@@ -18,16 +18,16 @@ struct ContentView: View {
             if store.account != nil {
                 NextcloudView(store: store)
             } else {
-                ServerAddressView(backgroundColor: .constant(Color.accent), brandImage: Image(systemName: "cloud.fill"), sharedAccounts: [], userAgent: FramecloudApp.userAgent) { host, user, password in
+                ServerAddressView(backgroundColor: .constant(Color.accent), brandImage: Image(systemName: "cloud.fill"), sharedAccounts: []) { host, user, password in
                     store.addAccount(host: host, user: user, password: password)
                 } beginPolling: { url, dismiss in
                     let (_, serverInfoResult) = await NextcloudKit.shared.getServerStatusAsync(serverUrl: url.absoluteString)
 
                     switch serverInfoResult {
                         case .success:
-                            let loginOptions = NKRequestOptions(customUserAgent: FramecloudApp.userAgent)
+                            let loginOptions = NKRequestOptions()
                             let (endpoint, loginAddress, token) = try await NextcloudKit.shared.getLoginFlowV2(serverUrl: url.absoluteString, options: loginOptions)
-                            let options = NKRequestOptions(customUserAgent: FramecloudApp.userAgent)
+                            let options = NKRequestOptions()
                             var grantValues: (url: String, user: String, appPassword: String)?
 
                             poller = Task {

@@ -28,7 +28,6 @@ struct NextcloudView: View {
         configuration.userContentController =  userContentController
 
         let page = WebPage(configuration: configuration)
-        page.customUserAgent = FramecloudApp.userAgent
         page.isInspectable = true
         self.page = page
         self.events = page.navigations
