@@ -9,6 +9,7 @@ class ViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        webView.isInspectable = true
         injectCustomStyleSheet()
         webView.load(URLRequest(url: Self.defaultURL))
     }
@@ -34,7 +35,7 @@ class ViewController: NSViewController {
 
         let toolbarHeight: CGFloat = 50
         let leadingInset: CGFloat = 20
-        let spacing: CGFloat = 20
+        let spacing: CGFloat = 23
 
         let buttonTypes: [NSWindow.ButtonType] = [.closeButton, .miniaturizeButton, .zoomButton]
 
