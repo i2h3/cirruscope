@@ -7,239 +7,120 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AA105ABD2E30151E00110C2F /* SwiftNextcloudUI in Frameworks */ = {isa = PBXBuildFile; productRef = AA105ABC2E30151E00110C2F /* SwiftNextcloudUI */; };
-		AA105B122E303B8D00110C2F /* NextcloudKit in Frameworks */ = {isa = PBXBuildFile; productRef = AA105B112E303B8D00110C2F /* NextcloudKit */; };
+		AA059CBF2FE407BA00DE3094 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA059CBE2FE407BA00DE3094 /* WebKit.framework */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXContainerItemProxy section */
-		AA105A9F2E3014A600110C2F /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = AA105A892E3014A500110C2F /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = AA105A902E3014A500110C2F;
-			remoteInfo = Framecloud;
-		};
-		AA105AA92E3014A600110C2F /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = AA105A892E3014A500110C2F /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = AA105A902E3014A500110C2F;
-			remoteInfo = Framecloud;
-		};
-/* End PBXContainerItemProxy section */
-
 /* Begin PBXFileReference section */
-		AA105A912E3014A500110C2F /* Framecloud.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Framecloud.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA105A9E2E3014A600110C2F /* FramecloudTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FramecloudTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA105AA82E3014A600110C2F /* FramecloudUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FramecloudUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA105ABE2E30154300110C2F /* README.md */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = README.md; sourceTree = "<group>"; };
-		AA105AC02E30157A00110C2F /* Framecloud.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Framecloud.xcconfig; sourceTree = "<group>"; };
+		AA059CA32FE407A700DE3094 /* Framecloud.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Framecloud.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA059CBE2FE407BA00DE3094 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		AA105A932E3014A500110C2F /* Framecloud */ = {
+		AA059CA52FE407A700DE3094 /* Framecloud */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Framecloud;
-			sourceTree = "<group>";
-		};
-		AA105AA12E3014A600110C2F /* FramecloudTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = FramecloudTests;
-			sourceTree = "<group>";
-		};
-		AA105AAB2E3014A600110C2F /* FramecloudUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = FramecloudUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		AA105A8E2E3014A500110C2F /* Frameworks */ = {
+		AA059CA02FE407A700DE3094 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AA105B122E303B8D00110C2F /* NextcloudKit in Frameworks */,
-				AA105ABD2E30151E00110C2F /* SwiftNextcloudUI in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		AA105A9B2E3014A600110C2F /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		AA105AA52E3014A600110C2F /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
+				AA059CBF2FE407BA00DE3094 /* WebKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		AA105A882E3014A500110C2F = {
+		AA059C9A2FE407A700DE3094 = {
 			isa = PBXGroup;
 			children = (
-				AA105ABE2E30154300110C2F /* README.md */,
-				AA105AC02E30157A00110C2F /* Framecloud.xcconfig */,
-				AA105A932E3014A500110C2F /* Framecloud */,
-				AA105AA12E3014A600110C2F /* FramecloudTests */,
-				AA105AAB2E3014A600110C2F /* FramecloudUITests */,
-				AA105A922E3014A500110C2F /* Products */,
+				AA059CA52FE407A700DE3094 /* Framecloud */,
+				AA059CBD2FE407BA00DE3094 /* Frameworks */,
+				AA059CA42FE407A700DE3094 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		AA105A922E3014A500110C2F /* Products */ = {
+		AA059CA42FE407A700DE3094 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				AA105A912E3014A500110C2F /* Framecloud.app */,
-				AA105A9E2E3014A600110C2F /* FramecloudTests.xctest */,
-				AA105AA82E3014A600110C2F /* FramecloudUITests.xctest */,
+				AA059CA32FE407A700DE3094 /* Framecloud.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		AA059CBD2FE407BA00DE3094 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				AA059CBE2FE407BA00DE3094 /* WebKit.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		AA105A902E3014A500110C2F /* Framecloud */ = {
+		AA059CA22FE407A700DE3094 /* Framecloud */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AA105AB22E3014A600110C2F /* Build configuration list for PBXNativeTarget "Framecloud" */;
+			buildConfigurationList = AA059CB12FE407A900DE3094 /* Build configuration list for PBXNativeTarget "Framecloud" */;
 			buildPhases = (
-				AA105A8D2E3014A500110C2F /* Sources */,
-				AA105A8E2E3014A500110C2F /* Frameworks */,
-				AA105A8F2E3014A500110C2F /* Resources */,
+				AA059C9F2FE407A700DE3094 /* Sources */,
+				AA059CA02FE407A700DE3094 /* Frameworks */,
+				AA059CA12FE407A700DE3094 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				AA105A932E3014A500110C2F /* Framecloud */,
+				AA059CA52FE407A700DE3094 /* Framecloud */,
 			);
 			name = Framecloud;
 			packageProductDependencies = (
-				AA105ABC2E30151E00110C2F /* SwiftNextcloudUI */,
-				AA105B112E303B8D00110C2F /* NextcloudKit */,
 			);
 			productName = Framecloud;
-			productReference = AA105A912E3014A500110C2F /* Framecloud.app */;
+			productReference = AA059CA32FE407A700DE3094 /* Framecloud.app */;
 			productType = "com.apple.product-type.application";
-		};
-		AA105A9D2E3014A600110C2F /* FramecloudTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = AA105AB52E3014A600110C2F /* Build configuration list for PBXNativeTarget "FramecloudTests" */;
-			buildPhases = (
-				AA105A9A2E3014A600110C2F /* Sources */,
-				AA105A9B2E3014A600110C2F /* Frameworks */,
-				AA105A9C2E3014A600110C2F /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				AA105AA02E3014A600110C2F /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				AA105AA12E3014A600110C2F /* FramecloudTests */,
-			);
-			name = FramecloudTests;
-			packageProductDependencies = (
-			);
-			productName = FramecloudTests;
-			productReference = AA105A9E2E3014A600110C2F /* FramecloudTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
-		AA105AA72E3014A600110C2F /* FramecloudUITests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = AA105AB82E3014A600110C2F /* Build configuration list for PBXNativeTarget "FramecloudUITests" */;
-			buildPhases = (
-				AA105AA42E3014A600110C2F /* Sources */,
-				AA105AA52E3014A600110C2F /* Frameworks */,
-				AA105AA62E3014A600110C2F /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				AA105AAA2E3014A600110C2F /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				AA105AAB2E3014A600110C2F /* FramecloudUITests */,
-			);
-			name = FramecloudUITests;
-			packageProductDependencies = (
-			);
-			productName = FramecloudUITests;
-			productReference = AA105AA82E3014A600110C2F /* FramecloudUITests.xctest */;
-			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		AA105A892E3014A500110C2F /* Project object */ = {
+		AA059C9B2FE407A700DE3094 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2600;
-				LastUpgradeCheck = 2600;
+				LastSwiftUpdateCheck = 2650;
+				LastUpgradeCheck = 2650;
 				TargetAttributes = {
-					AA105A902E3014A500110C2F = {
-						CreatedOnToolsVersion = 26.0;
-					};
-					AA105A9D2E3014A600110C2F = {
-						CreatedOnToolsVersion = 26.0;
-						TestTargetID = AA105A902E3014A500110C2F;
-					};
-					AA105AA72E3014A600110C2F = {
-						CreatedOnToolsVersion = 26.0;
-						TestTargetID = AA105A902E3014A500110C2F;
+					AA059CA22FE407A700DE3094 = {
+						CreatedOnToolsVersion = 26.5;
 					};
 				};
 			};
-			buildConfigurationList = AA105A8C2E3014A500110C2F /* Build configuration list for PBXProject "Framecloud" */;
+			buildConfigurationList = AA059C9E2FE407A700DE3094 /* Build configuration list for PBXProject "Framecloud" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
 			);
-			mainGroup = AA105A882E3014A500110C2F;
+			mainGroup = AA059C9A2FE407A700DE3094;
 			minimizedProjectReferenceProxies = 1;
-			packageReferences = (
-				AA105ABB2E30151E00110C2F /* XCRemoteSwiftPackageReference "swiftnextcloudui" */,
-				AA105B102E303B8D00110C2F /* XCRemoteSwiftPackageReference "NextcloudKit" */,
-			);
 			preferredProjectObjectVersion = 77;
-			productRefGroup = AA105A922E3014A500110C2F /* Products */;
+			productRefGroup = AA059CA42FE407A700DE3094 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				AA105A902E3014A500110C2F /* Framecloud */,
-				AA105A9D2E3014A600110C2F /* FramecloudTests */,
-				AA105AA72E3014A600110C2F /* FramecloudUITests */,
+				AA059CA22FE407A700DE3094 /* Framecloud */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		AA105A8F2E3014A500110C2F /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		AA105A9C2E3014A600110C2F /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		AA105AA62E3014A600110C2F /* Resources */ = {
+		AA059CA12FE407A700DE3094 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -249,21 +130,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		AA105A8D2E3014A500110C2F /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		AA105A9A2E3014A600110C2F /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		AA105AA42E3014A600110C2F /* Sources */ = {
+		AA059C9F2FE407A700DE3094 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -272,23 +139,9 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXTargetDependency section */
-		AA105AA02E3014A600110C2F /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = AA105A902E3014A500110C2F /* Framecloud */;
-			targetProxy = AA105A9F2E3014A600110C2F /* PBXContainerItemProxy */;
-		};
-		AA105AAA2E3014A600110C2F /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = AA105A902E3014A500110C2F /* Framecloud */;
-			targetProxy = AA105AA92E3014A600110C2F /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
-
 /* Begin XCBuildConfiguration section */
-		AA105AB02E3014A600110C2F /* Debug */ = {
+		AA059CAF2FE407A900DE3094 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AA105AC02E30157A00110C2F /* Framecloud.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -322,7 +175,6 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = 9258VT2Z85;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -341,17 +193,18 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.5;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
 		};
-		AA105AB12E3014A600110C2F /* Release */ = {
+		AA059CB02FE407A900DE3094 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AA105AC02E30157A00110C2F /* Framecloud.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -385,7 +238,6 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = 9258VT2Z85;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -398,226 +250,118 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.5;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
 		};
-		AA105AB32E3014A600110C2F /* Debug */ = {
+		AA059CB22FE407A900DE3094 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_APP_SANDBOX = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_PREVIEWS = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = de.i2h3.Framecloud;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.i2h3.framecloud;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
-				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
-		AA105AB42E3014A600110C2F /* Release */ = {
+		AA059CB32FE407A900DE3094 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_APP_SANDBOX = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_PREVIEWS = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = de.i2h3.Framecloud;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.i2h3.framecloud;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
-				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
-			};
-			name = Release;
-		};
-		AA105AB62E3014A600110C2F /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				GENERATE_INFOPLIST_FILE = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = de.i2h3.FramecloudTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = auto;
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Framecloud.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Framecloud";
-			};
-			name = Debug;
-		};
-		AA105AB72E3014A600110C2F /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				GENERATE_INFOPLIST_FILE = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = de.i2h3.FramecloudTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = auto;
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Framecloud.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Framecloud";
-			};
-			name = Release;
-		};
-		AA105AB92E3014A600110C2F /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				GENERATE_INFOPLIST_FILE = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = de.i2h3.FramecloudUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = auto;
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_TARGET_NAME = Framecloud;
-			};
-			name = Debug;
-		};
-		AA105ABA2E3014A600110C2F /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				GENERATE_INFOPLIST_FILE = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = de.i2h3.FramecloudUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = auto;
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_TARGET_NAME = Framecloud;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		AA105A8C2E3014A500110C2F /* Build configuration list for PBXProject "Framecloud" */ = {
+		AA059C9E2FE407A700DE3094 /* Build configuration list for PBXProject "Framecloud" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				AA105AB02E3014A600110C2F /* Debug */,
-				AA105AB12E3014A600110C2F /* Release */,
+				AA059CAF2FE407A900DE3094 /* Debug */,
+				AA059CB02FE407A900DE3094 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		AA105AB22E3014A600110C2F /* Build configuration list for PBXNativeTarget "Framecloud" */ = {
+		AA059CB12FE407A900DE3094 /* Build configuration list for PBXNativeTarget "Framecloud" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				AA105AB32E3014A600110C2F /* Debug */,
-				AA105AB42E3014A600110C2F /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		AA105AB52E3014A600110C2F /* Build configuration list for PBXNativeTarget "FramecloudTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				AA105AB62E3014A600110C2F /* Debug */,
-				AA105AB72E3014A600110C2F /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		AA105AB82E3014A600110C2F /* Build configuration list for PBXNativeTarget "FramecloudUITests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				AA105AB92E3014A600110C2F /* Debug */,
-				AA105ABA2E3014A600110C2F /* Release */,
+				AA059CB22FE407A900DE3094 /* Debug */,
+				AA059CB32FE407A900DE3094 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		AA105ABB2E30151E00110C2F /* XCRemoteSwiftPackageReference "swiftnextcloudui" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/nextcloud/swiftnextcloudui";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.0.0;
-			};
-		};
-		AA105B102E303B8D00110C2F /* XCRemoteSwiftPackageReference "NextcloudKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/nextcloud/NextcloudKit";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 7.0.4;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		AA105ABC2E30151E00110C2F /* SwiftNextcloudUI */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = AA105ABB2E30151E00110C2F /* XCRemoteSwiftPackageReference "swiftnextcloudui" */;
-			productName = SwiftNextcloudUI;
-		};
-		AA105B112E303B8D00110C2F /* NextcloudKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = AA105B102E303B8D00110C2F /* XCRemoteSwiftPackageReference "NextcloudKit" */;
-			productName = NextcloudKit;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
-	rootObject = AA105A892E3014A500110C2F /* Project object */;
+	rootObject = AA059C9B2FE407A700DE3094 /* Project object */;
 }
