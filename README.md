@@ -6,9 +6,13 @@
 A native macOS app which wraps your Nextcloud web user interface into first class windows.
 This leverages the fast and efficient WebKit framework shipped with macOS.
 
-</div>
-
 <img src="Screenshots/Dashboard.jpeg" alt="Nextcloud Files" />
+<img src="Screenshots/Files.jpeg" alt="Nextcloud Files" width=150 />
+<img src="Screenshots/Talk.jpeg" alt="Nextcloud Talk" width=150 />
+<img src="Screenshots/Office.jpeg" alt="Nextcloud Office" width=150 />
+<img src="Screenshots/Photos.jpeg" alt="Nextcloud Photos" width=150 />
+<img src="Screenshots/Notes.jpeg" alt="Nextcloud Notes" width=150 />
+</div>
 
 ## Status
 
