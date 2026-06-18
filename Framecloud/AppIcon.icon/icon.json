@@ -1,20 +1,127 @@
 {
-  "fill" : {
-    "automatic-gradient" : "display-p3:0.92549,0.65490,0.00000,1.00000"
-  },
+  "fill-specializations" : [
+    {
+      "value" : {
+        "automatic-gradient" : "srgb:0.72157,0.49412,1.00000,1.00000"
+      }
+    },
+    {
+      "appearance" : "dark",
+      "value" : {
+        "automatic-gradient" : "srgb:0.32549,0.10588,0.57647,1.00000"
+      }
+    }
+  ],
   "groups" : [
     {
       "layers" : [
         {
           "blend-mode" : "normal",
+          "fill-specializations" : [
+            {
+              "value" : {
+                "automatic-gradient" : "extended-srgb:0.20392,0.78039,0.34902,1.00000"
+              }
+            },
+            {
+              "appearance" : "tinted",
+              "value" : {
+                "solid" : "extended-gray:1.00000,1.00000"
+              }
+            }
+          ],
           "glass" : true,
+          "image-name" : "Zoom.svg",
+          "name" : "Zoom",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              63.99999975257515,
+              -328.3203125
+            ]
+          }
+        },
+        {
+          "fill-specializations" : [
+            {
+              "value" : {
+                "automatic-gradient" : "extended-srgb:1.00000,0.80000,0.00000,1.00000"
+              }
+            },
+            {
+              "appearance" : "tinted",
+              "value" : {
+                "solid" : "extended-gray:1.00000,1.00000"
+              }
+            }
+          ],
+          "image-name" : "Zoom.svg",
+          "name" : "Zoom",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              -128.00000024742485,
+              -328.3203125
+            ]
+          }
+        },
+        {
+          "fill-specializations" : [
+            {
+              "value" : {
+                "automatic-gradient" : "extended-srgb:1.00000,0.21961,0.23529,1.00000"
+              }
+            },
+            {
+              "appearance" : "tinted",
+              "value" : {
+                "solid" : "extended-gray:1.00000,1.00000"
+              }
+            }
+          ],
+          "image-name" : "Zoom.svg",
+          "name" : "Zoom",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              -320.00000024742485,
+              -328.3203125
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "layers" : [
+        {
+          "fill-specializations" : [
+            {
+              "value" : {
+                "automatic-gradient" : "extended-gray:1.00000,1.00000"
+              }
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "automatic-gradient" : "srgb:0.72157,0.49412,1.00000,1.00000"
+              }
+            }
+          ],
           "image-name" : "Cloud.svg",
           "name" : "Cloud",
           "position" : {
-            "scale" : 6.4,
+            "scale" : 1,
             "translation-in-points" : [
-              0,
-              0
+              2.474246230121935e-07,
+              81.90625
             ]
           }
         }
@@ -30,9 +137,8 @@
     }
   ],
   "supported-platforms" : {
-    "circles" : [
-      "watchOS"
-    ],
-    "squares" : "shared"
+    "squares" : [
+      "macOS"
+    ]
   }
 }
