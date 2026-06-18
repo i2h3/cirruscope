@@ -1,10 +1,10 @@
-#header-start {
-    margin-left: 100px;
+#header .header-start {
+    margin-left: 80px !important;
 }
 
 #content-vue {
-    border-radius: 0;
-    margin-top: 50px 0 0 0;
-    width: 100%;
-    height: 100%;
+    border-radius: 0 !important;
+    margin-top: 50px 0 0 0 !important;
+    width: 100% !important;
+    height: 100% !important;
 }
