@@ -6,6 +6,10 @@ class ViewController: NSViewController, WKScriptMessageHandler {
 
     private static let defaultURL = URL(string: "https://cloud.nextcloud.com")!
     private static let windowDragMessageName = "windowDrag"
+    private static let sidebarToggleStateMessageName = "sidebarToggleState"
+
+    private var sidebarToggleAvailable = false
+    private var sidebarToggleExpanded = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -13,6 +17,7 @@ class ViewController: NSViewController, WKScriptMessageHandler {
         webView.isInspectable = true
         injectCustomStyleSheet()
         installWindowDragBridge()
+        installSidebarToggleBridge()
         webView.load(URLRequest(url: Self.defaultURL))
     }
 
@@ -61,13 +66,75 @@ class ViewController: NSViewController, WKScriptMessageHandler {
     }
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        guard message.name == Self.windowDragMessageName,
-              let window = view.window,
-              let event = NSApp.currentEvent else {
-            return
-        }
+        switch message.name {
+        case Self.windowDragMessageName:
+            guard let window = view.window,
+                  let event = NSApp.currentEvent else {
+                return
+            }
+            window.performDrag(with: event)
 
-        window.performDrag(with: event)
+        case Self.sidebarToggleStateMessageName:
+            guard let body = message.body as? [String: Any] else { return }
+            sidebarToggleAvailable = body["available"] as? Bool ?? false
+            sidebarToggleExpanded = body["expanded"] as? Bool ?? false
+
+        default:
+            break
+        }
+    }
+
+    @IBAction func toggleSidebar(_ sender: Any?) {
+        let script = """
+        (function() {
+            var element = document.querySelector('.app-navigation-toggle');
+            if (element) {
+                element.click();
+            }
+        })();
+        """
+
+        webView.evaluateJavaScript(script)
+    }
+
+    private func installSidebarToggleBridge() {
+        let controller = webView.configuration.userContentController
+        controller.add(self, name: Self.sidebarToggleStateMessageName)
+
+        let source = """
+        (function() {
+            function reportState() {
+                var element = document.querySelector('.app-navigation-toggle');
+                var available = !!element;
+                var expanded = available && element.getAttribute('aria-expanded') === 'true';
+                window.webkit.messageHandlers.sidebarToggleState.postMessage({
+                    available: available,
+                    expanded: expanded
+                });
+            }
+
+            reportState();
+
+            var observer = new MutationObserver(function() {
+                reportState();
+            });
+
+            observer.observe(document.documentElement, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['aria-expanded', 'class']
+            });
+        })();
+        """
+
+        let script = WKUserScript(
+            source: source,
+            injectionTime: .atDocumentEnd,
+            forMainFrameOnly: false
+        )
+
+        controller.addUserScript(script)
     }
 
     private func installWindowDragBridge() {
@@ -135,3 +202,13 @@ class ViewController: NSViewController, WKScriptMessageHandler {
         webView.configuration.userContentController.addUserScript(script)
     }
 }
+extension ViewController: NSMenuItemValidation {
+    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        if menuItem.action == #selector(toggleSidebar(_:)) {
+            menuItem.title = sidebarToggleExpanded ? "Hide Sidebar" : "Show Sidebar"
+            return sidebarToggleAvailable
+        }
+        return true
+    }
+}
+
