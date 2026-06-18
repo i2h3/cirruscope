@@ -1,16 +1,18 @@
 import Cocoa
 import WebKit
 
-class ViewController: NSViewController {
+class ViewController: NSViewController, WKScriptMessageHandler {
     @IBOutlet weak var webView: WKWebView!
 
-    private static let defaultURL = URL(string: "http://localhost:53371")!
+    private static let defaultURL = URL(string: "https://cloud.nextcloud.com")!
+    private static let windowDragMessageName = "windowDrag"
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
         webView.isInspectable = true
         injectCustomStyleSheet()
+        installWindowDragBridge()
         webView.load(URLRequest(url: Self.defaultURL))
     }
 
@@ -56,6 +58,52 @@ class ViewController: NSViewController {
 
             button.setFrameOrigin(superview.convert(originInWindow, from: nil))
         }
+    }
+
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        guard message.name == Self.windowDragMessageName,
+              let window = view.window,
+              let event = NSApp.currentEvent else {
+            return
+        }
+
+        window.performDrag(with: event)
+    }
+
+    private func installWindowDragBridge() {
+        let controller = webView.configuration.userContentController
+        controller.add(self, name: Self.windowDragMessageName)
+
+        let source = """
+        (function() {
+            var interactiveSelector = 'a, button, input, textarea, select, label, [role="button"], [role="link"], [contenteditable="true"], [contenteditable=""]';
+
+            document.addEventListener('mousedown', function(event) {
+                if (event.button !== 0) {
+                    return;
+                }
+
+                var header = document.querySelector('#header');
+                if (!header || !header.contains(event.target)) {
+                    return;
+                }
+
+                if (event.target.closest(interactiveSelector)) {
+                    return;
+                }
+
+                window.webkit.messageHandlers.windowDrag.postMessage({});
+            }, true);
+        })();
+        """
+
+        let script = WKUserScript(
+            source: source,
+            injectionTime: .atDocumentEnd,
+            forMainFrameOnly: false
+        )
+
+        controller.addUserScript(script)
     }
 
     private func injectCustomStyleSheet() {
