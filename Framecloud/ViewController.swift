@@ -13,9 +13,47 @@ class ViewController: NSViewController {
         webView.load(URLRequest(url: Self.defaultURL))
     }
 
+    override func viewWillAppear() {
+        super.viewWillAppear()
+        layoutWindowControls()
+    }
+
+    override func viewDidLayout() {
+        super.viewDidLayout()
+        layoutWindowControls()
+    }
+
     override var representedObject: Any? {
         didSet {
         // Update the view, if already loaded.
+        }
+    }
+
+    private func layoutWindowControls() {
+        guard let window = view.window else { return }
+
+        let toolbarHeight: CGFloat = 50
+        let leadingInset: CGFloat = 20
+        let spacing: CGFloat = 20
+
+        let buttonTypes: [NSWindow.ButtonType] = [.closeButton, .miniaturizeButton, .zoomButton]
+
+        for (index, type) in buttonTypes.enumerated() {
+            guard let button = window.standardWindowButton(type),
+                  let superview = button.superview else {
+                continue
+            }
+
+            let buttonHeight = button.bounds.height
+            let topInset = (toolbarHeight - buttonHeight) / 2
+            let leading = leadingInset + CGFloat(index) * spacing
+
+            let originInWindow = NSPoint(
+                x: leading,
+                y: window.frame.height - topInset - buttonHeight
+            )
+
+            button.setFrameOrigin(superview.convert(originInWindow, from: nil))
         }
     }
 
