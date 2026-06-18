@@ -13,6 +13,8 @@
 /* Begin PBXFileReference section */
 		AA059CA32FE407A700DE3094 /* Framecloud.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Framecloud.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA059CBE2FE407BA00DE3094 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
+		AA059CC42FE4130E00DE3094 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		AA059CC92FE414EB00DE3094 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -38,6 +40,8 @@
 		AA059C9A2FE407A700DE3094 = {
 			isa = PBXGroup;
 			children = (
+				AA059CC92FE414EB00DE3094 /* LICENSE */,
+				AA059CC42FE4130E00DE3094 /* README.md */,
 				AA059CA52FE407A700DE3094 /* Framecloud */,
 				AA059CBD2FE407BA00DE3094 /* Frameworks */,
 				AA059CA42FE407A700DE3094 /* Products */,
