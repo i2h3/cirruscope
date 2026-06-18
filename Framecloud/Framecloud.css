@@ -1,14 +1,17 @@
 #header .header-start {
-    margin-left: 80px !important;
+    margin-left: 80px;
 }
 
+#content,
 #content-vue {
-    border-radius: 0 !important;
-    margin: 50px 0 0 0 !important;
+    height: calc(100% - var(--header-height)) !important;
+    margin-bottom: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
     width: 100% !important;
-    height: 100% !important;
 }
 
+#content-vue,
 #app-content-vue {
     border-radius: 0;
 }
