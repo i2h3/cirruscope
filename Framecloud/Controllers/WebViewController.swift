@@ -2,7 +2,8 @@ import Cocoa
 import WebKit
 
 class WebViewController: NSViewController, WKScriptMessageHandler {
-    @IBOutlet weak var webView: WKWebView!
+    @IBOutlet
+    var webView: WKWebView!
 
     private static let windowDragMessageName = "windowDrag"
     private static let sidebarToggleStateMessageName = "sidebarToggleState"
@@ -35,14 +36,10 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         layoutWindowControls()
     }
 
-    override var representedObject: Any? {
-        didSet {
-        // Update the view, if already loaded.
-        }
-    }
-
     private func layoutWindowControls() {
-        guard let window = view.window else { return }
+        guard let window = view.window else {
+            return
+        }
 
         let toolbarHeight: CGFloat = 50
         let leadingInset: CGFloat = 20
@@ -52,7 +49,8 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
 
         for (index, type) in buttonTypes.enumerated() {
             guard let button = window.standardWindowButton(type),
-                  let superview = button.superview else {
+                  let superview = button.superview
+            else {
                 continue
             }
 
@@ -69,26 +67,30 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         }
     }
 
-    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+    func userContentController(_: WKUserContentController, didReceive message: WKScriptMessage) {
         switch message.name {
-        case Self.windowDragMessageName:
-            guard let window = view.window,
-                  let event = NSApp.currentEvent else {
-                return
-            }
-            window.performDrag(with: event)
+            case Self.windowDragMessageName:
+                guard let window = view.window,
+                      let event = NSApp.currentEvent
+                else {
+                    return
+                }
+                window.performDrag(with: event)
 
-        case Self.sidebarToggleStateMessageName:
-            guard let body = message.body as? [String: Any] else { return }
-            sidebarToggleAvailable = body["available"] as? Bool ?? false
-            sidebarToggleExpanded = body["expanded"] as? Bool ?? false
+            case Self.sidebarToggleStateMessageName:
+                guard let body = message.body as? [String: Any] else {
+                    return
+                }
+                sidebarToggleAvailable = body["available"] as? Bool ?? false
+                sidebarToggleExpanded = body["expanded"] as? Bool ?? false
 
-        default:
-            break
+            default:
+                break
         }
     }
 
-    @IBAction func toggleSidebar(_ sender: Any?) {
+    @IBAction
+    func toggleSidebar(_: Any?) {
         let script = """
         (function() {
             var element = document.querySelector('.app-navigation-toggle');
@@ -206,5 +208,3 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         webView.configuration.userContentController.addUserScript(script)
     }
 }
-
-

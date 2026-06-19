@@ -1,6 +1,6 @@
 import Foundation
 
-final class Settings {
+enum Settings {
     private enum UserDefaultsKey: String {
         case serverAddress
     }

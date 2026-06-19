@@ -5,14 +5,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var windowControllers: [NSWindowController] = []
     private var lastCascadePoint: NSPoint = .zero
 
-    func applicationDidFinishLaunching(_ aNotification: Notification) {
+    func applicationDidFinishLaunching(_: Notification) {
         let storyboard = NSStoryboard(name: "Main", bundle: nil)
-        let windowController: NSWindowController?
-
-        if Settings.serverAddress != nil {
-            windowController = storyboard.instantiateController(withIdentifier: "WebViewWindowController") as? NSWindowController
+        let windowController: NSWindowController? = if Settings.serverAddress != nil {
+            storyboard.instantiateController(withIdentifier: "WebViewWindowController") as? NSWindowController
         } else {
-            windowController = storyboard.instantiateController(withIdentifier: "ServerAddressWindowController") as? NSWindowController
+            storyboard.instantiateController(withIdentifier: "ServerAddressWindowController") as? NSWindowController
         }
 
         guard let windowController else {
@@ -22,15 +20,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         present(windowController: windowController)
     }
 
-    func applicationWillTerminate(_ aNotification: Notification) {
+    func applicationWillTerminate(_: Notification) {
         // Insert code here to tear down your application
     }
 
-    func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
-        return true
+    func applicationSupportsSecureRestorableState(_: NSApplication) -> Bool {
+        true
     }
 
-    @IBAction func newWindow(_ sender: Any?) {
+    @IBAction
+    func newWindow(_ sender: Any?) {
         let storyboard = NSStoryboard(name: "Main", bundle: nil)
 
         guard let windowController = storyboard.instantiateInitialController() as? NSWindowController else {
@@ -52,8 +51,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             object: window,
             queue: .main
         ) { [weak self, weak windowController] _ in
-            guard let self, let windowController else { return }
-            self.windowControllers.removeAll { $0 === windowController }
+            guard let self, let windowController else {
+                return
+            }
+            windowControllers.removeAll { $0 === windowController }
         }
 
         windowControllers.append(windowController)

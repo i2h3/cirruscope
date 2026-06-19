@@ -2,11 +2,15 @@ import Cocoa
 import Rainmaker
 
 class ServerAddressViewController: NSViewController {
-    @IBOutlet var progressIndicator: NSProgressIndicator!
-    @IBOutlet var serverAddressField: NSTextField!
-    @IBOutlet var openButton: NSButton!
+    @IBOutlet
+    var progressIndicator: NSProgressIndicator!
+    @IBOutlet
+    var serverAddressField: NSTextField!
+    @IBOutlet
+    var openButton: NSButton!
 
-    @IBAction func open(_ sender: Any) {
+    @IBAction
+    func open(_: Any) {
         var sanitizedServerAddress = serverAddressField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
 
         if sanitizedServerAddress.hasPrefix("http://") == false || sanitizedServerAddress.hasPrefix("https://") == false {
