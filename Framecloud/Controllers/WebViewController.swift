@@ -7,8 +7,8 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     private static let windowDragMessageName = "windowDrag"
     private static let sidebarToggleStateMessageName = "sidebarToggleState"
 
-    private var sidebarToggleAvailable = false
-    private var sidebarToggleExpanded = false
+    var sidebarToggleAvailable = false
+    var sidebarToggleExpanded = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -206,13 +206,5 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         webView.configuration.userContentController.addUserScript(script)
     }
 }
-extension WebViewController: NSMenuItemValidation {
-    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
-        if menuItem.action == #selector(toggleSidebar(_:)) {
-            menuItem.title = sidebarToggleExpanded ? "Hide Sidebar" : "Show Sidebar"
-            return sidebarToggleAvailable
-        }
-        return true
-    }
-}
+
 
