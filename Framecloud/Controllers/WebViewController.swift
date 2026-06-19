@@ -37,6 +37,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         super.viewDidLoad()
 
         webView.isInspectable = true
+        webView.navigationDelegate = self
         injectCustomStyleSheet()
         installWindowDragBridge()
         installSidebarToggleBridge()
