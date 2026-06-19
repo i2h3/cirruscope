@@ -1,11 +1,26 @@
 import Cocoa
 import Rainmaker
 
+/// `ServerAddressViewController` backs the storyboard scene that asks the user for the address of the Nextcloud server they want to connect to.
+///
+/// It is presented by `AppDelegate` on launch when `Settings.serverAddress` is `nil`, validates the entered address by fetching the server's capabilities via `Rainmaker.Server`, and on success persists the address to `Settings.serverAddress` before handing off to `WebViewController`.
 class ServerAddressViewController: NSViewController {
+
+    /// `progressIndicator` is the indeterminate spinner that is animated while a server's capabilities are being fetched.
+    ///
+    /// `open(_:)` shows and starts it before issuing the network request and hides and stops it once the request has completed or failed.
     @IBOutlet
     var progressIndicator: NSProgressIndicator!
+
+    /// `serverAddressField` is the text field that captures the server address typed by the user.
+    ///
+    /// `open(_:)` reads its `stringValue`, sanitizes it, and disables the field while validating the resulting URL against the server.
     @IBOutlet
     var serverAddressField: NSTextField!
+
+    /// `openButton` is the button that triggers `open(_:)` to validate the entered server address.
+    ///
+    /// `open(_:)` disables it while a validation request is in flight to prevent duplicate submissions.
     @IBOutlet
     var openButton: NSButton!
 

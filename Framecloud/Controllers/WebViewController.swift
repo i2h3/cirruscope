@@ -1,14 +1,36 @@
 import Cocoa
 import WebKit
 
+/// `WebViewController` backs the storyboard scene that hosts the embedded `WKWebView` Framecloud uses to display Nextcloud.
+///
+/// `AppDelegate` presents it on launch when `Settings.serverAddress` is non-`nil`, and `ServerAddressViewController` transitions to it after persisting a freshly validated server address.
+/// It injects the bundled `Framecloud.css` stylesheet, bridges custom title-bar drag behaviour, and tracks the state of Nextcloud's sidebar so that `WebViewController+NSMenuItemValidation` can drive the "Show/Hide Sidebar" menu item.
 class WebViewController: NSViewController, WKScriptMessageHandler {
+
+    /// `webView` is the `WKWebView` that loads `Settings.serverAddress` and renders the Nextcloud web interface.
+    ///
+    /// `viewDidLoad()` configures it, installs the user scripts produced by `injectCustomStyleSheet()`, `installWindowDragBridge()`, and `installSidebarToggleBridge()`, and triggers the initial navigation.
     @IBOutlet
     var webView: WKWebView!
 
+    /// `windowDragMessageName` is the script-message name used by the user script installed in `installWindowDragBridge()` to ask the host window to begin a drag.
+    ///
+    /// `userContentController(_:didReceive:)` switches on this value to forward the event to `NSWindow.performDrag(with:)`.
     private static let windowDragMessageName = "windowDrag"
+
+    /// `sidebarToggleStateMessageName` is the script-message name used by the user script installed in `installSidebarToggleBridge()` to report whether Nextcloud's sidebar toggle is available and expanded.
+    ///
+    /// `userContentController(_:didReceive:)` switches on this value to update `sidebarToggleAvailable` and `sidebarToggleExpanded`.
     private static let sidebarToggleStateMessageName = "sidebarToggleState"
 
+    /// `sidebarToggleAvailable` is `true` while the currently loaded Nextcloud page exposes a sidebar toggle that can be activated.
+    ///
+    /// `WebViewController+NSMenuItemValidation` reads this value to enable or disable the "Show/Hide Sidebar" menu item.
     var sidebarToggleAvailable = false
+
+    /// `sidebarToggleExpanded` is `true` while Nextcloud's sidebar is currently shown.
+    ///
+    /// `WebViewController+NSMenuItemValidation` reads this value to switch the title of the "Show/Hide Sidebar" menu item between "Hide Sidebar" and "Show Sidebar".
     var sidebarToggleExpanded = false
 
     override func viewDidLoad() {
@@ -58,10 +80,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
             let topInset = (toolbarHeight - buttonHeight) / 2
             let leading = leadingInset + CGFloat(index) * spacing
 
-            let originInWindow = NSPoint(
-                x: leading,
-                y: window.frame.height - topInset - buttonHeight
-            )
+            let originInWindow = NSPoint(x: leading, y: window.frame.height - topInset - buttonHeight)
 
             button.setFrameOrigin(superview.convert(originInWindow, from: nil))
         }
@@ -134,11 +153,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         })();
         """
 
-        let script = WKUserScript(
-            source: source,
-            injectionTime: .atDocumentEnd,
-            forMainFrameOnly: false
-        )
+        let script = WKUserScript(source: source, injectionTime: .atDocumentEnd, forMainFrameOnly: false)
 
         controller.addUserScript(script)
     }
@@ -170,11 +185,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         })();
         """
 
-        let script = WKUserScript(
-            source: source,
-            injectionTime: .atDocumentEnd,
-            forMainFrameOnly: false
-        )
+        let script = WKUserScript(source: source, injectionTime: .atDocumentEnd, forMainFrameOnly: false)
 
         controller.addUserScript(script)
     }
@@ -199,11 +210,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         })();
         """
 
-        let script = WKUserScript(
-            source: source,
-            injectionTime: .atDocumentStart,
-            forMainFrameOnly: false
-        )
+        let script = WKUserScript(source: source, injectionTime: .atDocumentStart, forMainFrameOnly: false)
 
         webView.configuration.userContentController.addUserScript(script)
     }
