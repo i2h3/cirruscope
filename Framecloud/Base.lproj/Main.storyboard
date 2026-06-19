@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="24765" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="B8D-0N-5wS">
+<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="24765" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24765"/>
         <plugIn identifier="com.apple.WebKit2IBPlugin" version="24765"/>
@@ -22,9 +22,13 @@
                                                 <action selector="orderFrontStandardAboutPanel:" target="Ady-hI-5gd" id="Exp-CZ-Vem"/>
                                             </connections>
                                         </menuItem>
+                                        <menuItem isSeparatorItem="YES" id="b3X-ju-wXU"/>
+                                        <menuItem title="Settings…" image="gear" catalog="system" keyEquivalent="," id="Pv6-gx-UJs">
+                                            <connections>
+                                                <segue destination="v0N-vH-deC" kind="show" id="jOo-5l-axv"/>
+                                            </connections>
+                                        </menuItem>
                                         <menuItem isSeparatorItem="YES" id="VOq-y0-SEH"/>
-                                        <menuItem title="Preferences…" keyEquivalent="," id="BOF-NM-1cW"/>
-                                        <menuItem isSeparatorItem="YES" id="wFC-TO-SCJ"/>
                                         <menuItem title="Services" id="NMo-om-nkz">
                                             <modifierMask key="keyEquivalentModifierMask"/>
                                             <menu key="submenu" title="Services" systemMenu="services" id="hz9-B4-Xy5"/>
@@ -621,12 +625,132 @@
                 <customObject id="YLy-65-1bz" customClass="NSFontManager"/>
                 <customObject id="Ady-hI-5gd" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="75" y="0.0"/>
+            <point key="canvasLocation" x="-592" y="-248"/>
+        </scene>
+        <!--Window Controller-->
+        <scene sceneID="UII-pp-Y3L">
+            <objects>
+                <windowController storyboardIdentifier="ServerAddressWindowController" id="gEK-0I-zXE" sceneMemberID="viewController">
+                    <window key="window" title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" titlebarAppearsTransparent="YES" titleVisibility="hidden" id="XFy-oL-ctO">
+                        <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES"/>
+                        <rect key="contentRect" x="425" y="462" width="400" height="270"/>
+                        <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1410"/>
+                        <view key="contentView" id="x0V-YN-wUH">
+                            <rect key="frame" x="0.0" y="0.0" width="400" height="270"/>
+                            <autoresizingMask key="autoresizingMask"/>
+                        </view>
+                        <connections>
+                            <outlet property="delegate" destination="gEK-0I-zXE" id="UNP-8X-lv0"/>
+                        </connections>
+                    </window>
+                    <connections>
+                        <segue destination="CSm-iM-xwx" kind="relationship" relationship="window.shadowedContentViewController" id="bjm-pF-qDV"/>
+                    </connections>
+                </windowController>
+                <customObject id="hg0-4w-Eq5" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-1087" y="271"/>
+        </scene>
+        <!--Server Address View Controller-->
+        <scene sceneID="fGo-gY-vRI">
+            <objects>
+                <viewController id="CSm-iM-xwx" customClass="ServerAddressViewController" customModule="Framecloud" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" id="JXc-I7-b73">
+                        <rect key="frame" x="0.0" y="0.0" width="400" height="473"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                        <subviews>
+                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="hJR-Eu-VYI">
+                                <rect key="frame" x="132" y="262" width="137" height="31"/>
+                                <textFieldCell key="cell" lineBreakMode="clipping" title="Framecloud" id="YMm-Pw-AmD">
+                                    <font key="font" textStyle="largeTitle" name=".SFNS-Regular"/>
+                                    <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
+                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                </textFieldCell>
+                            </textField>
+                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="RBx-9A-EGs">
+                                <rect key="frame" x="58" y="206" width="229" height="16"/>
+                                <textFieldCell key="cell" lineBreakMode="clipping" title="Enter your Nextcloud server address:" id="aZ0-zr-lPD">
+                                    <font key="font" metaFont="system"/>
+                                    <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                </textFieldCell>
+                            </textField>
+                            <textField focusRingType="none" verticalHuggingPriority="750" contentType="url" translatesAutoresizingMaskIntoConstraints="NO" id="YlJ-G9-LcR">
+                                <rect key="frame" x="60" y="174" width="280" height="24"/>
+                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" placeholderString="https://your.nextcloud.com" drawsBackground="YES" usesSingleLineMode="YES" id="wwU-wS-wXs">
+                                    <font key="font" metaFont="system"/>
+                                    <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                </textFieldCell>
+                                <connections>
+                                    <action selector="open:" target="CSm-iM-xwx" id="K46-jo-GKv"/>
+                                </connections>
+                            </textField>
+                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="qIf-JY-Zk0">
+                                <rect key="frame" x="38" y="40" width="324" height="42"/>
+                                <textFieldCell key="cell" title="The next time you open Framecloud, this server will be opened again directly. You can log out any time and enter a new address." id="nLm-92-XsW">
+                                    <font key="font" metaFont="smallSystem"/>
+                                    <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
+                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                </textFieldCell>
+                            </textField>
+                            <progressIndicator hidden="YES" wantsLayer="YES" maxValue="100" indeterminate="YES" controlSize="small" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="ech-1t-Ipm">
+                                <rect key="frame" x="259" y="146" width="16" height="16"/>
+                            </progressIndicator>
+                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="k1i-ML-nxX">
+                                <rect key="frame" x="283" y="142" width="57" height="24"/>
+                                <buttonCell key="cell" type="push" title="Open" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="stm-Nb-RXX">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                                <connections>
+                                    <action selector="open:" target="CSm-iM-xwx" id="twh-wo-lFG"/>
+                                </connections>
+                            </button>
+                            <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="46a-hj-1ne">
+                                <rect key="frame" x="150" y="313" width="100" height="100"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="100" id="NBx-hp-Saj"/>
+                                    <constraint firstAttribute="width" secondItem="46a-hj-1ne" secondAttribute="height" multiplier="1:1" id="Z4C-q0-MAB"/>
+                                </constraints>
+                                <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="Logo" id="bqR-tO-fAe"/>
+                            </imageView>
+                        </subviews>
+                        <constraints>
+                            <constraint firstItem="qIf-JY-Zk0" firstAttribute="top" secondItem="k1i-ML-nxX" secondAttribute="bottom" constant="60" id="AFI-hn-czT"/>
+                            <constraint firstItem="YlJ-G9-LcR" firstAttribute="top" secondItem="RBx-9A-EGs" secondAttribute="bottom" constant="8" symbolic="YES" id="Bsv-FU-npx"/>
+                            <constraint firstAttribute="trailing" secondItem="qIf-JY-Zk0" secondAttribute="trailing" constant="40" id="CjA-FN-Yrv"/>
+                            <constraint firstItem="YlJ-G9-LcR" firstAttribute="leading" secondItem="RBx-9A-EGs" secondAttribute="leading" id="EEG-zz-D0I"/>
+                            <constraint firstAttribute="bottom" secondItem="qIf-JY-Zk0" secondAttribute="bottom" constant="40" id="GcM-zu-mm0"/>
+                            <constraint firstItem="46a-hj-1ne" firstAttribute="top" secondItem="JXc-I7-b73" secondAttribute="top" constant="60" id="LSX-ep-Iuw"/>
+                            <constraint firstAttribute="trailing" secondItem="YlJ-G9-LcR" secondAttribute="trailing" constant="60" id="NSb-3T-ziI"/>
+                            <constraint firstItem="YlJ-G9-LcR" firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="RBx-9A-EGs" secondAttribute="trailing" id="P4s-Tl-Lln"/>
+                            <constraint firstItem="hJR-Eu-VYI" firstAttribute="top" secondItem="46a-hj-1ne" secondAttribute="bottom" constant="20" id="Wxj-la-Cfv"/>
+                            <constraint firstItem="k1i-ML-nxX" firstAttribute="trailing" secondItem="YlJ-G9-LcR" secondAttribute="trailing" id="Y1d-Q1-lBU"/>
+                            <constraint firstItem="46a-hj-1ne" firstAttribute="centerX" secondItem="JXc-I7-b73" secondAttribute="centerX" id="dD9-Lb-YOS"/>
+                            <constraint firstItem="k1i-ML-nxX" firstAttribute="leading" secondItem="ech-1t-Ipm" secondAttribute="trailing" constant="8" symbolic="YES" id="iKD-Ie-Y7o"/>
+                            <constraint firstItem="ech-1t-Ipm" firstAttribute="centerY" secondItem="k1i-ML-nxX" secondAttribute="centerY" id="j0j-8T-u2f"/>
+                            <constraint firstItem="hJR-Eu-VYI" firstAttribute="centerX" secondItem="JXc-I7-b73" secondAttribute="centerX" id="phN-2T-nbT"/>
+                            <constraint firstItem="k1i-ML-nxX" firstAttribute="top" secondItem="YlJ-G9-LcR" secondAttribute="bottom" constant="8" symbolic="YES" id="q60-fs-ErN"/>
+                            <constraint firstItem="qIf-JY-Zk0" firstAttribute="leading" secondItem="JXc-I7-b73" secondAttribute="leading" constant="40" id="qvU-q9-RmX"/>
+                            <constraint firstItem="RBx-9A-EGs" firstAttribute="leading" secondItem="JXc-I7-b73" secondAttribute="leading" constant="60" id="s8p-DS-hv1"/>
+                            <constraint firstItem="RBx-9A-EGs" firstAttribute="top" secondItem="hJR-Eu-VYI" secondAttribute="bottom" constant="40" id="uwY-UC-GdF"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="openButton" destination="k1i-ML-nxX" id="yTP-uu-Umj"/>
+                        <outlet property="progressIndicator" destination="ech-1t-Ipm" id="ask-cz-WW2"/>
+                        <outlet property="serverAddressField" destination="YlJ-G9-LcR" id="7M9-fT-bgh"/>
+                    </connections>
+                </viewController>
+                <customObject id="ZVT-ow-fmy" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-1087" y="937"/>
         </scene>
         <!--Window Controller-->
         <scene sceneID="R2V-B0-nI4">
             <objects>
-                <windowController id="B8D-0N-5wS" sceneMemberID="viewController">
+                <windowController storyboardIdentifier="WebViewWindowController" id="B8D-0N-5wS" sceneMemberID="viewController">
                     <window key="window" title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" titlebarAppearsTransparent="YES" titleVisibility="hidden" id="IQv-IB-iLA">
                         <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES" fullSizeContentView="YES"/>
                         <rect key="contentRect" x="196" y="240" width="1200" height="800"/>
@@ -644,10 +768,148 @@
             </objects>
             <point key="canvasLocation" x="74" y="502"/>
         </scene>
+        <!--Window Controller-->
+        <scene sceneID="mtj-gJ-bn2">
+            <objects>
+                <windowController id="v0N-vH-deC" sceneMemberID="viewController">
+                    <window key="window" title="Framecloud Settings" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" id="oTc-Gk-jL0">
+                        <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES"/>
+                        <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
+                        <rect key="contentRect" x="425" y="462" width="480" height="270"/>
+                        <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1410"/>
+                        <view key="contentView" id="uZ7-wY-0ex">
+                            <rect key="frame" x="0.0" y="0.0" width="480" height="270"/>
+                            <autoresizingMask key="autoresizingMask"/>
+                        </view>
+                        <connections>
+                            <outlet property="delegate" destination="v0N-vH-deC" id="YEn-Dz-52M"/>
+                        </connections>
+                    </window>
+                    <connections>
+                        <segue destination="Krt-iQ-b8b" kind="relationship" relationship="window.shadowedContentViewController" id="D4v-z3-4j1"/>
+                    </connections>
+                </windowController>
+                <customObject id="cCE-Zd-q64" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="21" y="-202"/>
+        </scene>
+        <!--Tab View Controller-->
+        <scene sceneID="Zp6-PE-2VJ">
+            <objects>
+                <tabViewController selectedTabViewItemIndex="0" tabStyle="toolbar" id="Krt-iQ-b8b" sceneMemberID="viewController">
+                    <tabViewItems>
+                        <tabViewItem label="General" identifier="" image="gear" catalog="system" id="7IU-fb-S0w"/>
+                        <tabViewItem label="Apps" identifier="" image="app.grid" catalog="system" id="rJd-2U-O7V"/>
+                    </tabViewItems>
+                    <tabView key="tabView" type="noTabsNoBorder" id="C5g-9C-yaP">
+                        <rect key="frame" x="0.0" y="0.0" width="450" height="300"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                        <font key="font" metaFont="system"/>
+                        <connections>
+                            <outlet property="delegate" destination="Krt-iQ-b8b" id="fcV-Aa-7GT"/>
+                        </connections>
+                    </tabView>
+                    <connections>
+                        <outlet property="tabView" destination="C5g-9C-yaP" id="mtd-BQ-BbT"/>
+                        <segue destination="M8w-Tj-wCV" kind="relationship" relationship="tabItems" id="3q6-yk-PQ3"/>
+                        <segue destination="ZAg-dq-Ifn" kind="relationship" relationship="tabItems" id="Ei3-mR-8uS"/>
+                    </connections>
+                </tabViewController>
+                <customObject id="30j-tt-1Sy" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="748" y="-217"/>
+        </scene>
         <!--View Controller-->
+        <scene sceneID="X0s-dQ-JkY">
+            <objects>
+                <viewController id="M8w-Tj-wCV" sceneMemberID="viewController">
+                    <view key="view" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="z5Z-wa-TqO">
+                        <rect key="frame" x="0.0" y="0.0" width="440" height="133"/>
+                        <subviews>
+                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="fJw-we-GPe">
+                                <rect key="frame" x="350" y="20" width="70" height="24"/>
+                                <buttonCell key="cell" type="push" title="Log out" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="i91-lg-qlx">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                            </button>
+                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="xMK-P6-2OJ">
+                                <rect key="frame" x="18" y="97" width="116" height="16"/>
+                                <textFieldCell key="cell" lineBreakMode="clipping" title="You are signed on:" id="QBm-XH-EVn">
+                                    <font key="font" metaFont="system"/>
+                                    <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                </textFieldCell>
+                            </textField>
+                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="jn8-Pv-2jp">
+                                <rect key="frame" x="20" y="73" width="154" height="16"/>
+                                <buttonCell key="cell" type="bevel" title="https://cloud.example.tld" bezelStyle="regularSquare" alignment="center" imageScaling="proportionallyDown" inset="2" id="g6X-kk-Wil">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                                <color key="contentTintColor" name="linkColor" catalog="System" colorSpace="catalog"/>
+                            </button>
+                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="o8O-UB-Wz8">
+                                <rect key="frame" x="18" y="52" width="402" height="13"/>
+                                <textFieldCell key="cell" title="If you log out here, Framecloud will reset the chosen server and ask for a new one." id="BH5-Gl-U5U">
+                                    <font key="font" textStyle="footnote" name=".SFNS-Regular"/>
+                                    <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
+                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                </textFieldCell>
+                            </textField>
+                        </subviews>
+                        <constraints>
+                            <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="jn8-Pv-2jp" secondAttribute="trailing" constant="20" symbolic="YES" id="0z6-K8-rEs"/>
+                            <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="o8O-UB-Wz8" secondAttribute="trailing" constant="20" symbolic="YES" id="1gz-bI-4Sk"/>
+                            <constraint firstItem="jn8-Pv-2jp" firstAttribute="leading" secondItem="xMK-P6-2OJ" secondAttribute="leading" id="3KE-wJ-8lT"/>
+                            <constraint firstItem="o8O-UB-Wz8" firstAttribute="top" secondItem="jn8-Pv-2jp" secondAttribute="bottom" constant="8" symbolic="YES" id="Ffb-jw-m3s"/>
+                            <constraint firstItem="xMK-P6-2OJ" firstAttribute="leading" secondItem="z5Z-wa-TqO" secondAttribute="leading" constant="20" symbolic="YES" id="GUa-tB-BJU"/>
+                            <constraint firstItem="fJw-we-GPe" firstAttribute="top" secondItem="o8O-UB-Wz8" secondAttribute="bottom" constant="8" symbolic="YES" id="bXK-3h-6dY"/>
+                            <constraint firstItem="jn8-Pv-2jp" firstAttribute="top" secondItem="xMK-P6-2OJ" secondAttribute="bottom" constant="8" symbolic="YES" id="dh3-hg-SRb"/>
+                            <constraint firstItem="xMK-P6-2OJ" firstAttribute="top" secondItem="z5Z-wa-TqO" secondAttribute="top" constant="20" symbolic="YES" id="hxI-bZ-unw"/>
+                            <constraint firstItem="o8O-UB-Wz8" firstAttribute="leading" secondItem="jn8-Pv-2jp" secondAttribute="leading" id="jwx-yB-XHW"/>
+                            <constraint firstItem="fJw-we-GPe" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="z5Z-wa-TqO" secondAttribute="leading" constant="20" symbolic="YES" id="kQK-te-lJJ"/>
+                            <constraint firstAttribute="bottom" secondItem="fJw-we-GPe" secondAttribute="bottom" constant="20" symbolic="YES" id="lPV-t3-TAk"/>
+                            <constraint firstAttribute="trailing" secondItem="fJw-we-GPe" secondAttribute="trailing" constant="20" symbolic="YES" id="p7c-8f-Mg6"/>
+                            <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="xMK-P6-2OJ" secondAttribute="trailing" constant="20" symbolic="YES" id="znk-I8-dM3"/>
+                        </constraints>
+                    </view>
+                </viewController>
+                <customObject id="dfB-2r-kth" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1397" y="-464"/>
+        </scene>
+        <!--View Controller-->
+        <scene sceneID="GUt-Gv-wjF">
+            <objects>
+                <viewController id="ZAg-dq-Ifn" sceneMemberID="viewController">
+                    <view key="view" id="5f0-K6-DIA">
+                        <rect key="frame" x="0.0" y="0.0" width="450" height="300"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                        <subviews>
+                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="La9-ot-ILJ">
+                                <rect key="frame" x="138" y="142" width="175" height="16"/>
+                                <textFieldCell key="cell" lineBreakMode="clipping" title="This is not implemented yet." id="FmR-bW-CmS">
+                                    <font key="font" usesAppearanceFont="YES"/>
+                                    <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                </textFieldCell>
+                            </textField>
+                        </subviews>
+                        <constraints>
+                            <constraint firstItem="La9-ot-ILJ" firstAttribute="centerY" secondItem="5f0-K6-DIA" secondAttribute="centerY" id="W6e-te-RgX"/>
+                            <constraint firstItem="La9-ot-ILJ" firstAttribute="centerX" secondItem="5f0-K6-DIA" secondAttribute="centerX" id="q3p-VX-h2z"/>
+                        </constraints>
+                    </view>
+                </viewController>
+                <customObject id="Ddr-cy-etH" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1532" y="-9"/>
+        </scene>
+        <!--Web View Controller-->
         <scene sceneID="hIz-AP-VOD">
             <objects>
-                <viewController id="XfG-lQ-9wD" customClass="ViewController" customModule="Framecloud" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="XfG-lQ-9wD" customClass="WebViewController" customModule="Framecloud" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="m2S-Jp-Qdl">
                         <rect key="frame" x="0.0" y="0.0" width="480" height="270"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -676,4 +938,9 @@
             <point key="canvasLocation" x="74" y="1252"/>
         </scene>
     </scenes>
+    <resources>
+        <image name="Logo" width="1024" height="1024"/>
+        <image name="app.grid" catalog="system" width="15" height="14"/>
+        <image name="gear" catalog="system" width="17" height="16"/>
+    </resources>
 </document>

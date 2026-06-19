@@ -6,7 +6,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var lastCascadePoint: NSPoint = .zero
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
-        // Insert code here to initialize your application
+        let storyboard = NSStoryboard(name: "Main", bundle: nil)
+        let windowController: NSWindowController?
+
+        if Settings.serverAddress != nil {
+            windowController = storyboard.instantiateController(withIdentifier: "WebViewWindowController") as? NSWindowController
+        } else {
+            windowController = storyboard.instantiateController(withIdentifier: "ServerAddressWindowController") as? NSWindowController
+        }
+
+        guard let windowController else {
+            return
+        }
+
+        present(windowController: windowController)
     }
 
     func applicationWillTerminate(_ aNotification: Notification) {
@@ -19,8 +32,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @IBAction func newWindow(_ sender: Any?) {
         let storyboard = NSStoryboard(name: "Main", bundle: nil)
-        guard let windowController = storyboard.instantiateInitialController() as? NSWindowController,
-              let window = windowController.window else {
+
+        guard let windowController = storyboard.instantiateInitialController() as? NSWindowController else {
+            return
+        }
+
+        present(windowController: windowController, sender: sender)
+    }
+
+    private func present(windowController: NSWindowController, sender: Any? = nil) {
+        guard let window = windowController.window else {
             return
         }
 
@@ -39,4 +60,3 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         windowController.showWindow(sender)
     }
 }
-

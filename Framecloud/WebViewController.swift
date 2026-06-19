@@ -1,10 +1,9 @@
 import Cocoa
 import WebKit
 
-class ViewController: NSViewController, WKScriptMessageHandler {
+class WebViewController: NSViewController, WKScriptMessageHandler {
     @IBOutlet weak var webView: WKWebView!
 
-    private static let defaultURL = URL(string: "https://cloud.nextcloud.com")!
     private static let windowDragMessageName = "windowDrag"
     private static let sidebarToggleStateMessageName = "sidebarToggleState"
 
@@ -18,7 +17,12 @@ class ViewController: NSViewController, WKScriptMessageHandler {
         injectCustomStyleSheet()
         installWindowDragBridge()
         installSidebarToggleBridge()
-        webView.load(URLRequest(url: Self.defaultURL))
+
+        guard let serverAddress = Settings.serverAddress else {
+            preconditionFailure("WebViewController was loaded without a server address in Settings.")
+        }
+
+        webView.load(URLRequest(url: serverAddress))
     }
 
     override func viewWillAppear() {
@@ -202,7 +206,7 @@ class ViewController: NSViewController, WKScriptMessageHandler {
         webView.configuration.userContentController.addUserScript(script)
     }
 }
-extension ViewController: NSMenuItemValidation {
+extension WebViewController: NSMenuItemValidation {
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         if menuItem.action == #selector(toggleSidebar(_:)) {
             menuItem.title = sidebarToggleExpanded ? "Hide Sidebar" : "Show Sidebar"

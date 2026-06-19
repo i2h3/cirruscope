@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		AA059CBF2FE407BA00DE3094 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA059CBE2FE407BA00DE3094 /* WebKit.framework */; };
+		AA059CE32FE42E5500DE3094 /* Rainmaker in Frameworks */ = {isa = PBXBuildFile; productRef = AA059CE22FE42E5500DE3094 /* Rainmaker */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -17,9 +18,22 @@
 		AA059CC92FE414EB00DE3094 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		AA059CF62FE5301C00DE3094 /* Exceptions for "Framecloud" folder in "Framecloud" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = AA059CA22FE407A700DE3094 /* Framecloud */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		AA059CA52FE407A700DE3094 /* Framecloud */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AA059CF62FE5301C00DE3094 /* Exceptions for "Framecloud" folder in "Framecloud" target */,
+			);
 			path = Framecloud;
 			sourceTree = "<group>";
 		};
@@ -31,6 +45,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA059CBF2FE407BA00DE3094 /* WebKit.framework in Frameworks */,
+				AA059CE32FE42E5500DE3094 /* Rainmaker in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -84,6 +99,7 @@
 			);
 			name = Framecloud;
 			packageProductDependencies = (
+				AA059CE22FE42E5500DE3094 /* Rainmaker */,
 			);
 			productName = Framecloud;
 			productReference = AA059CA32FE407A700DE3094 /* Framecloud.app */;
@@ -113,6 +129,9 @@
 			);
 			mainGroup = AA059C9A2FE407A700DE3094;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				AA059CE12FE42E5500DE3094 /* XCRemoteSwiftPackageReference "rainmaker" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AA059CA42FE407A700DE3094 /* Products */;
 			projectDirPath = "";
@@ -283,6 +302,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Framecloud/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSMainStoryboardFile = Main;
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
@@ -324,6 +344,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Framecloud/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSMainStoryboardFile = Main;
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
@@ -366,6 +387,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		AA059CE12FE42E5500DE3094 /* XCRemoteSwiftPackageReference "rainmaker" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/i2h3/rainmaker";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.1.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AA059CE22FE42E5500DE3094 /* Rainmaker */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA059CE12FE42E5500DE3094 /* XCRemoteSwiftPackageReference "rainmaker" */;
+			productName = Rainmaker;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = AA059C9B2FE407A700DE3094 /* Project object */;
 }
