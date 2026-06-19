@@ -916,7 +916,7 @@
                         <subviews>
                             <wkWebView wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="edZ-kL-6y2">
                                 <rect key="frame" x="0.0" y="0.0" width="480" height="270"/>
-                                <wkWebViewConfiguration key="configuration" applicationNameForUserAgent="Framecloud">
+                                <wkWebViewConfiguration key="configuration" applicationNameForUserAgent="Version/18.0 Safari/605.1.15">
                                     <audiovisualMediaTypes key="mediaTypesRequiringUserActionForPlayback" none="YES"/>
                                     <wkPreferences key="preferences"/>
                                 </wkWebViewConfiguration>
