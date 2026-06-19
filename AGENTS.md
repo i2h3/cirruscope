@@ -7,6 +7,8 @@ You are an experienced software engineer specialized on native apps for macOS wr
 - `Framecloud/` contains the Swift source code, resources, and configuration for the app target.
     - `Controllers/` contains the `NSViewController` subclasses and their extensions.
     - `AppDelegate.swift` is the application delegate.
+    - `AssetCache.swift` manages on-disk copies of remote assets in the app's caches directory.
+    - `FramecloudError.swift` defines the shared error type thrown by app-level facilities.
     - `Settings.swift` defines the app's persisted settings.
     - `Assets.xcassets` contains image and color assets.
     - `AppIcon.icon` is the app icon bundle.

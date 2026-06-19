@@ -52,6 +52,10 @@ class ServerAddressViewController: NSViewController {
             do {
                 let capabilities = try await server.capabilities()
 
+                if let theming = try? capabilities.get(Theming.self) {
+                    await Settings.persist(theming: theming)
+                }
+
                 let minimumMajorVersion = Settings.minimumSupportedServerMajorVersion
 
                 if capabilities.version.major >= minimumMajorVersion {

@@ -5,13 +5,22 @@ import WebKit
 ///
 /// `AppDelegate` presents it on launch when `Settings.serverAddress` is non-`nil`, and `ServerAddressViewController` transitions to it after persisting a freshly validated server address.
 /// It injects the bundled `Framecloud.css` stylesheet, bridges custom title-bar drag behaviour, and tracks the state of Nextcloud's sidebar so that `WebViewController+NSMenuItemValidation` can drive the "Show/Hide Sidebar" menu item.
+/// The hosted `WKWebView` is hidden in the storyboard and only revealed by `WebViewController+WKNavigationDelegate` once its initial page load completes so the user is not exposed to the unstyled intermediate paint of the Nextcloud interface.
 class WebViewController: NSViewController, WKScriptMessageHandler {
+    @IBOutlet
+    var progressIndicator: NSProgressIndicator!
 
     /// `webView` is the `WKWebView` that loads `Settings.serverAddress` and renders the Nextcloud web interface.
     ///
     /// `viewDidLoad()` configures it, installs the user scripts produced by `injectCustomStyleSheet()`, `installWindowDragBridge()`, and `installSidebarToggleBridge()`, and triggers the initial navigation.
+    /// The view is hidden in the storyboard and unhidden by `webView(_:didFinish:)` after the initial navigation has completed.
     @IBOutlet
     var webView: WKWebView!
+
+    /// `hasRevealedAfterInitialLoad` is `true` once `webView` has been unhidden after its initial navigation has completed.
+    ///
+    /// `webView(_:didFinish:)` consults this flag so the reveal happens exactly once, on the first finished navigation, and subsequent navigations do not touch the view's visibility.
+    var hasRevealedAfterInitialLoad = false
 
     /// `windowDragMessageName` is the script-message name used by the user script installed in `installWindowDragBridge()` to ask the host window to begin a drag.
     ///
@@ -52,6 +61,11 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     override func viewWillAppear() {
         super.viewWillAppear()
         layoutWindowControls()
+    }
+
+    override func viewDidAppear() {
+        super.viewDidAppear()
+        progressIndicator.startAnimation(self)
     }
 
     override func viewDidLayout() {

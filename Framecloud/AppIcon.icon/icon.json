@@ -2,13 +2,39 @@
   "fill-specializations" : [
     {
       "value" : {
-        "automatic-gradient" : "srgb:0.72157,0.49412,1.00000,1.00000"
+        "linear-gradient" : [
+          "display-p3:0.00000,0.40000,0.62353,1.00000",
+          "srgb:0.11373,0.69020,0.99608,1.00000"
+        ],
+        "orientation" : {
+          "start" : {
+            "x" : 0.5,
+            "y" : 0
+          },
+          "stop" : {
+            "x" : 0.5,
+            "y" : 0.7
+          }
+        }
       }
     },
     {
       "appearance" : "dark",
       "value" : {
-        "automatic-gradient" : "srgb:0.32549,0.10588,0.57647,1.00000"
+        "linear-gradient" : [
+          "display-p3:0.05882,0.03137,0.20000,1.00000",
+          "srgb:0.06667,0.41961,0.66667,1.00000"
+        ],
+        "orientation" : {
+          "start" : {
+            "x" : 0.5,
+            "y" : 0
+          },
+          "stop" : {
+            "x" : 0.5,
+            "y" : 0.7
+          }
+        }
       }
     }
   ],
@@ -102,6 +128,12 @@
     {
       "layers" : [
         {
+          "blend-mode-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : "normal"
+            }
+          ],
           "fill-specializations" : [
             {
               "value" : {
@@ -111,12 +143,23 @@
             {
               "appearance" : "dark",
               "value" : {
-                "automatic-gradient" : "srgb:0.72157,0.49412,1.00000,1.00000"
+                "automatic-gradient" : "extended-gray:1.00000,1.00000"
               }
             }
           ],
+          "glass" : true,
           "image-name" : "Cloud.svg",
           "name" : "Cloud",
+          "opacity-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : 0.9
+            },
+            {
+              "appearance" : "tinted",
+              "value" : 1
+            }
+          ],
           "position" : {
             "scale" : 1,
             "translation-in-points" : [

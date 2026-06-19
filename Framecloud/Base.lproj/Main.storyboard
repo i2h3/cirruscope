@@ -627,10 +627,10 @@
             </objects>
             <point key="canvasLocation" x="-592" y="-248"/>
         </scene>
-        <!--Window Controller-->
+        <!--Server Address Window-->
         <scene sceneID="UII-pp-Y3L">
             <objects>
-                <windowController storyboardIdentifier="ServerAddressWindowController" id="gEK-0I-zXE" sceneMemberID="viewController">
+                <windowController storyboardIdentifier="ServerAddressWindowController" id="gEK-0I-zXE" userLabel="Server Address Window" sceneMemberID="viewController">
                     <window key="window" title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" titlebarAppearsTransparent="YES" titleVisibility="hidden" id="XFy-oL-ctO">
                         <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES"/>
                         <rect key="contentRect" x="425" y="462" width="400" height="270"/>
@@ -659,7 +659,7 @@
                         <rect key="frame" x="0.0" y="0.0" width="400" height="473"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="hJR-Eu-VYI">
+                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="hJR-Eu-VYI">
                                 <rect key="frame" x="132" y="262" width="137" height="31"/>
                                 <textFieldCell key="cell" lineBreakMode="clipping" title="Framecloud" id="YMm-Pw-AmD">
                                     <font key="font" textStyle="largeTitle" name=".SFNS-Regular"/>
@@ -667,7 +667,7 @@
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                 </textFieldCell>
                             </textField>
-                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="RBx-9A-EGs">
+                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="RBx-9A-EGs">
                                 <rect key="frame" x="58" y="206" width="229" height="16"/>
                                 <textFieldCell key="cell" lineBreakMode="clipping" title="Enter your Nextcloud server address:" id="aZ0-zr-lPD">
                                     <font key="font" metaFont="system"/>
@@ -675,7 +675,7 @@
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                 </textFieldCell>
                             </textField>
-                            <textField focusRingType="none" verticalHuggingPriority="750" contentType="url" translatesAutoresizingMaskIntoConstraints="NO" id="YlJ-G9-LcR">
+                            <textField verticalHuggingPriority="750" contentType="url" translatesAutoresizingMaskIntoConstraints="NO" id="YlJ-G9-LcR">
                                 <rect key="frame" x="60" y="174" width="280" height="24"/>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" placeholderString="https://your.nextcloud.com" drawsBackground="YES" usesSingleLineMode="YES" id="wwU-wS-wXs">
                                     <font key="font" metaFont="system"/>
@@ -686,7 +686,7 @@
                                     <action selector="open:" target="CSm-iM-xwx" id="K46-jo-GKv"/>
                                 </connections>
                             </textField>
-                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="qIf-JY-Zk0">
+                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="qIf-JY-Zk0">
                                 <rect key="frame" x="38" y="40" width="324" height="42"/>
                                 <textFieldCell key="cell" title="The next time you open Framecloud, this server will be opened again directly. You can log out any time and enter a new address." id="nLm-92-XsW">
                                     <font key="font" metaFont="smallSystem"/>
@@ -747,10 +747,10 @@
             </objects>
             <point key="canvasLocation" x="-1087" y="937"/>
         </scene>
-        <!--Window Controller-->
+        <!--Web Window-->
         <scene sceneID="R2V-B0-nI4">
             <objects>
-                <windowController storyboardIdentifier="WebViewWindowController" id="B8D-0N-5wS" sceneMemberID="viewController">
+                <windowController storyboardIdentifier="WebViewWindowController" id="B8D-0N-5wS" userLabel="Web Window" sceneMemberID="viewController">
                     <window key="window" title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" titlebarAppearsTransparent="YES" titleVisibility="hidden" id="IQv-IB-iLA">
                         <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES" fullSizeContentView="YES"/>
                         <rect key="contentRect" x="196" y="240" width="1200" height="800"/>
@@ -768,10 +768,10 @@
             </objects>
             <point key="canvasLocation" x="74" y="502"/>
         </scene>
-        <!--Window Controller-->
+        <!--Settings Window-->
         <scene sceneID="mtj-gJ-bn2">
             <objects>
-                <windowController id="v0N-vH-deC" sceneMemberID="viewController">
+                <windowController id="v0N-vH-deC" userLabel="Settings Window" sceneMemberID="viewController">
                     <window key="window" title="Framecloud Settings" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" id="oTc-Gk-jL0">
                         <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES"/>
                         <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
@@ -793,10 +793,10 @@
             </objects>
             <point key="canvasLocation" x="21" y="-202"/>
         </scene>
-        <!--Tab View Controller-->
+        <!--Settings Tab View-->
         <scene sceneID="Zp6-PE-2VJ">
             <objects>
-                <tabViewController selectedTabViewItemIndex="0" tabStyle="toolbar" id="Krt-iQ-b8b" sceneMemberID="viewController">
+                <tabViewController selectedTabViewItemIndex="0" tabStyle="toolbar" id="Krt-iQ-b8b" userLabel="Settings Tab View" sceneMemberID="viewController">
                     <tabViewItems>
                         <tabViewItem label="General" identifier="" image="gear" catalog="system" id="7IU-fb-S0w"/>
                         <tabViewItem label="Apps" identifier="" image="app.grid" catalog="system" id="rJd-2U-O7V"/>
@@ -819,11 +819,11 @@
             </objects>
             <point key="canvasLocation" x="748" y="-217"/>
         </scene>
-        <!--View Controller-->
+        <!--General Settings-->
         <scene sceneID="X0s-dQ-JkY">
             <objects>
-                <viewController id="M8w-Tj-wCV" sceneMemberID="viewController">
-                    <view key="view" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="z5Z-wa-TqO">
+                <viewController id="M8w-Tj-wCV" userLabel="General Settings" sceneMemberID="viewController">
+                    <view key="view" translatesAutoresizingMaskIntoConstraints="NO" id="z5Z-wa-TqO">
                         <rect key="frame" x="0.0" y="0.0" width="440" height="133"/>
                         <subviews>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="fJw-we-GPe">
@@ -833,7 +833,7 @@
                                     <font key="font" metaFont="system"/>
                                 </buttonCell>
                             </button>
-                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="xMK-P6-2OJ">
+                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="xMK-P6-2OJ">
                                 <rect key="frame" x="18" y="97" width="116" height="16"/>
                                 <textFieldCell key="cell" lineBreakMode="clipping" title="You are signed on:" id="QBm-XH-EVn">
                                     <font key="font" metaFont="system"/>
@@ -849,7 +849,7 @@
                                 </buttonCell>
                                 <color key="contentTintColor" name="linkColor" catalog="System" colorSpace="catalog"/>
                             </button>
-                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="o8O-UB-Wz8">
+                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="o8O-UB-Wz8">
                                 <rect key="frame" x="18" y="52" width="402" height="13"/>
                                 <textFieldCell key="cell" title="If you log out here, Framecloud will reset the chosen server and ask for a new one." id="BH5-Gl-U5U">
                                     <font key="font" textStyle="footnote" name=".SFNS-Regular"/>
@@ -879,15 +879,15 @@
             </objects>
             <point key="canvasLocation" x="1397" y="-464"/>
         </scene>
-        <!--View Controller-->
+        <!--Apps Settings-->
         <scene sceneID="GUt-Gv-wjF">
             <objects>
-                <viewController id="ZAg-dq-Ifn" sceneMemberID="viewController">
+                <viewController id="ZAg-dq-Ifn" userLabel="Apps Settings" sceneMemberID="viewController">
                     <view key="view" id="5f0-K6-DIA">
                         <rect key="frame" x="0.0" y="0.0" width="450" height="300"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="La9-ot-ILJ">
+                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="La9-ot-ILJ">
                                 <rect key="frame" x="138" y="142" width="175" height="16"/>
                                 <textFieldCell key="cell" lineBreakMode="clipping" title="This is not implemented yet." id="FmR-bW-CmS">
                                     <font key="font" usesAppearanceFont="YES"/>
@@ -914,22 +914,28 @@
                         <rect key="frame" x="0.0" y="0.0" width="480" height="270"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <wkWebView wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="edZ-kL-6y2">
+                            <wkWebView hidden="YES" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="edZ-kL-6y2">
                                 <rect key="frame" x="0.0" y="0.0" width="480" height="270"/>
                                 <wkWebViewConfiguration key="configuration" applicationNameForUserAgent="Version/18.0 Safari/605.1.15">
                                     <audiovisualMediaTypes key="mediaTypesRequiringUserActionForPlayback" none="YES"/>
                                     <wkPreferences key="preferences"/>
                                 </wkWebViewConfiguration>
                             </wkWebView>
+                            <progressIndicator wantsLayer="YES" maxValue="100" displayedWhenStopped="NO" indeterminate="YES" controlSize="small" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="raH-BI-vv0">
+                                <rect key="frame" x="232" y="127" width="16" height="16"/>
+                            </progressIndicator>
                         </subviews>
                         <constraints>
                             <constraint firstAttribute="bottom" secondItem="edZ-kL-6y2" secondAttribute="bottom" id="3oX-aL-2yM"/>
                             <constraint firstAttribute="trailing" secondItem="edZ-kL-6y2" secondAttribute="trailing" id="B47-ee-AH0"/>
+                            <constraint firstItem="raH-BI-vv0" firstAttribute="centerX" secondItem="m2S-Jp-Qdl" secondAttribute="centerX" id="HG5-Vx-nuK"/>
                             <constraint firstItem="edZ-kL-6y2" firstAttribute="leading" secondItem="m2S-Jp-Qdl" secondAttribute="leading" id="WGc-BC-SiP"/>
+                            <constraint firstItem="raH-BI-vv0" firstAttribute="centerY" secondItem="m2S-Jp-Qdl" secondAttribute="centerY" id="fzO-kR-Mgk"/>
                             <constraint firstItem="edZ-kL-6y2" firstAttribute="top" secondItem="m2S-Jp-Qdl" secondAttribute="top" id="lQF-QF-lhq"/>
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="progressIndicator" destination="raH-BI-vv0" id="ax6-NQ-AFz"/>
                         <outlet property="webView" destination="edZ-kL-6y2" id="Opc-Vh-CP9"/>
                     </connections>
                 </viewController>
