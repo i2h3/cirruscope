@@ -34,7 +34,7 @@ class ServerAddressViewController: NSViewController {
     func open(_: Any) {
         var sanitizedServerAddress = serverAddressField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        if sanitizedServerAddress.hasPrefix("http://") == false || sanitizedServerAddress.hasPrefix("https://") == false {
+        if sanitizedServerAddress.hasPrefix("http://") == false && sanitizedServerAddress.hasPrefix("https://") == false {
             sanitizedServerAddress = "https://".appending(sanitizedServerAddress)
         }
 
@@ -69,7 +69,7 @@ class ServerAddressViewController: NSViewController {
                     openWebViewWindow()
                     view.window?.close()
                 } else {
-                    presentAlert(title: "Unsupported Server", message: "Framecloud requires Nextcloud version \(minimumMajorVersion) or later. The server at “\(url.absoluteString)” is running version \(capabilities.version.string).")
+                    presentAlert(title: "Unsupported Server Version", message: "Framecloud requires Nextcloud server version \(minimumMajorVersion) or later. The server at “\(url.absoluteString)” is running version \(capabilities.version.string).")
                 }
             } catch {
                 presentAlert(title: "Could Not Reach Server", message: error.localizedDescription)

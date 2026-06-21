@@ -656,32 +656,28 @@
         <scene sceneID="fGo-gY-vRI">
             <objects>
                 <viewController id="CSm-iM-xwx" customClass="ServerAddressViewController" customModule="Framecloud" customModuleProvider="target" sceneMemberID="viewController">
-                    <view key="view" id="JXc-I7-b73">
-                        <rect key="frame" x="0.0" y="0.0" width="400" height="513"/>
+                    <view key="view" misplaced="YES" id="JXc-I7-b73">
+                        <rect key="frame" x="0.0" y="0.0" width="400" height="403"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="WhW-Oc-Igr">
-                                <rect key="frame" x="0.0" y="0.0" width="400" height="513"/>
-                                <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="axesIndependently" image="Background" id="zy8-RD-nkc"/>
-                            </imageView>
                             <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="hJR-Eu-VYI">
-                                <rect key="frame" x="132" y="282" width="137" height="31"/>
+                                <rect key="frame" x="132" y="172" width="137" height="31"/>
                                 <textFieldCell key="cell" lineBreakMode="clipping" title="Framecloud" id="YMm-Pw-AmD">
                                     <font key="font" textStyle="largeTitle" name=".SFNS-Regular"/>
-                                    <color key="textColor" red="0.99999600649999998" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                    <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                 </textFieldCell>
                             </textField>
                             <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="RBx-9A-EGs">
-                                <rect key="frame" x="58" y="226" width="229" height="16"/>
+                                <rect key="frame" x="58" y="116" width="229" height="16"/>
                                 <textFieldCell key="cell" lineBreakMode="clipping" title="Enter your Nextcloud server address:" id="aZ0-zr-lPD">
                                     <font key="font" metaFont="system"/>
-                                    <color key="textColor" red="0.99999600649999998" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                    <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                 </textFieldCell>
                             </textField>
                             <textField focusRingType="none" verticalHuggingPriority="750" contentType="url" translatesAutoresizingMaskIntoConstraints="NO" id="YlJ-G9-LcR">
-                                <rect key="frame" x="60" y="194" width="252" height="24"/>
+                                <rect key="frame" x="60" y="84" width="252" height="24"/>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" placeholderString="https://your.nextcloud.com" drawsBackground="YES" usesSingleLineMode="YES" id="wwU-wS-wXs">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -691,19 +687,11 @@
                                     <action selector="performClick:" target="k1i-ML-nxX" id="nbX-nn-9aL"/>
                                 </connections>
                             </textField>
-                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="qIf-JY-Zk0">
-                                <rect key="frame" x="58" y="60" width="284" height="42"/>
-                                <textFieldCell key="cell" title="The next time you open Framecloud, this server will be opened again directly. You can log out any time and enter a new address." id="nLm-92-XsW">
-                                    <font key="font" metaFont="smallSystem"/>
-                                    <color key="textColor" red="0.99999600649999998" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                </textFieldCell>
-                            </textField>
-                            <progressIndicator hidden="YES" wantsLayer="YES" maxValue="100" indeterminate="YES" controlSize="small" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="ech-1t-Ipm">
-                                <rect key="frame" x="192" y="170" width="16" height="16"/>
+                            <progressIndicator hidden="YES" wantsLayer="YES" horizontalHuggingPriority="750" verticalHuggingPriority="750" maxValue="100" indeterminate="YES" controlSize="small" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="ech-1t-Ipm">
+                                <rect key="frame" x="192" y="60" width="16" height="16"/>
                             </progressIndicator>
                             <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="46a-hj-1ne">
-                                <rect key="frame" x="150" y="333" width="100" height="100"/>
+                                <rect key="frame" x="150" y="223" width="100" height="100"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="100" id="NBx-hp-Saj"/>
                                     <constraint firstAttribute="width" secondItem="46a-hj-1ne" secondAttribute="height" multiplier="1:1" id="Z4C-q0-MAB"/>
@@ -711,7 +699,7 @@
                                 <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="Logo" id="bqR-tO-fAe"/>
                             </imageView>
                             <button translatesAutoresizingMaskIntoConstraints="NO" id="k1i-ML-nxX">
-                                <rect key="frame" x="320" y="197" width="20" height="20"/>
+                                <rect key="frame" x="320" y="87" width="20" height="20"/>
                                 <buttonCell key="cell" type="bevel" title="Open" bezelStyle="rounded" imagePosition="only" alignment="center" enabled="NO" imageScaling="proportionallyDown" inset="2" id="stm-Nb-RXX">
                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                     <font key="font" metaFont="system"/>
@@ -723,28 +711,21 @@
                             </button>
                         </subviews>
                         <constraints>
-                            <constraint firstAttribute="trailing" secondItem="WhW-Oc-Igr" secondAttribute="trailing" id="6xE-zl-z8d"/>
-                            <constraint firstItem="WhW-Oc-Igr" firstAttribute="top" secondItem="JXc-I7-b73" secondAttribute="top" id="8ZZ-I9-Sam"/>
                             <constraint firstItem="YlJ-G9-LcR" firstAttribute="top" secondItem="RBx-9A-EGs" secondAttribute="bottom" constant="8" symbolic="YES" id="Bsv-FU-npx"/>
                             <constraint firstItem="YlJ-G9-LcR" firstAttribute="leading" secondItem="JXc-I7-b73" secondAttribute="leading" constant="60" id="Cbi-y6-i1D"/>
-                            <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="qIf-JY-Zk0" secondAttribute="trailing" constant="60" id="CjA-FN-Yrv"/>
-                            <constraint firstAttribute="bottom" secondItem="qIf-JY-Zk0" secondAttribute="bottom" constant="60" id="GcM-zu-mm0"/>
                             <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="RBx-9A-EGs" secondAttribute="trailing" constant="60" id="HgC-UQ-5kR"/>
                             <constraint firstItem="46a-hj-1ne" firstAttribute="top" secondItem="JXc-I7-b73" secondAttribute="top" constant="80" id="LSX-ep-Iuw"/>
                             <constraint firstItem="k1i-ML-nxX" firstAttribute="centerY" secondItem="YlJ-G9-LcR" secondAttribute="centerY" id="LsY-hP-fhi"/>
-                            <constraint firstItem="qIf-JY-Zk0" firstAttribute="top" secondItem="YlJ-G9-LcR" secondAttribute="bottom" constant="92" id="UfN-Dd-ait"/>
                             <constraint firstItem="hJR-Eu-VYI" firstAttribute="top" secondItem="46a-hj-1ne" secondAttribute="bottom" constant="20" id="Wxj-la-Cfv"/>
+                            <constraint firstAttribute="bottom" secondItem="ech-1t-Ipm" secondAttribute="bottom" constant="60" id="XMO-Oh-N3I"/>
                             <constraint firstAttribute="trailing" secondItem="k1i-ML-nxX" secondAttribute="trailing" constant="60" id="aQd-oB-iZS"/>
                             <constraint firstItem="ech-1t-Ipm" firstAttribute="centerX" secondItem="JXc-I7-b73" secondAttribute="centerX" id="aZc-gt-3ye"/>
                             <constraint firstItem="46a-hj-1ne" firstAttribute="centerX" secondItem="JXc-I7-b73" secondAttribute="centerX" id="dD9-Lb-YOS"/>
                             <constraint firstItem="ech-1t-Ipm" firstAttribute="top" secondItem="YlJ-G9-LcR" secondAttribute="bottom" constant="8" symbolic="YES" id="m5m-7F-C7y"/>
                             <constraint firstItem="hJR-Eu-VYI" firstAttribute="centerX" secondItem="JXc-I7-b73" secondAttribute="centerX" id="phN-2T-nbT"/>
-                            <constraint firstItem="qIf-JY-Zk0" firstAttribute="leading" secondItem="JXc-I7-b73" secondAttribute="leading" constant="60" id="qvU-q9-RmX"/>
-                            <constraint firstAttribute="bottom" secondItem="WhW-Oc-Igr" secondAttribute="bottom" id="ret-Oa-20m"/>
                             <constraint firstItem="k1i-ML-nxX" firstAttribute="leading" secondItem="YlJ-G9-LcR" secondAttribute="trailing" constant="8" symbolic="YES" id="rk6-nx-Pm7"/>
                             <constraint firstItem="RBx-9A-EGs" firstAttribute="leading" secondItem="JXc-I7-b73" secondAttribute="leading" constant="60" id="s8p-DS-hv1"/>
                             <constraint firstItem="RBx-9A-EGs" firstAttribute="top" secondItem="hJR-Eu-VYI" secondAttribute="bottom" constant="40" id="uwY-UC-GdF"/>
-                            <constraint firstItem="WhW-Oc-Igr" firstAttribute="leading" secondItem="JXc-I7-b73" secondAttribute="leading" id="we3-AZ-18h"/>
                         </constraints>
                     </view>
                     <connections>
@@ -964,7 +945,6 @@
         </scene>
     </scenes>
     <resources>
-        <image name="Background" width="800" height="1000"/>
         <image name="Logo" width="1024" height="1024"/>
         <image name="app.grid" catalog="system" width="15" height="14"/>
         <image name="arrow.right.circle.fill" catalog="system" width="20" height="20"/>
