@@ -34,6 +34,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
 
         webView.isInspectable = true
         webView.navigationDelegate = self
+        observeWebViewTitle()
         injectCustomStyleSheet()
         installWindowDragBridge()
         installSidebarToggleBridge()
@@ -87,6 +88,22 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
             let originInWindow = NSPoint(x: leading, y: window.frame.height - topInset - buttonHeight)
 
             button.setFrameOrigin(superview.convert(originInWindow, from: nil))
+        }
+    }
+
+    // MARK: - Window Title
+
+    /// `titleObservation` retains the key-value observation of `webView`'s `title` that keeps the host window's title in sync with the currently displayed Nextcloud page.
+    ///
+    /// `observeWebViewTitle()` assigns it during `viewDidLoad()`, and it is released when the controller is deallocated, which ends the observation.
+    private var titleObservation: NSKeyValueObservation?
+
+    /// `observeWebViewTitle()` starts mirroring `webView.title` into the host window's title so the page title identifies the window in Mission Control, the "Window" menu, and other system UI, even though the title bar itself hides it.
+    ///
+    /// `viewDidLoad()` calls this once after the web view has been configured. The observation reads `webView.title` on every change, including the in-page title updates Nextcloud performs as the user navigates its single-page interface, and substitutes an empty string while the page has not yet reported a title.
+    private func observeWebViewTitle() {
+        titleObservation = webView.observe(\.title, options: [.initial, .new]) { [weak self] webView, _ in
+            self?.view.window?.title = webView.title ?? ""
         }
     }
 
