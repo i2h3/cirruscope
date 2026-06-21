@@ -18,6 +18,34 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var lastCascadePoint: NSPoint = .zero
 
     func applicationDidFinishLaunching(_: Notification) {
+        presentInitialWindow()
+    }
+
+    func applicationShouldHandleReopen(_: NSApplication, hasVisibleWindows: Bool) -> Bool {
+        if !hasVisibleWindows, windowControllers.isEmpty {
+            presentInitialWindow()
+        }
+
+        return true
+    }
+
+    func applicationWillTerminate(_: Notification) {
+        // Insert code here to tear down your application
+    }
+
+    func applicationSupportsSecureRestorableState(_: NSApplication) -> Bool {
+        true
+    }
+
+    @IBAction
+    func newWindow(_: Any?) {
+        presentInitialWindow()
+    }
+
+    /// `presentInitialWindow()` validates the configured server and presents the window the app should show for the current state: `WebViewWindowController` when a supported server is reachable, otherwise `ServerAddressWindowController`.
+    ///
+    /// `applicationDidFinishLaunching(_:)` calls it on launch, `applicationShouldHandleReopen(_:hasVisibleWindows:)` calls it when the user reactivates the app while no windows are open, and `newWindow(_:)` calls it for the "New Window" menu item, so all three entry points share the same launch logic.
+    private func presentInitialWindow() {
         guard let serverAddress = Settings.serverAddress else {
             presentWindow(withIdentifier: "ServerAddressWindowController")
             return
@@ -48,25 +76,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
             presentWindow(withIdentifier: identifier)
         }
-    }
-
-    func applicationWillTerminate(_: Notification) {
-        // Insert code here to tear down your application
-    }
-
-    func applicationSupportsSecureRestorableState(_: NSApplication) -> Bool {
-        true
-    }
-
-    @IBAction
-    func newWindow(_ sender: Any?) {
-        let storyboard = NSStoryboard(name: "Main", bundle: nil)
-
-        guard let windowController = storyboard.instantiateInitialController() as? NSWindowController else {
-            return
-        }
-
-        present(windowController: windowController, sender: sender)
     }
 
     private func presentWindow(withIdentifier identifier: String) {
