@@ -10,10 +10,12 @@ You are an experienced software engineer specialized on native apps for macOS wr
     - `AssetCache.swift` manages on-disk copies of remote assets in the app's caches directory.
     - `FramecloudError.swift` defines the shared error type thrown by app-level facilities.
     - `Settings.swift` defines the app's persisted settings.
+    - `WebViewScript.swift` enumerates the bundled JavaScript resources and loads their source from the bundle on demand.
     - `Assets.xcassets` contains image and color assets.
     - `AppIcon.icon` is the app icon bundle.
     - `Main.storyboard` defines the app's user interface.
     - `Framecloud.css` is the stylesheet injected into the web view.
+    - `Scripts/` contains the JavaScript resources injected into or evaluated within the web view.
     - `Info.plist` is the app's information property list.
 - `Frameworks/` contains the bundled frameworks the app links against.
 - `Products/` contains the built app bundle.

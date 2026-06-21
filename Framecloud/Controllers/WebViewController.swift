@@ -4,9 +4,12 @@ import WebKit
 /// `WebViewController` backs the storyboard scene that hosts the embedded `WKWebView` Framecloud uses to display Nextcloud.
 ///
 /// `AppDelegate` presents it on launch when `Settings.serverAddress` is non-`nil`, and `ServerAddressViewController` transitions to it after persisting a freshly validated server address.
-/// It injects the bundled `Framecloud.css` stylesheet, bridges custom title-bar drag behaviour, and tracks the state of Nextcloud's sidebar so that `WebViewController+NSMenuItemValidation` can drive the "Show/Hide Sidebar" menu item.
+/// It injects the bundled `Framecloud.css` stylesheet, bridges custom title-bar drag behaviour, and tracks the state of Nextcloud's sidebar so that `WebViewController+NSMenuItemValidation` can drive the "Show/Hide Sidebar" menu item. The drag and sidebar behaviours are driven by the JavaScript resources enumerated in `WebViewScript`, which are loaded from the bundle on demand rather than embedded in this source file.
 /// The hosted `WKWebView` is hidden in the storyboard and only revealed by `WebViewController+WKNavigationDelegate` once its initial page load completes so the user is not exposed to the unstyled intermediate paint of the Nextcloud interface.
 class WebViewController: NSViewController, WKScriptMessageHandler {
+
+    // MARK: - Outlets
+
     @IBOutlet
     var progressIndicator: NSProgressIndicator!
 
@@ -17,30 +20,14 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     @IBOutlet
     var webView: WKWebView!
 
+    // MARK: - Initial Load
+
     /// `hasRevealedAfterInitialLoad` is `true` once `webView` has been unhidden after its initial navigation has completed.
     ///
     /// `webView(_:didFinish:)` consults this flag so the reveal happens exactly once, on the first finished navigation, and subsequent navigations do not touch the view's visibility.
     var hasRevealedAfterInitialLoad = false
 
-    /// `windowDragMessageName` is the script-message name used by the user script installed in `installWindowDragBridge()` to ask the host window to begin a drag.
-    ///
-    /// `userContentController(_:didReceive:)` switches on this value to forward the event to `NSWindow.performDrag(with:)`.
-    private static let windowDragMessageName = "windowDrag"
-
-    /// `sidebarToggleStateMessageName` is the script-message name used by the user script installed in `installSidebarToggleBridge()` to report whether Nextcloud's sidebar toggle is available and expanded.
-    ///
-    /// `userContentController(_:didReceive:)` switches on this value to update `sidebarToggleAvailable` and `sidebarToggleExpanded`.
-    private static let sidebarToggleStateMessageName = "sidebarToggleState"
-
-    /// `sidebarToggleAvailable` is `true` while the currently loaded Nextcloud page exposes a sidebar toggle that can be activated.
-    ///
-    /// `WebViewController+NSMenuItemValidation` reads this value to enable or disable the "Show/Hide Sidebar" menu item.
-    var sidebarToggleAvailable = false
-
-    /// `sidebarToggleExpanded` is `true` while Nextcloud's sidebar is currently shown.
-    ///
-    /// `WebViewController+NSMenuItemValidation` reads this value to switch the title of the "Show/Hide Sidebar" menu item between "Hide Sidebar" and "Show Sidebar".
-    var sidebarToggleExpanded = false
+    // MARK: - Lifecycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -73,6 +60,8 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         layoutWindowControls()
     }
 
+    // MARK: - Window Controls
+
     private func layoutWindowControls() {
         guard let window = view.window else {
             return
@@ -101,109 +90,50 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         }
     }
 
-    func userContentController(_: WKUserContentController, didReceive message: WKScriptMessage) {
-        switch message.name {
-            case Self.windowDragMessageName:
-                guard let window = view.window,
-                      let event = NSApp.currentEvent
-                else {
-                    return
-                }
-                window.performDrag(with: event)
+    // MARK: - Window Dragging
 
-            case Self.sidebarToggleStateMessageName:
-                guard let body = message.body as? [String: Any] else {
-                    return
-                }
-                sidebarToggleAvailable = body["available"] as? Bool ?? false
-                sidebarToggleExpanded = body["expanded"] as? Bool ?? false
+    /// `windowDragMessageName` is the script-message name used by the `WebViewScript.windowDrag` user script installed in `installWindowDragBridge()` to ask the host window to begin a drag.
+    ///
+    /// `userContentController(_:didReceive:)` switches on this value to forward the event to `NSWindow.performDrag(with:)`.
+    private static let windowDragMessageName = "windowDrag"
 
-            default:
-                break
-        }
+    private func installWindowDragBridge() {
+        webView.configuration.userContentController.add(self, name: Self.windowDragMessageName)
+        installUserScript(.windowDrag, injectionTime: .atDocumentEnd)
+    }
+
+    // MARK: - Sidebar
+
+    /// `sidebarToggleStateMessageName` is the script-message name used by the `WebViewScript.sidebarToggleState` user script installed in `installSidebarToggleBridge()` to report whether Nextcloud's sidebar toggle is available and expanded.
+    ///
+    /// `userContentController(_:didReceive:)` switches on this value to update `sidebarToggleAvailable` and `sidebarToggleExpanded`.
+    private static let sidebarToggleStateMessageName = "sidebarToggleState"
+
+    /// `sidebarToggleAvailable` is `true` while the currently loaded Nextcloud page exposes a sidebar toggle that can be activated.
+    ///
+    /// `WebViewController+NSMenuItemValidation` reads this value to enable or disable the "Show/Hide Sidebar" menu item.
+    var sidebarToggleAvailable = false
+
+    /// `sidebarToggleExpanded` is `true` while Nextcloud's sidebar is currently shown.
+    ///
+    /// `WebViewController+NSMenuItemValidation` reads this value to switch the title of the "Show/Hide Sidebar" menu item between "Hide Sidebar" and "Show Sidebar".
+    var sidebarToggleExpanded = false
+
+    private func installSidebarToggleBridge() {
+        webView.configuration.userContentController.add(self, name: Self.sidebarToggleStateMessageName)
+        installUserScript(.sidebarToggleState, injectionTime: .atDocumentEnd)
     }
 
     @IBAction
     func toggleSidebar(_: Any?) {
-        let script = """
-        (function() {
-            var element = document.querySelector('.app-navigation-toggle');
-            if (element) {
-                element.click();
-            }
-        })();
-        """
+        guard let source = WebViewScript.sidebarToggle.source else {
+            return
+        }
 
-        webView.evaluateJavaScript(script)
+        webView.evaluateJavaScript(source)
     }
 
-    private func installSidebarToggleBridge() {
-        let controller = webView.configuration.userContentController
-        controller.add(self, name: Self.sidebarToggleStateMessageName)
-
-        let source = """
-        (function() {
-            function reportState() {
-                var element = document.querySelector('.app-navigation-toggle');
-                var available = !!element;
-                var expanded = available && element.getAttribute('aria-expanded') === 'true';
-                window.webkit.messageHandlers.sidebarToggleState.postMessage({
-                    available: available,
-                    expanded: expanded
-                });
-            }
-
-            reportState();
-
-            var observer = new MutationObserver(function() {
-                reportState();
-            });
-
-            observer.observe(document.documentElement, {
-                childList: true,
-                subtree: true,
-                attributes: true,
-                attributeFilter: ['aria-expanded', 'class']
-            });
-        })();
-        """
-
-        let script = WKUserScript(source: source, injectionTime: .atDocumentEnd, forMainFrameOnly: false)
-
-        controller.addUserScript(script)
-    }
-
-    private func installWindowDragBridge() {
-        let controller = webView.configuration.userContentController
-        controller.add(self, name: Self.windowDragMessageName)
-
-        let source = """
-        (function() {
-            var interactiveSelector = 'a, button, input, textarea, select, label, [role="button"], [role="link"], [contenteditable="true"], [contenteditable=""]';
-
-            document.addEventListener('mousedown', function(event) {
-                if (event.button !== 0) {
-                    return;
-                }
-
-                var header = document.querySelector('#header');
-                if (!header || !header.contains(event.target)) {
-                    return;
-                }
-
-                if (event.target.closest(interactiveSelector)) {
-                    return;
-                }
-
-                window.webkit.messageHandlers.windowDrag.postMessage({});
-            }, true);
-        })();
-        """
-
-        let script = WKUserScript(source: source, injectionTime: .atDocumentEnd, forMainFrameOnly: false)
-
-        controller.addUserScript(script)
-    }
+    // MARK: - Web View Styling
 
     private func injectCustomStyleSheet() {
         guard
@@ -228,5 +158,41 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         let script = WKUserScript(source: source, injectionTime: .atDocumentStart, forMainFrameOnly: false)
 
         webView.configuration.userContentController.addUserScript(script)
+    }
+
+    // MARK: - Script Bridge
+
+    /// `installUserScript(_:injectionTime:)` loads `script` from its bundled resource and registers it on the web view's `WKUserContentController` so it runs at `injectionTime` on every page load, doing nothing if the resource cannot be read.
+    ///
+    /// `installWindowDragBridge()` and `installSidebarToggleBridge()` call this after registering the script-message handlers their scripts post back to.
+    private func installUserScript(_ script: WebViewScript, injectionTime: WKUserScriptInjectionTime) {
+        guard let source = script.source else {
+            return
+        }
+
+        let userScript = WKUserScript(source: source, injectionTime: injectionTime, forMainFrameOnly: false)
+        webView.configuration.userContentController.addUserScript(userScript)
+    }
+
+    func userContentController(_: WKUserContentController, didReceive message: WKScriptMessage) {
+        switch message.name {
+            case Self.windowDragMessageName:
+                guard let window = view.window,
+                      let event = NSApp.currentEvent
+                else {
+                    return
+                }
+                window.performDrag(with: event)
+
+            case Self.sidebarToggleStateMessageName:
+                guard let body = message.body as? [String: Any] else {
+                    return
+                }
+                sidebarToggleAvailable = body["available"] as? Bool ?? false
+                sidebarToggleExpanded = body["expanded"] as? Bool ?? false
+
+            default:
+                break
+        }
     }
 }
