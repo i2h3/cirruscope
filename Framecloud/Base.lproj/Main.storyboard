@@ -3,6 +3,7 @@
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24765"/>
         <plugIn identifier="com.apple.WebKit2IBPlugin" version="24765"/>
+        <capability name="Image references" minToolsVersion="12.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -632,7 +633,7 @@
             <objects>
                 <windowController storyboardIdentifier="ServerAddressWindowController" id="gEK-0I-zXE" userLabel="Server Address Window" sceneMemberID="viewController">
                     <window key="window" title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" titlebarAppearsTransparent="YES" titleVisibility="hidden" id="XFy-oL-ctO">
-                        <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES"/>
+                        <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" fullSizeContentView="YES"/>
                         <rect key="contentRect" x="425" y="462" width="400" height="270"/>
                         <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1410"/>
                         <view key="contentView" id="x0V-YN-wUH">
@@ -656,85 +657,94 @@
             <objects>
                 <viewController id="CSm-iM-xwx" customClass="ServerAddressViewController" customModule="Framecloud" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="JXc-I7-b73">
-                        <rect key="frame" x="0.0" y="0.0" width="400" height="473"/>
+                        <rect key="frame" x="0.0" y="0.0" width="400" height="513"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="hJR-Eu-VYI">
-                                <rect key="frame" x="132" y="262" width="137" height="31"/>
+                            <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="WhW-Oc-Igr">
+                                <rect key="frame" x="0.0" y="0.0" width="400" height="513"/>
+                                <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="axesIndependently" image="Background" id="zy8-RD-nkc"/>
+                            </imageView>
+                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="hJR-Eu-VYI">
+                                <rect key="frame" x="132" y="282" width="137" height="31"/>
                                 <textFieldCell key="cell" lineBreakMode="clipping" title="Framecloud" id="YMm-Pw-AmD">
                                     <font key="font" textStyle="largeTitle" name=".SFNS-Regular"/>
-                                    <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
+                                    <color key="textColor" red="0.99999600649999998" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                 </textFieldCell>
                             </textField>
-                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="RBx-9A-EGs">
-                                <rect key="frame" x="58" y="206" width="229" height="16"/>
+                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="RBx-9A-EGs">
+                                <rect key="frame" x="58" y="226" width="229" height="16"/>
                                 <textFieldCell key="cell" lineBreakMode="clipping" title="Enter your Nextcloud server address:" id="aZ0-zr-lPD">
                                     <font key="font" metaFont="system"/>
-                                    <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                    <color key="textColor" red="0.99999600649999998" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                 </textFieldCell>
                             </textField>
-                            <textField verticalHuggingPriority="750" contentType="url" translatesAutoresizingMaskIntoConstraints="NO" id="YlJ-G9-LcR">
-                                <rect key="frame" x="60" y="174" width="280" height="24"/>
+                            <textField focusRingType="none" verticalHuggingPriority="750" contentType="url" translatesAutoresizingMaskIntoConstraints="NO" id="YlJ-G9-LcR">
+                                <rect key="frame" x="60" y="194" width="252" height="24"/>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" placeholderString="https://your.nextcloud.com" drawsBackground="YES" usesSingleLineMode="YES" id="wwU-wS-wXs">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                 </textFieldCell>
                                 <connections>
-                                    <action selector="open:" target="CSm-iM-xwx" id="K46-jo-GKv"/>
+                                    <action selector="performClick:" target="k1i-ML-nxX" id="nbX-nn-9aL"/>
                                 </connections>
                             </textField>
-                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="qIf-JY-Zk0">
-                                <rect key="frame" x="38" y="40" width="324" height="42"/>
+                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="qIf-JY-Zk0">
+                                <rect key="frame" x="58" y="60" width="284" height="42"/>
                                 <textFieldCell key="cell" title="The next time you open Framecloud, this server will be opened again directly. You can log out any time and enter a new address." id="nLm-92-XsW">
                                     <font key="font" metaFont="smallSystem"/>
-                                    <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
+                                    <color key="textColor" red="0.99999600649999998" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                 </textFieldCell>
                             </textField>
                             <progressIndicator hidden="YES" wantsLayer="YES" maxValue="100" indeterminate="YES" controlSize="small" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="ech-1t-Ipm">
-                                <rect key="frame" x="259" y="146" width="16" height="16"/>
+                                <rect key="frame" x="192" y="170" width="16" height="16"/>
                             </progressIndicator>
-                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="k1i-ML-nxX">
-                                <rect key="frame" x="283" y="142" width="57" height="24"/>
-                                <buttonCell key="cell" type="push" title="Open" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="stm-Nb-RXX">
-                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                    <font key="font" metaFont="system"/>
-                                </buttonCell>
-                                <connections>
-                                    <action selector="open:" target="CSm-iM-xwx" id="twh-wo-lFG"/>
-                                </connections>
-                            </button>
                             <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="46a-hj-1ne">
-                                <rect key="frame" x="150" y="313" width="100" height="100"/>
+                                <rect key="frame" x="150" y="333" width="100" height="100"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="100" id="NBx-hp-Saj"/>
                                     <constraint firstAttribute="width" secondItem="46a-hj-1ne" secondAttribute="height" multiplier="1:1" id="Z4C-q0-MAB"/>
                                 </constraints>
                                 <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="Logo" id="bqR-tO-fAe"/>
                             </imageView>
+                            <button translatesAutoresizingMaskIntoConstraints="NO" id="k1i-ML-nxX">
+                                <rect key="frame" x="320" y="197" width="20" height="20"/>
+                                <buttonCell key="cell" type="bevel" title="Open" bezelStyle="rounded" imagePosition="only" alignment="center" enabled="NO" imageScaling="proportionallyDown" inset="2" id="stm-Nb-RXX">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                    <imageReference key="image" image="arrow.right.circle.fill" catalog="system" symbolScale="large"/>
+                                </buttonCell>
+                                <connections>
+                                    <action selector="open:" target="CSm-iM-xwx" id="twh-wo-lFG"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <constraints>
-                            <constraint firstItem="qIf-JY-Zk0" firstAttribute="top" secondItem="k1i-ML-nxX" secondAttribute="bottom" constant="60" id="AFI-hn-czT"/>
+                            <constraint firstAttribute="trailing" secondItem="WhW-Oc-Igr" secondAttribute="trailing" id="6xE-zl-z8d"/>
+                            <constraint firstItem="WhW-Oc-Igr" firstAttribute="top" secondItem="JXc-I7-b73" secondAttribute="top" id="8ZZ-I9-Sam"/>
                             <constraint firstItem="YlJ-G9-LcR" firstAttribute="top" secondItem="RBx-9A-EGs" secondAttribute="bottom" constant="8" symbolic="YES" id="Bsv-FU-npx"/>
-                            <constraint firstAttribute="trailing" secondItem="qIf-JY-Zk0" secondAttribute="trailing" constant="40" id="CjA-FN-Yrv"/>
-                            <constraint firstItem="YlJ-G9-LcR" firstAttribute="leading" secondItem="RBx-9A-EGs" secondAttribute="leading" id="EEG-zz-D0I"/>
-                            <constraint firstAttribute="bottom" secondItem="qIf-JY-Zk0" secondAttribute="bottom" constant="40" id="GcM-zu-mm0"/>
-                            <constraint firstItem="46a-hj-1ne" firstAttribute="top" secondItem="JXc-I7-b73" secondAttribute="top" constant="60" id="LSX-ep-Iuw"/>
-                            <constraint firstAttribute="trailing" secondItem="YlJ-G9-LcR" secondAttribute="trailing" constant="60" id="NSb-3T-ziI"/>
-                            <constraint firstItem="YlJ-G9-LcR" firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="RBx-9A-EGs" secondAttribute="trailing" id="P4s-Tl-Lln"/>
+                            <constraint firstItem="YlJ-G9-LcR" firstAttribute="leading" secondItem="JXc-I7-b73" secondAttribute="leading" constant="60" id="Cbi-y6-i1D"/>
+                            <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="qIf-JY-Zk0" secondAttribute="trailing" constant="60" id="CjA-FN-Yrv"/>
+                            <constraint firstAttribute="bottom" secondItem="qIf-JY-Zk0" secondAttribute="bottom" constant="60" id="GcM-zu-mm0"/>
+                            <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="RBx-9A-EGs" secondAttribute="trailing" constant="60" id="HgC-UQ-5kR"/>
+                            <constraint firstItem="46a-hj-1ne" firstAttribute="top" secondItem="JXc-I7-b73" secondAttribute="top" constant="80" id="LSX-ep-Iuw"/>
+                            <constraint firstItem="k1i-ML-nxX" firstAttribute="centerY" secondItem="YlJ-G9-LcR" secondAttribute="centerY" id="LsY-hP-fhi"/>
+                            <constraint firstItem="qIf-JY-Zk0" firstAttribute="top" secondItem="YlJ-G9-LcR" secondAttribute="bottom" constant="92" id="UfN-Dd-ait"/>
                             <constraint firstItem="hJR-Eu-VYI" firstAttribute="top" secondItem="46a-hj-1ne" secondAttribute="bottom" constant="20" id="Wxj-la-Cfv"/>
-                            <constraint firstItem="k1i-ML-nxX" firstAttribute="trailing" secondItem="YlJ-G9-LcR" secondAttribute="trailing" id="Y1d-Q1-lBU"/>
+                            <constraint firstAttribute="trailing" secondItem="k1i-ML-nxX" secondAttribute="trailing" constant="60" id="aQd-oB-iZS"/>
+                            <constraint firstItem="ech-1t-Ipm" firstAttribute="centerX" secondItem="JXc-I7-b73" secondAttribute="centerX" id="aZc-gt-3ye"/>
                             <constraint firstItem="46a-hj-1ne" firstAttribute="centerX" secondItem="JXc-I7-b73" secondAttribute="centerX" id="dD9-Lb-YOS"/>
-                            <constraint firstItem="k1i-ML-nxX" firstAttribute="leading" secondItem="ech-1t-Ipm" secondAttribute="trailing" constant="8" symbolic="YES" id="iKD-Ie-Y7o"/>
-                            <constraint firstItem="ech-1t-Ipm" firstAttribute="centerY" secondItem="k1i-ML-nxX" secondAttribute="centerY" id="j0j-8T-u2f"/>
+                            <constraint firstItem="ech-1t-Ipm" firstAttribute="top" secondItem="YlJ-G9-LcR" secondAttribute="bottom" constant="8" symbolic="YES" id="m5m-7F-C7y"/>
                             <constraint firstItem="hJR-Eu-VYI" firstAttribute="centerX" secondItem="JXc-I7-b73" secondAttribute="centerX" id="phN-2T-nbT"/>
-                            <constraint firstItem="k1i-ML-nxX" firstAttribute="top" secondItem="YlJ-G9-LcR" secondAttribute="bottom" constant="8" symbolic="YES" id="q60-fs-ErN"/>
-                            <constraint firstItem="qIf-JY-Zk0" firstAttribute="leading" secondItem="JXc-I7-b73" secondAttribute="leading" constant="40" id="qvU-q9-RmX"/>
+                            <constraint firstItem="qIf-JY-Zk0" firstAttribute="leading" secondItem="JXc-I7-b73" secondAttribute="leading" constant="60" id="qvU-q9-RmX"/>
+                            <constraint firstAttribute="bottom" secondItem="WhW-Oc-Igr" secondAttribute="bottom" id="ret-Oa-20m"/>
+                            <constraint firstItem="k1i-ML-nxX" firstAttribute="leading" secondItem="YlJ-G9-LcR" secondAttribute="trailing" constant="8" symbolic="YES" id="rk6-nx-Pm7"/>
                             <constraint firstItem="RBx-9A-EGs" firstAttribute="leading" secondItem="JXc-I7-b73" secondAttribute="leading" constant="60" id="s8p-DS-hv1"/>
                             <constraint firstItem="RBx-9A-EGs" firstAttribute="top" secondItem="hJR-Eu-VYI" secondAttribute="bottom" constant="40" id="uwY-UC-GdF"/>
+                            <constraint firstItem="WhW-Oc-Igr" firstAttribute="leading" secondItem="JXc-I7-b73" secondAttribute="leading" id="we3-AZ-18h"/>
                         </constraints>
                     </view>
                     <connections>
@@ -745,7 +755,7 @@
                 </viewController>
                 <customObject id="ZVT-ow-fmy" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-1087" y="937"/>
+            <point key="canvasLocation" x="-1087" y="936.5"/>
         </scene>
         <!--Web Window-->
         <scene sceneID="R2V-B0-nI4">
@@ -822,7 +832,7 @@
         <!--General Settings-->
         <scene sceneID="X0s-dQ-JkY">
             <objects>
-                <viewController id="M8w-Tj-wCV" userLabel="General Settings" sceneMemberID="viewController">
+                <viewController id="M8w-Tj-wCV" userLabel="General Settings" customClass="GeneralSettingsViewController" customModule="Framecloud" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" translatesAutoresizingMaskIntoConstraints="NO" id="z5Z-wa-TqO">
                         <rect key="frame" x="0.0" y="0.0" width="440" height="133"/>
                         <subviews>
@@ -832,10 +842,13 @@
                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                     <font key="font" metaFont="system"/>
                                 </buttonCell>
+                                <connections>
+                                    <action selector="logOut:" target="M8w-Tj-wCV" id="nRb-ku-8kw"/>
+                                </connections>
                             </button>
-                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="xMK-P6-2OJ">
-                                <rect key="frame" x="18" y="97" width="116" height="16"/>
-                                <textFieldCell key="cell" lineBreakMode="clipping" title="You are signed on:" id="QBm-XH-EVn">
+                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="xMK-P6-2OJ">
+                                <rect key="frame" x="18" y="97" width="132" height="16"/>
+                                <textFieldCell key="cell" lineBreakMode="clipping" title="You are logged in on:" id="QBm-XH-EVn">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -848,8 +861,11 @@
                                     <font key="font" metaFont="system"/>
                                 </buttonCell>
                                 <color key="contentTintColor" name="linkColor" catalog="System" colorSpace="catalog"/>
+                                <connections>
+                                    <action selector="openServerAddress:" target="M8w-Tj-wCV" id="1mf-47-dMu"/>
+                                </connections>
                             </button>
-                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="o8O-UB-Wz8">
+                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="o8O-UB-Wz8">
                                 <rect key="frame" x="18" y="52" width="402" height="13"/>
                                 <textFieldCell key="cell" title="If you log out here, Framecloud will reset the chosen server and ask for a new one." id="BH5-Gl-U5U">
                                     <font key="font" textStyle="footnote" name=".SFNS-Regular"/>
@@ -874,6 +890,9 @@
                             <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="xMK-P6-2OJ" secondAttribute="trailing" constant="20" symbolic="YES" id="znk-I8-dM3"/>
                         </constraints>
                     </view>
+                    <connections>
+                        <outlet property="serverAddressButton" destination="jn8-Pv-2jp" id="zJB-ho-7mt"/>
+                    </connections>
                 </viewController>
                 <customObject id="dfB-2r-kth" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
@@ -887,7 +906,7 @@
                         <rect key="frame" x="0.0" y="0.0" width="450" height="300"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="La9-ot-ILJ">
+                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="La9-ot-ILJ">
                                 <rect key="frame" x="138" y="142" width="175" height="16"/>
                                 <textFieldCell key="cell" lineBreakMode="clipping" title="This is not implemented yet." id="FmR-bW-CmS">
                                     <font key="font" usesAppearanceFont="YES"/>
@@ -911,18 +930,18 @@
             <objects>
                 <viewController id="XfG-lQ-9wD" customClass="WebViewController" customModule="Framecloud" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="m2S-Jp-Qdl">
-                        <rect key="frame" x="0.0" y="0.0" width="480" height="270"/>
+                        <rect key="frame" x="0.0" y="0.0" width="1200" height="800"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <wkWebView hidden="YES" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="edZ-kL-6y2">
-                                <rect key="frame" x="0.0" y="0.0" width="480" height="270"/>
+                                <rect key="frame" x="0.0" y="0.0" width="1200" height="800"/>
                                 <wkWebViewConfiguration key="configuration" applicationNameForUserAgent="Version/18.0 Safari/605.1.15">
                                     <audiovisualMediaTypes key="mediaTypesRequiringUserActionForPlayback" none="YES"/>
                                     <wkPreferences key="preferences"/>
                                 </wkWebViewConfiguration>
                             </wkWebView>
                             <progressIndicator wantsLayer="YES" maxValue="100" displayedWhenStopped="NO" indeterminate="YES" controlSize="small" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="raH-BI-vv0">
-                                <rect key="frame" x="232" y="127" width="16" height="16"/>
+                                <rect key="frame" x="592" y="392" width="16" height="16"/>
                             </progressIndicator>
                         </subviews>
                         <constraints>
@@ -941,12 +960,14 @@
                 </viewController>
                 <customObject id="rPt-NT-nkU" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="74" y="1252"/>
+            <point key="canvasLocation" x="74" y="1587"/>
         </scene>
     </scenes>
     <resources>
+        <image name="Background" width="800" height="1000"/>
         <image name="Logo" width="1024" height="1024"/>
         <image name="app.grid" catalog="system" width="15" height="14"/>
+        <image name="arrow.right.circle.fill" catalog="system" width="20" height="20"/>
         <image name="gear" catalog="system" width="17" height="16"/>
     </resources>
 </document>

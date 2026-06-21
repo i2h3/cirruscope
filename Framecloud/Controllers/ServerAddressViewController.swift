@@ -24,6 +24,12 @@ class ServerAddressViewController: NSViewController {
     @IBOutlet
     var openButton: NSButton!
 
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        serverAddressField.delegate = self
+    }
+
     @IBAction
     func open(_: Any) {
         var sanitizedServerAddress = serverAddressField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -99,3 +105,9 @@ class ServerAddressViewController: NSViewController {
         windowController.showWindow(self)
     }
 }
+extension ServerAddressViewController: NSTextFieldDelegate {
+    func controlTextDidChange(_: Notification) {
+        openButton.isEnabled = serverAddressField.stringValue.isEmpty == false
+    }
+}
+
