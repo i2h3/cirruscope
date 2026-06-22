@@ -27,6 +27,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var serverAppMenuItems: [NSMenuItem] = []
 
     func applicationDidFinishLaunching(_: Notification) {
+        UserNotifier.shared.configure()
         NotificationCenter.default.addObserver(self, selector: #selector(serverAppsDidChange), name: .serverAppsDidChange, object: nil)
         rebuildServerAppsMenu()
         presentInitialWindow()

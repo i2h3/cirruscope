@@ -82,6 +82,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         injectCustomStyleSheet()
         installWindowDragBridge()
         installSidebarToggleBridge()
+        installNotificationBridge()
         updateBackgroundImage()
 
         visualEffectsView.wantsLayer = true
@@ -175,22 +176,12 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
 
     // MARK: - Window Dragging
 
-    /// `windowDragMessageName` is the script-message name used by the `WebViewScript.windowDrag` user script installed in `installWindowDragBridge()` to ask the host window to begin a drag.
-    ///
-    /// `userContentController(_:didReceive:)` switches on this value to forward the event to `NSWindow.performDrag(with:)`.
-    private static let windowDragMessageName = "windowDrag"
-
     private func installWindowDragBridge() {
-        webView.configuration.userContentController.add(self, name: Self.windowDragMessageName)
+        webView.configuration.userContentController.add(self, name: ScriptMessageName.windowDrag.rawValue)
         installUserScript(.windowDrag, injectionTime: .atDocumentEnd)
     }
 
     // MARK: - Sidebar
-
-    /// `sidebarToggleStateMessageName` is the script-message name used by the `WebViewScript.sidebarToggleState` user script installed in `installSidebarToggleBridge()` to report whether Nextcloud's sidebar toggle is available and expanded.
-    ///
-    /// `userContentController(_:didReceive:)` switches on this value to update `sidebarToggleAvailable` and `sidebarToggleExpanded`.
-    private static let sidebarToggleStateMessageName = "sidebarToggleState"
 
     /// `sidebarToggleAvailable` is `true` while the currently loaded Nextcloud page exposes a sidebar toggle that can be activated.
     ///
@@ -203,7 +194,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     var sidebarToggleExpanded = false
 
     private func installSidebarToggleBridge() {
-        webView.configuration.userContentController.add(self, name: Self.sidebarToggleStateMessageName)
+        webView.configuration.userContentController.add(self, name: ScriptMessageName.sidebarToggleState.rawValue)
         installUserScript(.sidebarToggleState, injectionTime: .atDocumentEnd)
     }
 
@@ -214,6 +205,14 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         }
 
         webView.evaluateJavaScript(source)
+    }
+
+    // MARK: - Notifications
+
+    private func installNotificationBridge() {
+        UserNotifier.shared.requestAuthorization()
+        webView.configuration.userContentController.add(self, name: ScriptMessageName.notification.rawValue)
+        installUserScript(.notificationBridge, injectionTime: .atDocumentStart)
     }
 
     // MARK: - Web View Styling
@@ -245,6 +244,21 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
 
     // MARK: - Script Bridge
 
+    /// `ScriptMessageName` is the central list of script-message names that the injected user scripts post back to `userContentController(_:didReceive:)`.
+    ///
+    /// Each raw value is the name a `WebViewScript` uses in `window.webkit.messageHandlers.<name>.postMessage(...)`; the `install…Bridge()` methods register a handler for it on the web view's `WKUserContentController`, and `userContentController(_:didReceive:)` switches on it.
+    private enum ScriptMessageName: String {
+
+        /// `windowDrag` is posted by `WebViewScript.windowDrag` to ask the host window to begin a drag.
+        case windowDrag
+
+        /// `sidebarToggleState` is posted by `WebViewScript.sidebarToggleState` to report whether Nextcloud's sidebar toggle is available and expanded.
+        case sidebarToggleState
+
+        /// `notification` is posted by `WebViewScript.notificationBridge` to forward a web notification's content to the app.
+        case notification
+    }
+
     /// `installUserScript(_:injectionTime:)` loads `script` from its bundled resource and registers it on the web view's `WKUserContentController` so it runs at `injectionTime` on every page load, doing nothing if the resource cannot be read.
     ///
     /// `installWindowDragBridge()` and `installSidebarToggleBridge()` call this after registering the script-message handlers their scripts post back to.
@@ -258,8 +272,8 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     }
 
     func userContentController(_: WKUserContentController, didReceive message: WKScriptMessage) {
-        switch message.name {
-            case Self.windowDragMessageName:
+        switch ScriptMessageName(rawValue: message.name) {
+            case .windowDrag:
                 guard let window = view.window,
                       let event = NSApp.currentEvent
                 else {
@@ -267,14 +281,20 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
                 }
                 window.performDrag(with: event)
 
-            case Self.sidebarToggleStateMessageName:
+            case .sidebarToggleState:
                 guard let body = message.body as? [String: Any] else {
                     return
                 }
                 sidebarToggleAvailable = body["available"] as? Bool ?? false
                 sidebarToggleExpanded = body["expanded"] as? Bool ?? false
 
-            default:
+            case .notification:
+                guard let body = message.body as? [String: Any] else {
+                    return
+                }
+                UserNotifier.shared.post(title: body["title"] as? String ?? "", body: body["body"] as? String ?? "", tag: body["tag"] as? String ?? "", webNotificationID: body["id"] as? String ?? "", webView: webView)
+
+            case nil:
                 break
         }
     }

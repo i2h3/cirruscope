@@ -21,6 +21,11 @@ enum WebViewScript: String {
     /// `WebViewController.toggleSidebar(_:)` evaluates it on demand when the user activates the "Show/Hide Sidebar" menu item.
     case sidebarToggle = "SidebarToggle"
 
+    /// `notificationBridge` overrides the web Notification API so notifications created by the Nextcloud web interface are forwarded to the `notification` message handler instead of being lost.
+    ///
+    /// `WebViewController.installNotificationBridge()` installs it as a user script that runs at the start of every document load, before the page's own scripts read the API.
+    case notificationBridge = "NotificationBridge"
+
     /// `source` is the JavaScript text of the bundled `.js` resource backing this case, or `nil` if the resource is missing from the bundle or cannot be decoded as UTF-8.
     ///
     /// It is read lazily at the point of use so edits to the underlying `.js` file take effect without any change to Swift source.

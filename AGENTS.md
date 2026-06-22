@@ -15,6 +15,7 @@ You are an experienced software engineer specialized on native apps for macOS wr
     - `ServerApp.swift` is a persisted Nextcloud server app shown in the menus and settings.
     - `ServerConnection.swift` builds and validates `Rainmaker.Server` instances and fetches the server apps.
     - `Settings.swift` defines the app's persisted settings.
+    - `UserNotifier.swift` presents notifications from the web interface in the macOS Notification Center.
     - `WebViewScript.swift` enumerates the bundled JavaScript resources and loads their source from the bundle on demand.
     - `Assets.xcassets` contains image and color assets.
     - `AppIcon.icon` is the app icon bundle.
