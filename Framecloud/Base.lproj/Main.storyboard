@@ -566,6 +566,25 @@
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <menu key="submenu" title="View" id="HyV-fh-RgO">
                                     <items>
+                                        <menuItem title="Back" id="8Rr-Mc-7mo">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="goBack:" target="Ady-hI-5gd" id="71c-re-XMa"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="Forward" id="gwZ-2L-ITj">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="goForward:" target="Ady-hI-5gd" id="AsQ-us-ikW"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="Reload" id="mdf-Pa-v7a">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="reload:" target="Ady-hI-5gd" id="90b-QT-tlo"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem isSeparatorItem="YES" id="KiL-uI-x2u"/>
                                         <menuItem title="Show Sidebar" keyEquivalent="s" id="kIP-vf-haE">
                                             <modifierMask key="keyEquivalentModifierMask" control="YES" command="YES"/>
                                             <connections>

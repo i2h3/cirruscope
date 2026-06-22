@@ -27,5 +27,9 @@ extension WebViewController: WKNavigationDelegate {
         backgroundImageView.isHidden = true
         visualEffectsView.isHidden = true
         webView.isHidden = false
+
+        // Make the web view the first responder so it joins the key window's responder chain, which
+        // enables the Back/Forward/Reload menu items (WKWebView's own validated actions) for this window.
+        view.window?.makeFirstResponder(webView)
     }
 }
