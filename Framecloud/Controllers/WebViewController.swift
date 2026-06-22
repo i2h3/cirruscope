@@ -11,7 +11,13 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     // MARK: - Outlets
 
     @IBOutlet
+    var backgroundImageView: NSImageView!
+
+    @IBOutlet
     var progressIndicator: NSProgressIndicator!
+
+    @IBOutlet
+    var visualEffectsView: NSVisualEffectView!
 
     /// `webView` is the `WKWebView` that loads `Settings.serverAddress` and renders the Nextcloud web interface.
     ///
@@ -76,6 +82,11 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         injectCustomStyleSheet()
         installWindowDragBridge()
         installSidebarToggleBridge()
+        updateBackgroundImage()
+
+        visualEffectsView.wantsLayer = true
+        visualEffectsView.layer?.cornerRadius = 20
+        visualEffectsView.layer?.masksToBounds = true
     }
 
     override func viewWillAppear() {
@@ -86,6 +97,29 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     override func viewDidAppear() {
         super.viewDidAppear()
         progressIndicator.startAnimation(self)
+    }
+
+    // MARK: - Background
+
+    /// `updateBackgroundImage()` shows the server's cached theming background behind the web view, or nothing when no background image is available so the window background shows through.
+    ///
+    /// `viewDidLoad()` calls it. The image is the cached copy of the theming background, so it relies on `Settings.persist(theming:)` having already downloaded it via `AssetCache`, which `ServerConnection.validate(_:)` awaits before the web window is presented.
+    private func updateBackgroundImage() {
+        backgroundImageView.image = cachedBackgroundImage()
+    }
+
+    /// `cachedBackgroundImage()` returns the cached theming background image, or `nil` when the server publishes a plain color, the background is not an `http`/`https` image URL, or no cached copy exists yet.
+    private func cachedBackgroundImage() -> NSImage? {
+        guard Settings.themeBackgroundPlain != true,
+              let background = Settings.themeBackground,
+              let url = URL(string: background),
+              url.scheme == "http" || url.scheme == "https",
+              let localURL = AssetCache.shared.localURL(for: url)
+        else {
+            return nil
+        }
+
+        return NSImage(contentsOf: localURL)
     }
 
     // MARK: - Window Title

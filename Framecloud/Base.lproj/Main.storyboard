@@ -1027,21 +1027,52 @@
                                     <wkPreferences key="preferences"/>
                                 </wkWebViewConfiguration>
                             </wkWebView>
-                            <progressIndicator wantsLayer="YES" maxValue="100" displayedWhenStopped="NO" indeterminate="YES" controlSize="small" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="raH-BI-vv0">
-                                <rect key="frame" x="592" y="392" width="16" height="16"/>
-                            </progressIndicator>
+                            <imageView horizontalHuggingPriority="1" verticalHuggingPriority="1" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="9eM-UK-O0L" customClass="BackgroundImageView" customModule="Framecloud" customModuleProvider="target">
+                                <rect key="frame" x="0.0" y="0.0" width="1200" height="800"/>
+                                <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyUpOrDown" id="Wfu-an-mwi"/>
+                            </imageView>
+                            <visualEffectView blendingMode="withinWindow" material="HUDWindow" state="followsWindowActiveState" translatesAutoresizingMaskIntoConstraints="NO" id="iAf-Qp-NNu">
+                                <rect key="frame" x="548" y="360" width="104" height="80"/>
+                                <subviews>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="159-4F-xrb">
+                                        <rect key="frame" x="18" y="20" width="68" height="16"/>
+                                        <textFieldCell key="cell" lineBreakMode="clipping" title="Loading…" id="JU3-Zi-Xj2">
+                                            <font key="font" textStyle="headline" name=".SFNS-Bold"/>
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                        </textFieldCell>
+                                    </textField>
+                                    <progressIndicator wantsLayer="YES" maxValue="100" displayedWhenStopped="NO" indeterminate="YES" controlSize="small" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="raH-BI-vv0">
+                                        <rect key="frame" x="44" y="44" width="16" height="16"/>
+                                    </progressIndicator>
+                                </subviews>
+                                <constraints>
+                                    <constraint firstItem="raH-BI-vv0" firstAttribute="top" secondItem="iAf-Qp-NNu" secondAttribute="top" constant="20" symbolic="YES" id="7yu-mu-W0M"/>
+                                    <constraint firstAttribute="trailing" secondItem="159-4F-xrb" secondAttribute="trailing" constant="20" id="9yx-qh-M8N"/>
+                                    <constraint firstItem="raH-BI-vv0" firstAttribute="centerX" secondItem="159-4F-xrb" secondAttribute="centerX" id="AjK-xX-TqA"/>
+                                    <constraint firstAttribute="bottom" secondItem="159-4F-xrb" secondAttribute="bottom" constant="20" id="DFi-0O-iF9"/>
+                                    <constraint firstItem="159-4F-xrb" firstAttribute="top" secondItem="raH-BI-vv0" secondAttribute="bottom" constant="8" symbolic="YES" id="Wqc-Mq-JBy"/>
+                                    <constraint firstItem="159-4F-xrb" firstAttribute="leading" secondItem="iAf-Qp-NNu" secondAttribute="leading" constant="20" id="cad-fn-F1Z"/>
+                                </constraints>
+                            </visualEffectView>
                         </subviews>
                         <constraints>
+                            <constraint firstItem="iAf-Qp-NNu" firstAttribute="centerX" secondItem="m2S-Jp-Qdl" secondAttribute="centerX" id="1Ip-cM-VVw"/>
+                            <constraint firstAttribute="bottom" secondItem="9eM-UK-O0L" secondAttribute="bottom" id="2QN-Zl-J7a"/>
                             <constraint firstAttribute="bottom" secondItem="edZ-kL-6y2" secondAttribute="bottom" id="3oX-aL-2yM"/>
                             <constraint firstAttribute="trailing" secondItem="edZ-kL-6y2" secondAttribute="trailing" id="B47-ee-AH0"/>
-                            <constraint firstItem="raH-BI-vv0" firstAttribute="centerX" secondItem="m2S-Jp-Qdl" secondAttribute="centerX" id="HG5-Vx-nuK"/>
+                            <constraint firstItem="9eM-UK-O0L" firstAttribute="leading" secondItem="m2S-Jp-Qdl" secondAttribute="leading" id="HCg-xc-Zsa"/>
+                            <constraint firstAttribute="trailing" secondItem="9eM-UK-O0L" secondAttribute="trailing" id="Jxx-YS-gGF"/>
+                            <constraint firstItem="9eM-UK-O0L" firstAttribute="top" secondItem="m2S-Jp-Qdl" secondAttribute="top" id="SRa-sg-UKz"/>
                             <constraint firstItem="edZ-kL-6y2" firstAttribute="leading" secondItem="m2S-Jp-Qdl" secondAttribute="leading" id="WGc-BC-SiP"/>
-                            <constraint firstItem="raH-BI-vv0" firstAttribute="centerY" secondItem="m2S-Jp-Qdl" secondAttribute="centerY" id="fzO-kR-Mgk"/>
                             <constraint firstItem="edZ-kL-6y2" firstAttribute="top" secondItem="m2S-Jp-Qdl" secondAttribute="top" id="lQF-QF-lhq"/>
+                            <constraint firstItem="iAf-Qp-NNu" firstAttribute="centerY" secondItem="m2S-Jp-Qdl" secondAttribute="centerY" id="qCJ-Xs-HoI"/>
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="backgroundImageView" destination="9eM-UK-O0L" id="PoX-1Z-ubZ"/>
                         <outlet property="progressIndicator" destination="raH-BI-vv0" id="ax6-NQ-AFz"/>
+                        <outlet property="visualEffectsView" destination="iAf-Qp-NNu" id="Ijf-fw-9ss"/>
                         <outlet property="webView" destination="edZ-kL-6y2" id="Opc-Vh-CP9"/>
                     </connections>
                 </viewController>

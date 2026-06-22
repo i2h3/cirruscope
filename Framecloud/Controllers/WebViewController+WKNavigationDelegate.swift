@@ -24,7 +24,8 @@ extension WebViewController: WKNavigationDelegate {
         }
 
         hasRevealedAfterInitialLoad = true
-        progressIndicator.isHidden = true
+        backgroundImageView.isHidden = true
+        visualEffectsView.isHidden = true
         webView.isHidden = false
     }
 }
