@@ -1,14 +1,15 @@
+import AuthenticationServices
 import Cocoa
 import Rainmaker
 
 /// `ServerAddressViewController` backs the storyboard scene that asks the user for the address of the Nextcloud server they want to connect to.
 ///
-/// It is presented by `AppDelegate` on launch when `Settings.serverAddress` is `nil`, validates the entered address by fetching the server's capabilities via `Rainmaker.Server`, and on success persists the address to `Settings.serverAddress` before handing off to `WebViewController`.
+/// It is presented by `AppDelegate` on launch when `Settings.serverAddress` is `nil`, validates the entered address by fetching the server's capabilities via `ServerConnection`, runs Nextcloud's Login Flow v2 in an `ASWebAuthenticationSession` to obtain an app password, and on success persists the address to `Settings.serverAddress` and the credentials to `Keychain` before handing off to `WebViewController`.
 class ServerAddressViewController: NSViewController {
 
-    /// `progressIndicator` is the indeterminate spinner that is animated while a server's capabilities are being fetched.
+    /// `progressIndicator` is the indeterminate spinner that is animated while a server is being validated and the login is in progress.
     ///
-    /// `open(_:)` shows and starts it before issuing the network request and hides and stops it once the request has completed or failed.
+    /// `open(_:)` shows and starts it before issuing the network request and hides and stops it once the flow has completed or failed.
     @IBOutlet
     var progressIndicator: NSProgressIndicator!
 
@@ -23,6 +24,14 @@ class ServerAddressViewController: NSViewController {
     /// `open(_:)` disables it while a validation request is in flight to prevent duplicate submissions.
     @IBOutlet
     var openButton: NSButton!
+
+    /// `authenticationSession` retains the `ASWebAuthenticationSession` that presents the Login Flow v2 grant page while polling is in progress.
+    ///
+    /// `startAuthenticationSession(using:)` assigns it, and `dismissAuthenticationSession()` cancels it once polling has produced credentials or stopped.
+    private var authenticationSession: ASWebAuthenticationSession?
+
+    /// `authenticationCancelled` is set by the `ASWebAuthenticationSession` completion handler when the user dismisses the grant sheet, signaling `pollForCredentials(on:flow:)` to stop.
+    private var authenticationCancelled = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -47,7 +56,7 @@ class ServerAddressViewController: NSViewController {
             return
         }
 
-        let server = Server(address: url)
+        let server = ServerConnection.anonymous(address: url)
 
         serverAddressField.isEnabled = false
         openButton.isEnabled = false
@@ -56,21 +65,23 @@ class ServerAddressViewController: NSViewController {
 
         Task {
             do {
-                let capabilities = try await server.capabilities()
+                switch try await ServerConnection.validate(server) {
+                    case let .unsupported(version):
+                        presentAlert(title: "Unsupported Server Version", message: "Framecloud requires Nextcloud server version \(Settings.minimumSupportedServerMajorVersion) or later. The server at “\(url.absoluteString)” is running version \(version).")
 
-                if let theming = try? capabilities.get(Theming.self) {
-                    await Settings.persist(theming: theming)
+                    case .supported:
+                        let result = try await logIn(to: server)
+                        try Keychain.store(Credentials(user: result.name, appPassword: result.password), for: result.server)
+                        Settings.serverAddress = result.server
+                        (NSApp.delegate as? AppDelegate)?.presentWebViewWindow()
+                        view.window?.close()
+
+                        if let authenticated = ServerConnection.authenticated(address: result.server) {
+                            await ServerConnection.refreshNavigationApps(using: authenticated)
+                        }
                 }
-
-                let minimumMajorVersion = Settings.minimumSupportedServerMajorVersion
-
-                if capabilities.version.major >= minimumMajorVersion {
-                    Settings.serverAddress = url
-                    openWebViewWindow()
-                    view.window?.close()
-                } else {
-                    presentAlert(title: "Unsupported Server Version", message: "Framecloud requires Nextcloud server version \(minimumMajorVersion) or later. The server at “\(url.absoluteString)” is running version \(capabilities.version.string).")
-                }
+            } catch FramecloudError.loginCancelled {
+                // The user dismissed the login sheet; leave the form ready for another attempt.
             } catch {
                 presentAlert(title: "Could Not Reach Server", message: error.localizedDescription)
             }
@@ -80,6 +91,69 @@ class ServerAddressViewController: NSViewController {
             progressIndicator.isHidden = true
             progressIndicator.stopAnimation(self)
         }
+    }
+
+    /// `logIn(to:)` runs Nextcloud's Login Flow v2 against `server`: it presents the grant page in an `ASWebAuthenticationSession` and concurrently polls the login endpoint until the user completes the grant.
+    ///
+    /// Login Flow v2 never invokes the session's `nc` callback URL, so a successful `server.poll(_:token:)` is what signals completion; the session is then dismissed by the `defer`. It throws `FramecloudError.loginCancelled` if the user dismisses the sheet and `FramecloudError.loginTimedOut` if the grant is not completed in time.
+    private func logIn(to server: Server) async throws -> LoginResult {
+        let flow = try await server.login()
+
+        defer {
+            dismissAuthenticationSession()
+        }
+
+        try startAuthenticationSession(using: flow.entry)
+
+        return try await pollForCredentials(on: server, flow: flow)
+    }
+
+    /// `startAuthenticationSession(using:)` presents `url` in an `ASWebAuthenticationSession` so the user can authenticate and grant access.
+    ///
+    /// The session is retained in `authenticationSession`. Because Login Flow v2 never invokes the `nc` callback, the completion handler only fires when the user dismisses the sheet, which sets `authenticationCancelled` so `pollForCredentials(on:flow:)` stops. It throws `FramecloudError.loginPresentationFailed` if the session cannot be presented.
+    private func startAuthenticationSession(using url: URL) throws {
+        let session = ASWebAuthenticationSession(url: url, callbackURLScheme: "nc") { [weak self] _, _ in
+            self?.authenticationCancelled = true
+        }
+
+        session.presentationContextProvider = self
+        session.prefersEphemeralWebBrowserSession = true
+
+        authenticationCancelled = false
+        authenticationSession = session
+
+        guard session.start() else {
+            throw FramecloudError.loginPresentationFailed
+        }
+    }
+
+    /// `pollForCredentials(on:flow:)` polls `server`'s login endpoint until the user completes the grant, returning the resulting credentials.
+    ///
+    /// While the grant is pending the endpoint yields no result and `server.poll(_:token:)` throws, so every failure is treated as "keep polling". It stops with `FramecloudError.loginCancelled` if the user dismisses the sheet and `FramecloudError.loginTimedOut` after a few minutes without completion.
+    private func pollForCredentials(on server: Server, flow: LoginFlow) async throws -> LoginResult {
+        let deadline = Date().addingTimeInterval(300)
+
+        while Date() < deadline {
+            try Task.checkCancellation()
+
+            if authenticationCancelled {
+                throw FramecloudError.loginCancelled
+            }
+
+            if let result = try? await server.poll(flow.endpoint, token: flow.token) {
+                return result
+            }
+
+            try await Task.sleep(for: .seconds(1))
+        }
+
+        throw FramecloudError.loginTimedOut
+    }
+
+    /// `dismissAuthenticationSession()` cancels and releases the `ASWebAuthenticationSession`, dismissing the grant sheet once the login has completed, failed, or been cancelled.
+    private func dismissAuthenticationSession() {
+        authenticationSession?.cancel()
+        authenticationSession = nil
     }
 
     private func presentAlert(title: String, message: String) {
@@ -95,19 +169,18 @@ class ServerAddressViewController: NSViewController {
         }
     }
 
-    private func openWebViewWindow() {
-        let storyboard = NSStoryboard(name: "Main", bundle: nil)
-
-        guard let windowController = storyboard.instantiateController(withIdentifier: "WebViewWindowController") as? NSWindowController else {
-            return
-        }
-
-        windowController.showWindow(self)
-    }
 }
+
 extension ServerAddressViewController: NSTextFieldDelegate {
+
     func controlTextDidChange(_: Notification) {
         openButton.isEnabled = serverAddressField.stringValue.isEmpty == false
     }
 }
 
+extension ServerAddressViewController: ASWebAuthenticationPresentationContextProviding {
+
+    func presentationAnchor(for _: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        view.window ?? ASPresentationAnchor()
+    }
+}

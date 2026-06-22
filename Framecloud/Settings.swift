@@ -22,6 +22,12 @@ enum Settings {
 
         /// `themeBackgroundPlain` is the key under which `Settings.themeBackgroundPlain` persists the `backgroundPlain` flag of the server's `Theming` capability.
         case themeBackgroundPlain
+
+        /// `serverApps` is the key under which `Settings.serverApps` persists the list of Nextcloud server apps offered by the connected server.
+        case serverApps
+
+        /// `appShortcuts` is the key under which `Settings.appShortcuts` persists the user's custom keyboard shortcuts for individual server apps.
+        case appShortcuts
     }
 
     /// `InfoPlistKey` collects the string keys under which `Settings` reads statically configured values from the app's `Info.plist`.
@@ -35,7 +41,7 @@ enum Settings {
     ///
     /// `AppDelegate` reads this property during launch to decide which storyboard scene to instantiate.
     /// `ServerAddressViewController` writes to it after successfully reaching and validating a server, and `WebViewController` reads it to load the initial request into its `WKWebView`.
-    /// Setting this property to `nil` also clears `themeBackground`, `themeLogo`, and `themeBackgroundPlain` and empties `AssetCache` because those values and the cached image assets describe the server identified by this address and become meaningless without it.
+    /// Setting this property to `nil` also clears `themeBackground`, `themeLogo`, `themeBackgroundPlain`, and `serverApps`, empties `AssetCache`, and clears the stored Login Flow v2 credentials via `Keychain` because those values, cached assets, and credentials describe the server identified by this address and become meaningless without it.
     static var serverAddress: URL? {
         get {
             UserDefaults.standard.url(forKey: UserDefaultsKey.serverAddress.rawValue)
@@ -47,7 +53,9 @@ enum Settings {
                 themeBackground = nil
                 themeLogo = nil
                 themeBackgroundPlain = nil
+                serverApps = []
                 AssetCache.shared.clear()
+                Keychain.clearAll()
             } else {
                 UserDefaults.standard.set(newValue, forKey: UserDefaultsKey.serverAddress.rawValue)
             }
@@ -123,6 +131,59 @@ enum Settings {
         try? await AssetCache.shared.cache(remote: theming.logo)
     }
 
+    /// `serverApps` is the list of Nextcloud server apps offered by the connected server, sorted ascending by their `order`.
+    ///
+    /// `persist(navigationApps:)` writes it whenever the apps are fetched, and `AppDelegate` reads it to build the View and Dock menus and `ServerAppsViewController` to list the apps in settings.
+    /// Setting it prunes `appShortcuts` entries for apps that are no longer offered and posts `Notification.Name.serverAppsDidChange`.
+    static var serverApps: [ServerApp] {
+        get {
+            guard let data = UserDefaults.standard.data(forKey: UserDefaultsKey.serverApps.rawValue) else {
+                return []
+            }
+
+            return (try? JSONDecoder().decode([ServerApp].self, from: data)) ?? []
+        }
+
+        set {
+            UserDefaults.standard.set(try? JSONEncoder().encode(newValue), forKey: UserDefaultsKey.serverApps.rawValue)
+
+            let availableIDs = Set(newValue.map(\.id))
+            let prunedShortcuts = appShortcuts.filter { availableIDs.contains($0.key) }
+
+            if prunedShortcuts.count != appShortcuts.count {
+                appShortcuts = prunedShortcuts
+            }
+
+            NotificationCenter.default.post(name: .serverAppsDidChange, object: nil)
+        }
+    }
+
+    /// `appShortcuts` maps a `ServerApp.id` to the `KeyboardShortcut` the user has assigned to it; apps without an entry have no shortcut.
+    ///
+    /// `ServerAppsViewController` writes it as the user edits shortcuts, and `AppDelegate` reads it to set the key equivalents of the server-app menu items.
+    /// Setting it posts `Notification.Name.serverAppsDidChange`.
+    static var appShortcuts: [String: KeyboardShortcut] {
+        get {
+            guard let data = UserDefaults.standard.data(forKey: UserDefaultsKey.appShortcuts.rawValue) else {
+                return [:]
+            }
+
+            return (try? JSONDecoder().decode([String: KeyboardShortcut].self, from: data)) ?? [:]
+        }
+
+        set {
+            UserDefaults.standard.set(try? JSONEncoder().encode(newValue), forKey: UserDefaultsKey.appShortcuts.rawValue)
+            NotificationCenter.default.post(name: .serverAppsDidChange, object: nil)
+        }
+    }
+
+    /// `persist(navigationApps:)` projects `navigationApps` into `ServerApp` values, sorts them by `order`, and stores them in `serverApps`.
+    ///
+    /// `ServerConnection.refreshNavigationApps(using:)` calls it whenever the server's navigation apps have been fetched, which also prunes shortcuts for apps that are no longer offered.
+    static func persist(navigationApps: [NavigationItem]) {
+        serverApps = navigationApps.map(ServerApp.init).sorted { $0.order < $1.order }
+    }
+
     /// `minimumSupportedServerMajorVersion` is the lowest Nextcloud major version the app accepts.
     ///
     /// `ServerAddressViewController` consults this value after fetching the server's capabilities via `Rainmaker` and rejects servers running an older major release.
@@ -141,4 +202,10 @@ enum Settings {
 
         preconditionFailure("Info.plist entry \"\(InfoPlistKey.minimumSupportedServerMajorVersion)\" must be an integer or a string representing one but was \(type(of: value)).")
     }
+}
+
+extension Notification.Name {
+
+    /// `serverAppsDidChange` is posted by `Settings` whenever `serverApps` or `appShortcuts` changes so `AppDelegate` can rebuild the View and Dock menus.
+    static let serverAppsDidChange = Notification.Name("FCServerAppsDidChange")
 }

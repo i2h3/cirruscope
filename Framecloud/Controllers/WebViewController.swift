@@ -27,6 +27,44 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     /// `webView(_:didFinish:)` consults this flag so the reveal happens exactly once, on the first finished navigation, and subsequent navigations do not touch the view's visibility.
     var hasRevealedAfterInitialLoad = false
 
+    /// `hasStartedInitialLoad` is `true` once the initial navigation has been issued, so `viewWillAppear()` triggers it exactly once.
+    private var hasStartedInitialLoad = false
+
+    /// `webWindowController` is the `WebWindowController` hosting this controller, from which the `targetURL` to load is read once the view is in its window.
+    private var webWindowController: WebWindowController? {
+        view.window?.windowController as? WebWindowController
+    }
+
+    /// `startInitialLoadIfNeeded()` issues the initial navigation the first time the view appears, loading the host window controller's `targetURL` when set or `Settings.serverAddress` otherwise.
+    ///
+    /// It runs from `viewWillAppear()` rather than `viewDidLoad()` because the host `WebWindowController` and its `targetURL` are only reachable once the view has been placed in its window.
+    private func startInitialLoadIfNeeded() {
+        guard hasStartedInitialLoad == false else {
+            return
+        }
+
+        guard let url = webWindowController?.targetURL ?? Settings.serverAddress else {
+            preconditionFailure("WebViewController was loaded without a server address in Settings.")
+        }
+
+        hasStartedInitialLoad = true
+        webView.load(authenticatedRequest(for: url))
+    }
+
+    /// `authenticatedRequest(for:)` builds the request that loads `url`, attaching HTTP Basic authentication derived from the `Credentials` stored for `Settings.serverAddress` when they are available.
+    ///
+    /// Nextcloud accepts the app password as Basic authentication and establishes a web session from it, so the embedded web view is signed in without a separate in-page login. When no credentials are stored the request is unauthenticated and the server presents its normal login page.
+    private func authenticatedRequest(for url: URL) -> URLRequest {
+        var request = URLRequest(url: url)
+
+        if let serverAddress = Settings.serverAddress, let credentials = Keychain.credentials(for: serverAddress) {
+            let encoded = Data("\(credentials.user):\(credentials.appPassword)".utf8).base64EncodedString()
+            request.setValue("Basic \(encoded)", forHTTPHeaderField: "Authorization")
+        }
+
+        return request
+    }
+
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
@@ -38,57 +76,16 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         injectCustomStyleSheet()
         installWindowDragBridge()
         installSidebarToggleBridge()
-
-        guard let serverAddress = Settings.serverAddress else {
-            preconditionFailure("WebViewController was loaded without a server address in Settings.")
-        }
-
-        webView.load(URLRequest(url: serverAddress))
     }
 
     override func viewWillAppear() {
         super.viewWillAppear()
-        layoutWindowControls()
+        startInitialLoadIfNeeded()
     }
 
     override func viewDidAppear() {
         super.viewDidAppear()
         progressIndicator.startAnimation(self)
-    }
-
-    override func viewDidLayout() {
-        super.viewDidLayout()
-        layoutWindowControls()
-    }
-
-    // MARK: - Window Controls
-
-    private func layoutWindowControls() {
-        guard let window = view.window else {
-            return
-        }
-
-        let toolbarHeight: CGFloat = 50
-        let leadingInset: CGFloat = 20
-        let spacing: CGFloat = 23
-
-        let buttonTypes: [NSWindow.ButtonType] = [.closeButton, .miniaturizeButton, .zoomButton]
-
-        for (index, type) in buttonTypes.enumerated() {
-            guard let button = window.standardWindowButton(type),
-                  let superview = button.superview
-            else {
-                continue
-            }
-
-            let buttonHeight = button.bounds.height
-            let topInset = (toolbarHeight - buttonHeight) / 2
-            let leading = leadingInset + CGFloat(index) * spacing
-
-            let originInWindow = NSPoint(x: leading, y: window.frame.height - topInset - buttonHeight)
-
-            button.setFrameOrigin(superview.convert(originInWindow, from: nil))
-        }
     }
 
     // MARK: - Window Title
@@ -105,6 +102,41 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         titleObservation = webView.observe(\.title, options: [.initial, .new]) { [weak self] webView, _ in
             self?.view.window?.title = webView.title ?? ""
         }
+    }
+
+    // MARK: - Server App
+
+    /// `currentAppID` is the Nextcloud app id of the page the web view currently shows, derived from its URL, or `nil` when the URL does not address a recognizable app on the configured server.
+    ///
+    /// Until the web view reports a URL it falls back to the app id of the host window controller's `targetURL`, so a window opened for an app is recognized before its first load completes. `AppDelegate.openServerApp(_:)` reads this to focus an existing window instead of opening a duplicate.
+    var currentAppID: String? {
+        guard let url = webView.url else {
+            return webWindowController?.targetURL.flatMap { Self.appID(fromPath: $0.path) }
+        }
+
+        guard let host = url.host,
+              let serverHost = Settings.serverAddress?.host,
+              host.caseInsensitiveCompare(serverHost) == .orderedSame
+        else {
+            return nil
+        }
+
+        return Self.appID(fromPath: url.path)
+    }
+
+    /// `appID(fromPath:)` extracts the Nextcloud app id from a URL path of the form `/apps/<id>/…` or `/index.php/apps/<id>/…`, or returns `nil` when the path does not address an app.
+    static func appID(fromPath path: String) -> String? {
+        var components = path.split(separator: "/", omittingEmptySubsequences: true).map(String.init)
+
+        if components.first == "index.php" {
+            components.removeFirst()
+        }
+
+        guard components.count >= 2, components[0] == "apps" else {
+            return nil
+        }
+
+        return components[1]
     }
 
     // MARK: - Window Dragging

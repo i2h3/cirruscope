@@ -17,8 +17,35 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// `present(windowController:sender:)` updates it on every call so that subsequent windows opened via the "New Window" menu item are offset from the previous one rather than stacking on top of each other.
     private var lastCascadePoint: NSPoint = .zero
 
+    /// `serverAppsSeparator` is the View-menu separator after which the dynamic server-app menu items are inserted.
+    ///
+    /// `rebuildServerAppsMenu()` inserts one item per `Settings.serverApps` entry directly after it, so the apps occupy the section the storyboard brackets with a separator above and below.
+    @IBOutlet
+    var serverAppsSeparator: NSMenuItem!
+
+    /// `serverAppMenuItems` holds the server-app items currently inserted into the View menu so `rebuildServerAppsMenu()` can remove the previous set before inserting an updated one.
+    private var serverAppMenuItems: [NSMenuItem] = []
+
     func applicationDidFinishLaunching(_: Notification) {
+        NotificationCenter.default.addObserver(self, selector: #selector(serverAppsDidChange), name: .serverAppsDidChange, object: nil)
+        rebuildServerAppsMenu()
         presentInitialWindow()
+    }
+
+    func applicationDockMenu(_: NSApplication) -> NSMenu? {
+        let apps = Settings.serverApps
+
+        guard apps.isEmpty == false else {
+            return nil
+        }
+
+        let menu = NSMenu()
+
+        for app in apps {
+            menu.addItem(menuItem(for: app))
+        }
+
+        return menu
     }
 
     func applicationShouldHandleReopen(_: NSApplication, hasVisibleWindows: Bool) -> Bool {
@@ -51,31 +78,122 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        guard let server = ServerConnection.authenticated(address: serverAddress) else {
+            // The address is configured but no credentials are stored, so the user must log in again.
+            presentWindow(withIdentifier: "ServerAddressWindowController")
+            return
+        }
+
         Task {
-            let identifier: String
             do {
-                let server = Server(address: serverAddress)
-                let capabilities = try await server.capabilities()
+                switch try await ServerConnection.validate(server) {
+                    case .supported:
+                        presentWebViewWindow()
+                        await ServerConnection.refreshNavigationApps(using: server)
 
-                if let theming = try? capabilities.get(Theming.self) {
-                    await Settings.persist(theming: theming)
+                    case let .unsupported(version):
+                        presentAlert(title: "Unsupported Server", message: "Framecloud requires Nextcloud version \(Settings.minimumSupportedServerMajorVersion) or later. The server at “\(serverAddress.absoluteString)” is running version \(version).")
+                        presentWindow(withIdentifier: "ServerAddressWindowController")
                 }
-
-                let minimumMajorVersion = Settings.minimumSupportedServerMajorVersion
-
-                if capabilities.version.major >= minimumMajorVersion {
-                    identifier = "WebViewWindowController"
-                } else {
-                    presentAlert(title: "Unsupported Server", message: "Framecloud requires Nextcloud version \(minimumMajorVersion) or later. The server at “\(serverAddress.absoluteString)” is running version \(capabilities.version.string).")
-                    identifier = "ServerAddressWindowController"
-                }
+            } catch RainmakerError.credentialsRequired, RainmakerError.unexpectedStatus(code: 401) {
+                // The stored app password was revoked on the server; discard it and require a new login.
+                Keychain.clearAll()
+                presentWindow(withIdentifier: "ServerAddressWindowController")
             } catch {
                 presentAlert(title: "Could Not Reach Server", message: error.localizedDescription)
-                identifier = "ServerAddressWindowController"
+                presentWindow(withIdentifier: "ServerAddressWindowController")
             }
-
-            presentWindow(withIdentifier: identifier)
         }
+    }
+
+    /// `presentWebViewWindow(targetURL:)` opens and tracks a web window, loading `targetURL` when given or `Settings.serverAddress` otherwise.
+    ///
+    /// `presentInitialWindow()` and `ServerAddressViewController` open the root window through it, and `openServerApp(_:)` opens app-specific windows, so every web window is created, cascaded, and retained the same way.
+    func presentWebViewWindow(targetURL: URL? = nil) {
+        let storyboard = NSStoryboard(name: "Main", bundle: nil)
+
+        guard let windowController = storyboard.instantiateController(withIdentifier: "WebViewWindowController") as? WebWindowController else {
+            return
+        }
+
+        windowController.targetURL = targetURL
+        present(windowController: windowController)
+    }
+
+    /// `openServerApp(_:)` brings the web window already showing `app` to the front, or opens a new window loading the app when none is open.
+    ///
+    /// The currently shown app of each window is reported by `WebViewController.currentAppID`. It does nothing when no server address is configured.
+    func openServerApp(_ app: ServerApp) {
+        guard let serverAddress = Settings.serverAddress else {
+            return
+        }
+
+        if let existing = windowControllers.first(where: { ($0.contentViewController as? WebViewController)?.currentAppID == app.id }) {
+            existing.window?.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        guard let url = URL(string: app.href, relativeTo: serverAddress)?.absoluteURL else {
+            return
+        }
+
+        presentWebViewWindow(targetURL: url)
+    }
+
+    @IBAction
+    func performServerApp(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? String,
+              let app = Settings.serverApps.first(where: { $0.id == id })
+        else {
+            return
+        }
+
+        openServerApp(app)
+    }
+
+    /// `serverAppsDidChange()` rebuilds the View menu when `Settings` posts that the server apps or their shortcuts changed.
+    @objc
+    private func serverAppsDidChange() {
+        rebuildServerAppsMenu()
+    }
+
+    /// `rebuildServerAppsMenu()` replaces the dynamic server-app items in the View menu with the current `Settings.serverApps`, applying each app's configured shortcut.
+    ///
+    /// It removes the items it previously inserted and inserts the current apps directly after `serverAppsSeparator`, which keeps them within the storyboard's bracketed section.
+    private func rebuildServerAppsMenu() {
+        guard let menu = serverAppsSeparator?.menu else {
+            return
+        }
+
+        for item in serverAppMenuItems {
+            menu.removeItem(item)
+        }
+
+        serverAppMenuItems.removeAll()
+
+        var index = menu.index(of: serverAppsSeparator) + 1
+
+        for app in Settings.serverApps {
+            let item = menuItem(for: app)
+            menu.insertItem(item, at: index)
+            serverAppMenuItems.append(item)
+            index += 1
+        }
+    }
+
+    /// `menuItem(for:)` builds a menu item that opens `app` via `performServerApp(_:)`, applying the user's configured keyboard shortcut for it when one exists.
+    private func menuItem(for app: ServerApp) -> NSMenuItem {
+        let item = NSMenuItem(title: app.name, action: #selector(performServerApp(_:)), keyEquivalent: "")
+        item.target = self
+        item.representedObject = app.id
+
+        if let shortcut = Settings.appShortcuts[app.id] {
+            item.keyEquivalent = shortcut.keyEquivalent
+            item.keyEquivalentModifierMask = shortcut.modifierMask
+        }
+
+        return item
     }
 
     private func presentWindow(withIdentifier identifier: String) {
