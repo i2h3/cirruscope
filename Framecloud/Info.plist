@@ -4,5 +4,10 @@
 <dict>
 	<key>FCMinimumSupportedNextcloudMajorVersion</key>
 	<integer>33</integer>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
 </dict>
 </plist>

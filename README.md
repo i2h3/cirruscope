@@ -3,8 +3,8 @@
 
 # Framecloud
 
-A native macOS app which wraps your Nextcloud web user interface into first class windows.
-This leverages the fast and efficient WebKit framework shipped with macOS.
+An app-like Nextcloud experience on macOS.
+This elevates your Nextcloud user interface to the next level by leveraging native platform features and WebKit. 
 
 <img src="Screenshots/Dashboard.jpeg" alt="Nextcloud Files" />
 <img src="Screenshots/Files.jpeg" alt="Nextcloud Files" width=150 />
@@ -16,8 +16,9 @@ This leverages the fast and efficient WebKit framework shipped with macOS.
 
 ## Status
 
-**This is just an experimental toy project for now!**
-There are still some rough edges to iron out before making any builds available.
+**This is an experiment only, for now.**
+But the minimum viable product for an initial release to gather feedback is closing in.
+There are a few things still missing before any builds will be made available.
 
 ## Features
 
@@ -25,6 +26,12 @@ There are still some rough edges to iron out before making any builds available.
 - Windows can be dragged by the Nextcloud top bar.
 - Edge to edge content, no unnecessary gaps.
 - Sidebar visibility control through app menu item.
+- Nextcloud server app speed dials in app menu and dock menu with configurable keyboard shortcuts.
+
+## Disclaimer
+
+This is an unofficial third-party app out of the Nextcloud community.
+It is not associated with or endorsed by Nextcloud GmbH.
 
 ## License
 
