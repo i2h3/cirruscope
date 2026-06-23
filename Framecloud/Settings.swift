@@ -23,6 +23,9 @@ enum Settings {
         /// `themeBackgroundPlain` is the key under which `Settings.themeBackgroundPlain` persists the `backgroundPlain` flag of the server's `Theming` capability.
         case themeBackgroundPlain
 
+        /// `serverVersion` is the key under which `Settings.serverVersion` persists the human-readable version string of the connected server.
+        case serverVersion
+
         /// `serverApps` is the key under which `Settings.serverApps` persists the list of Nextcloud server apps offered by the connected server.
         case serverApps
 
@@ -38,13 +41,16 @@ enum Settings {
 
         /// `privacyPolicy` is the key for the `Info.plist` entry that backs `Settings.privacyPolicy`.
         static let privacyPolicy = "FCPrivacyPolicy"
+
+        /// `feedbackAddress` is the key for the `Info.plist` entry that backs `Settings.feedbackAddress`.
+        static let feedbackAddress = "FCFeedbackAddress"
     }
 
     /// `serverAddress` is the URL of the Nextcloud server the user has last connected to, or `nil` while no server has been configured yet.
     ///
     /// `AppDelegate` reads this property during launch to decide which storyboard scene to instantiate.
     /// `ServerAddressViewController` writes to it after successfully reaching and validating a server, and `WebViewController` reads it to load the initial request into its `WKWebView`.
-    /// Setting this property to `nil` also clears `themeBackground`, `themeLogo`, `themeBackgroundPlain`, and `serverApps`, empties `AssetCache`, and clears the stored Login Flow v2 credentials via `Keychain` because those values, cached assets, and credentials describe the server identified by this address and become meaningless without it.
+    /// Setting this property to `nil` also clears `themeBackground`, `themeLogo`, `themeBackgroundPlain`, `serverVersion`, and `serverApps`, empties `AssetCache`, and clears the stored Login Flow v2 credentials via `Keychain` because those values, cached assets, and credentials describe the server identified by this address and become meaningless without it.
     static var serverAddress: URL? {
         get {
             UserDefaults.standard.url(forKey: UserDefaultsKey.serverAddress.rawValue)
@@ -56,6 +62,7 @@ enum Settings {
                 themeBackground = nil
                 themeLogo = nil
                 themeBackgroundPlain = nil
+                serverVersion = nil
                 serverApps = []
                 AssetCache.shared.clear()
                 Keychain.clearAll()
@@ -115,6 +122,24 @@ enum Settings {
                 UserDefaults.standard.set(newValue, forKey: UserDefaultsKey.themeBackgroundPlain.rawValue)
             } else {
                 UserDefaults.standard.removeObject(forKey: UserDefaultsKey.themeBackgroundPlain.rawValue)
+            }
+        }
+    }
+
+    /// `serverVersion` is the human-readable version string of the connected Nextcloud server, or `nil` while no supported server has been reached yet.
+    ///
+    /// `ServerConnection.validate(_:)` writes it whenever a supported server's capabilities are retrieved, and `AppDelegate.provideFeedback(_:)` includes it in the feedback email when present.
+    /// It is cleared together with `serverAddress` when the user disconnects from the server.
+    static var serverVersion: String? {
+        get {
+            UserDefaults.standard.string(forKey: UserDefaultsKey.serverVersion.rawValue)
+        }
+
+        set {
+            if let newValue {
+                UserDefaults.standard.set(newValue, forKey: UserDefaultsKey.serverVersion.rawValue)
+            } else {
+                UserDefaults.standard.removeObject(forKey: UserDefaultsKey.serverVersion.rawValue)
             }
         }
     }
@@ -219,6 +244,19 @@ enum Settings {
         }
 
         return url
+    }
+
+    /// `feedbackAddress` is the recipient that `AppDelegate.provideFeedback(_:)` addresses the feedback email to, e.g. `Framecloud Feedback <framecloud@i2h3.de>`.
+    static var feedbackAddress: String {
+        guard let value = Bundle.main.object(forInfoDictionaryKey: InfoPlistKey.feedbackAddress) else {
+            preconditionFailure("Info.plist is missing the \"\(InfoPlistKey.feedbackAddress)\" entry.")
+        }
+
+        guard let stringValue = value as? String else {
+            preconditionFailure("Info.plist entry \"\(InfoPlistKey.feedbackAddress)\" must be a string but was \(value).")
+        }
+
+        return stringValue
     }
 }
 

@@ -642,6 +642,12 @@
                                                 <action selector="openPrivacyPolicy:" target="Ady-hI-5gd" id="Ppm-It-pol"/>
                                             </connections>
                                         </menuItem>
+                                        <menuItem title="Provide Feedback…" id="eAK-Mc-Zl7">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="provideFeedback:" target="Ady-hI-5gd" id="Fbk-It-eml"/>
+                                            </connections>
+                                        </menuItem>
                                     </items>
                                 </menu>
                             </menuItem>

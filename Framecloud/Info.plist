@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>FCFeedbackAddress</key>
+	<string>Framecloud Feedback &lt;framecloud@i2h3.de&gt;</string>
 	<key>FCMinimumSupportedNextcloudMajorVersion</key>
 	<integer>33</integer>
 	<key>FCPrivacyPolicy</key>

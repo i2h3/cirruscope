@@ -32,7 +32,7 @@ enum ServerConnection {
         return Server(address: address, password: credentials.appPassword, user: credentials.user, userAgent: userAgent)
     }
 
-    /// `validate(_:)` fetches `server`'s capabilities, persists its theming, and reports whether its major version is supported.
+    /// `validate(_:)` fetches `server`'s capabilities, persists its theming, and reports whether its major version is supported, recording the version string of a supported server in `Settings.serverVersion`.
     ///
     /// It rethrows any error raised while fetching the capabilities so callers can distinguish an unreachable or unauthorized server from an unsupported one.
     static func validate(_ server: Server) async throws -> ValidationOutcome {
@@ -47,6 +47,8 @@ enum ServerConnection {
         guard capabilities.version.major >= minimumMajorVersion else {
             return .unsupported(version: capabilities.version.string)
         }
+
+        Settings.serverVersion = capabilities.version.string
 
         return .supported(capabilities)
     }
