@@ -33,6 +33,10 @@ There are a few things still missing before any builds will be made available.
 This is an unofficial third-party app out of the Nextcloud community.
 It is not associated with or endorsed by Nextcloud GmbH.
 
+## Privacy Policy
+
+The Framecloud app does not collect any data.
+
 ## License
 
 See [LICENSE](./LICENSE).
