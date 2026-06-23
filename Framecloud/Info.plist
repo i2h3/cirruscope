@@ -4,6 +4,8 @@
 <dict>
 	<key>FCMinimumSupportedNextcloudMajorVersion</key>
 	<integer>33</integer>
+	<key>FCPrivacyPolicy</key>
+	<string>https://i2h3.de/framecloud/privacy-policy/</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

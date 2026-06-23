@@ -70,6 +70,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         presentInitialWindow()
     }
 
+    /// `openPrivacyPolicy(_:)` opens Framecloud's online privacy policy in the user's default browser.
+    ///
+    /// It backs both the Help-menu "Privacy Policy…" item and the "Privacy Policy" button on `ServerAddressViewController`; both target the responder chain rather than this object directly, so a single handler serves every entry point.
+    @IBAction
+    func openPrivacyPolicy(_: Any?) {
+        NSWorkspace.shared.open(Settings.privacyPolicy)
+    }
+
     /// `presentInitialWindow()` validates the configured server and presents the window the app should show for the current state: `WebViewWindowController` when a supported server is reachable, otherwise `ServerAddressWindowController`.
     ///
     /// `applicationDidFinishLaunching(_:)` calls it on launch, `applicationShouldHandleReopen(_:hasVisibleWindows:)` calls it when the user reactivates the app while no windows are open, and `newWindow(_:)` calls it for the "New Window" menu item, so all three entry points share the same launch logic.

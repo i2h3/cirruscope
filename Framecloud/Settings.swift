@@ -35,6 +35,9 @@ enum Settings {
 
         /// `minimumSupportedServerMajorVersion` is the key for the `Info.plist` entry that backs `Settings.minimumSupportedServerMajorVersion`.
         static let minimumSupportedServerMajorVersion = "FCMinimumSupportedNextcloudMajorVersion"
+
+        /// `privacyPolicy` is the key for the `Info.plist` entry that backs `Settings.privacyPolicy`.
+        static let privacyPolicy = "FCPrivacyPolicy"
     }
 
     /// `serverAddress` is the URL of the Nextcloud server the user has last connected to, or `nil` while no server has been configured yet.
@@ -201,6 +204,21 @@ enum Settings {
         }
 
         preconditionFailure("Info.plist entry \"\(InfoPlistKey.minimumSupportedServerMajorVersion)\" must be an integer or a string representing one but was \(type(of: value)).")
+    }
+
+    /// `privacyPolicy` is the URL of Framecloud's online privacy policy.
+    ///
+    /// `AppDelegate.openPrivacyPolicy(_:)` opens it in the user's default browser when the user chooses the Help-menu item or the button on `ServerAddressViewController`.
+    static var privacyPolicy: URL {
+        guard let value = Bundle.main.object(forInfoDictionaryKey: InfoPlistKey.privacyPolicy) else {
+            preconditionFailure("Info.plist is missing the \"\(InfoPlistKey.privacyPolicy)\" entry.")
+        }
+
+        guard let stringValue = value as? String, let url = URL(string: stringValue) else {
+            preconditionFailure("Info.plist entry \"\(InfoPlistKey.privacyPolicy)\" must be a string representing a valid URL but was \(value).")
+        }
+
+        return url
     }
 }
 
