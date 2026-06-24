@@ -24,8 +24,14 @@ class WebWindow: NSWindow {
         repositionControlButtons()
     }
 
-    /// `repositionControlButtons()` moves the close, miniaturize, and zoom buttons to align with the custom title bar, leaving them untouched while they are not yet available.
+    /// `repositionControlButtons()` moves the close, miniaturize, and zoom buttons to align with the custom title bar, leaving them untouched while they are not yet available or while the window is in fullscreen.
+    ///
+    /// In fullscreen macOS relocates the window buttons into the auto-revealing title bar; the custom placement is skipped there so the buttons stay reachable in that title bar (including the green button used to leave fullscreen) instead of being pulled into the hidden content area.
     private func repositionControlButtons() {
+        guard styleMask.contains(.fullScreen) == false else {
+            return
+        }
+
         let buttonTypes: [NSWindow.ButtonType] = [.closeButton, .miniaturizeButton, .zoomButton]
 
         for (index, type) in buttonTypes.enumerated() {

@@ -699,7 +699,7 @@
                         <rect key="frame" x="0.0" y="0.0" width="400" height="447"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="hJR-Eu-VYI">
+                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="hJR-Eu-VYI">
                                 <rect key="frame" x="132" y="216" width="137" height="31"/>
                                 <textFieldCell key="cell" lineBreakMode="clipping" title="Framecloud" id="YMm-Pw-AmD">
                                     <font key="font" textStyle="largeTitle" name=".SFNS-Regular"/>
@@ -707,7 +707,7 @@
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                 </textFieldCell>
                             </textField>
-                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="RBx-9A-EGs">
+                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="RBx-9A-EGs">
                                 <rect key="frame" x="58" y="160" width="229" height="16"/>
                                 <textFieldCell key="cell" lineBreakMode="clipping" title="Enter your Nextcloud server address:" id="aZ0-zr-lPD">
                                     <font key="font" metaFont="system"/>
@@ -715,7 +715,7 @@
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                 </textFieldCell>
                             </textField>
-                            <textField focusRingType="none" verticalHuggingPriority="750" contentType="url" translatesAutoresizingMaskIntoConstraints="NO" id="YlJ-G9-LcR">
+                            <textField verticalHuggingPriority="750" contentType="url" translatesAutoresizingMaskIntoConstraints="NO" id="YlJ-G9-LcR">
                                 <rect key="frame" x="60" y="128" width="252" height="24"/>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" placeholderString="https://your.nextcloud.com" drawsBackground="YES" usesSingleLineMode="YES" id="wwU-wS-wXs">
                                     <font key="font" metaFont="system"/>
@@ -879,7 +879,7 @@
                                     <action selector="logOut:" target="M8w-Tj-wCV" id="nRb-ku-8kw"/>
                                 </connections>
                             </button>
-                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="xMK-P6-2OJ">
+                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="xMK-P6-2OJ">
                                 <rect key="frame" x="18" y="97" width="132" height="16"/>
                                 <textFieldCell key="cell" lineBreakMode="clipping" title="You are logged in on:" id="QBm-XH-EVn">
                                     <font key="font" metaFont="system"/>
@@ -898,7 +898,7 @@
                                     <action selector="openServerAddress:" target="M8w-Tj-wCV" id="1mf-47-dMu"/>
                                 </connections>
                             </button>
-                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="o8O-UB-Wz8">
+                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="o8O-UB-Wz8">
                                 <rect key="frame" x="18" y="52" width="402" height="13"/>
                                 <textFieldCell key="cell" title="If you log out here, Framecloud will reset the chosen server and ask for a new one." id="BH5-Gl-U5U">
                                     <font key="font" textStyle="footnote" name=".SFNS-Regular"/>
@@ -968,7 +968,7 @@
                                                             <rect key="frame" x="8" y="0.0" width="238" height="24"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                             <subviews>
-                                                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="cUw-Sm-bMk">
+                                                                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="cUw-Sm-bMk">
                                                                     <rect key="frame" x="0.0" y="4" width="238" height="16"/>
                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
                                                                     <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="App Name" id="rCU-Tq-mzw">
@@ -1000,7 +1000,7 @@
                                                             <rect key="frame" x="263" y="0.0" width="147" height="24"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                             <subviews>
-                                                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="bSU-Ue-M7K">
+                                                                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="bSU-Ue-M7K">
                                                                     <rect key="frame" x="0.0" y="4" width="147" height="16"/>
                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
                                                                     <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Table View Cell" id="Phu-Ny-sSI">
@@ -1078,7 +1078,7 @@
                             <visualEffectView blendingMode="withinWindow" material="HUDWindow" state="followsWindowActiveState" translatesAutoresizingMaskIntoConstraints="NO" id="iAf-Qp-NNu">
                                 <rect key="frame" x="548" y="360" width="104" height="80"/>
                                 <subviews>
-                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="159-4F-xrb">
+                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="159-4F-xrb">
                                         <rect key="frame" x="18" y="20" width="68" height="16"/>
                                         <textFieldCell key="cell" lineBreakMode="clipping" title="Loading…" id="JU3-Zi-Xj2">
                                             <font key="font" textStyle="headline" name=".SFNS-Bold"/>
