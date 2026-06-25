@@ -14,6 +14,21 @@ class WebWindow: NSWindow {
     /// `buttonSpacing` is the horizontal distance between the leading edges of adjacent window buttons.
     private static let buttonSpacing: CGFloat = 23
 
+    /// `restorableStateURLKey` is the coder key under which the displayed page URL is stored for window restoration.
+    ///
+    /// `encodeRestorableState(with:)` writes it; `AppDelegate.restoreWindow(withIdentifier:state:completionHandler:)` reads it back.
+    static let restorableStateURLKey = "url"
+
+    override func encodeRestorableState(with coder: NSCoder) {
+        super.encodeRestorableState(with: coder)
+
+        // Persist the page the window currently shows so a relaunch can reopen it there. The window itself is the
+        // restorable participant, so it (not the view controller) encodes the state AppKit hands to the restoration class.
+        if let url = (contentViewController as? WebViewController)?.restorableURL {
+            coder.encode(url as NSURL, forKey: Self.restorableStateURLKey)
+        }
+    }
+
     override func layoutIfNeeded() {
         super.layoutIfNeeded()
         repositionControlButtons()

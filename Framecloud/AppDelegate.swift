@@ -30,7 +30,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         UserNotifier.shared.configure()
         NotificationCenter.default.addObserver(self, selector: #selector(serverAppsDidChange), name: .serverAppsDidChange, object: nil)
         rebuildServerAppsMenu()
-        presentInitialWindow()
+        presentInitialWindow(forLaunch: true)
     }
 
     func applicationDockMenu(_: NSApplication) -> NSMenu? {
@@ -51,7 +51,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldHandleReopen(_: NSApplication, hasVisibleWindows: Bool) -> Bool {
         if !hasVisibleWindows, windowControllers.isEmpty {
-            presentInitialWindow()
+            presentInitialWindow(forLaunch: false)
         }
 
         return true
@@ -67,7 +67,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @IBAction
     func newWindow(_: Any?) {
-        presentInitialWindow()
+        presentInitialWindow(forLaunch: false)
     }
 
     /// `openPrivacyPolicy(_:)` opens Framecloud's online privacy policy in the user's default browser.
@@ -78,10 +78,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSWorkspace.shared.open(Settings.privacyPolicy)
     }
 
-    /// `presentInitialWindow()` validates the configured server and presents the window the app should show for the current state: `WebViewWindowController` when a supported server is reachable, otherwise `ServerAddressWindowController`.
+    /// `presentInitialWindow(forLaunch:)` validates the configured server and presents the window the app should show: a `WebViewWindowController` when a supported server is reachable, otherwise a `ServerAddressWindowController`.
     ///
-    /// `applicationDidFinishLaunching(_:)` calls it on launch, `applicationShouldHandleReopen(_:hasVisibleWindows:)` calls it when the user reactivates the app while no windows are open, and `newWindow(_:)` calls it for the "New Window" menu item, so all three entry points share the same launch logic.
-    private func presentInitialWindow() {
+    /// `applicationDidFinishLaunching(_:)` calls it with `forLaunch` set to coordinate with AppKit window restoration: it opens a fresh web window only when none was restored, and if the server is now unreachable, unsupported, or has revoked the credentials it closes any restored web windows so none lingers on a server the app can no longer use. `newWindow(_:)` and `applicationShouldHandleReopen(_:hasVisibleWindows:)` call it with `forLaunch` cleared, which always opens a new web window on success and leaves any already-open windows untouched on failure.
+    private func presentInitialWindow(forLaunch: Bool) {
         guard let serverAddress = Settings.serverAddress else {
             presentWindow(withIdentifier: "ServerAddressWindowController")
             return
@@ -97,21 +97,57 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             do {
                 switch try await ServerConnection.validate(server) {
                     case .supported:
-                        presentWebViewWindow()
+                        // At launch the validate round-trip runs after AppKit's local restoration, so any restored
+                        // web windows are already tracked; open a fresh one only when nothing was restored. A
+                        // user-initiated new window always opens.
+                        if forLaunch == false || hasOpenWebWindow == false {
+                            presentWebViewWindow()
+                        }
+
                         await ServerConnection.refreshNavigationApps(using: server)
 
                     case let .unsupported(version):
+                        if forLaunch {
+                            closeWebViewWindows()
+                        }
+
                         presentAlert(title: "Unsupported Server", message: "Framecloud requires Nextcloud version \(Settings.minimumSupportedServerMajorVersion) or later. The server at “\(serverAddress.absoluteString)” is running version \(version).")
                         presentWindow(withIdentifier: "ServerAddressWindowController")
                 }
             } catch RainmakerError.credentialsRequired, RainmakerError.unexpectedStatus(code: 401) {
                 // The stored app password was revoked on the server; discard it and require a new login.
                 Keychain.clearAll()
+
+                if forLaunch {
+                    closeWebViewWindows()
+                }
+
                 presentWindow(withIdentifier: "ServerAddressWindowController")
             } catch {
+                if forLaunch {
+                    closeWebViewWindows()
+                }
+
                 presentAlert(title: "Could Not Reach Server", message: error.localizedDescription)
                 presentWindow(withIdentifier: "ServerAddressWindowController")
             }
+        }
+    }
+
+    /// `hasOpenWebWindow` is `true` while at least one web window is open, including any AppKit restored at launch.
+    ///
+    /// `presentInitialWindow(forLaunch:)` reads it at launch to avoid opening a duplicate window when AppKit already restored one.
+    private var hasOpenWebWindow: Bool {
+        windowControllers.contains { $0 is WebWindowController }
+    }
+
+    /// `closeWebViewWindows()` closes every open web window.
+    ///
+    /// `presentInitialWindow(forLaunch:)` calls it at launch when the server turns out to be unreachable, unsupported, or to have revoked the stored credentials, so a restored window does not linger on a server the app can no longer use.
+    private func closeWebViewWindows() {
+        // Iterate a snapshot: closing a window fires the `willClose` observer that mutates `windowControllers`.
+        for windowController in windowControllers.filter({ $0 is WebWindowController }) {
+            windowController.close()
         }
     }
 
@@ -126,6 +162,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         windowController.targetURL = targetURL
+        // Give every web window a unique restoration identifier so AppKit tracks and restores each one separately.
+        windowController.window?.identifier = NSUserInterfaceItemIdentifier(UUID().uuidString)
         present(windowController: windowController)
     }
 
@@ -229,6 +267,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         lastCascadePoint = window.cascadeTopLeft(from: lastCascadePoint)
+        track(windowController)
+        windowController.showWindow(sender)
+    }
+
+    /// `track(_:)` retains `windowController` so its window survives while visible and drops it once the window closes.
+    ///
+    /// `present(windowController:sender:)` calls it after cascading and before showing; the restoration path calls it on its own for windows AppKit positions and shows itself, so those are retained without being cascaded or shown a second time.
+    func track(_ windowController: NSWindowController) {
+        guard let window = windowController.window else {
+            return
+        }
 
         NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { [weak self, weak windowController] _ in
             guard let self, let windowController else {
@@ -238,6 +287,5 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         windowControllers.append(windowController)
-        windowController.showWindow(sender)
     }
 }

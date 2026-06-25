@@ -27,6 +27,7 @@ There are a few things still missing before any builds will be made available.
 - Edge to edge content, no unnecessary gaps.
 - Sidebar visibility control through app menu item.
 - Nextcloud server app speed dials in app menu and dock menu with configurable keyboard shortcuts.
+- Window state restoration on relaunch.
 
 ## Disclaimer
 

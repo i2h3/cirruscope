@@ -170,17 +170,3 @@ class ServerAddressViewController: NSViewController {
     }
 
 }
-
-extension ServerAddressViewController: NSTextFieldDelegate {
-
-    func controlTextDidChange(_: Notification) {
-        openButton.isEnabled = serverAddressField.stringValue.isEmpty == false
-    }
-}
-
-extension ServerAddressViewController: ASWebAuthenticationPresentationContextProviding {
-
-    func presentationAnchor(for _: ASWebAuthenticationSession) -> ASPresentationAnchor {
-        view.window ?? ASPresentationAnchor()
-    }
-}

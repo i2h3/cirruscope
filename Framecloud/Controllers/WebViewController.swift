@@ -41,6 +41,13 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         view.window?.windowController as? WebWindowController
     }
 
+    /// `restorableURL` is the URL to persist for window restoration: the page currently shown, or the window's target before the first load completes.
+    ///
+    /// `WebWindow.encodeRestorableState(with:)` reads it so a relaunch can reopen this window on the same page.
+    var restorableURL: URL? {
+        webView.url ?? webWindowController?.targetURL
+    }
+
     /// `startInitialLoadIfNeeded()` issues the initial navigation the first time the view appears, loading the host window controller's `targetURL` when set or `Settings.serverAddress` otherwise.
     ///
     /// It runs from `viewWillAppear()` rather than `viewDidLoad()` because the host `WebWindowController` and its `targetURL` are only reachable once the view has been placed in its window.
