@@ -19,6 +19,10 @@ extension WebViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish _: WKNavigation!) {
+        // Re-save the window's restorable state after every navigation so a relaunch reopens the page now shown,
+        // not the one the window started on. `WebWindow.encodeRestorableState(with:)` reads the current URL.
+        view.window?.invalidateRestorableState()
+
         guard !hasRevealedAfterInitialLoad else {
             return
         }

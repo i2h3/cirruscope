@@ -9,4 +9,13 @@ class WebWindowController: NSWindowController {
     ///
     /// `AppDelegate.presentWebViewWindow(targetURL:)` sets it before the window is shown; `WebViewController.startInitialLoadIfNeeded()` reads it when the view first appears.
     var targetURL: URL?
+
+    override func windowDidLoad() {
+        super.windowDidLoad()
+
+        // Opt the window into AppKit state restoration; `AppDelegate` recreates it on relaunch and `WebWindow`
+        // encodes which page it shows. The per-window identifier is assigned by whoever creates the window.
+        window?.isRestorable = true
+        window?.restorationClass = AppDelegate.self
+    }
 }
