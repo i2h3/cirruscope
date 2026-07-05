@@ -1,4 +1,5 @@
 import Cocoa
+import os
 
 /// `ServerAppsViewController` is the "Apps" tab of the settings window, listing the Nextcloud server apps and letting the user assign a keyboard shortcut to each.
 ///
@@ -15,8 +16,12 @@ class ServerAppsViewController: NSViewController {
     /// `reload()` refreshes it from `Settings`; the data source and delegate read it to populate the table, so it is settable only within this controller.
     private(set) var apps: [ServerApp] = []
 
+    /// `logger` records the apps settings tab's activity under the `ServerAppsViewController` category.
+    private let logger = Logger(for: ServerAppsViewController.self)
+
     override func viewDidLoad() {
         super.viewDidLoad()
+        logger.debug("Apps settings tab loaded")
 
         reload()
 

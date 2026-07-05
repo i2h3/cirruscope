@@ -436,3 +436,15 @@
 
 /* Class = "NSMenuItem"; title = "Show Substitutions"; ObjectID = "z6F-FW-3nz"; */
 "z6F-FW-3nz.title" = "Show Substitutions";
+
+/* Class = "NSMenuItem"; title = "Downloads"; ObjectID = "5xm-BD-bvl"; */
+"5xm-BD-bvl.title" = "Téléchargements";
+
+/* Class = "NSWindow"; title = "Downloads"; ObjectID = "CCG-fQ-E0o"; */
+"CCG-fQ-E0o.title" = "Téléchargements";
+
+/* Class = "NSButtonCell"; title = "Stop"; ObjectID = "UwD-yz-doy"; */
+"UwD-yz-doy.title" = "Arrêter";
+
+/* Class = "NSButtonCell"; title = "Reveal in Finder"; ObjectID = "hwL-bh-nPp"; */
+"hwL-bh-nPp.title" = "Afficher dans le Finder";

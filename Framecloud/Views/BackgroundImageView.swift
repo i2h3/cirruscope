@@ -4,7 +4,6 @@ import AppKit
 ///
 /// `WebViewController` uses it for the themed backdrop shown behind the web view during the initial page load; with no image assigned it draws nothing, letting the window background show through.
 class BackgroundImageView: NSImageView {
-
     override func draw(_: NSRect) {
         guard let image, image.size.width > 0, image.size.height > 0 else {
             return

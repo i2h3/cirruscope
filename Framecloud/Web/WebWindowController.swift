@@ -1,4 +1,5 @@
 import Cocoa
+import os
 
 /// `WebWindowController` is the window controller for the storyboard "Web Window" scene, carrying the URL its `WebViewController` should load.
 ///
@@ -10,8 +11,12 @@ class WebWindowController: NSWindowController {
     /// `AppDelegate.presentWebViewWindow(targetURL:)` sets it before the window is shown; `WebViewController.startInitialLoadIfNeeded()` reads it when the view first appears.
     var targetURL: URL?
 
+    /// `logger` records this window controller's activity under the `WebWindowController` category.
+    private let logger = Logger(for: WebWindowController.self)
+
     override func windowDidLoad() {
         super.windowDidLoad()
+        logger.debug("Did load")
 
         // Opt the window into AppKit state restoration; `AppDelegate` recreates it on relaunch and `WebWindow`
         // encodes which page it shows. The per-window identifier is assigned by whoever creates the window.

@@ -1,4 +1,5 @@
 import Foundation
+import os
 import Rainmaker
 
 /// `ServerConnection` builds `Rainmaker.Server` instances and validates them, centralizing the connection logic shared by `AppDelegate` and `ServerAddressViewController`.
@@ -15,6 +16,12 @@ enum ServerConnection {
         /// `unsupported` carries the human-readable version string of a server whose major version is below `Settings.minimumSupportedServerMajorVersion`.
         case unsupported(version: String)
     }
+
+    /// `logger` records connection and validation activity under the `ServerConnection` category.
+    private static let logger = Logger(for: ServerConnection.self)
+
+    /// `signposter` times each capability validation as a `Validate` interval so slow server round trips are visible in Instruments.
+    private static let signposter = OSSignposter(for: ServerConnection.self)
 
     /// `anonymous(address:)` builds a `Server` without credentials, used to validate reachability and to initiate Login Flow v2.
     static func anonymous(address: URL) -> Server {
@@ -36,19 +43,27 @@ enum ServerConnection {
     ///
     /// It rethrows any error raised while fetching the capabilities so callers can distinguish an unreachable or unauthorized server from an unsupported one.
     static func validate(_ server: Server) async throws -> ValidationOutcome {
+        let signpostState = signposter.beginInterval("Validate", id: signposter.makeSignpostID())
+        defer { signposter.endInterval("Validate", signpostState) }
+
+        logger.info("Validating server capabilities")
         let capabilities = try await server.capabilities()
 
         if let theming = try? capabilities.get(Theming.self) {
             await Settings.persist(theming: theming)
+        } else {
+            logger.debug("No theming capability present")
         }
 
         let minimumMajorVersion = Settings.minimumSupportedServerMajorVersion
 
         guard capabilities.version.major >= minimumMajorVersion else {
+            logger.notice("Server version \(capabilities.version.string) is below the minimum \(minimumMajorVersion)")
             return .unsupported(version: capabilities.version.string)
         }
 
         Settings.serverVersion = capabilities.version.string
+        logger.info("Server version \(capabilities.version.string) is supported")
 
         return .supported(capabilities)
     }
@@ -57,11 +72,12 @@ enum ServerConnection {
     ///
     /// Failures are ignored because the apps list is non-critical: when it cannot be fetched the previously persisted list is simply left in place.
     static func refreshNavigationApps(using server: Server) async {
-        guard let apps = try? await server.navigation() else {
-            return
+        do {
+            let apps = try await server.navigation()
+            Settings.persist(navigationApps: apps)
+        } catch {
+            logger.notice("Could not refresh navigation apps; keeping the previous list: \(error.localizedDescription)")
         }
-
-        Settings.persist(navigationApps: apps)
     }
 
     /// `userAgent` is the HTTP user agent Framecloud presents to the server, derived from the app's bundle name.
