@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 /// `WebViewScript` enumerates the JavaScript resources bundled with the app that `WebViewController` injects into or evaluates within its `WKWebView`.
 ///
@@ -26,6 +27,9 @@ enum WebViewScript: String {
     /// `WebViewController.installNotificationBridge()` installs it as a user script that runs at the start of every document load, before the page's own scripts read the API.
     case notificationBridge = "NotificationBridge"
 
+    /// `logger` records failures to load a bundled script under the `WebViewScript` category.
+    private static let logger = Logger(for: WebViewScript.self)
+
     /// `source` is the JavaScript text of the bundled `.js` resource backing this case, or `nil` if the resource is missing from the bundle or cannot be decoded as UTF-8.
     ///
     /// It is read lazily at the point of use so edits to the underlying `.js` file take effect without any change to Swift source.
@@ -34,6 +38,7 @@ enum WebViewScript: String {
             let url = Bundle.main.url(forResource: rawValue, withExtension: "js"),
             let source = try? String(contentsOf: url, encoding: .utf8)
         else {
+            Self.logger.error("Could not load bundled script resource \(rawValue).js")
             return nil
         }
 

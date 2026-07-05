@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 /// `Keychain` stores the `Credentials` obtained from Login Flow v2 in the macOS Keychain, keyed by the address of the server they authenticate against.
 ///
@@ -8,6 +9,9 @@ enum Keychain {
 
     /// `service` is the constant `kSecAttrService` value under which every credential item is filed, so the app's items can be enumerated and cleared as a group.
     private static let service = "Framecloud"
+
+    /// `logger` records Keychain access under the `Keychain` category, at debug level for successful reads, writes, and clears and at error level for failures.
+    private static let logger = Logger(for: Keychain.self)
 
     /// `store(_:for:)` persists `credentials` for `server`, replacing any credentials previously stored for the same server.
     ///
@@ -30,8 +34,11 @@ enum Keychain {
         let status = SecItemAdd(attributes as CFDictionary, nil)
 
         guard status == errSecSuccess else {
+            logger.error("Keychain store failed: OSStatus \(status)")
             throw FramecloudError.keychainFailure(status)
         }
+
+        logger.debug("Stored credentials for \(server)")
     }
 
     /// `credentials(for:)` returns the credentials stored for `server`, or `nil` if none have been stored or the stored value cannot be decoded.
@@ -48,10 +55,21 @@ enum Keychain {
         let status = SecItemCopyMatching(query as CFDictionary, &result)
 
         guard status == errSecSuccess, let data = result as? Data else {
+            if status == errSecItemNotFound {
+                logger.debug("No stored credentials for \(server)")
+            } else {
+                logger.error("Keychain read failed: OSStatus \(status)")
+            }
             return nil
         }
 
-        return try? JSONDecoder().decode(Credentials.self, from: data)
+        guard let credentials = try? JSONDecoder().decode(Credentials.self, from: data) else {
+            logger.error("Stored credentials could not be decoded")
+            return nil
+        }
+
+        logger.debug("Retrieved stored credentials for \(server)")
+        return credentials
     }
 
     /// `clearAll()` removes every credential item the app has stored.
@@ -64,5 +82,6 @@ enum Keychain {
         ]
 
         SecItemDelete(query as CFDictionary)
+        logger.debug("Cleared all stored credentials")
     }
 }

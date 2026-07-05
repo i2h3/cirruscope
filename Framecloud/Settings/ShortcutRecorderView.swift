@@ -1,4 +1,5 @@
 import AppKit
+import os
 
 /// `ShortcutRecorderView` is a focusable, text-field-style control that records a single keyboard shortcut.
 ///
@@ -24,6 +25,9 @@ class ShortcutRecorderView: NSView {
     /// `clearButton` is the trailing image-only button that clears the recorded shortcut, shown only while one is assigned.
     private let clearButton = NSButton()
 
+    /// `logger` records this control's activity under the `ShortcutRecorderView` category.
+    private let logger = Logger(for: ShortcutRecorderView.self)
+
     /// `isRecording` is `true` while the control is the first responder and waiting to capture the next key combination.
     private var isRecording = false {
         didSet {
@@ -32,7 +36,9 @@ class ShortcutRecorderView: NSView {
     }
 
     /// `eventMonitor` is the local key-event monitor that is active only while recording.
-    private var eventMonitor: Any?
+    ///
+    /// It is only ever assigned on the main actor while recording starts and stops, and read again in `deinit` once no other reference remains, so `nonisolated(unsafe)` lets the `nonisolated` deinit tear it down without a data race.
+    nonisolated(unsafe) private var eventMonitor: Any?
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -143,6 +149,7 @@ class ShortcutRecorderView: NSView {
         }
 
         isRecording = true
+        logger.debug("Started recording")
 
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
             self?.handle(event)
@@ -152,6 +159,7 @@ class ShortcutRecorderView: NSView {
 
     private func stopRecording() {
         isRecording = false
+        logger.debug("Stopped recording")
 
         if let eventMonitor {
             NSEvent.removeMonitor(eventMonitor)
@@ -208,6 +216,7 @@ class ShortcutRecorderView: NSView {
     private func clear() {
         shortcut = nil
         onChange?(nil)
+        logger.debug("Cleared")
     }
 
     // MARK: - Display
@@ -216,12 +225,15 @@ class ShortcutRecorderView: NSView {
         if isRecording {
             displayField.stringValue = "Press now"
             displayField.textColor = .controlAccentColor
+            logger.debug("Updated display for recording")
         } else if let shortcut {
             displayField.stringValue = Self.displayString(for: shortcut)
             displayField.textColor = .labelColor
+            logger.debug("Updated display for shortcut presentation")
         } else {
             displayField.stringValue = "None"
             displayField.textColor = .secondaryLabelColor
+            logger.debug("Updated display for empty presentation")
         }
     }
 

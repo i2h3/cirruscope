@@ -1,5 +1,6 @@
 import AuthenticationServices
 import Cocoa
+import os
 import Rainmaker
 
 /// `ServerAddressViewController` backs the storyboard scene that asks the user for the address of the Nextcloud server they want to connect to.
@@ -33,6 +34,12 @@ class ServerAddressViewController: NSViewController {
     /// `authenticationCancelled` is set by the `ASWebAuthenticationSession` completion handler when the user dismisses the grant sheet, signaling `pollForCredentials(on:flow:)` to stop.
     private var authenticationCancelled = false
 
+    /// `logger` records the sign-in flow under the `ServerAddressViewController` category.
+    private let logger = Logger(for: ServerAddressViewController.self)
+
+    /// `signposter` times the whole sign-in — capability validation plus Login Flow v2 polling — as a `Login` interval.
+    private let signposter = OSSignposter(for: ServerAddressViewController.self)
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -52,6 +59,7 @@ class ServerAddressViewController: NSViewController {
         }
 
         guard let url = URL(string: sanitizedServerAddress) else {
+            logger.error("Entered server address is not a valid URL")
             presentAlert(title: "Invalid Server Address", message: "“\(sanitizedServerAddress)” is not a valid URL. Please check the address and try again.")
             return
         }
@@ -64,15 +72,28 @@ class ServerAddressViewController: NSViewController {
         progressIndicator.startAnimation(self)
 
         Task {
+            let signpostState = signposter.beginInterval("Login", id: signposter.makeSignpostID())
+
+            defer {
+                signposter.endInterval("Login", signpostState)
+                serverAddressField.isEnabled = true
+                openButton.isEnabled = true
+                progressIndicator.isHidden = true
+                progressIndicator.stopAnimation(self)
+            }
+
             do {
                 switch try await ServerConnection.validate(server) {
                     case let .unsupported(version):
+                        logger.notice("Server version \(version) is unsupported")
                         presentAlert(title: "Unsupported Server Version", message: "Framecloud requires Nextcloud server version \(Settings.minimumSupportedServerMajorVersion) or later. The server at “\(url.absoluteString)” is running version \(version).")
 
                     case .supported:
+                        logger.info("Server supported; starting Login Flow v2")
                         let result = try await logIn(to: server)
                         try Keychain.store(Credentials(user: result.name, appPassword: result.password), for: result.server)
                         Settings.serverAddress = result.server
+                        logger.info("Stored credentials and connected to \(result.server)")
                         (NSApp.delegate as? AppDelegate)?.presentWebViewWindow()
                         view.window?.close()
 
@@ -81,15 +102,11 @@ class ServerAddressViewController: NSViewController {
                         }
                 }
             } catch FramecloudError.loginCancelled {
-                // The user dismissed the login sheet; leave the form ready for another attempt.
+                logger.notice("Sign-in cancelled by the user")
             } catch {
+                logger.error("Sign-in failed: \(error.localizedDescription)")
                 presentAlert(title: "Could Not Reach Server", message: error.localizedDescription)
             }
-
-            serverAddressField.isEnabled = true
-            openButton.isEnabled = true
-            progressIndicator.isHidden = true
-            progressIndicator.stopAnimation(self)
         }
     }
 
@@ -113,6 +130,7 @@ class ServerAddressViewController: NSViewController {
     /// The session is retained in `authenticationSession`. Because Login Flow v2 never invokes the `nc` callback, the completion handler only fires when the user dismisses the sheet, which sets `authenticationCancelled` so `pollForCredentials(on:flow:)` stops. It throws `FramecloudError.loginPresentationFailed` if the session cannot be presented.
     private func startAuthenticationSession(using url: URL) throws {
         let session = ASWebAuthenticationSession(url: url, callbackURLScheme: "nc") { [weak self] _, _ in
+            self?.logger.debug("Authentication sheet dismissed by the user")
             self?.authenticationCancelled = true
         }
 
@@ -123,6 +141,7 @@ class ServerAddressViewController: NSViewController {
         authenticationSession = session
 
         guard session.start() else {
+            logger.error("Could not present the authentication session")
             throw FramecloudError.loginPresentationFailed
         }
     }
@@ -141,12 +160,14 @@ class ServerAddressViewController: NSViewController {
             }
 
             if let result = try? await server.poll(flow.endpoint, token: flow.token) {
+                logger.debug("Sign-in granted; received credentials")
                 return result
             }
 
             try await Task.sleep(for: .seconds(1))
         }
 
+        logger.error("Sign-in timed out after 300 seconds")
         throw FramecloudError.loginTimedOut
     }
 

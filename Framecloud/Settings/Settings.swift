@@ -1,4 +1,5 @@
 import Foundation
+import os
 import Rainmaker
 
 /// `Settings` provides typed accessors for values persisted in `UserDefaults` and configured statically in the app's `Info.plist`.
@@ -45,6 +46,9 @@ enum Settings {
         /// `feedbackAddress` is the key for the `Info.plist` entry that backs `Settings.feedbackAddress`.
         static let feedbackAddress = "FCFeedbackAddress"
     }
+
+    /// `logger` records settings persistence failures — JSON coding and theming asset caching — under the `Settings` category.
+    private static let logger = Logger(for: Settings.self)
 
     /// `serverAddress` is the URL of the Nextcloud server the user has last connected to, or `nil` while no server has been configured yet.
     ///
@@ -154,9 +158,18 @@ enum Settings {
         themeBackgroundPlain = theming.backgroundPlain
 
         if let backgroundURL = URL(string: theming.background), backgroundURL.scheme == "http" || backgroundURL.scheme == "https" {
-            try? await AssetCache.shared.cache(remote: backgroundURL)
+            do {
+                try await AssetCache.shared.cache(remote: backgroundURL)
+            } catch {
+                logger.notice("Could not cache theming background: \(error.localizedDescription)")
+            }
         }
-        try? await AssetCache.shared.cache(remote: theming.logo)
+
+        do {
+            try await AssetCache.shared.cache(remote: theming.logo)
+        } catch {
+            logger.notice("Could not cache theming logo: \(error.localizedDescription)")
+        }
     }
 
     /// `serverApps` is the list of Nextcloud server apps offered by the connected server, sorted ascending by their `order`.
@@ -169,11 +182,20 @@ enum Settings {
                 return []
             }
 
-            return (try? JSONDecoder().decode([ServerApp].self, from: data)) ?? []
+            do {
+                return try JSONDecoder().decode([ServerApp].self, from: data)
+            } catch {
+                logger.error("Could not decode stored server apps: \(error.localizedDescription)")
+                return []
+            }
         }
 
         set {
-            UserDefaults.standard.set(try? JSONEncoder().encode(newValue), forKey: UserDefaultsKey.serverApps.rawValue)
+            do {
+                UserDefaults.standard.set(try JSONEncoder().encode(newValue), forKey: UserDefaultsKey.serverApps.rawValue)
+            } catch {
+                logger.error("Could not encode server apps: \(error.localizedDescription)")
+            }
 
             let availableIDs = Set(newValue.map(\.id))
             let prunedShortcuts = appShortcuts.filter { availableIDs.contains($0.key) }
@@ -196,11 +218,21 @@ enum Settings {
                 return [:]
             }
 
-            return (try? JSONDecoder().decode([String: KeyboardShortcut].self, from: data)) ?? [:]
+            do {
+                return try JSONDecoder().decode([String: KeyboardShortcut].self, from: data)
+            } catch {
+                logger.error("Could not decode stored app shortcuts: \(error.localizedDescription)")
+                return [:]
+            }
         }
 
         set {
-            UserDefaults.standard.set(try? JSONEncoder().encode(newValue), forKey: UserDefaultsKey.appShortcuts.rawValue)
+            do {
+                UserDefaults.standard.set(try JSONEncoder().encode(newValue), forKey: UserDefaultsKey.appShortcuts.rawValue)
+            } catch {
+                logger.error("Could not encode app shortcuts: \(error.localizedDescription)")
+            }
+
             NotificationCenter.default.post(name: .serverAppsDidChange, object: nil)
         }
     }
@@ -264,4 +296,10 @@ extension Notification.Name {
 
     /// `serverAppsDidChange` is posted by `Settings` whenever `serverApps` or `appShortcuts` changes so `AppDelegate` can rebuild the View and Dock menus.
     static let serverAppsDidChange = Notification.Name("FCServerAppsDidChange")
+
+    /// `downloadsDidChange` is posted by `DownloadManager` whenever its `downloads` list or a download's state changes so `DownloadViewController` can reload its table.
+    static let downloadsDidChange = Notification.Name("FCDownloadsDidChange")
+
+    /// `downloadDidStart` is posted by `DownloadManager` when a new transfer begins so `AppDelegate` can open and bring the Downloads window to the foreground.
+    static let downloadDidStart = Notification.Name("FCDownloadDidStart")
 }

@@ -1,4 +1,5 @@
 import AppKit
+import os
 import UserNotifications
 import WebKit
 
@@ -11,8 +12,16 @@ final class UserNotifier: NSObject, UNUserNotificationCenterDelegate {
     /// `shared` is the process-wide notifier instance, used so a single object owns the `UNUserNotificationCenter` delegate relationship for the app's lifetime.
     static let shared = UserNotifier()
 
+    /// `logger` records notification activity under the `UserNotifier` category; it is `nonisolated` so the `nonisolated` `UNUserNotificationCenterDelegate` callbacks can log through it.
+    nonisolated let logger = Logger(for: UserNotifier.self)
+
     /// `webViewsByIdentifier` maps a posted notification's request identifier to the web view that created it, held weakly so closed windows are released, so that a click can be routed back to the originating page.
     private let webViewsByIdentifier = NSMapTable<NSString, WKWebView>.strongToWeakObjects()
+
+    /// `downloadFilePathKey` is the `userInfo` key under which `postDownloadFinished(filename:fileURL:)` stores a finished download's file path so a click can reveal it in Finder.
+    ///
+    /// It is `nonisolated` so the `nonisolated` delegate callback that inspects a clicked notification can read it.
+    private nonisolated static let downloadFilePathKey = "downloadFilePath"
 
     /// `configure()` registers `shared` as the `UNUserNotificationCenter` delegate so notifications are presented even while Framecloud is the active app and so clicks are delivered here.
     ///
@@ -25,7 +34,13 @@ final class UserNotifier: NSObject, UNUserNotificationCenterDelegate {
     ///
     /// `WebViewController` calls it when a web window opens so the prompt appears in the context of a connected server rather than at launch.
     func requestAuthorization() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { [logger] granted, error in
+            if let error {
+                logger.error("Notification authorization failed: \(error.localizedDescription)")
+            } else if granted == false {
+                logger.notice("Notification authorization was denied")
+            }
+        }
     }
 
     /// `post(title:body:tag:webNotificationID:webView:)` posts a notification with `title` and `body`, remembering `webView` and `webNotificationID` so a later click can be routed back to the page that created it.
@@ -44,18 +59,38 @@ final class UserNotifier: NSObject, UNUserNotificationCenterDelegate {
         UNUserNotificationCenter.current().add(request)
     }
 
+    /// `postDownloadFinished(filename:fileURL:)` posts a notification announcing that `filename` finished downloading, remembering `fileURL` so a click reveals the file in Finder.
+    ///
+    /// `DownloadManager` calls it from `downloadDidFinish(_:)`. It reuses the authorization already requested when a web window opened, and its `userInfo` carries the file path under `downloadFilePathKey` so `userNotificationCenter(_:didReceive:withCompletionHandler:)` can distinguish it from a web notification.
+    func postDownloadFinished(filename: String, fileURL: URL) {
+        let content = UNMutableNotificationContent()
+        content.title = String(localized: "Download Finished", comment: "Title of the notification shown when a file download finishes.")
+        content.body = filename
+        content.userInfo = [Self.downloadFilePathKey: fileURL.path(percentEncoded: false)]
+
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+        UNUserNotificationCenter.current().add(request)
+    }
+
     nonisolated func userNotificationCenter(_: UNUserNotificationCenter, willPresent _: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         completionHandler([.banner, .sound, .list])
     }
 
     nonisolated func userNotificationCenter(_: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
         let identifier = response.notification.request.identifier
-        let webNotificationID = response.notification.request.content.userInfo["webNotificationID"] as? String
+        let userInfo = response.notification.request.content.userInfo
+        let webNotificationID = userInfo["webNotificationID"] as? String
+        let downloadFilePath = userInfo[Self.downloadFilePathKey] as? String
 
         Task { @MainActor in
-            self.activate(identifier: identifier, webNotificationID: webNotificationID)
-            completionHandler()
+            if let downloadFilePath {
+                self.revealDownloadedFile(atPath: downloadFilePath)
+            } else {
+                self.activate(identifier: identifier, webNotificationID: webNotificationID)
+            }
         }
+
+        completionHandler()
     }
 
     /// `activate(identifier:webNotificationID:)` brings the app and the originating web window forward and runs that page's click handler for the notification, navigating the web interface to the notification's target.
@@ -74,5 +109,14 @@ final class UserNotifier: NSObject, UNUserNotificationCenterDelegate {
         if let webNotificationID {
             webView.evaluateJavaScript("window.__framecloudActivateNotification && window.__framecloudActivateNotification(\"\(webNotificationID)\")")
         }
+    }
+
+    /// `revealDownloadedFile(atPath:)` brings the app forward and opens Finder with the finished download selected.
+    ///
+    /// `userNotificationCenter(_:didReceive:withCompletionHandler:)` calls it when the clicked notification was posted by `postDownloadFinished(filename:fileURL:)`.
+    @MainActor
+    private func revealDownloadedFile(atPath path: String) {
+        NSApp.activate(ignoringOtherApps: true)
+        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
     }
 }

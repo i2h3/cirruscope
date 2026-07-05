@@ -1,4 +1,5 @@
 import Cocoa
+import os
 import Rainmaker
 
 /// `AppDelegate` is the application delegate of Framecloud and owns the lifecycle of every window the app shows.
@@ -26,9 +27,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// `serverAppMenuItems` holds the server-app items currently inserted into the View menu so `rebuildServerAppsMenu()` can remove the previous set before inserting an updated one.
     private var serverAppMenuItems: [NSMenuItem] = []
 
+    /// `logger` records launch and window-management activity under the `AppDelegate` category; it is not `private` so `AppDelegate`'s extensions in other files can log through it.
+    let logger = Logger(for: AppDelegate.self)
+
+    /// `signposter` times the launch server validation as a `LaunchValidation` interval.
+    private let signposter = OSSignposter(for: AppDelegate.self)
+
     func applicationDidFinishLaunching(_: Notification) {
+        logger.notice("Application finished launching")
         UserNotifier.shared.configure()
         NotificationCenter.default.addObserver(self, selector: #selector(serverAppsDidChange), name: .serverAppsDidChange, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(downloadDidStart), name: .downloadDidStart, object: nil)
         rebuildServerAppsMenu()
         presentInitialWindow(forLaunch: true)
     }
@@ -50,6 +59,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldHandleReopen(_: NSApplication, hasVisibleWindows: Bool) -> Bool {
+        logger.log("App should handle reopen")
+
         if !hasVisibleWindows, windowControllers.isEmpty {
             presentInitialWindow(forLaunch: false)
         }
@@ -58,7 +69,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_: Notification) {
-        // Insert code here to tear down your application
+        logger.log("App will terminate")
     }
 
     func applicationSupportsSecureRestorableState(_: NSApplication) -> Bool {
@@ -75,6 +86,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// It backs both the Help-menu "Privacy Policy…" item and the "Privacy Policy" button on `ServerAddressViewController`; both target the responder chain rather than this object directly, so a single handler serves every entry point.
     @IBAction
     func openPrivacyPolicy(_: Any?) {
+        logger.debug("Opening privacy policy")
         NSWorkspace.shared.open(Settings.privacyPolicy)
     }
 
@@ -82,21 +94,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     ///
     /// `applicationDidFinishLaunching(_:)` calls it with `forLaunch` set to coordinate with AppKit window restoration: it opens a fresh web window only when none was restored, and if the server is now unreachable, unsupported, or has revoked the credentials it closes any restored web windows so none lingers on a server the app can no longer use. `newWindow(_:)` and `applicationShouldHandleReopen(_:hasVisibleWindows:)` call it with `forLaunch` cleared, which always opens a new web window on success and leaves any already-open windows untouched on failure.
     private func presentInitialWindow(forLaunch: Bool) {
+        logger.log("Presenting initial window")
+
         guard let serverAddress = Settings.serverAddress else {
+            logger.info("No server address configured; presenting sign-in")
             presentWindow(withIdentifier: "ServerAddressWindowController")
             return
         }
 
         guard let server = ServerConnection.authenticated(address: serverAddress) else {
             // The address is configured but no credentials are stored, so the user must log in again.
+            logger.notice("Server configured but no stored credentials; requiring sign-in")
             presentWindow(withIdentifier: "ServerAddressWindowController")
             return
         }
 
         Task {
+            let signpostState = signposter.beginInterval("LaunchValidation", id: signposter.makeSignpostID())
+            defer { signposter.endInterval("LaunchValidation", signpostState) }
+
             do {
                 switch try await ServerConnection.validate(server) {
                     case .supported:
+                        logger.info("Server supported; presenting web window")
                         // At launch the validate round-trip runs after AppKit's local restoration, so any restored
                         // web windows are already tracked; open a fresh one only when nothing was restored. A
                         // user-initiated new window always opens.
@@ -107,6 +127,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                         await ServerConnection.refreshNavigationApps(using: server)
 
                     case let .unsupported(version):
+                        logger.notice("Server at \(serverAddress.absoluteString) runs unsupported version \(version)")
                         if forLaunch {
                             closeWebViewWindows()
                         }
@@ -116,6 +137,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             } catch RainmakerError.credentialsRequired, RainmakerError.unexpectedStatus(code: 401) {
                 // The stored app password was revoked on the server; discard it and require a new login.
+                logger.notice("Stored credentials rejected (401); clearing keychain and requiring sign-in")
                 Keychain.clearAll()
 
                 if forLaunch {
@@ -124,6 +146,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
                 presentWindow(withIdentifier: "ServerAddressWindowController")
             } catch {
+                logger.error("Could not reach server: \(error.localizedDescription)")
                 if forLaunch {
                     closeWebViewWindows()
                 }
@@ -145,6 +168,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     ///
     /// `presentInitialWindow(forLaunch:)` calls it at launch when the server turns out to be unreachable, unsupported, or to have revoked the stored credentials, so a restored window does not linger on a server the app can no longer use.
     private func closeWebViewWindows() {
+        logger.debug("Closing web view windows…")
+
         // Iterate a snapshot: closing a window fires the `willClose` observer that mutates `windowControllers`.
         for windowController in windowControllers.filter({ $0 is WebWindowController }) {
             windowController.close()
@@ -155,6 +180,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     ///
     /// `presentInitialWindow()` and `ServerAddressViewController` open the root window through it, and `openServerApp(_:)` opens app-specific windows, so every web window is created, cascaded, and retained the same way.
     func presentWebViewWindow(targetURL: URL? = nil) {
+        logger.debug("Presenting web view window…")
+
         let storyboard = NSStoryboard(name: "Main", bundle: nil)
 
         guard let windowController = storyboard.instantiateController(withIdentifier: "WebViewWindowController") as? WebWindowController else {
@@ -171,11 +198,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     ///
     /// The currently shown app of each window is reported by `WebViewController.currentAppID`. It does nothing when no server address is configured.
     func openServerApp(_ app: ServerApp) {
+        logger.log("Opening server app…")
+
         guard let serverAddress = Settings.serverAddress else {
             return
         }
 
         if let existing = windowControllers.first(where: { ($0.contentViewController as? WebViewController)?.currentAppID == app.id }) {
+            logger.log("Found existing window for server app \(app.id) to bring to front")
             existing.window?.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
@@ -185,7 +215,41 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        logger.log("Failed to find existing window for server app \(app.id) to bring to front, opening a new web view window")
         presentWebViewWindow(targetURL: url)
+    }
+
+    /// `showDownloads(_:)` backs the "Downloads" menu item, opening the download history window or bringing it to the front when it is already open.
+    ///
+    /// It targets the responder chain from the menu item, so this single handler serves the menu; `downloadDidStart()` opens the same window when a transfer begins.
+    @IBAction
+    func showDownloads(_: Any?) {
+        logger.log("Showing downloads…")
+        showDownloadsWindow()
+    }
+
+    /// `showDownloadsWindow()` brings the single Downloads window to the front, instantiating and tracking it from the storyboard first when none is open, and activates the app so the window comes to the foreground.
+    ///
+    /// `showDownloads(_:)` and `downloadDidStart()` both call it, so the menu item and a starting download converge on one window rather than each opening its own.
+    func showDownloadsWindow() {
+        if let existing = windowControllers.first(where: { $0.contentViewController is DownloadViewController }) {
+            logger.log("Showing existing downloads window…")
+            existing.showWindow(self)
+        } else {
+            logger.log("Showing new downloads window…")
+            presentWindow(withIdentifier: "DownloadsWindowController")
+        }
+
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    /// `downloadDidStart()` opens the Downloads window when `DownloadManager` reports that a transfer has begun.
+    ///
+    /// `DownloadManager.handle(_:)` posts `Notification.Name.downloadDidStart` on the main actor, so presenting the window here runs on the main thread.
+    @objc
+    private func downloadDidStart() {
+        logger.log("Download did start")
+        showDownloadsWindow()
     }
 
     @IBAction
@@ -202,6 +266,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// `serverAppsDidChange()` rebuilds the View menu when `Settings` posts that the server apps or their shortcuts changed.
     @objc
     private func serverAppsDidChange() {
+        logger.log("Server apps did change")
         rebuildServerAppsMenu()
     }
 
@@ -209,6 +274,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     ///
     /// It removes the items it previously inserted and inserts the current apps directly after `serverAppsSeparator`, which keeps them within the storyboard's bracketed section.
     private func rebuildServerAppsMenu() {
+        logger.log("Rebuilding server apps menu…")
+
         guard let menu = serverAppsSeparator?.menu else {
             return
         }
@@ -227,6 +294,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             serverAppMenuItems.append(item)
             index += 1
         }
+
+        logger.log("Completed server app menu rebuilding")
     }
 
     /// `menuItem(for:)` builds a menu item that opens `app` via `performServerApp(_:)`, applying the user's configured keyboard shortcut for it when one exists.
@@ -244,6 +313,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func presentWindow(withIdentifier identifier: String) {
+        logger.log("Presenting window with identifier \(identifier)…")
         let storyboard = NSStoryboard(name: "Main", bundle: nil)
 
         guard let windowController = storyboard.instantiateController(withIdentifier: identifier) as? NSWindowController else {
@@ -254,6 +324,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func presentAlert(title: String, message: String) {
+        logger.log("Presenting alert with title \(title) and informative text \(message)…")
+
         let alert = NSAlert()
         alert.messageText = title
         alert.informativeText = message
@@ -262,6 +334,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func present(windowController: NSWindowController, sender: Any? = nil) {
+        logger.log("Presenting window controller \(windowController)…")
+
         guard let window = windowController.window else {
             return
         }
@@ -275,15 +349,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     ///
     /// `present(windowController:sender:)` calls it after cascading and before showing; the restoration path calls it on its own for windows AppKit positions and shows itself, so those are retained without being cascaded or shown a second time.
     func track(_ windowController: NSWindowController) {
+        logger.log("Tracking window controller \(windowController)…")
         guard let window = windowController.window else {
             return
         }
 
         NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { [weak self, weak windowController] _ in
-            guard let self, let windowController else {
-                return
+            // The observer is delivered on the main queue, so the main-actor state it drops the window controller from is safe to touch here.
+            MainActor.assumeIsolated {
+                guard let self, let windowController else {
+                    return
+                }
+                self.windowControllers.removeAll { $0 === windowController }
             }
-            windowControllers.removeAll { $0 === windowController }
         }
 
         windowControllers.append(windowController)

@@ -1,4 +1,5 @@
 import Cocoa
+import os
 import WebKit
 
 /// `WebViewController` backs the storyboard scene that hosts the embedded `WKWebView` Framecloud uses to display Nextcloud.
@@ -26,6 +27,25 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     @IBOutlet
     var webView: WKWebView!
 
+    // MARK: - Logging
+
+    /// `logger` records this web view controller's activity under the `WebViewController` category; it is not `private` so the delegate conformances in `WebViewController+WKNavigationDelegate` and `+WKUIDelegate` can log through it.
+    let logger = Logger(for: WebViewController.self)
+
+    /// `signposter` times the initial page load as an `InitialLoad` interval; it is not `private` for the same cross-file reason as `logger`.
+    let signposter = OSSignposter(for: WebViewController.self)
+
+    /// `nextLogID` hands out the monotonically increasing values behind `logID`, so each `WebViewController` receives a distinct identifier for the lifetime of the process.
+    private static var nextLogID: UInt64 = 0
+
+    /// `logID` is a per-instance identifier appended to this controller's log messages, for example "(WebViewController 3)", so entries from different web windows — which each have their own `WebViewController` sharing the `WebViewController` category — can be told apart while the category stays stable and filterable.
+    ///
+    /// It is an auto-incremented `UInt64`, which `os.Logger` prints in the clear (unlike a string, which would be redacted), and it is not `private` so the delegate extensions that log can append it too.
+    let logID: UInt64 = {
+        WebViewController.nextLogID += 1
+        return WebViewController.nextLogID
+    }()
+
     // MARK: - Initial Load
 
     /// `hasRevealedAfterInitialLoad` is `true` once `webView` has been unhidden after its initial navigation has completed.
@@ -35,6 +55,11 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
 
     /// `hasStartedInitialLoad` is `true` once the initial navigation has been issued, so `viewWillAppear()` triggers it exactly once.
     private var hasStartedInitialLoad = false
+
+    /// `initialLoadSignpostState` is the state of the `InitialLoad` signpost interval begun in `startInitialLoadIfNeeded()`, held so `WebViewController+WKNavigationDelegate` can end it when the first navigation finishes or fails.
+    ///
+    /// It is not `private` because that extension, which ends the interval, lives in a separate file.
+    var initialLoadSignpostState: OSSignpostIntervalState?
 
     /// `webWindowController` is the `WebWindowController` hosting this controller, from which the `targetURL` to load is read once the view is in its window.
     private var webWindowController: WebWindowController? {
@@ -61,6 +86,8 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         }
 
         hasStartedInitialLoad = true
+        logger.info("Starting initial navigation (WebViewController \(self.logID))")
+        initialLoadSignpostState = signposter.beginInterval("InitialLoad", id: signposter.makeSignpostID())
         webView.load(authenticatedRequest(for: url))
     }
 
@@ -143,7 +170,10 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     /// `viewDidLoad()` calls this once after the web view has been configured. The observation reads `webView.title` on every change, including the in-page title updates Nextcloud performs as the user navigates its single-page interface, and substitutes an empty string while the page has not yet reported a title.
     private func observeWebViewTitle() {
         titleObservation = webView.observe(\.title, options: [.initial, .new]) { [weak self] webView, _ in
-            self?.view.window?.title = webView.title ?? ""
+            // WKWebView delivers its title changes on the main thread, so mirroring them into the main-actor window title is safe here.
+            MainActor.assumeIsolated {
+                self?.view.window?.title = webView.title ?? ""
+            }
         }
     }
 
@@ -254,7 +284,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
 
     /// `ScriptMessageName` is the central list of script-message names that the injected user scripts post back to `userContentController(_:didReceive:)`.
     ///
-    /// Each raw value is the name a `WebViewScript` uses in `window.webkit.messageHandlers.<name>.postMessage(...)`; the `install…Bridge()` methods register a handler for it on the web view's `WKUserContentController`, and `userContentController(_:didReceive:)` switches on it.
+    /// Each raw value is the name a `WebViewScript` uses in `window.webkit.messageHandlers.<name>.postMessage(…)`; the `install…Bridge()` methods register a handler for it on the web view's `WKUserContentController`, and `userContentController(_:didReceive:)` switches on it.
     private enum ScriptMessageName: String {
 
         /// `windowDrag` is posted by `WebViewScript.windowDrag` to ask the host window to begin a drag.
