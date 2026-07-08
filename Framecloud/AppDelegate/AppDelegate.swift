@@ -30,9 +30,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// `logger` records launch and window-management activity under the `AppDelegate` category; it is not `private` so `AppDelegate`'s extensions in other files can log through it.
     let logger = Logger(for: AppDelegate.self)
 
-    /// `signposter` times the launch server validation as a `LaunchValidation` interval.
-    private let signposter = OSSignposter(for: AppDelegate.self)
-
     func applicationDidFinishLaunching(_: Notification) {
         logger.notice("Application finished launching")
         UserNotifier.shared.configure()
@@ -110,9 +107,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         Task {
-            let signpostState = signposter.beginInterval("LaunchValidation", id: signposter.makeSignpostID())
-            defer { signposter.endInterval("LaunchValidation", signpostState) }
-
             do {
                 switch try await ServerConnection.validate(server) {
                     case .supported:

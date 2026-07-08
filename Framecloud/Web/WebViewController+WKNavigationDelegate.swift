@@ -121,7 +121,6 @@ extension WebViewController: WKNavigationDelegate {
 
         hasRevealedAfterInitialLoad = true
         logger.debug("Initial navigation finished; revealing web view (WebViewController \(self.logID))")
-        endInitialLoadInterval()
 
         backgroundImageView.isHidden = true
         visualEffectsView.isHidden = true
@@ -134,25 +133,9 @@ extension WebViewController: WKNavigationDelegate {
 
     func webView(_: WKWebView, didFail _: WKNavigation!, withError error: any Error) {
         logger.error("Web navigation failed: \(error.localizedDescription) (WebViewController \(self.logID))")
-        endInitialLoadInterval()
     }
 
     func webView(_: WKWebView, didFailProvisionalNavigation _: WKNavigation!, withError error: any Error) {
         logger.error("Web provisional navigation failed: \(error.localizedDescription) (WebViewController \(self.logID))")
-        endInitialLoadInterval()
-    }
-
-    /// `endInitialLoadInterval()` closes the `InitialLoad` signpost interval if it is still open, so the initial load is timed exactly once whether it finishes or fails.
-    ///
-    /// `webView(_:didFinish:)` calls it on the first reveal and the failure callbacks call it on error; once the state is cleared, further calls are no-ops.
-    private func endInitialLoadInterval() {
-        guard let initialLoadSignpostState else {
-            logger.debug("No initial-load signpost interval to end (WebViewController \(self.logID))")
-            return
-        }
-
-        signposter.endInterval("InitialLoad", initialLoadSignpostState)
-        self.initialLoadSignpostState = nil
-        logger.debug("Ended the initial-load signpost interval (WebViewController \(self.logID))")
     }
 }

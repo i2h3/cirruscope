@@ -16,9 +16,6 @@ final class AssetCache {
     /// `logger` records asset caching activity under the `AssetCache` category.
     private let logger = Logger(for: AssetCache.self)
 
-    /// `signposter` times each `cache(remote:)` round trip as a `CacheAsset` interval so slow asset fetches are visible in Instruments.
-    private let signposter = OSSignposter(for: AssetCache.self)
-
     /// `directory` is the on-disk location, rooted in the app's caches directory, in which cached asset payloads and their `ETag` sidecars are stored.
     private let directory: URL
 
@@ -65,7 +62,7 @@ final class AssetCache {
     func localURL(for remoteURL: URL) -> URL? {
         let fileURL = fileURL(for: remoteURL)
 
-        guard FileManager.default.fileExists(atPath: fileURL.path(percentEncoded: false)) else {
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
             logger.debug("Cache miss for \(remoteURL)")
             return nil
         }
@@ -80,15 +77,12 @@ final class AssetCache {
     /// Throws `FramecloudError.invalidResponse` if the server response is not HTTP, `FramecloudError.unexpectedStatus` for HTTP status codes outside 2xx and 304, and any error thrown by `URLSession` while transporting the request.
     @discardableResult
     func cache(remote remoteURL: URL) async throws -> URL {
-        let signpostState = signposter.beginInterval("CacheAsset", id: signposter.makeSignpostID(), "\(remoteURL)")
-        defer { signposter.endInterval("CacheAsset", signpostState) }
-
         let fileURL = fileURL(for: remoteURL)
 
         var request = URLRequest(url: remoteURL)
         request.cachePolicy = .reloadIgnoringLocalCacheData
 
-        if FileManager.default.fileExists(atPath: fileURL.path(percentEncoded: false)), let etag = etag(for: fileURL) {
+        if FileManager.default.fileExists(atPath: fileURL.path), let etag = etag(for: fileURL) {
             request.setValue(etag, forHTTPHeaderField: "If-None-Match")
             logger.debug("Revalidating cached asset with stored ETag")
         }

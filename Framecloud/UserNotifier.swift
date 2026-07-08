@@ -66,7 +66,7 @@ final class UserNotifier: NSObject, UNUserNotificationCenterDelegate {
         let content = UNMutableNotificationContent()
         content.title = String(localized: "Download Finished", comment: "Title of the notification shown when a file download finishes.")
         content.body = filename
-        content.userInfo = [Self.downloadFilePathKey: fileURL.path(percentEncoded: false)]
+        content.userInfo = [Self.downloadFilePathKey: fileURL.path]
 
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
         UNUserNotificationCenter.current().add(request)

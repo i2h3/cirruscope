@@ -37,9 +37,6 @@ class ServerAddressViewController: NSViewController {
     /// `logger` records the sign-in flow under the `ServerAddressViewController` category.
     private let logger = Logger(for: ServerAddressViewController.self)
 
-    /// `signposter` times the whole sign-in — capability validation plus Login Flow v2 polling — as a `Login` interval.
-    private let signposter = OSSignposter(for: ServerAddressViewController.self)
-
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -72,10 +69,7 @@ class ServerAddressViewController: NSViewController {
         progressIndicator.startAnimation(self)
 
         Task {
-            let signpostState = signposter.beginInterval("Login", id: signposter.makeSignpostID())
-
             defer {
-                signposter.endInterval("Login", signpostState)
                 serverAddressField.isEnabled = true
                 openButton.isEnabled = true
                 progressIndicator.isHidden = true
@@ -164,7 +158,7 @@ class ServerAddressViewController: NSViewController {
                 return result
             }
 
-            try await Task.sleep(for: .seconds(1))
+            try await Task.sleep(nanoseconds: 1_000_000_000)
         }
 
         logger.error("Sign-in timed out after 300 seconds")

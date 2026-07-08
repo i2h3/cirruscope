@@ -11,13 +11,3 @@ extension Logger {
         self.init(subsystem: Bundle.main.bundleIdentifier ?? "de.i2h3.framecloud", category: String(describing: type))
     }
 }
-
-extension OSSignposter {
-
-    /// `init(for:)` creates a signposter for `type`, using the main bundle identifier as the subsystem and `type`'s unqualified name as the category.
-    ///
-    /// Facilities with asynchronous or long-running work hold their own `OSSignposter(for: Self.self)` to time working steps, matching the category of the type's `Logger` so intervals and log lines line up in Instruments; it is `nonisolated` for the same reason as `Logger.init(for:)`.
-    nonisolated init(for type: Any.Type) {
-        self.init(subsystem: Bundle.main.bundleIdentifier ?? "de.i2h3.framecloud", category: String(describing: type))
-    }
-}

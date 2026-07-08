@@ -20,9 +20,6 @@ enum ServerConnection {
     /// `logger` records connection and validation activity under the `ServerConnection` category.
     private static let logger = Logger(for: ServerConnection.self)
 
-    /// `signposter` times each capability validation as a `Validate` interval so slow server round trips are visible in Instruments.
-    private static let signposter = OSSignposter(for: ServerConnection.self)
-
     /// `anonymous(address:)` builds a `Server` without credentials, used to validate reachability and to initiate Login Flow v2.
     static func anonymous(address: URL) -> Server {
         Server(address: address, userAgent: userAgent)
@@ -43,9 +40,6 @@ enum ServerConnection {
     ///
     /// It rethrows any error raised while fetching the capabilities so callers can distinguish an unreachable or unauthorized server from an unsupported one.
     static func validate(_ server: Server) async throws -> ValidationOutcome {
-        let signpostState = signposter.beginInterval("Validate", id: signposter.makeSignpostID())
-        defer { signposter.endInterval("Validate", signpostState) }
-
         logger.info("Validating server capabilities")
         let capabilities = try await server.capabilities()
 

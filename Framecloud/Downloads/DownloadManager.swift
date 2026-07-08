@@ -14,9 +14,6 @@ final class DownloadManager: NSObject {
     /// `logger` records download coordination under the `DownloadManager` category; it is not `private` because `DownloadManager+WKDownloadDelegate` logs the transfer callbacks from a separate file.
     let logger = Logger(for: DownloadManager.self)
 
-    /// `signposter` times each transfer as an interval, begun in `handle(_:)` and ended in the terminal `WKDownloadDelegate` callbacks; it is not `private` for the same cross-file reason as `logger`.
-    let signposter = OSSignposter(for: DownloadManager.self)
-
     /// `downloads` is the in-memory history of downloads for the current run, newest last, exposed read-only so only the coordinator mutates it.
     ///
     /// `DownloadViewController` reads it to populate its table; it is never persisted, so relaunching the app starts with an empty list.
@@ -34,8 +31,6 @@ final class DownloadManager: NSObject {
         wkDownload.delegate = self
 
         let download = Download(wkDownload)
-        let signpostID = signposter.makeSignpostID(from: wkDownload)
-        download.signpostState = signposter.beginInterval("Download", id: signpostID, "\(download.displayName)")
         downloads.append(download)
 
         logger.info("Handling download \(download.displayName)")
@@ -50,11 +45,6 @@ final class DownloadManager: NSObject {
         logger.notice("Cancelling download \(download.displayName)")
         download.wkDownload?.cancel { _ in }
         download.state = .cancelled
-
-        if let signpostState = download.signpostState {
-            signposter.endInterval("Download", signpostState)
-            download.signpostState = nil
-        }
 
         releaseReservation(for: download)
         NotificationCenter.default.post(name: .downloadsDidChange, object: nil)
@@ -82,7 +72,7 @@ final class DownloadManager: NSObject {
     ///
     /// `WKDownload` requires a destination whose file does not already exist in an existing directory, so this avoids clobbering a previous download and matches the auto-renaming a web browser performs.
     func uniqueDestination(for suggestedFilename: String) -> URL {
-        let directory = URL.downloadsDirectory
+        let directory = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
         let name = suggestedFilename.isEmpty ? "download" : suggestedFilename
         let base = directory.appendingPathComponent(name)
         let ext = base.pathExtension
@@ -106,6 +96,6 @@ final class DownloadManager: NSObject {
 
     /// `isTaken(_:)` reports whether `url` is unavailable as a download destination — either a file already exists there or another in-flight transfer has reserved it via `uniqueDestination(for:)`.
     private func isTaken(_ url: URL) -> Bool {
-        reservedDestinations.contains(url) || FileManager.default.fileExists(atPath: url.path(percentEncoded: false))
+        reservedDestinations.contains(url) || FileManager.default.fileExists(atPath: url.path)
     }
 }

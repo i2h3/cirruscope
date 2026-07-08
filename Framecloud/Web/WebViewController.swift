@@ -32,9 +32,6 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     /// `logger` records this web view controller's activity under the `WebViewController` category; it is not `private` so the delegate conformances in `WebViewController+WKNavigationDelegate` and `+WKUIDelegate` can log through it.
     let logger = Logger(for: WebViewController.self)
 
-    /// `signposter` times the initial page load as an `InitialLoad` interval; it is not `private` for the same cross-file reason as `logger`.
-    let signposter = OSSignposter(for: WebViewController.self)
-
     /// `nextLogID` hands out the monotonically increasing values behind `logID`, so each `WebViewController` receives a distinct identifier for the lifetime of the process.
     private static var nextLogID: UInt64 = 0
 
@@ -55,11 +52,6 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
 
     /// `hasStartedInitialLoad` is `true` once the initial navigation has been issued, so `viewWillAppear()` triggers it exactly once.
     private var hasStartedInitialLoad = false
-
-    /// `initialLoadSignpostState` is the state of the `InitialLoad` signpost interval begun in `startInitialLoadIfNeeded()`, held so `WebViewController+WKNavigationDelegate` can end it when the first navigation finishes or fails.
-    ///
-    /// It is not `private` because that extension, which ends the interval, lives in a separate file.
-    var initialLoadSignpostState: OSSignpostIntervalState?
 
     /// `webWindowController` is the `WebWindowController` hosting this controller, from which the `targetURL` to load is read once the view is in its window.
     private var webWindowController: WebWindowController? {
@@ -87,7 +79,6 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
 
         hasStartedInitialLoad = true
         logger.info("Starting initial navigation (WebViewController \(self.logID))")
-        initialLoadSignpostState = signposter.beginInterval("InitialLoad", id: signposter.makeSignpostID())
         webView.load(authenticatedRequest(for: url))
     }
 
@@ -110,7 +101,9 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        webView.isInspectable = true
+        if #available(macOS 13.3, *) {
+            webView.isInspectable = true
+        }
         webView.navigationDelegate = self
         webView.uiDelegate = self
         observeWebViewTitle()

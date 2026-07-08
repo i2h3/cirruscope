@@ -1,4 +1,3 @@
-import os
 import WebKit
 
 /// `Download` is the runtime record of a single file transfer that `DownloadManager` coordinates and `DownloadViewController` displays.
@@ -54,11 +53,6 @@ final class Download: Identifiable {
     ///
     /// `DownloadManager` uses it to `cancel(_:)` an in-progress download and clears it on a terminal state so the transfer object is released.
     var wkDownload: WKDownload?
-
-    /// `signpostState` is the state of the `OSSignposter` interval `DownloadManager` opened for this transfer, held here because the interval spans separate `WKDownloadDelegate` callbacks.
-    ///
-    /// `DownloadManager.handle(_:)` begins the interval and stores it; `downloadDidFinish`, `download(_:didFailWithError:resumeData:)`, and `cancel(_:)` read it back to end the interval exactly once.
-    var signpostState: OSSignpostIntervalState?
 
     /// `init(_:)` creates a record for `wkDownload`, capturing its `progress` and deriving an initial `displayName` from the request it originated from.
     ///

@@ -40,11 +40,6 @@ extension DownloadManager: WKDownloadDelegate {
 
         logger.info("Download finished: \(model.displayName)")
 
-        if let signpostState = model.signpostState {
-            signposter.endInterval("Download", signpostState)
-            model.signpostState = nil
-        }
-
         releaseReservation(for: model)
         NotificationCenter.default.post(name: .downloadsDidChange, object: nil)
 
@@ -65,8 +60,8 @@ extension DownloadManager: WKDownloadDelegate {
             return
         }
 
-        // A user-initiated cancel surfaces here as `NSURLErrorCancelled` after `cancel(_:)` already set the state
-        // and ended the signpost interval, so leave an explicit cancellation untouched and only record a genuine failure.
+        // A user-initiated cancel surfaces here as `NSURLErrorCancelled` after `cancel(_:)` already set the state,
+        // so leave an explicit cancellation untouched and only record a genuine failure.
         guard model.state != .cancelled else {
             logger.debug("Failure is the user cancellation already recorded for \(model.displayName); leaving its state unchanged")
             model.wkDownload = nil
@@ -77,11 +72,6 @@ extension DownloadManager: WKDownloadDelegate {
         model.state = .failed
         model.error = error
         logger.error("Download failed: \(model.displayName): \(error.localizedDescription)")
-
-        if let signpostState = model.signpostState {
-            signposter.endInterval("Download", signpostState)
-            model.signpostState = nil
-        }
 
         releaseReservation(for: model)
         model.wkDownload = nil
