@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Cirruscope - Coming Soon</title>
+	<style>
+		:root {
+			--bg-top: #f7efe3;
+			--bg-bottom: #d8e9ff;
+			--text: #1a2230;
+			--muted: #4b5668;
+			--card: rgba(255, 255, 255, 0.7);
+			--card-border: rgba(26, 34, 48, 0.12);
+			--accent: #0f7a63;
+		}
+
+		* {
+			box-sizing: border-box;
+		}
+
+		html,
+		body {
+			margin: 0;
+			min-height: 100%;
+		}
+
+		body {
+			min-height: 100vh;
+			display: grid;
+			place-items: center;
+			padding: 1.5rem;
+			color: var(--text);
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", "Helvetica Neue", Arial, sans-serif;
+			background:
+				radial-gradient(circle at 15% 15%, rgba(255, 255, 255, 0.7), transparent 50%),
+				radial-gradient(circle at 85% 85%, rgba(255, 255, 255, 0.5), transparent 42%),
+				linear-gradient(160deg, var(--bg-top), var(--bg-bottom));
+		}
+
+		.shell {
+			width: min(42rem, 100%);
+			padding: clamp(1.5rem, 4vw, 3rem);
+			border: 1px solid var(--card-border);
+			border-radius: 1.1rem;
+			background: var(--card);
+			backdrop-filter: blur(10px);
+			box-shadow: 0 18px 50px rgba(26, 34, 48, 0.12);
+			animation: rise 0.75s ease-out;
+		}
+
+		.brand {
+			margin: 0;
+			font-size: clamp(1.05rem, 2.6vw, 1.4rem);
+			letter-spacing: 0.12em;
+			text-transform: uppercase;
+			font-weight: 700;
+		}
+
+		h1 {
+			margin: 0.55rem 0 0;
+			font-size: clamp(1.9rem, 5.2vw, 3.4rem);
+			line-height: 1.06;
+		}
+
+		p {
+			margin: 1rem 0 0;
+			max-width: 52ch;
+			color: var(--muted);
+			font-size: clamp(1rem, 2.2vw, 1.1rem);
+			line-height: 1.6;
+		}
+
+		.status {
+			margin-top: 1.3rem;
+			display: inline-flex;
+			align-items: center;
+			gap: 0.5rem;
+			padding: 0.4rem 0.7rem;
+			border-radius: 999px;
+			border: 1px solid rgba(15, 122, 99, 0.25);
+			background: rgba(15, 122, 99, 0.08);
+			color: #0b5d4c;
+			font-family: inherit;
+			font-size: 0.79rem;
+			text-transform: uppercase;
+			letter-spacing: 0.06em;
+		}
+
+		.status-dot {
+			width: 0.48rem;
+			height: 0.48rem;
+			border-radius: 999px;
+			background: var(--accent);
+			animation: pulse 1.8s ease-out infinite;
+		}
+
+		@keyframes pulse {
+			0%,
+			100% {
+				transform: scale(1);
+				opacity: 1;
+			}
+			50% {
+				transform: scale(1.35);
+				opacity: 0.45;
+			}
+		}
+
+		@keyframes rise {
+			from {
+				transform: translateY(10px);
+				opacity: 0;
+			}
+			to {
+				transform: translateY(0);
+				opacity: 1;
+			}
+		}
+	</style>
+</head>
+<body>
+	<main class="shell">
+		<p class="brand">Cirruscope</p>
+		<h1>Website launching soon.</h1>
+		<p>
+			We are putting the final touches on the new Cirruscope web experience.
+			Check back shortly for updates.
+		</p>
+		<div class="status">
+			<span class="status-dot" aria-hidden="true"></span>
+			In progress
+		</div>
+	</main>
+</body>
+</html>
