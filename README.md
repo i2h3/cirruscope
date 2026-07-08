@@ -3,6 +3,8 @@
 
 # Framecloud
 
+[![REUSE](https://api.reuse.software/badge/github.com/i2h3/cirruscope)](https://api.reuse.software/info/github.com/i2h3/cirruscope)
+
 An app-like Nextcloud experience on macOS.
 This elevates your Nextcloud user interface to the next level by leveraging native platform features and WebKit. 
 
