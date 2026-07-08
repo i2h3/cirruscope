@@ -74,7 +74,7 @@ final class AssetCache {
     /// `cache(remote:)` downloads the asset at `remoteURL` into the cache directory, unless the server confirms via the `ETag` sent in `If-None-Match` that the cached copy is still up to date.
     ///
     /// Returns the file system URL of the cached copy.
-    /// Throws `FramecloudError.invalidResponse` if the server response is not HTTP, `FramecloudError.unexpectedStatus` for HTTP status codes outside 2xx and 304, and any error thrown by `URLSession` while transporting the request.
+    /// Throws `CirruscopeError.invalidResponse` if the server response is not HTTP, `CirruscopeError.unexpectedStatus` for HTTP status codes outside 2xx and 304, and any error thrown by `URLSession` while transporting the request.
     @discardableResult
     func cache(remote remoteURL: URL) async throws -> URL {
         let fileURL = fileURL(for: remoteURL)
@@ -91,7 +91,7 @@ final class AssetCache {
 
         guard let httpResponse = response as? HTTPURLResponse else {
             logger.error("Non-HTTP response caching \(remoteURL)")
-            throw FramecloudError.invalidResponse
+            throw CirruscopeError.invalidResponse
         }
 
         switch httpResponse.statusCode {
@@ -109,7 +109,7 @@ final class AssetCache {
             return fileURL
         default:
             logger.error("Unexpected status \(httpResponse.statusCode) caching asset")
-            throw FramecloudError.unexpectedStatus(httpResponse.statusCode)
+            throw CirruscopeError.unexpectedStatus(httpResponse.statusCode)
         }
     }
 

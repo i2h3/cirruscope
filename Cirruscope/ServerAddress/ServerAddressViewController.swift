@@ -80,7 +80,7 @@ class ServerAddressViewController: NSViewController {
                 switch try await ServerConnection.validate(server) {
                     case let .unsupported(version):
                         logger.notice("Server version \(version) is unsupported")
-                        presentAlert(title: "Unsupported Server Version", message: "Framecloud requires Nextcloud server version \(Settings.minimumSupportedServerMajorVersion) or later. The server at “\(url.absoluteString)” is running version \(version).")
+                        presentAlert(title: "Unsupported Server Version", message: "Cirruscope requires Nextcloud server version \(Settings.minimumSupportedServerMajorVersion) or later. The server at “\(url.absoluteString)” is running version \(version).")
 
                     case .supported:
                         logger.info("Server supported; starting Login Flow v2")
@@ -95,7 +95,7 @@ class ServerAddressViewController: NSViewController {
                             await ServerConnection.refreshNavigationApps(using: authenticated)
                         }
                 }
-            } catch FramecloudError.loginCancelled {
+            } catch CirruscopeError.loginCancelled {
                 logger.notice("Sign-in cancelled by the user")
             } catch {
                 logger.error("Sign-in failed: \(error.localizedDescription)")
@@ -106,7 +106,7 @@ class ServerAddressViewController: NSViewController {
 
     /// `logIn(to:)` runs Nextcloud's Login Flow v2 against `server`: it presents the grant page in an `ASWebAuthenticationSession` and concurrently polls the login endpoint until the user completes the grant.
     ///
-    /// Login Flow v2 never invokes the session's `nc` callback URL, so a successful `server.poll(_:token:)` is what signals completion; the session is then dismissed by the `defer`. It throws `FramecloudError.loginCancelled` if the user dismisses the sheet and `FramecloudError.loginTimedOut` if the grant is not completed in time.
+    /// Login Flow v2 never invokes the session's `nc` callback URL, so a successful `server.poll(_:token:)` is what signals completion; the session is then dismissed by the `defer`. It throws `CirruscopeError.loginCancelled` if the user dismisses the sheet and `CirruscopeError.loginTimedOut` if the grant is not completed in time.
     private func logIn(to server: Server) async throws -> LoginResult {
         let flow = try await server.login()
 
@@ -121,7 +121,7 @@ class ServerAddressViewController: NSViewController {
 
     /// `startAuthenticationSession(using:)` presents `url` in an `ASWebAuthenticationSession` so the user can authenticate and grant access.
     ///
-    /// The session is retained in `authenticationSession`. Because Login Flow v2 never invokes the `nc` callback, the completion handler only fires when the user dismisses the sheet, which sets `authenticationCancelled` so `pollForCredentials(on:flow:)` stops. It throws `FramecloudError.loginPresentationFailed` if the session cannot be presented.
+    /// The session is retained in `authenticationSession`. Because Login Flow v2 never invokes the `nc` callback, the completion handler only fires when the user dismisses the sheet, which sets `authenticationCancelled` so `pollForCredentials(on:flow:)` stops. It throws `CirruscopeError.loginPresentationFailed` if the session cannot be presented.
     private func startAuthenticationSession(using url: URL) throws {
         let session = ASWebAuthenticationSession(url: url, callbackURLScheme: "nc") { [weak self] _, _ in
             self?.logger.debug("Authentication sheet dismissed by the user")
@@ -136,13 +136,13 @@ class ServerAddressViewController: NSViewController {
 
         guard session.start() else {
             logger.error("Could not present the authentication session")
-            throw FramecloudError.loginPresentationFailed
+            throw CirruscopeError.loginPresentationFailed
         }
     }
 
     /// `pollForCredentials(on:flow:)` polls `server`'s login endpoint until the user completes the grant, returning the resulting credentials.
     ///
-    /// While the grant is pending the endpoint yields no result and `server.poll(_:token:)` throws, so every failure is treated as "keep polling". It stops with `FramecloudError.loginCancelled` if the user dismisses the sheet and `FramecloudError.loginTimedOut` after a few minutes without completion.
+    /// While the grant is pending the endpoint yields no result and `server.poll(_:token:)` throws, so every failure is treated as "keep polling". It stops with `CirruscopeError.loginCancelled` if the user dismisses the sheet and `CirruscopeError.loginTimedOut` after a few minutes without completion.
     private func pollForCredentials(on server: Server, flow: LoginFlow) async throws -> LoginResult {
         let deadline = Date().addingTimeInterval(300)
 
@@ -150,7 +150,7 @@ class ServerAddressViewController: NSViewController {
             try Task.checkCancellation()
 
             if authenticationCancelled {
-                throw FramecloudError.loginCancelled
+                throw CirruscopeError.loginCancelled
             }
 
             if let result = try? await server.poll(flow.endpoint, token: flow.token) {
@@ -162,7 +162,7 @@ class ServerAddressViewController: NSViewController {
         }
 
         logger.error("Sign-in timed out after 300 seconds")
-        throw FramecloudError.loginTimedOut
+        throw CirruscopeError.loginTimedOut
     }
 
     /// `dismissAuthenticationSession()` cancels and releases the `ASWebAuthenticationSession`, dismissing the grant sheet once the login has completed, failed, or been cancelled.

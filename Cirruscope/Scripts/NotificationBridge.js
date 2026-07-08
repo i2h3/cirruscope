@@ -5,7 +5,7 @@
 //
 // Each notification is kept in a registry keyed by an id that is also sent to the native side. When
 // the user clicks the notification in the Notification Center, the app calls
-// window.__framecloudActivateNotification(id), which runs the page's own click handler — so whatever
+// window.__cirruscopeActivateNotification(id), which runs the page's own click handler — so whatever
 // the web interface does on click (typically navigating to the notification's target) happens, just
 // as it would for a native web notification.
 //
@@ -15,10 +15,10 @@
     var counter = 0;
     var registry = {};
 
-    function FramecloudNotification(title, options) {
+    function CirruscopeNotification(title, options) {
         options = options || {};
 
-        var id = "fc-" + (++counter);
+        var id = "cirruscope-" + (++counter);
 
         this.title = title || "";
         this.body = options.body || "";
@@ -46,10 +46,10 @@
         }
     }
 
-    FramecloudNotification.permission = "granted";
-    FramecloudNotification.maxActions = 0;
+    CirruscopeNotification.permission = "granted";
+    CirruscopeNotification.maxActions = 0;
 
-    FramecloudNotification.requestPermission = function(callback) {
+    CirruscopeNotification.requestPermission = function(callback) {
         if (typeof callback === "function") {
             callback("granted");
         }
@@ -57,15 +57,15 @@
         return Promise.resolve("granted");
     };
 
-    FramecloudNotification.prototype.close = function() {
+    CirruscopeNotification.prototype.close = function() {
         delete registry[this._id];
     };
 
-    FramecloudNotification.prototype.addEventListener = function(type, handler) {
+    CirruscopeNotification.prototype.addEventListener = function(type, handler) {
         (this._listeners[type] = this._listeners[type] || []).push(handler);
     };
 
-    FramecloudNotification.prototype.removeEventListener = function(type, handler) {
+    CirruscopeNotification.prototype.removeEventListener = function(type, handler) {
         var handlers = this._listeners[type];
         if (!handlers) {
             return;
@@ -77,7 +77,7 @@
         }
     };
 
-    FramecloudNotification.prototype.dispatchEvent = function(event) {
+    CirruscopeNotification.prototype.dispatchEvent = function(event) {
         var handlers = (this._listeners[event.type] || []).slice();
         for (var i = 0; i < handlers.length; i++) {
             handlers[i].call(this, event);
@@ -92,7 +92,7 @@
     };
 
     // Invoked from native code when the user clicks the notification in the Notification Center.
-    window.__framecloudActivateNotification = function(id) {
+    window.__cirruscopeActivateNotification = function(id) {
         var notification = registry[id];
         if (!notification) {
             return;
@@ -111,9 +111,9 @@
         Object.defineProperty(window, "Notification", {
             configurable: true,
             writable: true,
-            value: FramecloudNotification
+            value: CirruscopeNotification
         });
     } catch (error) {
-        window.Notification = FramecloudNotification;
+        window.Notification = CirruscopeNotification;
     }
 })();

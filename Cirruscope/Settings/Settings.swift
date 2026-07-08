@@ -38,13 +38,13 @@ enum Settings {
     private enum InfoPlistKey {
 
         /// `minimumSupportedServerMajorVersion` is the key for the `Info.plist` entry that backs `Settings.minimumSupportedServerMajorVersion`.
-        static let minimumSupportedServerMajorVersion = "FCMinimumSupportedNextcloudMajorVersion"
+        static let minimumSupportedServerMajorVersion = "MinimumSupportedNextcloudMajorVersion"
 
         /// `privacyPolicy` is the key for the `Info.plist` entry that backs `Settings.privacyPolicy`.
-        static let privacyPolicy = "FCPrivacyPolicy"
+        static let privacyPolicy = "PrivacyPolicy"
 
         /// `feedbackAddress` is the key for the `Info.plist` entry that backs `Settings.feedbackAddress`.
-        static let feedbackAddress = "FCFeedbackAddress"
+        static let feedbackAddress = "FeedbackAddress"
     }
 
     /// `logger` records settings persistence failures — JSON coding and theming asset caching — under the `Settings` category.
@@ -263,7 +263,7 @@ enum Settings {
         preconditionFailure("Info.plist entry \"\(InfoPlistKey.minimumSupportedServerMajorVersion)\" must be an integer or a string representing one but was \(type(of: value)).")
     }
 
-    /// `privacyPolicy` is the URL of Framecloud's online privacy policy.
+    /// `privacyPolicy` is the URL of Cirruscope's online privacy policy.
     ///
     /// `AppDelegate.openPrivacyPolicy(_:)` opens it in the user's default browser when the user chooses the Help-menu item or the button on `ServerAddressViewController`.
     static var privacyPolicy: URL {
@@ -278,7 +278,7 @@ enum Settings {
         return url
     }
 
-    /// `feedbackAddress` is the recipient that `AppDelegate.provideFeedback(_:)` addresses the feedback email to, e.g. `Framecloud Feedback <framecloud@i2h3.de>`.
+    /// `feedbackAddress` is the recipient that `AppDelegate.provideFeedback(_:)` addresses the feedback email to, e.g. `Cirruscope Feedback <contact@cirruscope.app>`.
     static var feedbackAddress: String {
         guard let value = Bundle.main.object(forInfoDictionaryKey: InfoPlistKey.feedbackAddress) else {
             preconditionFailure("Info.plist is missing the \"\(InfoPlistKey.feedbackAddress)\" entry.")
@@ -295,11 +295,11 @@ enum Settings {
 extension Notification.Name {
 
     /// `serverAppsDidChange` is posted by `Settings` whenever `serverApps` or `appShortcuts` changes so `AppDelegate` can rebuild the View and Dock menus.
-    static let serverAppsDidChange = Notification.Name("FCServerAppsDidChange")
+    static let serverAppsDidChange = Notification.Name("ServerAppsDidChange")
 
     /// `downloadsDidChange` is posted by `DownloadManager` whenever its `downloads` list or a download's state changes so `DownloadViewController` can reload its table.
-    static let downloadsDidChange = Notification.Name("FCDownloadsDidChange")
+    static let downloadsDidChange = Notification.Name("DownloadsDidChange")
 
     /// `downloadDidStart` is posted by `DownloadManager` when a new transfer begins so `AppDelegate` can open and bring the Downloads window to the foreground.
-    static let downloadDidStart = Notification.Name("FCDownloadDidStart")
+    static let downloadDidStart = Notification.Name("DownloadDidStart")
 }

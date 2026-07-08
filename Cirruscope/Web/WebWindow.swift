@@ -2,10 +2,10 @@ import AppKit
 
 /// `WebWindow` is the window of the storyboard "Web Window" scene that hosts `WebViewController`.
 ///
-/// It keeps the standard close, miniaturize, and zoom buttons aligned with Framecloud's custom title bar. AppKit returns those buttons to their default position on every layout pass, so `WebWindow` repositions them again at the end of the same pass — synchronously, so they are never displayed at the default position and do not visibly jump.
+/// It keeps the standard close, miniaturize, and zoom buttons aligned with Cirruscope's custom title bar. AppKit returns those buttons to their default position on every layout pass, so `WebWindow` repositions them again at the end of the same pass — synchronously, so they are never displayed at the default position and do not visibly jump.
 class WebWindow: NSWindow {
 
-    /// `toolbarHeight` is the height of Framecloud's custom title bar that the window buttons are vertically centered within.
+    /// `toolbarHeight` is the height of Cirruscope's custom title bar that the window buttons are vertically centered within.
     private static let toolbarHeight: CGFloat = 50
 
     /// `leadingInset` is the distance from the window's leading edge to the first window button.

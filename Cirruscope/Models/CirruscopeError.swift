@@ -1,11 +1,11 @@
 import Foundation
 
-/// `FramecloudError` is the shared error type for failures originating in app-level code.
+/// `CirruscopeError` is the shared error type for failures originating in app-level code.
 ///
 /// Facilities such as `AssetCache`, `Keychain`, and the Login Flow v2 integration throw cases of this enum so that error handling at call sites can be uniform across the project.
 /// It conforms to `LocalizedError` so the messages presented to the user via `error.localizedDescription` are meaningful.
 /// New cases may be added as additional failure modes are introduced.
-enum FramecloudError: Error, LocalizedError {
+enum CirruscopeError: Error, LocalizedError {
 
     /// `invalidResponse` is thrown when a server returns a response that is not an `HTTPURLResponse`.
     case invalidResponse

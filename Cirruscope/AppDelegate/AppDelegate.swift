@@ -2,7 +2,7 @@ import Cocoa
 import os
 import Rainmaker
 
-/// `AppDelegate` is the application delegate of Framecloud and owns the lifecycle of every window the app shows.
+/// `AppDelegate` is the application delegate of Cirruscope and owns the lifecycle of every window the app shows.
 ///
 /// On launch it consults `Settings.serverAddress` to decide whether to present `WebViewController` directly or to first show `ServerAddressViewController`. When a server address is already configured it first re-validates the server's capabilities against `Settings.minimumSupportedServerMajorVersion` and falls back to `ServerAddressViewController` if the server is unreachable or runs an unsupported major version. It also keeps freshly instantiated `NSWindowController`s alive until their windows close.
 @main
@@ -78,7 +78,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         presentInitialWindow(forLaunch: false)
     }
 
-    /// `openPrivacyPolicy(_:)` opens Framecloud's online privacy policy in the user's default browser.
+    /// `openPrivacyPolicy(_:)` opens Cirruscope's online privacy policy in the user's default browser.
     ///
     /// It backs both the Help-menu "Privacy Policy…" item and the "Privacy Policy" button on `ServerAddressViewController`; both target the responder chain rather than this object directly, so a single handler serves every entry point.
     @IBAction
@@ -126,7 +126,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                             closeWebViewWindows()
                         }
 
-                        presentAlert(title: "Unsupported Server", message: "Framecloud requires Nextcloud version \(Settings.minimumSupportedServerMajorVersion) or later. The server at “\(serverAddress.absoluteString)” is running version \(version).")
+                        presentAlert(title: "Unsupported Server", message: "Cirruscope requires Nextcloud version \(Settings.minimumSupportedServerMajorVersion) or later. The server at “\(serverAddress.absoluteString)” is running version \(version).")
                         presentWindow(withIdentifier: "ServerAddressWindowController")
                 }
             } catch RainmakerError.credentialsRequired, RainmakerError.unexpectedStatus(code: 401) {

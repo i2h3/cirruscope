@@ -74,8 +74,8 @@ enum ServerConnection {
         }
     }
 
-    /// `userAgent` is the HTTP user agent Framecloud presents to the server, derived from the app's bundle name.
+    /// `userAgent` is the HTTP user agent Cirruscope presents to the server, derived from the app's bundle name.
     private static var userAgent: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Framecloud"
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Cirruscope"
     }
 }

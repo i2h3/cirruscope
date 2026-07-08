@@ -2,10 +2,10 @@ import Cocoa
 import os
 import WebKit
 
-/// `WebViewController` backs the storyboard scene that hosts the embedded `WKWebView` Framecloud uses to display Nextcloud.
+/// `WebViewController` backs the storyboard scene that hosts the embedded `WKWebView` Cirruscope uses to display Nextcloud.
 ///
 /// `AppDelegate` presents it on launch when `Settings.serverAddress` is non-`nil`, and `ServerAddressViewController` transitions to it after persisting a freshly validated server address.
-/// It injects the bundled `Framecloud.css` stylesheet, bridges custom title-bar drag behaviour, and tracks the state of Nextcloud's sidebar so that `WebViewController+NSMenuItemValidation` can drive the "Show/Hide Sidebar" menu item. The drag and sidebar behaviours are driven by the JavaScript resources enumerated in `WebViewScript`, which are loaded from the bundle on demand rather than embedded in this source file.
+/// It injects the bundled `Cirruscope.css` stylesheet, bridges custom title-bar drag behaviour, and tracks the state of Nextcloud's sidebar so that `WebViewController+NSMenuItemValidation` can drive the "Show/Hide Sidebar" menu item. The drag and sidebar behaviours are driven by the JavaScript resources enumerated in `WebViewScript`, which are loaded from the bundle on demand rather than embedded in this source file.
 /// The hosted `WKWebView` is hidden in the storyboard and only revealed by `WebViewController+WKNavigationDelegate` once its initial page load completes so the user is not exposed to the unstyled intermediate paint of the Nextcloud interface.
 class WebViewController: NSViewController, WKScriptMessageHandler {
 
@@ -250,7 +250,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
 
     private func injectCustomStyleSheet() {
         guard
-            let url = Bundle.main.url(forResource: "Framecloud", withExtension: "css"),
+            let url = Bundle.main.url(forResource: "Cirruscope", withExtension: "css"),
             let css = try? String(contentsOf: url, encoding: .utf8)
         else {
             return

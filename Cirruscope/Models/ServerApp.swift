@@ -3,7 +3,7 @@ import Rainmaker
 
 /// `ServerApp` is a Nextcloud server app the user can navigate to, persisted in `Settings.serverApps` so it can populate the View and Dock menus and the Apps settings tab.
 ///
-/// It is the storable projection of `Rainmaker.NavigationItem` (which is decode-only), keeping just the fields Framecloud needs: the `id` used to detect which app a window shows, the `order` used to sort the menus, the `href` used to build the app's URL, and the `name` used as the menu label.
+/// It is the storable projection of `Rainmaker.NavigationItem` (which is decode-only), keeping just the fields Cirruscope needs: the `id` used to detect which app a window shows, the `order` used to sort the menus, the `href` used to build the app's URL, and the `name` used as the menu label.
 struct ServerApp: Codable, Identifiable {
 
     /// `id` is the Nextcloud app identifier (e.g. `"files"`), matched against the `/apps/<id>/` path of a web view's URL to detect which app a window currently shows.
@@ -18,7 +18,7 @@ struct ServerApp: Codable, Identifiable {
     /// `name` is the localized display name of the app, used as its menu item label.
     let name: String
 
-    /// `init(_:)` projects a `Rainmaker.NavigationItem` into the subset of fields Framecloud persists.
+    /// `init(_:)` projects a `Rainmaker.NavigationItem` into the subset of fields Cirruscope persists.
     init(_ item: NavigationItem) {
         id = item.id
         order = item.order

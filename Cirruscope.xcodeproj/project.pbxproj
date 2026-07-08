@@ -12,7 +12,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		AA059CA32FE407A700DE3094 /* Framecloud.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Framecloud.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA059CA32FE407A700DE3094 /* Cirruscope.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cirruscope.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA059CBE2FE407BA00DE3094 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		AA059CC42FE4130E00DE3094 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		AA059CC92FE414EB00DE3094 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
@@ -20,22 +20,22 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		AA059CF62FE5301C00DE3094 /* Exceptions for "Framecloud" folder in "Framecloud" target */ = {
+		AA059CF62FE5301C00DE3094 /* Exceptions for "Cirruscope" folder in "Cirruscope" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = AA059CA22FE407A700DE3094 /* Framecloud */;
+			target = AA059CA22FE407A700DE3094 /* Cirruscope */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		AA059CA52FE407A700DE3094 /* Framecloud */ = {
+		AA059CA52FE407A700DE3094 /* Cirruscope */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				AA059CF62FE5301C00DE3094 /* Exceptions for "Framecloud" folder in "Framecloud" target */,
+				AA059CF62FE5301C00DE3094 /* Exceptions for "Cirruscope" folder in "Cirruscope" target */,
 			);
-			path = Framecloud;
+			path = Cirruscope;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -59,7 +59,7 @@
 				AA059CFA2FE558BD00DE3094 /* AGENTS.md */,
 				AA059CC92FE414EB00DE3094 /* LICENSE */,
 				AA059CC42FE4130E00DE3094 /* README.md */,
-				AA059CA52FE407A700DE3094 /* Framecloud */,
+				AA059CA52FE407A700DE3094 /* Cirruscope */,
 				AA059CBD2FE407BA00DE3094 /* Frameworks */,
 				AA059CA42FE407A700DE3094 /* Products */,
 			);
@@ -68,7 +68,7 @@
 		AA059CA42FE407A700DE3094 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				AA059CA32FE407A700DE3094 /* Framecloud.app */,
+				AA059CA32FE407A700DE3094 /* Cirruscope.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -84,9 +84,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		AA059CA22FE407A700DE3094 /* Framecloud */ = {
+		AA059CA22FE407A700DE3094 /* Cirruscope */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AA059CB12FE407A900DE3094 /* Build configuration list for PBXNativeTarget "Framecloud" */;
+			buildConfigurationList = AA059CB12FE407A900DE3094 /* Build configuration list for PBXNativeTarget "Cirruscope" */;
 			buildPhases = (
 				AA059C9F2FE407A700DE3094 /* Sources */,
 				AA059CA02FE407A700DE3094 /* Frameworks */,
@@ -97,14 +97,14 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				AA059CA52FE407A700DE3094 /* Framecloud */,
+				AA059CA52FE407A700DE3094 /* Cirruscope */,
 			);
-			name = Framecloud;
+			name = Cirruscope;
 			packageProductDependencies = (
 				AA059CE22FE42E5500DE3094 /* Rainmaker */,
 			);
-			productName = Framecloud;
-			productReference = AA059CA32FE407A700DE3094 /* Framecloud.app */;
+			productName = Cirruscope;
+			productReference = AA059CA32FE407A700DE3094 /* Cirruscope.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -122,7 +122,7 @@
 					};
 				};
 			};
-			buildConfigurationList = AA059C9E2FE407A700DE3094 /* Build configuration list for PBXProject "Framecloud" */;
+			buildConfigurationList = AA059C9E2FE407A700DE3094 /* Build configuration list for PBXProject "Cirruscope" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -142,7 +142,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				AA059CA22FE407A700DE3094 /* Framecloud */,
+				AA059CA22FE407A700DE3094 /* Cirruscope */,
 			);
 		};
 /* End PBXProject section */
@@ -322,7 +322,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Framecloud/Info.plist;
+				INFOPLIST_FILE = Cirruscope/Info.plist;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Grant access to your camera to show yourself during Nextcloud Talk calls.";
@@ -336,7 +336,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
 				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = de.i2h3.framecloud;
+				PRODUCT_BUNDLE_IDENTIFIER = de.i2h3.cirruscope;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
@@ -379,7 +379,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Framecloud/Info.plist;
+				INFOPLIST_FILE = Cirruscope/Info.plist;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Grant access to your camera to show yourself during Nextcloud Talk calls.";
@@ -393,7 +393,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
 				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = de.i2h3.framecloud;
+				PRODUCT_BUNDLE_IDENTIFIER = de.i2h3.cirruscope;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
@@ -413,7 +413,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		AA059C9E2FE407A700DE3094 /* Build configuration list for PBXProject "Framecloud" */ = {
+		AA059C9E2FE407A700DE3094 /* Build configuration list for PBXProject "Cirruscope" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AA059CAF2FE407A900DE3094 /* Debug */,
@@ -422,7 +422,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		AA059CB12FE407A900DE3094 /* Build configuration list for PBXNativeTarget "Framecloud" */ = {
+		AA059CB12FE407A900DE3094 /* Build configuration list for PBXNativeTarget "Cirruscope" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AA059CB22FE407A900DE3094 /* Debug */,

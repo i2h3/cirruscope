@@ -11,7 +11,6 @@ For a more user-friendly introduction, see [the official website](https://cirrus
 ## Project Status
 
 This is still under development but closing in fast on the initial release of version 1.0.0.
-Still in the progress of renaming everything to its final name "Cirruscope", hence you will still see "Framecloud" here and there.
 
 ## Features
 

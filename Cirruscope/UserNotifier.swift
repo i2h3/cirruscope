@@ -23,7 +23,7 @@ final class UserNotifier: NSObject, UNUserNotificationCenterDelegate {
     /// It is `nonisolated` so the `nonisolated` delegate callback that inspects a clicked notification can read it.
     private nonisolated static let downloadFilePathKey = "downloadFilePath"
 
-    /// `configure()` registers `shared` as the `UNUserNotificationCenter` delegate so notifications are presented even while Framecloud is the active app and so clicks are delivered here.
+    /// `configure()` registers `shared` as the `UNUserNotificationCenter` delegate so notifications are presented even while Cirruscope is the active app and so clicks are delivered here.
     ///
     /// `AppDelegate.applicationDidFinishLaunching(_:)` calls it once, before the launch sequence completes, as `UNUserNotificationCenter` requires its delegate to be set by then.
     func configure() {
@@ -107,7 +107,7 @@ final class UserNotifier: NSObject, UNUserNotificationCenterDelegate {
         webView.window?.makeKeyAndOrderFront(nil)
 
         if let webNotificationID {
-            webView.evaluateJavaScript("window.__framecloudActivateNotification && window.__framecloudActivateNotification(\"\(webNotificationID)\")")
+            webView.evaluateJavaScript("window.__cirruscopeActivateNotification && window.__cirruscopeActivateNotification(\"\(webNotificationID)\")")
         }
     }
 

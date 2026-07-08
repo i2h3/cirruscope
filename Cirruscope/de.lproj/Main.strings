@@ -1,6 +1,6 @@
 
-/* Class = "NSMenuItem"; title = "Framecloud"; ObjectID = "1Xt-HY-uBw"; */
-"1Xt-HY-uBw.title" = "Framecloud";
+/* Class = "NSMenuItem"; title = "Cirruscope"; ObjectID = "1Xt-HY-uBw"; */
+"1Xt-HY-uBw.title" = "Cirruscope";
 
 /* Class = "NSMenu"; title = "Find"; ObjectID = "1b7-l0-nxx"; */
 "1b7-l0-nxx.title" = "Find";
@@ -32,8 +32,8 @@
 /* Class = "NSMenuItem"; title = "Enter Full Screen"; ObjectID = "4J7-dP-txa"; */
 "4J7-dP-txa.title" = "Enter Full Screen";
 
-/* Class = "NSMenuItem"; title = "Quit Framecloud"; ObjectID = "4sb-4s-VLi"; */
-"4sb-4s-VLi.title" = "Quit Framecloud";
+/* Class = "NSMenuItem"; title = "Quit Cirruscope"; ObjectID = "4sb-4s-VLi"; */
+"4sb-4s-VLi.title" = "Quit Cirruscope";
 
 /* Class = "NSMenuItem"; title = "Edit"; ObjectID = "5QF-Oa-p0T"; */
 "5QF-Oa-p0T.title" = "Edit";
@@ -41,8 +41,8 @@
 /* Class = "NSMenuItem"; title = "Copy Style"; ObjectID = "5Vv-lz-BsD"; */
 "5Vv-lz-BsD.title" = "Copy Style";
 
-/* Class = "NSMenuItem"; title = "About Framecloud"; ObjectID = "5kV-Vb-QxS"; */
-"5kV-Vb-QxS.title" = "About Framecloud";
+/* Class = "NSMenuItem"; title = "About Cirruscope"; ObjectID = "5kV-Vb-QxS"; */
+"5kV-Vb-QxS.title" = "About Cirruscope";
 
 /* Class = "NSButtonCell"; title = "Privacy Policy"; ObjectID = "641-vb-mzY"; */
 "641-vb-mzY.title" = "Privacy Policy";
@@ -74,8 +74,8 @@
 /* Class = "NSMenu"; title = "Main Menu"; ObjectID = "AYu-sK-qS6"; */
 "AYu-sK-qS6.title" = "Main Menu";
 
-/* Class = "NSTextFieldCell"; title = "If you log out here, Framecloud will reset the chosen server and ask for a new one."; ObjectID = "BH5-Gl-U5U"; */
-"BH5-Gl-U5U.title" = "If you log out here, Framecloud will reset the chosen server and ask for a new one.";
+/* Class = "NSTextFieldCell"; title = "If you log out here, Cirruscope will reset the chosen server and ask for a new one."; ObjectID = "BH5-Gl-U5U"; */
+"BH5-Gl-U5U.title" = "If you log out here, Cirruscope will reset the chosen server and ask for a new one.";
 
 /* Class = "NSMenuItem"; title = "\tLeft to Right"; ObjectID = "BgM-ve-c93"; */
 "BgM-ve-c93.title" = "\tLeft to Right";
@@ -89,8 +89,8 @@
 /* Class = "NSMenu"; title = "Help"; ObjectID = "F2S-fz-NVQ"; */
 "F2S-fz-NVQ.title" = "Help";
 
-/* Class = "NSMenuItem"; title = "Framecloud Help"; ObjectID = "FKE-Sm-Kum"; */
-"FKE-Sm-Kum.title" = "Framecloud Help";
+/* Class = "NSMenuItem"; title = "Cirruscope Help"; ObjectID = "FKE-Sm-Kum"; */
+"FKE-Sm-Kum.title" = "Cirruscope Help";
 
 /* Class = "NSMenuItem"; title = "Text"; ObjectID = "Fal-I4-PZk"; */
 "Fal-I4-PZk.title" = "Text";
@@ -167,8 +167,8 @@
 /* Class = "NSMenuItem"; title = "Baseline"; ObjectID = "OaQ-X3-Vso"; */
 "OaQ-X3-Vso.title" = "Baseline";
 
-/* Class = "NSMenuItem"; title = "Hide Framecloud"; ObjectID = "Olw-nP-bQN"; */
-"Olw-nP-bQN.title" = "Hide Framecloud";
+/* Class = "NSMenuItem"; title = "Hide Cirruscope"; ObjectID = "Olw-nP-bQN"; */
+"Olw-nP-bQN.title" = "Hide Cirruscope";
 
 /* Class = "NSMenuItem"; title = "Find Previous"; ObjectID = "OwM-mh-QMV"; */
 "OwM-mh-QMV.title" = "Find Previous";
@@ -245,8 +245,8 @@
 /* Class = "NSMenuItem"; title = "\tDefault"; ObjectID = "YGs-j5-SAR"; */
 "YGs-j5-SAR.title" = "\tDefault";
 
-/* Class = "NSTextFieldCell"; title = "Framecloud"; ObjectID = "YMm-Pw-AmD"; */
-"YMm-Pw-AmD.title" = "Framecloud";
+/* Class = "NSTextFieldCell"; title = "Cirruscope"; ObjectID = "YMm-Pw-AmD"; */
+"YMm-Pw-AmD.title" = "Cirruscope";
 
 /* Class = "NSMenuItem"; title = "Start Speaking"; ObjectID = "Ynk-f8-cLZ"; */
 "Ynk-f8-cLZ.title" = "Start Speaking";
@@ -359,8 +359,8 @@
 /* Class = "NSMenuItem"; title = "Ligatures"; ObjectID = "o6e-r0-MWq"; */
 "o6e-r0-MWq.title" = "Ligatures";
 
-/* Class = "NSWindow"; title = "Framecloud Settings"; ObjectID = "oTc-Gk-jL0"; */
-"oTc-Gk-jL0.title" = "Framecloud Settings";
+/* Class = "NSWindow"; title = "Cirruscope Settings"; ObjectID = "oTc-Gk-jL0"; */
+"oTc-Gk-jL0.title" = "Cirruscope Settings";
 
 /* Class = "NSMenuItem"; title = "Loosen"; ObjectID = "ogc-rX-tC1"; */
 "ogc-rX-tC1.title" = "Loosen";
@@ -398,8 +398,8 @@
 /* Class = "NSMenu"; title = "Kern"; ObjectID = "tlD-Oa-oAM"; */
 "tlD-Oa-oAM.title" = "Kern";
 
-/* Class = "NSMenu"; title = "Framecloud"; ObjectID = "uQy-DD-JDr"; */
-"uQy-DD-JDr.title" = "Framecloud";
+/* Class = "NSMenu"; title = "Cirruscope"; ObjectID = "uQy-DD-JDr"; */
+"uQy-DD-JDr.title" = "Cirruscope";
 
 /* Class = "NSMenuItem"; title = "Cut"; ObjectID = "uRl-iY-unG"; */
 "uRl-iY-unG.title" = "Cut";

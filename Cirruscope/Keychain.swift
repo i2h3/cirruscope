@@ -8,14 +8,22 @@ import os
 enum Keychain {
 
     /// `service` is the constant `kSecAttrService` value under which every credential item is filed, so the app's items can be enumerated and cleared as a group.
-    private static let service = "Framecloud"
+    ///
+    /// It is derived from the app's bundle identifier rather than hardcoded so the Keychain items stay tied to the app across future renames without a code change.
+    private static let service: String = {
+        guard let bundleIdentifier = Bundle.main.bundleIdentifier else {
+            preconditionFailure("Missing bundle identifier")
+        }
+
+        return bundleIdentifier
+    }()
 
     /// `logger` records Keychain access under the `Keychain` category, at debug level for successful reads, writes, and clears and at error level for failures.
     private static let logger = Logger(for: Keychain.self)
 
     /// `store(_:for:)` persists `credentials` for `server`, replacing any credentials previously stored for the same server.
     ///
-    /// It throws `FramecloudError.keychainFailure` if the Keychain rejects the write.
+    /// It throws `CirruscopeError.keychainFailure` if the Keychain rejects the write.
     static func store(_ credentials: Credentials, for server: URL) throws {
         let data = try JSONEncoder().encode(credentials)
 
@@ -35,7 +43,7 @@ enum Keychain {
 
         guard status == errSecSuccess else {
             logger.error("Keychain store failed: OSStatus \(status)")
-            throw FramecloudError.keychainFailure(status)
+            throw CirruscopeError.keychainFailure(status)
         }
 
         logger.debug("Stored credentials for \(server)")

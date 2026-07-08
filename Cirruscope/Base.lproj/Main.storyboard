@@ -14,11 +14,11 @@
                 <application id="hnw-xV-0zn" sceneMemberID="viewController">
                     <menu key="mainMenu" title="Main Menu" systemMenu="main" id="AYu-sK-qS6">
                         <items>
-                            <menuItem title="Framecloud" id="1Xt-HY-uBw">
+                            <menuItem title="Cirruscope" id="1Xt-HY-uBw">
                                 <modifierMask key="keyEquivalentModifierMask"/>
-                                <menu key="submenu" title="Framecloud" systemMenu="apple" id="uQy-DD-JDr">
+                                <menu key="submenu" title="Cirruscope" systemMenu="apple" id="uQy-DD-JDr">
                                     <items>
-                                        <menuItem title="About Framecloud" id="5kV-Vb-QxS">
+                                        <menuItem title="About Cirruscope" id="5kV-Vb-QxS">
                                             <modifierMask key="keyEquivalentModifierMask"/>
                                             <connections>
                                                 <action selector="orderFrontStandardAboutPanel:" target="Ady-hI-5gd" id="Exp-CZ-Vem"/>
@@ -37,7 +37,7 @@
                                             <menu key="submenu" title="Services" systemMenu="services" id="hz9-B4-Xy5"/>
                                         </menuItem>
                                         <menuItem isSeparatorItem="YES" id="4je-JR-u6R"/>
-                                        <menuItem title="Hide Framecloud" keyEquivalent="h" id="Olw-nP-bQN">
+                                        <menuItem title="Hide Cirruscope" keyEquivalent="h" id="Olw-nP-bQN">
                                             <connections>
                                                 <action selector="hide:" target="Ady-hI-5gd" id="PnN-Uc-m68"/>
                                             </connections>
@@ -55,7 +55,7 @@
                                             </connections>
                                         </menuItem>
                                         <menuItem isSeparatorItem="YES" id="kCx-OE-vgT"/>
-                                        <menuItem title="Quit Framecloud" keyEquivalent="q" id="4sb-4s-VLi">
+                                        <menuItem title="Quit Cirruscope" keyEquivalent="q" id="4sb-4s-VLi">
                                             <connections>
                                                 <action selector="terminate:" target="Ady-hI-5gd" id="Te7-pn-YzF"/>
                                             </connections>
@@ -638,7 +638,7 @@
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <menu key="submenu" title="Help" systemMenu="help" id="F2S-fz-NVQ">
                                     <items>
-                                        <menuItem title="Framecloud Help" keyEquivalent="?" id="FKE-Sm-Kum">
+                                        <menuItem title="Cirruscope Help" keyEquivalent="?" id="FKE-Sm-Kum">
                                             <connections>
                                                 <action selector="showHelp:" target="Ady-hI-5gd" id="y7X-2Q-9no"/>
                                             </connections>
@@ -664,7 +664,7 @@
                         <outlet property="delegate" destination="Voe-Tx-rLC" id="PrD-fu-P6m"/>
                     </connections>
                 </application>
-                <customObject id="Voe-Tx-rLC" customClass="AppDelegate" customModule="Framecloud" customModuleProvider="target">
+                <customObject id="Voe-Tx-rLC" customClass="AppDelegate" customModule="Cirruscope" customModuleProvider="target">
                     <connections>
                         <outlet property="serverAppsSeparator" destination="sn2-Go-DSI" id="Fcl-ap-Sep"/>
                     </connections>
@@ -701,14 +701,14 @@
         <!--Server Address View Controller-->
         <scene sceneID="fGo-gY-vRI">
             <objects>
-                <viewController id="CSm-iM-xwx" customClass="ServerAddressViewController" customModule="Framecloud" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="CSm-iM-xwx" customClass="ServerAddressViewController" customModule="Cirruscope" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="JXc-I7-b73">
                         <rect key="frame" x="0.0" y="0.0" width="400" height="447"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="hJR-Eu-VYI">
                                 <rect key="frame" x="132" y="216" width="137" height="31"/>
-                                <textFieldCell key="cell" lineBreakMode="clipping" title="Framecloud" id="YMm-Pw-AmD">
+                                <textFieldCell key="cell" lineBreakMode="clipping" title="Cirruscope" id="YMm-Pw-AmD">
                                     <font key="font" textStyle="largeTitle" name=".SFNS-Regular"/>
                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -800,8 +800,8 @@
         <!--Web Window-->
         <scene sceneID="R2V-B0-nI4">
             <objects>
-                <windowController storyboardIdentifier="WebViewWindowController" id="B8D-0N-5wS" userLabel="Web Window" customClass="WebWindowController" customModule="Framecloud" customModuleProvider="target" sceneMemberID="viewController">
-                    <window key="window" title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" titlebarAppearsTransparent="YES" titleVisibility="hidden" id="IQv-IB-iLA" customClass="WebWindow" customModule="Framecloud" customModuleProvider="target">
+                <windowController storyboardIdentifier="WebViewWindowController" id="B8D-0N-5wS" userLabel="Web Window" customClass="WebWindowController" customModule="Cirruscope" customModuleProvider="target" sceneMemberID="viewController">
+                    <window key="window" title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" titlebarAppearsTransparent="YES" titleVisibility="hidden" id="IQv-IB-iLA" customClass="WebWindow" customModule="Cirruscope" customModuleProvider="target">
                         <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES" fullSizeContentView="YES"/>
                         <rect key="contentRect" x="196" y="240" width="1200" height="800"/>
                         <rect key="screenRect" x="0.0" y="0.0" width="1680" height="1027"/>
@@ -822,7 +822,7 @@
         <scene sceneID="mtj-gJ-bn2">
             <objects>
                 <windowController storyboardIdentifier="SettingsWindowController" showSeguePresentationStyle="single" id="v0N-vH-deC" userLabel="Settings Window" sceneMemberID="viewController">
-                    <window key="window" title="Framecloud Settings" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" id="oTc-Gk-jL0">
+                    <window key="window" title="Cirruscope Settings" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" id="oTc-Gk-jL0">
                         <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES"/>
                         <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
                         <rect key="contentRect" x="425" y="462" width="480" height="270"/>
@@ -872,7 +872,7 @@
         <!--General Settings-->
         <scene sceneID="X0s-dQ-JkY">
             <objects>
-                <viewController id="M8w-Tj-wCV" userLabel="General Settings" customClass="GeneralSettingsViewController" customModule="Framecloud" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="M8w-Tj-wCV" userLabel="General Settings" customClass="GeneralSettingsViewController" customModule="Cirruscope" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" translatesAutoresizingMaskIntoConstraints="NO" id="z5Z-wa-TqO">
                         <rect key="frame" x="0.0" y="0.0" width="440" height="133"/>
                         <subviews>
@@ -907,7 +907,7 @@
                             </button>
                             <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="o8O-UB-Wz8">
                                 <rect key="frame" x="18" y="52" width="402" height="13"/>
-                                <textFieldCell key="cell" title="If you log out here, Framecloud will reset the chosen server and ask for a new one." id="BH5-Gl-U5U">
+                                <textFieldCell key="cell" title="If you log out here, Cirruscope will reset the chosen server and ask for a new one." id="BH5-Gl-U5U">
                                     <font key="font" textStyle="footnote" name=".SFNS-Regular"/>
                                     <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -941,7 +941,7 @@
         <!--Server Apps View Controller-->
         <scene sceneID="GUt-Gv-wjF">
             <objects>
-                <viewController id="ZAg-dq-Ifn" customClass="ServerAppsViewController" customModule="Framecloud" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="ZAg-dq-Ifn" customClass="ServerAppsViewController" customModule="Cirruscope" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="5f0-K6-DIA">
                         <rect key="frame" x="0.0" y="0.0" width="450" height="300"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -1092,7 +1092,7 @@
         <!--Download View Controller-->
         <scene sceneID="gV2-0x-WHE">
             <objects>
-                <viewController id="5aA-To-spc" customClass="DownloadViewController" customModule="Framecloud" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="5aA-To-spc" customClass="DownloadViewController" customModule="Cirruscope" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="HaZ-Dd-Oa5">
                         <rect key="frame" x="0.0" y="0.0" width="400" height="200"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -1125,7 +1125,7 @@
                                                     </textFieldCell>
                                                     <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                                     <prototypeCellViews>
-                                                        <tableCellView translatesAutoresizingMaskIntoConstraints="NO" id="wZX-2w-mXp" customClass="DownloadTableCellView" customModule="Framecloud" customModuleProvider="target">
+                                                        <tableCellView translatesAutoresizingMaskIntoConstraints="NO" id="wZX-2w-mXp" customClass="DownloadTableCellView" customModule="Cirruscope" customModuleProvider="target">
                                                             <rect key="frame" x="8" y="0.0" width="383" height="88"/>
                                                             <subviews>
                                                                 <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="Yga-3T-tsc" userLabel="Icon">
@@ -1262,7 +1262,7 @@
         <!--Web View Controller-->
         <scene sceneID="hIz-AP-VOD">
             <objects>
-                <viewController id="XfG-lQ-9wD" customClass="WebViewController" customModule="Framecloud" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="XfG-lQ-9wD" customClass="WebViewController" customModule="Cirruscope" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="m2S-Jp-Qdl">
                         <rect key="frame" x="0.0" y="0.0" width="1200" height="800"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -1274,7 +1274,7 @@
                                     <wkPreferences key="preferences"/>
                                 </wkWebViewConfiguration>
                             </wkWebView>
-                            <imageView horizontalHuggingPriority="1" verticalHuggingPriority="1" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="9eM-UK-O0L" customClass="BackgroundImageView" customModule="Framecloud" customModuleProvider="target">
+                            <imageView horizontalHuggingPriority="1" verticalHuggingPriority="1" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="9eM-UK-O0L" customClass="BackgroundImageView" customModule="Cirruscope" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="1200" height="800"/>
                                 <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyUpOrDown" id="Wfu-an-mwi"/>
                             </imageView>
