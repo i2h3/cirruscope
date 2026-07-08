@@ -6,12 +6,12 @@
 	<string>Cirruscope Feedback &lt;contact@cirruscope.app&gt;</string>
 	<key>MinimumSupportedNextcloudMajorVersion</key>
 	<integer>33</integer>
-	<key>PrivacyPolicy</key>
-	<string>https://cirruscope.app/privacy-policy/</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>PrivacyPolicy</key>
+	<string>https://cirruscope.app/privacy-policy/</string>
 </dict>
 </plist>
