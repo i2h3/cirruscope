@@ -1,22 +1,14 @@
-<div align="center">
-<img src="Cirruscope.png" alt="Cirruscope" width="256" />
-
 # Cirruscope
 
 [![REUSE](https://api.reuse.software/badge/github.com/i2h3/cirruscope)](https://api.reuse.software/info/github.com/i2h3/cirruscope)
 
 An app-like Nextcloud experience on macOS.
-This elevates your Nextcloud user interface to the next level by leveraging native platform features and WebKit. 
+This elevates your Nextcloud user interface to the next level by leveraging native platform features and WebKit.
 
-<img src="Screenshots/Dashboard.jpeg" alt="Nextcloud Files" />
-<img src="Screenshots/Files.jpeg" alt="Nextcloud Files" width=150 />
-<img src="Screenshots/Talk.jpeg" alt="Nextcloud Talk" width=150 />
-<img src="Screenshots/Office.jpeg" alt="Nextcloud Office" width=150 />
-<img src="Screenshots/Photos.jpeg" alt="Nextcloud Photos" width=150 />
-<img src="Screenshots/Notes.jpeg" alt="Nextcloud Notes" width=150 />
-</div>
+This document is written for developers.
+For a more user-friendly introduction, see [the official website](https://cirruscope.app).
 
-## Status
+## Project Status
 
 This is still under development but closing in fast on the initial release of version 1.0.0.
 Still in the progress of renaming everything to its final name "Cirruscope", hence you will still see "Framecloud" here and there.
@@ -105,10 +97,6 @@ Double-click the file, then approve it under **System Settings ▸ General ▸ D
 
 This is an unofficial third-party app out of the Nextcloud community.
 It is not associated with or endorsed by Nextcloud GmbH.
-
-## Privacy Policy
-
-The Cirruscope app does not collect any data.
 
 ## License
 
