@@ -4,7 +4,6 @@ import AppKit
 ///
 /// It stores the key equivalent character and the raw value of the `NSEvent.ModifierFlags` so it round-trips through `UserDefaults` as JSON; `ShortcutRecorderView` produces it and the menu builder applies it to `NSMenuItem.keyEquivalent` and `keyEquivalentModifierMask`.
 struct KeyboardShortcut: Codable, Equatable {
-
     /// `keyEquivalent` is the character that triggers the shortcut, as assigned to `NSMenuItem.keyEquivalent`.
     let keyEquivalent: String
 

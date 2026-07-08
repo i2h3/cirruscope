@@ -4,7 +4,6 @@ import Foundation
 ///
 /// `Keychain` persists and retrieves values of this type, `ServerConnection.authenticated(address:)` reads them to build an authenticated `Rainmaker.Server`, and `WebViewController` reads them to sign the embedded web view in via HTTP Basic authentication.
 struct Credentials: Codable {
-
     /// `user` is the Nextcloud login name returned as the `name` of a `Rainmaker.LoginResult`.
     ///
     /// It is sent as the user component of the HTTP Basic authentication used for both `Rainmaker.Server` requests and the embedded web view.

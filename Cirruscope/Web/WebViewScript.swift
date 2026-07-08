@@ -6,7 +6,6 @@ import os
 /// Each case maps to a `.js` file of the same name in the `Scripts` group, which keeps the scripts in standalone files that can be edited with JavaScript tooling instead of being embedded as string literals in Swift source.
 /// `WebViewController` reads `source` at the moment it needs a script, either to install it as a `WKUserScript` via `installUserScript(_:injectionTime:)` or to evaluate it on demand with `WKWebView.evaluateJavaScript(_:)`.
 enum WebViewScript: String {
-
     /// `windowDrag` forwards `mousedown` events that land on Nextcloud's header to the `windowDrag` message handler so the host window can begin a drag.
     ///
     /// `WebViewController.installWindowDragBridge()` installs it as a user script that runs at the end of every document load.

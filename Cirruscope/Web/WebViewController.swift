@@ -8,7 +8,6 @@ import WebKit
 /// It injects the bundled `Cirruscope.css` stylesheet, bridges custom title-bar drag behaviour, and tracks the state of Nextcloud's sidebar so that `WebViewController+NSMenuItemValidation` can drive the "Show/Hide Sidebar" menu item. The drag and sidebar behaviours are driven by the JavaScript resources enumerated in `WebViewScript`, which are loaded from the bundle on demand rather than embedded in this source file.
 /// The hosted `WKWebView` is hidden in the storyboard and only revealed by `WebViewController+WKNavigationDelegate` once its initial page load completes so the user is not exposed to the unstyled intermediate paint of the Nextcloud interface.
 class WebViewController: NSViewController, WKScriptMessageHandler {
-
     // MARK: - Outlets
 
     @IBOutlet
@@ -78,7 +77,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         }
 
         hasStartedInitialLoad = true
-        logger.info("Starting initial navigation (WebViewController \(self.logID))")
+        logger.info("Starting initial navigation (WebViewController \(logID))")
         webView.load(authenticatedRequest(for: url))
     }
 
@@ -279,7 +278,6 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     ///
     /// Each raw value is the name a `WebViewScript` uses in `window.webkit.messageHandlers.<name>.postMessage(…)`; the `install…Bridge()` methods register a handler for it on the web view's `WKUserContentController`, and `userContentController(_:didReceive:)` switches on it.
     private enum ScriptMessageName: String {
-
         /// `windowDrag` is posted by `WebViewScript.windowDrag` to ask the host window to begin a drag.
         case windowDrag
 

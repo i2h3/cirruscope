@@ -6,9 +6,9 @@ import os
 /// It backs the single Downloads window reached from the "Downloads" menu item. It reads `DownloadManager.shared.downloads` through its `NSTableViewDataSource` conformance and reloads whenever `DownloadManager` posts `Notification.Name.downloadsDidChange`.
 /// Each row's live progress is driven by `DownloadTableCellView` observing its `Download` directly, so this controller only reloads on changes to the list or a download's state, not on every byte transferred.
 class DownloadViewController: NSViewController {
-
     /// `tableView` lists the tracked downloads; its data source is wired in the storyboard and its delegate is set in `viewDidLoad()`.
-    @IBOutlet var tableView: NSTableView!
+    @IBOutlet
+    var tableView: NSTableView!
 
     /// `logger` records the download window's activity under the `DownloadViewController` category.
     private let logger = Logger(for: DownloadViewController.self)

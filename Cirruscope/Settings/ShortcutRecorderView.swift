@@ -5,7 +5,6 @@ import os
 ///
 /// Clicking it makes it the first responder, which is the visual cue that it is recording; the next key combination the user presses (with at least one of Command, Option, or Control) becomes its value. A trailing clear button, shown only while a shortcut is assigned, removes the shortcut. `ServerAppsViewController` places one per row in its apps table and observes `onChange` to persist the recorded `KeyboardShortcut`, or `nil` when the user clears it, into `Settings.appShortcuts`.
 class ShortcutRecorderView: NSView {
-
     /// `shortcut` is the currently recorded shortcut, or `nil` when none is assigned.
     ///
     /// Setting it shows or hides the clear button and refreshes the displayed text; the user changes it by recording a new combination, pressing Delete while recording, or clicking the clear button.
@@ -38,7 +37,7 @@ class ShortcutRecorderView: NSView {
     /// `eventMonitor` is the local key-event monitor that is active only while recording.
     ///
     /// It is only ever assigned on the main actor while recording starts and stops, and read again in `deinit` once no other reference remains, so `nonisolated(unsafe)` lets the `nonisolated` deinit tear it down without a data race.
-    nonisolated(unsafe) private var eventMonitor: Any?
+    private nonisolated(unsafe) var eventMonitor: Any?
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)

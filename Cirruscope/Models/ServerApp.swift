@@ -5,7 +5,6 @@ import Rainmaker
 ///
 /// It is the storable projection of `Rainmaker.NavigationItem` (which is decode-only), keeping just the fields Cirruscope needs: the `id` used to detect which app a window shows, the `order` used to sort the menus, the `href` used to build the app's URL, and the `name` used as the menu label.
 struct ServerApp: Codable, Identifiable {
-
     /// `id` is the Nextcloud app identifier (e.g. `"files"`), matched against the `/apps/<id>/` path of a web view's URL to detect which app a window currently shows.
     let id: String
 

@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2026 Iva Horn
+# SPDX-License-Identifier: MIT
+
+name: SwiftFormat
+
+on:
+  pull_request:
+    paths:
+      - '**/*.swift'
+
+jobs:
+  Lint:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+      - name: SwiftFormat
+        run: swiftformat --lint . --reporter github-actions-log

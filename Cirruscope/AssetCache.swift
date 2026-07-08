@@ -7,7 +7,6 @@ import os
 /// `Settings.persist(theming:)` uses the `shared` instance to keep local copies of the Nextcloud server's branding assets up to date so they can be displayed without re-fetching them every launch.
 /// Cached files are addressed by the SHA-256 digest of their absolute URL so that distinct remote URLs map to distinct local files.
 final class AssetCache {
-
     /// `shared` is the process-wide cache instance.
     ///
     /// `Settings.persist(theming:)` uses it to cache the server's branding assets, and other parts of the app read those cached files back via `localURL(for:)`.
@@ -95,21 +94,21 @@ final class AssetCache {
         }
 
         switch httpResponse.statusCode {
-        case 304:
-            logger.debug("Asset not modified (HTTP 304); using cached copy")
-            return fileURL
-        case 200..<300:
-            try data.write(to: fileURL, options: .atomic)
-            if let newETag = httpResponse.value(forHTTPHeaderField: "ETag") {
-                setETag(newETag, for: fileURL)
-            } else {
-                removeETag(for: fileURL)
-            }
-            logger.info("Cached asset (HTTP \(httpResponse.statusCode))")
-            return fileURL
-        default:
-            logger.error("Unexpected status \(httpResponse.statusCode) caching asset")
-            throw CirruscopeError.unexpectedStatus(httpResponse.statusCode)
+            case 304:
+                logger.debug("Asset not modified (HTTP 304); using cached copy")
+                return fileURL
+            case 200 ..< 300:
+                try data.write(to: fileURL, options: .atomic)
+                if let newETag = httpResponse.value(forHTTPHeaderField: "ETag") {
+                    setETag(newETag, for: fileURL)
+                } else {
+                    removeETag(for: fileURL)
+                }
+                logger.info("Cached asset (HTTP \(httpResponse.statusCode))")
+                return fileURL
+            default:
+                logger.error("Unexpected status \(httpResponse.statusCode) caching asset")
+                throw CirruscopeError.unexpectedStatus(httpResponse.statusCode)
         }
     }
 

@@ -4,7 +4,6 @@ import AppKit
 ///
 /// It keeps the standard close, miniaturize, and zoom buttons aligned with Cirruscope's custom title bar. AppKit returns those buttons to their default position on every layout pass, so `WebWindow` repositions them again at the end of the same pass — synchronously, so they are never displayed at the default position and do not visibly jump.
 class WebWindow: NSWindow {
-
     /// `toolbarHeight` is the height of Cirruscope's custom title bar that the window buttons are vertically centered within.
     private static let toolbarHeight: CGFloat = 50
 

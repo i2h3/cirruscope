@@ -6,7 +6,6 @@ import Foundation
 /// It conforms to `LocalizedError` so the messages presented to the user via `error.localizedDescription` are meaningful.
 /// New cases may be added as additional failure modes are introduced.
 enum CirruscopeError: Error, LocalizedError {
-
     /// `invalidResponse` is thrown when a server returns a response that is not an `HTTPURLResponse`.
     case invalidResponse
 

@@ -4,7 +4,6 @@ import Cocoa
 ///
 /// It dequeues the storyboard's prototype cell by the column identifier, matching how `ServerAppsViewController` reuses its own prototype, and lets the cell's Auto Layout constraints drive the automatic row height.
 extension DownloadViewController: NSTableViewDelegate {
-
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         guard let tableColumn,
               let cell = tableView.makeView(withIdentifier: tableColumn.identifier, owner: self) as? DownloadTableCellView

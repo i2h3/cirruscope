@@ -36,6 +36,7 @@ You are an experienced software engineer specialized on native apps for macOS wr
 - Documentation comments should have one empty line at their top and their bottom each.
 - Documentation comments must not wrap at a fixed column count but when a sentence is finished. Line lengths do not matter in documentation comments. A full sentence should always be written into a single line.
 - Never wrap arguments in func declarations or calls.
+- Always run `swiftformat .` in the project root directory after applying changes.
 
 ## Documentation Instructions
 
@@ -116,5 +117,4 @@ Use `log show` to read logs already recorded in a past time range, and `log stre
 
 ## Pull Request Instructions
 
-- Do not open a pull request automaticallx.
-- Always run `swift package plugin --allow-writing-to-package-directory swiftformat --verbose --cache ignore` before committing.
+- Do not open a pull request automatically.

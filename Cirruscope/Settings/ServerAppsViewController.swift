@@ -6,7 +6,6 @@ import os
 /// It reads `Settings.serverApps` for the rows and writes `Settings.appShortcuts` as the user records shortcuts via the `ShortcutRecorderView` in each row, which prompts `AppDelegate` to rebuild the View and Dock menus.
 /// The table's rows and views are supplied by `ServerAppsViewController+NSTableViewDataSource` and `ServerAppsViewController+NSTableViewDelegate`.
 class ServerAppsViewController: NSViewController {
-
     /// `tableView` lists the server apps, one row per `Settings.serverApps` entry, each with the app name and a shortcut recorder.
     @IBOutlet
     private var tableView: NSTableView!

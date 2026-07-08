@@ -7,24 +7,29 @@ import UniformTypeIdentifiers
 /// `DownloadViewController+NSTableViewDelegate` calls `configure(with:)` to bind a row to its `Download`; the cell then drives its `progressIndicator` from the download's `Progress` and observes that progress to keep `status` current.
 /// Its stop and reveal buttons target the cell itself rather than the controller, so the cell asks `DownloadManager` to cancel the download it holds or opens Finder on the finished file.
 class DownloadTableCellView: NSTableCellView {
-
     /// `fileName` shows the download's `displayName`, the name the file is saved under in the Downloads folder.
-    @IBOutlet var fileName: NSTextField!
+    @IBOutlet
+    var fileName: NSTextField!
 
     /// `icon` shows a standard file-type icon derived from the download's file name, replacing the storyboard's design-time placeholder image.
-    @IBOutlet var icon: NSImageView!
+    @IBOutlet
+    var icon: NSImageView!
 
     /// `progressIndicator` reflects the download's `Progress`, driven from a `fractionCompleted` observation, running indeterminate until the total size is known.
-    @IBOutlet var progressIndicator: NSProgressIndicator!
+    @IBOutlet
+    var progressIndicator: NSProgressIndicator!
 
     /// `status` shows the transfer's live byte description while running and a terminal message once it finishes, fails, or is cancelled.
-    @IBOutlet var status: NSTextField!
+    @IBOutlet
+    var status: NSTextField!
 
     /// `revealInFinder` opens Finder on the finished file and is hidden until the download has finished.
-    @IBOutlet var revealInFinder: NSButton!
+    @IBOutlet
+    var revealInFinder: NSButton!
 
     /// `stop` cancels the transfer and is shown only while the download is in progress.
-    @IBOutlet var stop: NSButton!
+    @IBOutlet
+    var stop: NSButton!
 
     /// `logger` records the row's user actions under the `DownloadTableCellView` category.
     private let logger = Logger(for: DownloadTableCellView.self)
@@ -71,7 +76,7 @@ class DownloadTableCellView: NSTableCellView {
                 progressIndicator.maxValue = 1
                 let hasKnownTotal = download.progress.totalUnitCount > 0
                 progressIndicator.isIndeterminate = !hasKnownTotal
-                
+
                 if hasKnownTotal {
                     progressIndicator.stopAnimation(nil)
                     progressIndicator.doubleValue = download.progress.fractionCompleted
@@ -119,7 +124,8 @@ class DownloadTableCellView: NSTableCellView {
         }
     }
 
-    @IBAction func revealInFinder(_: Any) {
+    @IBAction
+    func revealInFinder(_: Any) {
         guard let destinationURL = download?.destinationURL else {
             return
         }
@@ -128,7 +134,8 @@ class DownloadTableCellView: NSTableCellView {
         NSWorkspace.shared.activateFileViewerSelecting([destinationURL])
     }
 
-    @IBAction func stop(_: Any) {
+    @IBAction
+    func stop(_: Any) {
         guard let download else {
             return
         }

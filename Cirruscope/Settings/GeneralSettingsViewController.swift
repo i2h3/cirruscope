@@ -2,7 +2,8 @@ import Cocoa
 import os
 
 class GeneralSettingsViewController: NSViewController {
-    @IBOutlet var serverAddressButton: NSButton!
+    @IBOutlet
+    var serverAddressButton: NSButton!
 
     /// `logger` records the general settings tab's activity under the `GeneralSettingsViewController` category.
     private let logger = Logger(for: GeneralSettingsViewController.self)
@@ -14,7 +15,8 @@ class GeneralSettingsViewController: NSViewController {
         serverAddressButton.title = Settings.serverAddress?.absoluteString ?? "Not set"
     }
 
-    @IBAction func openServerAddress(_ sender: Any) {
+    @IBAction
+    func openServerAddress(_: Any) {
         guard let url = Settings.serverAddress else {
             return
         }
@@ -22,7 +24,8 @@ class GeneralSettingsViewController: NSViewController {
         NSWorkspace.shared.open(url)
     }
 
-    @IBAction func logOut(_ sender: Any) {
+    @IBAction
+    func logOut(_: Any) {
         logger.notice("Logging out; closing all windows and clearing the server address and credentials")
 
         for window in NSApplication.shared.windows {

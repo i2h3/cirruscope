@@ -4,7 +4,6 @@ import Cocoa
 ///
 /// Web windows opt in via `WebWindowController.windowDidLoad()` (`isRestorable` + this restoration class); `WebWindow.encodeRestorableState(with:)` records each window's page. Restoration is declined when no server credentials are stored, and `presentInitialWindow(forLaunch:)` reconciles the restored windows with the server's current state.
 extension AppDelegate: NSWindowRestoration {
-
     static func restoreWindow(withIdentifier identifier: NSUserInterfaceItemIdentifier, state: NSCoder, completionHandler: @escaping (NSWindow?, (any Error)?) -> Void) {
         // AppKit calls this on the main thread during launch; bridge to the main-actor-isolated delegate to recreate the window.
         MainActor.assumeIsolated {

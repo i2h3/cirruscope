@@ -6,12 +6,10 @@ import WebKit
 /// `DownloadTableCellView` reads these properties to populate a row and observes `progress` to reflect live progress, so the model is the single source of truth shared between the coordinator and the UI.
 /// It is deliberately not `Codable`: issue #23 requires download history to live only for the current run and never be persisted across launches.
 final class Download: Identifiable {
-
     /// `State` enumerates the mutually exclusive phases a `Download` moves through, which `DownloadTableCellView` maps to the visibility of its stop and reveal buttons and the text it shows.
     ///
     /// A download starts `inProgress` and ends in exactly one terminal case: `finished` once `DownloadManager` receives `downloadDidFinish`, `cancelled` when the user stops it, or `failed` when the transfer errors for any other reason.
     enum State {
-
         /// `inProgress` is the phase while the transfer is running and its bytes are still arriving.
         case inProgress
 

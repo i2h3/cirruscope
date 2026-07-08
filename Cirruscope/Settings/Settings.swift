@@ -8,10 +8,8 @@ import Rainmaker
 /// `ServerAddressViewController` writes the user's chosen server address back to `Settings` after validating it against `Settings.minimumSupportedServerMajorVersion`, and `WebViewController` reads the address again to load the initial request.
 /// `AppDelegate` and `ServerAddressViewController` additionally feed the server's `Theming` capability into `persist(theming:)` whenever they successfully retrieve the capabilities, which mirrors the relevant properties into `themeBackground`, `themeLogo`, and `themeBackgroundPlain` and asks `AssetCache` to download the referenced image assets. Those values are cleared together with `serverAddress` when the user disconnects.
 enum Settings {
-
     /// `UserDefaultsKey` enumerates the raw string keys under which `Settings` stores user-specific values in `UserDefaults`.
     private enum UserDefaultsKey: String {
-
         /// `serverAddress` is the key under which `Settings.serverAddress` persists the URL of the Nextcloud server the user has connected to.
         case serverAddress
 
@@ -36,7 +34,6 @@ enum Settings {
 
     /// `InfoPlistKey` collects the string keys under which `Settings` reads statically configured values from the app's `Info.plist`.
     private enum InfoPlistKey {
-
         /// `minimumSupportedServerMajorVersion` is the key for the `Info.plist` entry that backs `Settings.minimumSupportedServerMajorVersion`.
         static let minimumSupportedServerMajorVersion = "MinimumSupportedNextcloudMajorVersion"
 
@@ -192,7 +189,7 @@ enum Settings {
 
         set {
             do {
-                UserDefaults.standard.set(try JSONEncoder().encode(newValue), forKey: UserDefaultsKey.serverApps.rawValue)
+                try UserDefaults.standard.set(JSONEncoder().encode(newValue), forKey: UserDefaultsKey.serverApps.rawValue)
             } catch {
                 logger.error("Could not encode server apps: \(error.localizedDescription)")
             }
@@ -228,7 +225,7 @@ enum Settings {
 
         set {
             do {
-                UserDefaults.standard.set(try JSONEncoder().encode(newValue), forKey: UserDefaultsKey.appShortcuts.rawValue)
+                try UserDefaults.standard.set(JSONEncoder().encode(newValue), forKey: UserDefaultsKey.appShortcuts.rawValue)
             } catch {
                 logger.error("Could not encode app shortcuts: \(error.localizedDescription)")
             }
@@ -293,7 +290,6 @@ enum Settings {
 }
 
 extension Notification.Name {
-
     /// `serverAppsDidChange` is posted by `Settings` whenever `serverApps` or `appShortcuts` changes so `AppDelegate` can rebuild the View and Dock menus.
     static let serverAppsDidChange = Notification.Name("ServerAppsDidChange")
 

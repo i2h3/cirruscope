@@ -6,10 +6,8 @@ import Rainmaker
 ///
 /// `anonymous(address:)` is used before the user has authenticated and to initiate Login Flow v2, `authenticated(address:)` builds a credentialed server from `Keychain`, and `validate(_:)` fetches capabilities, persists theming, and reports whether the server's version is supported.
 enum ServerConnection {
-
     /// `ValidationOutcome` reports the result of `validate(_:)`.
     enum ValidationOutcome {
-
         /// `supported` carries the fetched `CapabilitySet` of a server whose major version meets `Settings.minimumSupportedServerMajorVersion`.
         case supported(CapabilitySet)
 

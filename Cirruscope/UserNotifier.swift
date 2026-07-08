@@ -8,7 +8,6 @@ import WebKit
 /// `WebViewController` forwards each web `Notification` through its `notification` script-message handler to `post(title:body:tag:webNotificationID:webView:)`, which posts a `UNNotificationRequest`. `AppDelegate` calls `configure()` on launch to register this object as the `UNUserNotificationCenter` delegate, and `WebViewController` calls `requestAuthorization()` when a web window opens.
 /// When the user clicks a notification, `userNotificationCenter(_:didReceive:withCompletionHandler:)` brings the originating web window forward and asks its page to run the notification's own click handler, so the web interface navigates to the notification's target as it would natively.
 final class UserNotifier: NSObject, UNUserNotificationCenterDelegate {
-
     /// `shared` is the process-wide notifier instance, used so a single object owns the `UNUserNotificationCenter` delegate relationship for the app's lifetime.
     static let shared = UserNotifier()
 

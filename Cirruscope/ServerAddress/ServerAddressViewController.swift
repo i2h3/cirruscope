@@ -7,7 +7,6 @@ import Rainmaker
 ///
 /// It is presented by `AppDelegate` on launch when `Settings.serverAddress` is `nil`, validates the entered address by fetching the server's capabilities via `ServerConnection`, runs Nextcloud's Login Flow v2 in an `ASWebAuthenticationSession` to obtain an app password, and on success persists the address to `Settings.serverAddress` and the credentials to `Keychain` before handing off to `WebViewController`.
 class ServerAddressViewController: NSViewController {
-
     /// `progressIndicator` is the indeterminate spinner that is animated while a server is being validated and the login is in progress.
     ///
     /// `open(_:)` shows and starts it before issuing the network request and hides and stops it once the flow has completed or failed.
@@ -47,7 +46,7 @@ class ServerAddressViewController: NSViewController {
     func open(_: Any) {
         var sanitizedServerAddress = serverAddressField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        if sanitizedServerAddress.hasPrefix("http://") == false && sanitizedServerAddress.hasPrefix("https://") == false {
+        if sanitizedServerAddress.hasPrefix("http://") == false, sanitizedServerAddress.hasPrefix("https://") == false {
             sanitizedServerAddress = "https://".appending(sanitizedServerAddress)
         }
 
@@ -183,5 +182,4 @@ class ServerAddressViewController: NSViewController {
             alert.runModal()
         }
     }
-
 }

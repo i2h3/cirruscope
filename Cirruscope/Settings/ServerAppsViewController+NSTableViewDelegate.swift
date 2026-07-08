@@ -2,7 +2,6 @@ import Cocoa
 
 /// `ServerAppsViewController`'s conformance to `NSTableViewDelegate` builds each row's views: the app name in the first column and a `ShortcutRecorderView` bound to `Settings.appShortcuts` in the second.
 extension ServerAppsViewController: NSTableViewDelegate {
-
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         guard let tableColumn,
               let columnIndex = tableView.tableColumns.firstIndex(of: tableColumn)

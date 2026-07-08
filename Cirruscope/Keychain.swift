@@ -6,7 +6,6 @@ import os
 /// `ServerAddressViewController` writes credentials here after a successful login, `ServerConnection.authenticated(address:)` and `WebViewController` read them back, and `Settings.serverAddress`'s setter clears them when the user disconnects.
 /// Items use the app's default Keychain access group, so no `keychain-access-groups` entitlement is required under the App Sandbox.
 enum Keychain {
-
     /// `service` is the constant `kSecAttrService` value under which every credential item is filed, so the app's items can be enumerated and cleared as a group.
     ///
     /// It is derived from the app's bundle identifier rather than hardcoded so the Keychain items stay tied to the app across future renames without a code change.

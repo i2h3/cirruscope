@@ -7,7 +7,6 @@ import WebKit
 /// Each method carries an explicit `@objc(...)` selector: `WKDownloadDelegate` is an Objective-C protocol dispatched purely by selector, and the required destination callback must be the completion-handler form rather than `async` — under Swift 6 with main-actor default isolation the `async` witness did not register the selector WebKit probes, so WebKit found no destination method and silently abandoned every download without calling any delegate method.
 /// Every method logs its entry and each outcome at debug level (identifying the transfer by its file name, since `DownloadManager` is a single shared instance) so a download's lifecycle can be reconstructed from a log capture when tracing misbehaviour.
 extension DownloadManager: WKDownloadDelegate {
-
     @objc(download:decideDestinationUsingResponse:suggestedFilename:completionHandler:)
     func download(_ download: WKDownload, decideDestinationUsing _: URLResponse, suggestedFilename: String, completionHandler: @escaping @MainActor (URL?) -> Void) {
         logger.debug("Deciding destination for a download with suggested filename \(suggestedFilename)")

@@ -2,7 +2,6 @@ import Cocoa
 
 /// `AppDelegate`'s feedback support opens the user's default mail app with a draft addressed to Cirruscope's feedback inbox, pre-filled with the environment details that help triage a report.
 extension AppDelegate {
-
     /// `provideFeedback(_:)` opens the user's default mail app with a draft addressed to Cirruscope's feedback inbox.
     ///
     /// The body is pre-filled with the environment details that help triage a report — the macOS version, the app version, and, when a supported server is connected, the Nextcloud server version — so the user does not have to gather them by hand. It backs the Help-menu "Provide Feedback…" item, which targets the responder chain.
@@ -14,7 +13,8 @@ extension AppDelegate {
         guard let encodedRecipient = recipient.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
               let encodedSubject = subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
               let encodedBody = feedbackBody().addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-              let url = URL(string: "mailto:\(encodedRecipient)?subject=\(encodedSubject)&body=\(encodedBody)") else {
+              let url = URL(string: "mailto:\(encodedRecipient)?subject=\(encodedSubject)&body=\(encodedBody)")
+        else {
             return
         }
 
