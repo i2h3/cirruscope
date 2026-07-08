@@ -15,7 +15,7 @@ extension WebViewController: WKNavigationDelegate {
     /// a download is started explicitly with `WKWebView.startDownload(using:)`, which hands back the `WKDownload` directly.
     @objc(webView:decidePolicyForNavigationAction:decisionHandler:)
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping @MainActor (WKNavigationActionPolicy) -> Void) {
-        logger.debug("Deciding policy for navigation action to \(navigationAction.request.url?.absoluteString ?? "no URL") (WebViewController \(logID))")
+        logger.debug("Deciding policy for navigation action to \(navigationAction.request.url?.absoluteString ?? "no URL") (WebViewController \(self.logID))")
 
         // A link that asks to be downloaded (e.g. an anchor with a `download` attribute) is turned into a download
         // before the host check, so it is never misrouted to the system browser.
@@ -24,7 +24,7 @@ extension WebViewController: WKNavigationDelegate {
             // decision on this OS with Swift 6 (confirmed by tracing: the policy returns `.download` but the callback
             // never fires). So start the transfer explicitly with `startDownload(using:)`, which hands the `WKDownload`
             // straight to its completion handler, and cancel the navigation instead of relying on the callback.
-            logger.debug("Navigation action requests a download; starting it explicitly and cancelling the navigation (WebViewController \(logID))")
+            logger.debug("Navigation action requests a download; starting it explicitly and cancelling the navigation (WebViewController \(self.logID))")
             webView.startDownload(using: navigationAction.request) { download in
                 DownloadManager.shared.handle(download)
             }
@@ -37,19 +37,19 @@ extension WebViewController: WKNavigationDelegate {
               let serverHost = Settings.serverAddress?.host,
               host.caseInsensitiveCompare(serverHost) != .orderedSame
         else {
-            logger.debug("Navigation action stays on the configured server or has no comparable host; returning .allow (WebViewController \(logID))")
+            logger.debug("Navigation action stays on the configured server or has no comparable host; returning .allow (WebViewController \(self.logID))")
             decisionHandler(.allow)
             return
         }
 
         NSWorkspace.shared.open(url)
-        logger.debug("Navigation action targets external host \(host); opened it in the system browser and returning .cancel (WebViewController \(logID))")
+        logger.debug("Navigation action targets external host \(host); opened it in the system browser and returning .cancel (WebViewController \(self.logID))")
         decisionHandler(.cancel)
     }
 
     @objc(webView:decidePolicyForNavigationResponse:decisionHandler:)
     func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping @MainActor (WKNavigationResponsePolicy) -> Void) {
-        logger.debug("Deciding policy for navigation response from \(navigationResponse.response.url?.absoluteString ?? "no URL") (WebViewController \(logID))")
+        logger.debug("Deciding policy for navigation response from \(navigationResponse.response.url?.absoluteString ?? "no URL") (WebViewController \(self.logID))")
 
         // Download anything the web view cannot render inline, and anything the server marks as an attachment,
         // which is how Nextcloud delivers a file the user asked to download. As with a download-flagged action,
@@ -57,7 +57,7 @@ extension WebViewController: WKNavigationDelegate {
         // download and cancel the navigation. `startDownload(using:)` does not re-enter this delegate, so a
         // non-renderable response cannot loop back into another download decision.
         if navigationResponse.canShowMIMEType == false {
-            logger.debug("Response MIME type \(navigationResponse.response.mimeType ?? "unknown") is not renderable inline; starting a download and cancelling the navigation (WebViewController \(logID))")
+            logger.debug("Response MIME type \(navigationResponse.response.mimeType ?? "unknown") is not renderable inline; starting a download and cancelling the navigation (WebViewController \(self.logID))")
             startDownload(from: navigationResponse.response.url, in: webView)
             decisionHandler(.cancel)
             return
@@ -67,13 +67,13 @@ extension WebViewController: WKNavigationDelegate {
            let disposition = response.value(forHTTPHeaderField: "Content-Disposition"),
            disposition.lowercased().hasPrefix("attachment")
         {
-            logger.debug("Response is marked as an attachment; starting a download and cancelling the navigation (WebViewController \(logID))")
+            logger.debug("Response is marked as an attachment; starting a download and cancelling the navigation (WebViewController \(self.logID))")
             startDownload(from: navigationResponse.response.url, in: webView)
             decisionHandler(.cancel)
             return
         }
 
-        logger.debug("Response is renderable inline; returning .allow (WebViewController \(logID))")
+        logger.debug("Response is renderable inline; returning .allow (WebViewController \(self.logID))")
         decisionHandler(.allow)
     }
 
@@ -82,11 +82,11 @@ extension WebViewController: WKNavigationDelegate {
     /// `webView(_:decidePolicyFor:decisionHandler:)` (the response variant) calls it for a response it cannot render or that arrives as an attachment, then cancels the navigation; `startDownload(using:)` re-requests the URL in the web view's context, so the server session's cookies still authorize it.
     private func startDownload(from url: URL?, in webView: WKWebView) {
         guard let url else {
-            logger.error("Cannot start a download because the response has no URL (WebViewController \(logID))")
+            logger.error("Cannot start a download because the response has no URL (WebViewController \(self.logID))")
             return
         }
 
-        logger.debug("Starting an explicit download for \(url.absoluteString) (WebViewController \(logID))")
+        logger.debug("Starting an explicit download for \(url.absoluteString) (WebViewController \(self.logID))")
         webView.startDownload(using: URLRequest(url: url)) { download in
             DownloadManager.shared.handle(download)
         }
@@ -97,30 +97,30 @@ extension WebViewController: WKNavigationDelegate {
     /// WebKit's call to `…didBecomeDownload:` misses and a started download is never handed to the coordinator.
     @objc(webView:navigationAction:didBecomeDownload:)
     func webView(_: WKWebView, navigationAction _: WKNavigationAction, didBecome download: WKDownload) {
-        logger.debug("Navigation action became a download; handing it to DownloadManager (WebViewController \(logID))")
+        logger.debug("Navigation action became a download; handing it to DownloadManager (WebViewController \(self.logID))")
         DownloadManager.shared.handle(download)
     }
 
     @objc(webView:navigationResponse:didBecomeDownload:)
     func webView(_: WKWebView, navigationResponse _: WKNavigationResponse, didBecome download: WKDownload) {
-        logger.debug("Navigation response became a download; handing it to DownloadManager (WebViewController \(logID))")
+        logger.debug("Navigation response became a download; handing it to DownloadManager (WebViewController \(self.logID))")
         DownloadManager.shared.handle(download)
     }
 
     func webView(_ webView: WKWebView, didFinish _: WKNavigation!) {
-        logger.debug("Navigation finished (WebViewController \(logID))")
+        logger.debug("Navigation finished (WebViewController \(self.logID))")
 
         // Re-save the window's restorable state after every navigation so a relaunch reopens the page now shown,
         // not the one the window started on. `WebWindow.encodeRestorableState(with:)` reads the current URL.
         view.window?.invalidateRestorableState()
 
         guard !hasRevealedAfterInitialLoad else {
-            logger.debug("Web view already revealed; leaving it in place after this navigation (WebViewController \(logID))")
+            logger.debug("Web view already revealed; leaving it in place after this navigation (WebViewController \(self.logID))")
             return
         }
 
         hasRevealedAfterInitialLoad = true
-        logger.debug("Initial navigation finished; revealing web view (WebViewController \(logID))")
+        logger.debug("Initial navigation finished; revealing web view (WebViewController \(self.logID))")
 
         backgroundImageView.isHidden = true
         visualEffectsView.isHidden = true
@@ -132,10 +132,10 @@ extension WebViewController: WKNavigationDelegate {
     }
 
     func webView(_: WKWebView, didFail _: WKNavigation!, withError error: any Error) {
-        logger.error("Web navigation failed: \(error.localizedDescription) (WebViewController \(logID))")
+        logger.error("Web navigation failed: \(error.localizedDescription) (WebViewController \(self.logID))")
     }
 
     func webView(_: WKWebView, didFailProvisionalNavigation _: WKNavigation!, withError error: any Error) {
-        logger.error("Web provisional navigation failed: \(error.localizedDescription) (WebViewController \(logID))")
+        logger.error("Web provisional navigation failed: \(error.localizedDescription) (WebViewController \(self.logID))")
     }
 }

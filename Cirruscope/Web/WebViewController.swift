@@ -77,7 +77,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         }
 
         hasStartedInitialLoad = true
-        logger.info("Starting initial navigation (WebViewController \(logID))")
+        logger.info("Starting initial navigation (WebViewController \(self.logID))")
         webView.load(authenticatedRequest(for: url))
     }
 

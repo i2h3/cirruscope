@@ -13,6 +13,7 @@
 --line-after-marks true
 --line-between-guards true
 --non-complex-attributes prev-line
+--self-required trace,debug,info,notice,warning,error,critical,fault,log
 --stored-var-attributes prev-line
 --trailing-commas collections-only
 --type-attributes prev-line
