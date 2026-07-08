@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>FCFeedbackAddress</key>
-	<string>Framecloud Feedback &lt;framecloud@i2h3.de&gt;</string>
+	<string>Cirruscope Feedback &lt;contact@cirruscope.app&gt;</string>
 	<key>FCMinimumSupportedNextcloudMajorVersion</key>
 	<integer>33</integer>
 	<key>FCPrivacyPolicy</key>
-	<string>https://i2h3.de/framecloud/privacy-policy/</string>
+	<string>https://cirruscope.app/privacy-policy/</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
