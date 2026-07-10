@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Iva Horn
+// SPDX-License-Identifier: MIT
+
 import Cocoa
 
 /// `AppDelegate`'s conformance to `NSWindowRestoration` recreates the web windows AppKit saved at quit, so a relaunch reopens the same pages at the same frames.

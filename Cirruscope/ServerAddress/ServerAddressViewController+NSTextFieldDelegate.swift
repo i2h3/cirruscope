@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Iva Horn
+// SPDX-License-Identifier: MIT
+
 import Cocoa
 
 /// `ServerAddressViewController`'s conformance to `NSTextFieldDelegate` keeps the "Open" button enabled only while the server-address field holds an address to submit.

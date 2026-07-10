@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Iva Horn
+// SPDX-License-Identifier: MIT
+
 import AppKit
 
 /// `WebViewController`'s conformance to `NSMenuItemValidation` keeps the "Show/Hide Sidebar" menu item in sync with the state of Nextcloud's sidebar that `WebViewController` tracks via its `sidebarToggleAvailable` and `sidebarToggleExpanded` properties.

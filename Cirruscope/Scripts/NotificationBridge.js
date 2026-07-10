@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Iva Horn
+// SPDX-License-Identifier: MIT
+
 // Overrides the web Notification API so notifications created by the Nextcloud web interface are
 // forwarded to the native app, which presents them in the macOS Notification Center. WKWebView does
 // not implement the Notification API, so without this override the web interface's notifications are

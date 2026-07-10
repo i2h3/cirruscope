@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Iva Horn
+// SPDX-License-Identifier: MIT
+
 import WebKit
 
 /// `Download` is the runtime record of a single file transfer that `DownloadManager` coordinates and `DownloadViewController` displays.

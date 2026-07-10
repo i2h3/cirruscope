@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Iva Horn
+// SPDX-License-Identifier: MIT
+
 // Forwards primary-button mousedown events that land on Nextcloud's header,
 // but not on interactive elements within it, to the `windowDrag` message
 // handler so the host window can begin a drag.

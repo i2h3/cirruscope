@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Iva Horn
+// SPDX-License-Identifier: MIT
+
 import AppKit
 
 /// `BackgroundImageView` is an `NSImageView` that renders its image scaled to fill its bounds and center-cropped, matching the CSS `background-size: cover` of Nextcloud's own background rather than the aspect-fit scaling `NSImageView` offers.

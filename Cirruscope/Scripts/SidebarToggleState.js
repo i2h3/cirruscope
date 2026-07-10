@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Iva Horn
+// SPDX-License-Identifier: MIT
+
 // Reports whether Nextcloud's sidebar toggle is present and expanded through
 // the `sidebarToggleState` message handler, both once on injection and on every
 // subsequent DOM mutation that could change either value.

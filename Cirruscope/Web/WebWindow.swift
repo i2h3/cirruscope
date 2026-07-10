@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Iva Horn
+// SPDX-License-Identifier: MIT
+
 import AppKit
 
 /// `WebWindow` is the window of the storyboard "Web Window" scene that hosts `WebViewController`.

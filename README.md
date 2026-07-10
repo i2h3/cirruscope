@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2026 Iva Horn
+SPDX-License-Identifier: MIT
+-->
+
 # Cirruscope
 
 [![REUSE](https://api.reuse.software/badge/github.com/i2h3/cirruscope)](https://api.reuse.software/info/github.com/i2h3/cirruscope)

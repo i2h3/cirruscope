@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2026 Iva Horn
+SPDX-License-Identifier: MIT
+-->
+
 #  AGENTS.md
 
 You are an experienced software engineer specialized on native apps for macOS written in Swift using AppKit.
@@ -37,6 +42,23 @@ You are an experienced software engineer specialized on native apps for macOS wr
 - Documentation comments must not wrap at a fixed column count but when a sentence is finished. Line lengths do not matter in documentation comments. A full sentence should always be written into a single line.
 - Never wrap arguments in func declarations or calls.
 - Always run `swiftformat .` in the project root directory after applying changes.
+
+## REUSE Compliance
+
+This project is checked for [REUSE](https://reuse.software/) Specification 3.3 compliance by `.github/workflows/reuse.yml` (`fsfe/reuse-action@v6`): every file must carry SPDX copyright and license metadata, either as an inline header or as an entry in `REUSE.toml`.
+
+- The convention throughout the project is `SPDX-FileCopyrightText: <year> Iva Horn` and `SPDX-License-Identifier: MIT`, written as the two-line header appropriate to the file's comment syntax (`//` for Swift/JavaScript, `/* */` for CSS and `.strings`, `<!-- -->` for HTML/Markdown, `#` for shell-style configs like `.gitignore` and `.swiftformat`), placed at the very top of the file with a blank line before the rest of its content. `<year>` is the year the file was actually created — never hardcode the current year as a blanket constant, since files created in different years must carry different years, including ones added long after this instruction was written:
+  ```bash
+  # Year a new file is created: use the current year.
+  # Year an existing file predating SPDX coverage was created: check when
+  # its content first appeared, treating a delete-then-recreate at the same
+  # path as a fresh creation (its year, not the original's):
+  git log --follow --format=%ad --date=format:%Y -- <path> | tail -1
+  ```
+- Files that cannot safely hold an inline comment — binaries, pure JSON, or anything Xcode/SwiftPM/Icon Composer regenerates or rewrites through its own GUI or tooling (the asset catalog, the `AppIcon.icon` bundle, `project.pbxproj`, `contents.xcworkspacedata`, `Package.resolved`, `Main.storyboard`, `Info.plist`, `PrivacyInfo.xcprivacy`, `Localizable.xcstrings`, `.swift-version`) — are covered by a `[[annotations]]` entry in `REUSE.toml` instead. Add new files of these kinds to an existing matching `path` glob there only if its year already matches, or a new annotation block otherwise; never hand-edit an SPDX comment into them.
+- `Cirruscope/AppIcon.icon/Assets/White Nextcloud Mark.svg` is the one deliberate exception: it is Nextcloud's own trademark, not this project's work, so its `REUSE.toml` entry attributes it to `Nextcloud GmbH` under `LicenseRef-Nextcloud-Trademark` (see `LICENSES/LicenseRef-Nextcloud-Trademark.txt`) rather than `Iva Horn`/`MIT`.
+- Whenever a change adds a new file, give it SPDX coverage immediately — an inline header or a `REUSE.toml` entry — rather than leaving it for later.
+- Always run `reuse lint` in the project root directory after applying changes (install via `brew install reuse` if missing), and confirm it reports "Congratulations! Your project is compliant with version 3.3 of the REUSE Specification" before considering the change complete.
 
 ## Documentation Instructions
 

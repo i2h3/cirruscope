@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Iva Horn
+// SPDX-License-Identifier: MIT
+
 import Foundation
 
 /// `CirruscopeError` is the shared error type for failures originating in app-level code.

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Iva Horn
+// SPDX-License-Identifier: MIT
+
 // Clicks Nextcloud's sidebar toggle, if present, to show or hide the sidebar.
 
 (function() {

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Iva Horn
+// SPDX-License-Identifier: MIT
+
 import Foundation
 
 /// `Credentials` bundles the Nextcloud login name and app password obtained from a completed Login Flow v2 grant.

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Iva Horn
+// SPDX-License-Identifier: MIT
+
 import AppKit
 
 /// `KeyboardShortcut` is a user-assigned key equivalent for a `ServerApp`, persisted in `Settings.appShortcuts` and applied to the app's menu items.

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Iva Horn
+# SPDX-License-Identifier: MIT
+
 --complex-attributes prev-line
 --computed-var-attributes prev-line
 --enable blankLinesBetweenScopes

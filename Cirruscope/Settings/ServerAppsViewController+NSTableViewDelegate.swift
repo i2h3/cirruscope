@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Iva Horn
+// SPDX-License-Identifier: MIT
+
 import Cocoa
 
 /// `ServerAppsViewController`'s conformance to `NSTableViewDelegate` builds each row's views: the app name in the first column and a `ShortcutRecorderView` bound to `Settings.appShortcuts` in the second.
