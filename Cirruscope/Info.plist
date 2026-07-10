@@ -2,8 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>FeedbackAddress</key>
-	<string>Cirruscope Feedback &lt;contact@cirruscope.app&gt;</string>
 	<key>MinimumSupportedNextcloudMajorVersion</key>
 	<integer>33</integer>
 	<key>NSAppTransportSecurity</key>
@@ -13,5 +11,7 @@
 	</dict>
 	<key>PrivacyPolicy</key>
 	<string>https://cirruscope.app/privacy-policy/</string>
+	<key>SupportURL</key>
+	<string>https://cirruscope.app/support/</string>
 </dict>
 </plist>

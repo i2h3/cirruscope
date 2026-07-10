@@ -40,8 +40,8 @@ enum Settings {
         /// `privacyPolicy` is the key for the `Info.plist` entry that backs `Settings.privacyPolicy`.
         static let privacyPolicy = "PrivacyPolicy"
 
-        /// `feedbackAddress` is the key for the `Info.plist` entry that backs `Settings.feedbackAddress`.
-        static let feedbackAddress = "FeedbackAddress"
+        /// `supportURL` is the key for the `Info.plist` entry that backs `Settings.supportURL`.
+        static let supportURL = "SupportURL"
     }
 
     /// `logger` records settings persistence failures — JSON coding and theming asset caching — under the `Settings` category.
@@ -129,7 +129,7 @@ enum Settings {
 
     /// `serverVersion` is the human-readable version string of the connected Nextcloud server, or `nil` while no supported server has been reached yet.
     ///
-    /// `ServerConnection.validate(_:)` writes it whenever a supported server's capabilities are retrieved, and `AppDelegate.provideFeedback(_:)` includes it in the feedback email when present.
+    /// `ServerConnection.validate(_:)` writes it whenever a supported server's capabilities are retrieved.
     /// It is cleared together with `serverAddress` when the user disconnects from the server.
     static var serverVersion: String? {
         get {
@@ -275,17 +275,19 @@ enum Settings {
         return url
     }
 
-    /// `feedbackAddress` is the recipient that `AppDelegate.provideFeedback(_:)` addresses the feedback email to, e.g. `Cirruscope Feedback <contact@cirruscope.app>`.
-    static var feedbackAddress: String {
-        guard let value = Bundle.main.object(forInfoDictionaryKey: InfoPlistKey.feedbackAddress) else {
-            preconditionFailure("Info.plist is missing the \"\(InfoPlistKey.feedbackAddress)\" entry.")
+    /// `supportURL` is the URL of Cirruscope's online support page.
+    ///
+    /// `AppDelegate.openSupportPage(_:)` opens it in the user's default browser when the user chooses the Help-menu item.
+    static var supportURL: URL {
+        guard let value = Bundle.main.object(forInfoDictionaryKey: InfoPlistKey.supportURL) else {
+            preconditionFailure("Info.plist is missing the \"\(InfoPlistKey.supportURL)\" entry.")
         }
 
-        guard let stringValue = value as? String else {
-            preconditionFailure("Info.plist entry \"\(InfoPlistKey.feedbackAddress)\" must be a string but was \(value).")
+        guard let stringValue = value as? String, let url = URL(string: stringValue) else {
+            preconditionFailure("Info.plist entry \"\(InfoPlistKey.supportURL)\" must be a string representing a valid URL but was \(value).")
         }
 
-        return stringValue
+        return url
     }
 }
 

@@ -86,6 +86,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSWorkspace.shared.open(Settings.privacyPolicy)
     }
 
+    /// `openSupportPage(_:)` opens Cirruscope's online support page in the user's default browser.
+    ///
+    /// It backs the Help-menu "Get Support…" item, which targets the responder chain.
+    @IBAction
+    func openSupportPage(_: Any?) {
+        logger.debug("Opening support page")
+        NSWorkspace.shared.open(Settings.supportURL)
+    }
+
     /// `presentInitialWindow(forLaunch:)` validates the configured server and presents the window the app should show: a `WebViewWindowController` when a supported server is reachable, otherwise a `ServerAddressWindowController`.
     ///
     /// `applicationDidFinishLaunching(_:)` calls it with `forLaunch` set to coordinate with AppKit window restoration: it opens a fresh web window only when none was restored, and if the server is now unreachable, unsupported, or has revoked the credentials it closes any restored web windows so none lingers on a server the app can no longer use. `newWindow(_:)` and `applicationShouldHandleReopen(_:hasVisibleWindows:)` call it with `forLaunch` cleared, which always opens a new web window on success and leaves any already-open windows untouched on failure.
