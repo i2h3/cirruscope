@@ -17,16 +17,6 @@ For a more user-friendly introduction, see [the official website](https://cirrus
 
 This is still under development but closing in fast on the initial release of version 1.0.0.
 
-## Features
-
-- Full size content view, no macOS window titlebar or toolbar.
-- Windows can be dragged by the Nextcloud top bar.
-- Edge to edge content, no unnecessary gaps.
-- Sidebar visibility control through app menu item.
-- Nextcloud server app speed dials in app menu and dock menu with configurable keyboard shortcuts.
-- Window state restoration on relaunch.
-- File downloads into the Downloads folder, with a progress window and completion notifications.
-
 ## Logging
 
 Cirruscope logs through Apple's unified logging system (`os.Logger`). Every type logs under the subsystem `de.i2h3.cirruscope` with its own type name as the category, and the asynchronous facilities (asset caching, server validation, sign-in, downloads, launch, and page loads) additionally emit `OSSignposter` intervals.
