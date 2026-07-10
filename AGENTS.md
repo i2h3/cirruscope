@@ -64,7 +64,7 @@ This project is checked for [REUSE](https://reuse.software/) Specification 3.3 c
 
 - Always check existing documentation comments for validity and update, if necessary.
 - Whenever the files and folders within the repository change, update the "Repository Structure" section of this document accordingly.
-- Always check the "Features" section of `./README.md` for validity and update, if necessary.
+- Always check `./Website` for necessary updates in regard to localization, feature description, changes in supported target platforms, Nextcloud server releases or Nextcloud server apps.
 
 ## Localization Instructions
 
