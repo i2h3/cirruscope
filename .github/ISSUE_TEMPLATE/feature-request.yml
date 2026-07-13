@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: 2026 Iva Horn
+# SPDX-License-Identifier: MIT
+
+name: Suggest a feature
+description: Share an idea or improvement for Cirruscope.
+labels:
+  - enhancement
+body:
+  - type: checkboxes
+    id: search
+    attributes:
+      label: Search the issue tracker first
+      description: Please confirm you searched the issue tracker for an existing request before opening this one.
+      options:
+        - label: I searched the issue tracker and did not find a duplicate request.
+          required: true
+  - type: textarea
+    id: feature
+    attributes:
+      label: What would you like to see?
+      description: Describe the feature, improvement, or workflow you want.
+      placeholder: Tell us what you want to change and why it would help.
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Optional details, screenshots, mockups, or links.
+      placeholder: Add anything else that would help explain the idea.
+    validations:
+      required: false

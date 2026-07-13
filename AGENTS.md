@@ -30,6 +30,7 @@ You are an experienced software engineer specialized on native apps for macOS wr
     - `Info.plist` is the app's information property list, and `PrivacyInfo.xcprivacy` is its privacy manifest.
 - `Frameworks/` contains the bundled frameworks the app links against.
 - `Products/` contains the built app bundle.
+- `.github/ISSUE_TEMPLATE/` contains the GitHub issue forms for feature requests, bug reports, and the blank issue entry point.
 
 ## Code Style
 

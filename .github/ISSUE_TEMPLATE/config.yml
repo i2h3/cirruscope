@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: 2026 Iva Horn
+# SPDX-License-Identifier: MIT
+
+blank_issues_enabled: true
+contact_links:
+  - name: Cirruscope website
+    url: https://cirruscope.app
+    about: General project information and the user-facing introduction.

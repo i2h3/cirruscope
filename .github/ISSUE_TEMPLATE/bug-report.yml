@@ -1,0 +1,79 @@
+# SPDX-FileCopyrightText: 2026 Iva Horn
+# SPDX-License-Identifier: MIT
+
+name: Report a problem
+description: Report a bug or unexpected behavior in Cirruscope.
+labels:
+  - bug
+body:
+  - type: textarea
+    id: server-version
+    attributes:
+      label: Nextcloud server version
+      description: Share the exact Nextcloud server version you are using.
+      placeholder: For example, 30.0.2
+    validations:
+      required: true
+  - type: textarea
+    id: app-version
+    attributes:
+      label: Cirruscope app version
+      description: Share the Cirruscope version from About This App or the app bundle.
+      placeholder: For example, 1.0.0
+    validations:
+      required: true
+  - type: dropdown
+    id: server-app
+    attributes:
+      label: Nextcloud server app
+      description: Select the Nextcloud app where the problem happens, if it is specific to one.
+      multiple: false
+      options:
+        - Not specific to a server app
+        - Files
+        - Calendar
+        - Contacts
+        - Talk
+        - Mail
+        - Photos
+        - Deck
+        - Notes
+        - Tasks
+        - Other / not listed
+    validations:
+      required: false
+  - type: textarea
+    id: server-app-version
+    attributes:
+      label: Nextcloud server app version
+      description: If you selected a specific server app above, share its version too.
+      placeholder: For example, 5.3.1
+    validations:
+      required: false
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the smallest set of steps that reliably trigger the problem.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+      description: Describe what you expected to happen.
+      placeholder: What should have happened?
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed result
+      description: Describe what actually happened, including any error text.
+      placeholder: What happened instead?
+    validations:
+      required: true
