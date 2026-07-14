@@ -109,6 +109,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         webView.navigationDelegate = self
         webView.uiDelegate = self
         observeWebViewTitle()
+        observeWebViewURL()
         injectCustomStyleSheet()
         installWindowDragBridge()
         installSidebarToggleBridge()
@@ -176,7 +177,44 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         { [weak self] _, change in
             let title = change.newValue.flatMap(\.self) ?? ""
             Task { @MainActor [weak self] in
-                self?.view.window?.title = title
+                guard let self else {
+                    return
+                }
+
+                self.logger.debug("Web view title changed to \"\(title)\" (WebViewController \(self.logID))")
+                self.view.window?.title = title
+            }
+        }
+    }
+
+    // MARK: - Web View URL
+
+    /// `urlObservation` retains the key-value observation of `webView`'s `url` that logs every change to the currently displayed page's address.
+    ///
+    /// `observeWebViewURL()` assigns it during `viewDidLoad()`, and it is released when the controller is deallocated, which ends the observation.
+    private var urlObservation: NSKeyValueObservation?
+
+    /// `observeWebViewURL()` logs `webView.url` on every change so same-document navigations are visible in a log capture.
+    ///
+    /// `viewDidLoad()` calls this once after the web view has been configured. It complements `WebViewController+WKNavigationDelegate`, whose delegate callbacks fire only for the loading pipeline: Nextcloud's single-page interface changes the URL through the History API (`history.pushState` / `replaceState`, and `popstate`), which are same-document navigations that never issue a request or a document load, so `WKNavigationDelegate` never sees them. `WKWebView.url` is key-value-observing compliant and does update for those changes, which is why this observation catches what the delegate cannot.
+    private func observeWebViewURL() {
+        urlObservation = webView.observe(\.url, options: [.initial, .new], changeHandler: makeURLChangeHandler())
+    }
+
+    /// `makeURLChangeHandler()` builds the KVO change handler `observeWebViewURL()` registers on `webView.url`.
+    ///
+    /// It is `nonisolated` for the same reason as `makeTitleChangeHandler()`: so the closure it returns is not inferred main-actor-isolated and does not trip a dynamic isolation check should `WKWebView` ever deliver this KVO callback off the main thread instead of hopping to the main actor as this handler does.
+    ///
+    /// Only `change.newValue` — the `Sendable` `URL??` KVO already snapshotted — crosses into the `Task`, rather than `webView` itself, since `WKWebView` is main-actor-isolated and not `Sendable`.
+    private nonisolated func makeURLChangeHandler() -> @Sendable (WKWebView, NSKeyValueObservedChange<URL?>) -> Void {
+        { [weak self] _, change in
+            let url = change.newValue.flatMap(\.self)
+            Task { @MainActor [weak self] in
+                guard let self else {
+                    return
+                }
+
+                self.logger.debug("Web view URL changed to \(url?.absoluteString ?? "nil") (WebViewController \(self.logID))")
             }
         }
     }
