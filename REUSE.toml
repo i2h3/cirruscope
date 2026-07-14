@@ -78,8 +78,9 @@ SPDX-License-Identifier = "LicenseRef-Nextcloud-Trademark"
 
 # Miscellaneous Xcode-GUI-editable or generated files, all added in 2026:
 # Interface Builder storyboard, the Privacy Manifest editor's file, the
-# Info tab's file, the String Catalog (JSON), the bare version file
-# SwiftFormat itself parses, and the root LICENSE text.
+# Info tab's file, the two String Catalogs (JSON, one for Swift strings, one
+# for storyboard strings since migrating off per-locale Main.strings files),
+# the bare version file SwiftFormat itself parses, and the root LICENSE text.
 [[annotations]]
 path = [
     ".swift-version",
@@ -88,6 +89,7 @@ path = [
     "Cirruscope/Info.plist",
     "Cirruscope/PrivacyInfo.xcprivacy",
     "Cirruscope/Localizable.xcstrings",
+    "Cirruscope/mul.lproj/Main.xcstrings",
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "2026 Iva Horn"
