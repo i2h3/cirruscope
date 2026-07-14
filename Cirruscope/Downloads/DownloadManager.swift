@@ -9,6 +9,7 @@ import WebKit
 /// `WebViewController+WKNavigationDelegate` hands each `WKDownload` to the `shared` instance via `handle(_:)`, which becomes the download's `WKDownloadDelegate` (see `DownloadManager+WKDownloadDelegate`) so transfers keep running even after the web window that started them closes.
 /// It owns the process-lifetime `downloads` list and posts `Notification.Name.downloadsDidChange` whenever that list or a download's state changes, which `DownloadViewController` observes to refresh its table; live byte-level progress is not broadcast here but observed directly from each `Download.progress` by `DownloadTableCellView`.
 /// Files are written into the user's Downloads folder, which the app can reach because of the `com.apple.security.files.downloads.read-write` entitlement.
+@MainActor
 final class DownloadManager: NSObject {
     /// `shared` is the process-wide coordinator, retained for the app's lifetime so it can safely serve as the `weak` delegate of every `WKDownload`.
     static let shared = DownloadManager()

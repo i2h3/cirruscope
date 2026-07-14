@@ -91,13 +91,16 @@ class DownloadTableCellView: NSTableCellView {
                 // observe the former and read the latter, hopping to the main actor since KVO fires off it.
                 // The hop is async, so by the time it runs a reused cell may have been rebound to another download,
                 // or this one may have finished (its terminal status already set): guard on both so a late update
-                // never writes a stale transfer description over the row's current content.
+                // never writes a stale transfer description over the row's current content. Only `download`'s
+                // Sendable `id` crosses into the Task — the mutable `Download` itself is read back through
+                // `self.download` once inside the main actor, rather than sending the reference across the hop.
+                let downloadID = download.id
                 progressObservation = download.progress.observe(\.fractionCompleted, options: [.initial]) { [weak self] progress, _ in
                     let additionalDescription = progress.localizedAdditionalDescription
                     let hasKnownTotal = progress.totalUnitCount > 0
                     let fractionCompleted = progress.fractionCompleted
                     Task { @MainActor in
-                        guard let self, self.download === download, download.state == .inProgress else {
+                        guard let self, let download = self.download, download.id == downloadID, download.state == .inProgress else {
                             return
                         }
 

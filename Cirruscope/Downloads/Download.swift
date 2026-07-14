@@ -8,6 +8,7 @@ import WebKit
 /// `DownloadManager` creates one from the `WKDownload` handed to it by `WebViewController+WKNavigationDelegate`, keeps it in its in-memory `downloads` list for the lifetime of the process, and mutates its `state`, `destinationURL`, and `displayName` as the transfer progresses.
 /// `DownloadTableCellView` reads these properties to populate a row and observes `progress` to reflect live progress, so the model is the single source of truth shared between the coordinator and the UI.
 /// It is deliberately not `Codable`: issue #23 requires download history to live only for the current run and never be persisted across launches.
+@MainActor
 final class Download: Identifiable {
     /// `State` enumerates the mutually exclusive phases a `Download` moves through, which `DownloadTableCellView` maps to the visibility of its stop and reveal buttons and the text it shows.
     ///

@@ -204,7 +204,13 @@ enum Settings {
                 appShortcuts = prunedShortcuts
             }
 
-            NotificationCenter.default.post(name: .serverAppsDidChange, object: nil)
+            // `Settings` is nonisolated and this setter can be reached from a background context (e.g. via
+            // `ServerConnection.refreshNavigationApps(using:)` right after signing in), but `AppDelegate` observes
+            // this notification with a plain selector (no `queue: .main`) and dispatches straight into `@MainActor`
+            // code, so the post itself must land on the main thread regardless of the calling thread.
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .serverAppsDidChange, object: nil)
+            }
         }
     }
 
@@ -233,7 +239,11 @@ enum Settings {
                 logger.error("Could not encode app shortcuts: \(error.localizedDescription)")
             }
 
-            NotificationCenter.default.post(name: .serverAppsDidChange, object: nil)
+            // See the matching comment in `serverApps`'s setter: this post must land on the main thread regardless
+            // of the calling thread, since `AppDelegate` observes it with a plain selector into `@MainActor` code.
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .serverAppsDidChange, object: nil)
+            }
         }
     }
 

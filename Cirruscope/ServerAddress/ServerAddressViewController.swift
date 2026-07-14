@@ -125,10 +125,7 @@ class ServerAddressViewController: NSViewController {
     ///
     /// The session is retained in `authenticationSession`. Because Login Flow v2 never invokes the `nc` callback, the completion handler only fires when the user dismisses the sheet, which sets `authenticationCancelled` so `pollForCredentials(on:flow:)` stops. It throws `CirruscopeError.loginPresentationFailed` if the session cannot be presented.
     private func startAuthenticationSession(using url: URL) throws {
-        let session = ASWebAuthenticationSession(url: url, callbackURLScheme: "nc") { [weak self] _, _ in
-            self?.logger.debug("Authentication sheet dismissed by the user")
-            self?.authenticationCancelled = true
-        }
+        let session = ASWebAuthenticationSession(url: url, callbackURLScheme: "nc", completionHandler: makeAuthenticationCompletionHandler())
 
         session.presentationContextProvider = self
         session.prefersEphemeralWebBrowserSession = true
@@ -139,6 +136,18 @@ class ServerAddressViewController: NSViewController {
         guard session.start() else {
             logger.error("Could not present the authentication session")
             throw CirruscopeError.loginPresentationFailed
+        }
+    }
+
+    /// `makeAuthenticationCompletionHandler()` builds the completion handler `startAuthenticationSession(using:)` passes to its `ASWebAuthenticationSession`.
+    ///
+    /// It is `nonisolated` so the closure it returns is not itself inferred main-actor-isolated: `ServerAddressViewController` is main-actor-isolated via `NSResponder`, so a closure written directly inside one of its methods would inherit that isolation too — even though its body only creates a `Task` — and trip the very isolation check this handler exists to avoid, since `AuthenticationServices` does not guarantee it invokes the handler on the main thread (it is invoked off-main when `dismissAuthenticationSession()` calls `cancel()` right after polling succeeds).
+    private nonisolated func makeAuthenticationCompletionHandler() -> (URL?, (any Error)?) -> Void {
+        { [weak self] _, _ in
+            Task { @MainActor [weak self] in
+                self?.logger.debug("Authentication sheet dismissed by the user")
+                self?.authenticationCancelled = true
+            }
         }
     }
 

@@ -6,7 +6,7 @@ import WebKit
 
 /// `DownloadManager`'s conformance to `WKDownloadDelegate` drives each transfer: it picks a non-clobbering destination in the user's Downloads folder, records the outcome on the matching `Download`, and announces changes so the UI refreshes.
 ///
-/// The protocol is `@MainActor`, so every callback runs on the main actor alongside the rest of `DownloadManager`, and each one posts `Notification.Name.downloadsDidChange` after mutating a `Download` so `DownloadViewController` reloads.
+/// `DownloadManager` is explicitly `@MainActor`, so every callback runs on the main actor alongside the rest of its state, and each one posts `Notification.Name.downloadsDidChange` after mutating a `Download` so `DownloadViewController` reloads.
 /// Each method carries an explicit `@objc(...)` selector: `WKDownloadDelegate` is an Objective-C protocol dispatched purely by selector, and the required destination callback must be the completion-handler form rather than `async` — under Swift 6 with main-actor default isolation the `async` witness did not register the selector WebKit probes, so WebKit found no destination method and silently abandoned every download without calling any delegate method.
 /// Every method logs its entry and each outcome at debug level (identifying the transfer by its file name, since `DownloadManager` is a single shared instance) so a download's lifecycle can be reconstructed from a log capture when tracing misbehaviour.
 extension DownloadManager: WKDownloadDelegate {

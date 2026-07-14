@@ -153,8 +153,22 @@ class ShortcutRecorderView: NSView {
         isRecording = true
         logger.debug("Started recording")
 
-        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
-            self?.handle(event)
+        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown], handler: makeKeyDownHandler())
+    }
+
+    /// `makeKeyDownHandler()` builds the local event monitor handler `startRecording()` installs.
+    ///
+    /// It is `nonisolated` for the same reason as `ServerAddressViewController.makeAuthenticationCompletionHandler()`: `ShortcutRecorderView` is main-actor-isolated via `NSView`, so a closure written directly inside one of its methods would inherit that isolation too, even though its body only creates a `Task`. AppKit does not annotate `NSEvent.addLocalMonitorForEvents(matching:handler:)`'s handler as main-actor, so never assume the calling thread; the monitor's return value does not depend on `handle(_:)` completing first.
+    ///
+    /// Only the `Sendable` fields `handle(keyCode:modifierFlags:charactersIgnoringModifiers:)` needs cross into the `Task`, rather than `event` itself, since `NSEvent` is not `Sendable`.
+    private nonisolated func makeKeyDownHandler() -> (NSEvent) -> NSEvent? {
+        { [weak self] event in
+            let keyCode = event.keyCode
+            let modifierFlags = event.modifierFlags
+            let charactersIgnoringModifiers = event.charactersIgnoringModifiers
+            Task { @MainActor [weak self] in
+                self?.handle(keyCode: keyCode, modifierFlags: modifierFlags, charactersIgnoringModifiers: charactersIgnoringModifiers)
+            }
             return nil
         }
     }
@@ -179,22 +193,22 @@ class ShortcutRecorderView: NSView {
         }
     }
 
-    private func handle(_ event: NSEvent) {
+    private func handle(keyCode: UInt16, modifierFlags: NSEvent.ModifierFlags, charactersIgnoringModifiers: String?) {
         // Escape cancels recording without changing the shortcut.
-        if event.keyCode == 53 {
+        if keyCode == 53 {
             endRecording()
             return
         }
 
         // Delete or Forward Delete clears the shortcut.
-        if event.keyCode == 51 || event.keyCode == 117 {
+        if keyCode == 51 || keyCode == 117 {
             endRecording()
             shortcut = nil
             onChange?(nil)
             return
         }
 
-        let modifiers = event.modifierFlags
+        let modifiers = modifierFlags
             .intersection(.deviceIndependentFlagsMask)
             .intersection([.command, .option, .control, .shift])
 
@@ -203,7 +217,7 @@ class ShortcutRecorderView: NSView {
             return
         }
 
-        guard let characters = event.charactersIgnoringModifiers, characters.isEmpty == false else {
+        guard let characters = charactersIgnoringModifiers, characters.isEmpty == false else {
             return
         }
 
