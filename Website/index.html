@@ -1,141 +1,246 @@
-<!--
-SPDX-FileCopyrightText: 2026 Iva Horn
-SPDX-License-Identifier: MIT
--->
-
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Cirruscope - Coming Soon</title>
-	<style>
-		:root {
-			--bg-top: #f7efe3;
-			--bg-bottom: #d8e9ff;
-			--text: #1a2230;
-			--muted: #4b5668;
-			--card: rgba(255, 255, 255, 0.7);
-			--card-border: rgba(26, 34, 48, 0.12);
-			--accent: #0f7a63;
-		}
-
-		* {
-			box-sizing: border-box;
-		}
-
-		html,
-		body {
-			margin: 0;
-			min-height: 100%;
-		}
-
-		body {
-			min-height: 100vh;
-			display: grid;
-			place-items: center;
-			padding: 1.5rem;
-			color: var(--text);
-			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", "Helvetica Neue", Arial, sans-serif;
-			background:
-				radial-gradient(circle at 15% 15%, rgba(255, 255, 255, 0.7), transparent 50%),
-				radial-gradient(circle at 85% 85%, rgba(255, 255, 255, 0.5), transparent 42%),
-				linear-gradient(160deg, var(--bg-top), var(--bg-bottom));
-		}
-
-		.shell {
-			width: min(42rem, 100%);
-			padding: clamp(1.5rem, 4vw, 3rem);
-			border: 1px solid var(--card-border);
-			border-radius: 1.1rem;
-			background: var(--card);
-			backdrop-filter: blur(10px);
-			box-shadow: 0 18px 50px rgba(26, 34, 48, 0.12);
-			animation: rise 0.75s ease-out;
-		}
-
-		.brand {
-			margin: 0;
-			font-size: clamp(1.05rem, 2.6vw, 1.4rem);
-			letter-spacing: 0.12em;
-			text-transform: uppercase;
-			font-weight: 700;
-		}
-
-		h1 {
-			margin: 0.55rem 0 0;
-			font-size: clamp(1.9rem, 5.2vw, 3.4rem);
-			line-height: 1.06;
-		}
-
-		p {
-			margin: 1rem 0 0;
-			max-width: 52ch;
-			color: var(--muted);
-			font-size: clamp(1rem, 2.2vw, 1.1rem);
-			line-height: 1.6;
-		}
-
-		.status {
-			margin-top: 1.3rem;
-			display: inline-flex;
-			align-items: center;
-			gap: 0.5rem;
-			padding: 0.4rem 0.7rem;
-			border-radius: 999px;
-			border: 1px solid rgba(15, 122, 99, 0.25);
-			background: rgba(15, 122, 99, 0.08);
-			color: #0b5d4c;
-			font-family: inherit;
-			font-size: 0.79rem;
-			text-transform: uppercase;
-			letter-spacing: 0.06em;
-		}
-
-		.status-dot {
-			width: 0.48rem;
-			height: 0.48rem;
-			border-radius: 999px;
-			background: var(--accent);
-			animation: pulse 1.8s ease-out infinite;
-		}
-
-		@keyframes pulse {
-			0%,
-			100% {
-				transform: scale(1);
-				opacity: 1;
-			}
-			50% {
-				transform: scale(1.35);
-				opacity: 0.45;
-			}
-		}
-
-		@keyframes rise {
-			from {
-				transform: translateY(10px);
-				opacity: 0;
-			}
-			to {
-				transform: translateY(0);
-				opacity: 1;
-			}
-		}
-	</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cirruscope — a native Mac window into your Nextcloud</title>
+<meta name="description" content="A native macOS window into your Nextcloud. Free, open source, and independently built.">
+<link rel="icon" type="image/png" href="assets/cirruscope-icon-light.png">
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<style>
+*{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg)}
+  a{text-decoration:none}
+  ::selection{background:rgba(0,130,201,.20)}
+  :root{--bg:#e6f0fa;--wash:#d3e5f5;--surface:#ffffff;--ink:#04182b;--body:#41566a;--muted:#6d8297;--line:rgba(3,70,130,.13);--blue:#0082C9;--blue-ink:#0069a6;--blue-bright:#1CAFFF;--shadow:rgba(3,40,80,.20);--footer-bg:#03172a;--footer-ink:#9fb1c2;--nav-bg:rgba(230,240,250,.85);}
+  @keyframes fcFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.h0:hover{color:var(--blue-ink) !important}
+.h1:hover{background:rgba(255,255,255,.2) !important}
+.h2:hover{transform:translateY(-3px) !important;box-shadow:0 18px 38px -18px var(--shadow) !important}
+.h3:hover{gap:10px !important}
+.h4:hover{transform:translateY(-2px) !important}
+.h5:hover{color:#fff !important}
+</style>
 </head>
 <body>
-	<main class="shell">
-		<p class="brand">Cirruscope</p>
-		<h1>Website launching soon.</h1>
-		<p>
-			We are putting the final touches on the new Cirruscope web experience.
-			Check back shortly for updates.
-		</p>
-		<div class="status">
-			<span class="status-dot" aria-hidden="true"></span>
-			In progress
-		</div>
-	</main>
+<div style="font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--body);background:var(--bg);-webkit-font-smoothing:antialiased;line-height:1.5">
+
+  <!-- ============ NAV ============ -->
+  <header style="position:sticky;top:0;z-index:50;background:var(--nav-bg);backdrop-filter:saturate(180%) blur(14px);-webkit-backdrop-filter:saturate(180%) blur(14px);border-bottom:1px solid var(--line)">
+    <nav style="width:min(1120px,92vw);margin:0 auto;height:64px;display:flex;align-items:center;gap:20px">
+      <a href="index.html" style="display:flex;align-items:center;gap:10px;color:inherit"><img src="assets/cirruscope-icon-light.png" alt="" style="width:30px;height:30px"><span style="font-weight:800;font-size:19px;letter-spacing:-.02em;color:var(--ink)">Cirruscope</span></a>
+      <div style="flex:1"></div>
+      <div style="display:flex;align-items:center;gap:26px;flex-wrap:wrap;justify-content:flex-end">
+        <a href="#features" style="font-size:15px;font-weight:500;color:var(--body)" class="h0">Features</a>
+        <a href="privacy.html" style="font-size:15px;font-weight:500;color:var(--body)" class="h0">Privacy</a>
+        <span style="display:inline-flex;align-items:center;gap:7px;background:rgba(0,130,201,.12);color:var(--blue-ink);font-weight:600;font-size:14px;padding:9px 18px;border-radius:999px">Coming soon</span>
+      </div>
+    </nav>
+  </header>
+
+  <!-- ============ HERO ============ -->
+  <section style="background:linear-gradient(158deg,#0a8fd6 0%,#0082C9 44%,#025a97 100%);position:relative;overflow:hidden;color:#fff">
+    <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(720px 380px at 86% 2%,rgba(255,255,255,.18),transparent 60%),radial-gradient(560px 420px at 4% 98%,rgba(3,40,80,.5),transparent 60%);pointer-events:none"></div>
+    <div aria-hidden="true" style="position:absolute;top:-140px;right:-90px;width:460px;height:460px;border-radius:999px;background:radial-gradient(circle at 32% 32%,rgba(255,255,255,.26),rgba(255,255,255,0) 60%);pointer-events:none"></div>
+    <div aria-hidden="true" style="position:absolute;bottom:-180px;left:6%;width:380px;height:380px;border-radius:999px;background:radial-gradient(circle at 50% 40%,rgba(61,213,243,.42),rgba(61,213,243,0) 62%);pointer-events:none"></div>
+    <div style="position:relative;width:min(1120px,92vw);margin:0 auto;padding:clamp(56px,7vw,88px) 0 clamp(60px,7vw,92px);display:flex;flex-wrap:wrap;align-items:center;gap:clamp(36px,4vw,56px)">
+      <div style="flex:1 1 420px;min-width:300px">
+        <span style="display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.15);color:#fff;font-size:13px;font-weight:600;padding:6px 13px;border-radius:999px;border:1px solid rgba(255,255,255,.25)"><span style="width:6px;height:6px;border-radius:999px;background:#fff;display:block"></span>Open source · for macOS</span>
+        <h1 style="font-size:clamp(38px,5.6vw,62px);line-height:1.03;letter-spacing:-.03em;color:#fff;margin:18px 0 0;font-weight:800;text-wrap:balance">Your whole Nextcloud, at home on the Mac.</h1>
+        <p style="font-size:clamp(17px,1.6vw,20px);line-height:1.55;color:rgba(255,255,255,.9);margin:20px 0 0;max-width:36ch">Cirruscope wraps the Nextcloud web app in a fast, native window — with real window management and deep macOS integration, and none of the browser clutter.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:13px;margin-top:32px">
+          <span style="display:inline-flex;align-items:center;gap:10px;background:#fff;color:#0069a6;font-weight:700;font-size:16px;padding:15px 26px;border-radius:999px;box-shadow:0 18px 34px -14px rgba(3,40,80,.6)"><span style="font-family:'Material Symbols Outlined';font-weight:400;font-size:22px;line-height:1;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">schedule</span>Coming to the Mac App Store</span>
+          <a href="https://github.com/i2h3/cirruscope" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:9px;background:rgba(255,255,255,.12);color:#fff;font-weight:600;font-size:16px;padding:15px 24px;border-radius:999px;border:1.5px solid rgba(255,255,255,.4);transition:background .15s" class="h1"><span style="font-family:'Material Symbols Outlined';font-weight:400;font-size:20px;line-height:1;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">code</span>View on GitHub</a>
+        </div>
+        <p style="font-size:13.5px;color:rgba(255,255,255,.85);margin:18px 0 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-family:'Material Symbols Outlined';font-weight:400;font-size:17px;line-height:1;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">check_circle</span>Free &amp; open source · macOS 12+ · Universal · Coming soon</p>
+        <p style="font-size:12.5px;color:rgba(255,255,255,.72);margin:10px 0 0">An independent project — not affiliated with Nextcloud GmbH.</p>
+      </div>
+      <div style="flex:1 1 440px;min-width:300px;position:relative">
+        <!-- MacBook Pro (silver) device frame -->
+        <div style="width:100%">
+          <!-- lid: aluminium edge -->
+          <div style="background:linear-gradient(180deg,#eef0f3,#d6d9de);padding:3px;border-radius:18px 18px 6px 6px;box-shadow:inset 0 1px 0 rgba(255,255,255,.85),inset 0 0 0 1px rgba(120,130,145,.4),0 40px 55px -22px rgba(3,30,60,.6)">
+            <!-- black bezel -->
+            <div style="position:relative;background:#0a0b0d;padding:13px 13px 15px;border-radius:16px 16px 4px 4px;overflow:hidden">
+              <!-- notch -->
+              <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:10%;max-width:75px;height:20px;background:#0a0b0d;border-radius:0 0 9px 9px;z-index:3"></div>
+              <img src="assets/screenshots/en/dashboard-light.web.jpeg" alt="Cirruscope showing the Nextcloud dashboard" style="width:100%;height:auto;border-radius:4px">
+            </div>
+          </div>
+          <!-- base lip + hinge -->
+          <div style="position:relative;width:calc(100% + 22px);margin-left:-11px;height:15px;background:linear-gradient(180deg,#c7cad0 0%,#edeff2 42%,#c2c6cd 60%,#a3a9b1 100%);border-radius:0 0 13px 13px;box-shadow:inset 0 2px 3px rgba(0,0,0,.32),inset 0 -1px 0 rgba(255,255,255,.5),0 18px 24px -12px rgba(3,30,60,.5)">
+            <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:13%;max-width:104px;height:6px;background:linear-gradient(180deg,#9096a0,#c0c4cb);border-radius:0 0 7px 7px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ COMPAT ============ -->
+  <div style="width:min(1120px,92vw);margin:0 auto;padding:22px 0 4px;display:flex;align-items:center;justify-content:center;gap:9px;color:var(--muted);font-size:14px;text-align:center">
+    <span style="font-family:'Material Symbols Outlined';font-weight:400;font-size:19px;line-height:1;color:var(--blue);-webkit-font-feature-settings:'liga';font-feature-settings:'liga';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">dns</span>
+    Works with any Nextcloud server — self-hosted or provider-hosted.
+  </div>
+
+  <!-- ============ FEATURES ============ -->
+  <section id="features" style="width:min(1120px,92vw);margin:0 auto;padding:clamp(64px,7vw,88px) 0 20px;scroll-margin-top:76px">
+    <div style="text-align:center;max-width:660px;margin:0 auto 46px">
+      <span style="font-size:13px;font-weight:700;letter-spacing:.12em;color:var(--blue);text-transform:uppercase">Features</span>
+      <h2 style="font-size:clamp(28px,3.6vw,40px);letter-spacing:-.02em;color:var(--ink);margin:12px 0 0;font-weight:800;text-wrap:balance">Everything you love, natively wrapped.</h2>
+      <p style="font-size:17px;color:var(--muted);margin:14px 0 0;line-height:1.55">The whole Nextcloud web experience in a proper Mac app that respects your desktop.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px">
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:28px;position:relative;overflow:hidden;transition:transform .18s,box-shadow .18s" class="h2">
+        <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#0082C9,#1CAFFF)"></div>
+        <div style="display:inline-flex;align-items:center;justify-content:center;width:50px;height:50px;border-radius:13px;background:linear-gradient(140deg,#37bfff,#0082C9)"><span style="font-family:'Material Symbols Outlined';font-weight:400;font-size:27px;line-height:1;color:#fff;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">keyboard_command_key</span></div>
+        <h3 style="font-size:19px;color:var(--ink);margin:17px 0 7px;font-weight:700">Made for macOS</h3>
+        <p style="font-size:15px;color:var(--body);line-height:1.55;margin:0">Purpose-built for macOS, so your Nextcloud feels like a first-class part of your daily desktop — not a browser tab.</p>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:28px;position:relative;overflow:hidden;transition:transform .18s,box-shadow .18s" class="h2">
+        <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#0082C9,#1CAFFF)"></div>
+        <div style="display:inline-flex;align-items:center;justify-content:center;width:50px;height:50px;border-radius:13px;background:linear-gradient(140deg,#37bfff,#0082C9)"><span style="font-family:'Material Symbols Outlined';font-weight:400;font-size:27px;line-height:1;color:#fff;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">desktop_windows</span></div>
+        <h3 style="font-size:19px;color:var(--ink);margin:17px 0 7px;font-weight:700">Real window management</h3>
+        <p style="font-size:15px;color:var(--body);line-height:1.55;margin:0">Multiple windows, full-screen and Split View, restored exactly where you left them.</p>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:28px;position:relative;overflow:hidden;transition:transform .18s,box-shadow .18s" class="h2">
+        <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#0082C9,#1CAFFF)"></div>
+        <div style="display:inline-flex;align-items:center;justify-content:center;width:50px;height:50px;border-radius:13px;background:linear-gradient(140deg,#37bfff,#0082C9)"><span style="font-family:'Material Symbols Outlined';font-weight:400;font-size:27px;line-height:1;color:#fff;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">bolt</span></div>
+        <h3 style="font-size:19px;color:var(--ink);margin:17px 0 7px;font-weight:700">Light and fast</h3>
+        <p style="font-size:15px;color:var(--body);line-height:1.55;margin:0">A tiny, energy-friendly WebKit container that launches instantly and stays out of your way.</p>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:28px;position:relative;overflow:hidden;transition:transform .18s,box-shadow .18s" class="h2">
+        <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#0082C9,#1CAFFF)"></div>
+        <div style="display:inline-flex;align-items:center;justify-content:center;width:50px;height:50px;border-radius:13px;background:linear-gradient(140deg,#37bfff,#0082C9)"><span style="font-family:'Material Symbols Outlined';font-weight:400;font-size:27px;line-height:1;color:#fff;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">fit_screen</span></div>
+        <h3 style="font-size:19px;color:var(--ink);margin:17px 0 7px;font-weight:700">Full-size content</h3>
+        <p style="font-size:15px;color:var(--body);line-height:1.55;margin:0">Edge-to-edge content with no unnecessary chrome.</p>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:28px;position:relative;overflow:hidden;transition:transform .18s,box-shadow .18s" class="h2">
+        <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#0082C9,#1CAFFF)"></div>
+        <div style="display:inline-flex;align-items:center;justify-content:center;width:50px;height:50px;border-radius:13px;background:linear-gradient(140deg,#37bfff,#0082C9)"><span style="font-family:'Material Symbols Outlined';font-weight:400;font-size:27px;line-height:1;color:#fff;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">view_sidebar</span></div>
+        <h3 style="font-size:19px;color:var(--ink);margin:17px 0 7px;font-weight:700">Native sidebar control</h3>
+        <p style="font-size:15px;color:var(--body);line-height:1.55;margin:0">Control the visibility of the Nextcloud sidebar through the app menu or with the conventional keyboard shortcut like in other macOS apps.</p>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:28px;position:relative;overflow:hidden;transition:transform .18s,box-shadow .18s" class="h2">
+        <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#0082C9,#1CAFFF)"></div>
+        <div style="display:inline-flex;align-items:center;justify-content:center;width:50px;height:50px;border-radius:13px;background:linear-gradient(140deg,#37bfff,#0082C9)"><span style="font-family:'Material Symbols Outlined';font-weight:400;font-size:27px;line-height:1;color:#fff;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">keyboard</span></div>
+        <h3 style="font-size:19px;color:var(--ink);margin:17px 0 7px;font-weight:700">Speed dials</h3>
+        <p style="font-size:15px;color:var(--body);line-height:1.55;margin:0">Configurable keyboard shortcuts for your Nextcloud server apps.</p>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:28px;position:relative;overflow:hidden;transition:transform .18s,box-shadow .18s" class="h2">
+        <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#0082C9,#1CAFFF)"></div>
+        <div style="display:inline-flex;align-items:center;justify-content:center;width:50px;height:50px;border-radius:13px;background:linear-gradient(140deg,#37bfff,#0082C9)"><span style="font-family:'Material Symbols Outlined';font-weight:400;font-size:27px;line-height:1;color:#fff;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">notifications</span></div>
+        <h3 style="font-size:19px;color:var(--ink);margin:17px 0 7px;font-weight:700">Native notifications</h3>
+        <p style="font-size:15px;color:var(--body);line-height:1.55;margin:0">Notifications show up as first-class citizens in Notification Center.</p>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:28px;position:relative;overflow:hidden;transition:transform .18s,box-shadow .18s" class="h2">
+        <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#0082C9,#1CAFFF)"></div>
+        <div style="display:inline-flex;align-items:center;justify-content:center;width:50px;height:50px;border-radius:13px;background:linear-gradient(140deg,#37bfff,#0082C9)"><span style="font-family:'Material Symbols Outlined';font-weight:400;font-size:27px;line-height:1;color:#fff;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">swap_vert</span></div>
+        <h3 style="font-size:19px;color:var(--ink);margin:17px 0 7px;font-weight:700">File transfers</h3>
+        <p style="font-size:15px;color:var(--body);line-height:1.55;margin:0">Upload and download your files smoothly, exactly the way you'd expect on the Mac.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PRIVATE BY DESIGN ============ -->
+  <section style="width:min(1120px,92vw);margin:0 auto;padding:clamp(64px,7vw,90px) 0;display:flex;flex-wrap:wrap-reverse;align-items:center;gap:clamp(36px,4vw,56px)">
+    <div style="flex:1 1 360px;min-width:290px;display:flex;justify-content:center">
+      <div style="width:100%;max-width:400px;background:var(--surface);border-radius:18px;border:1px solid var(--line);box-shadow:0 24px 50px -28px var(--shadow);padding:28px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:14px">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex:1">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:14px;background:var(--wash)"><span style="font-family:'Material Symbols Outlined';font-weight:400;font-size:28px;line-height:1;color:var(--ink);-webkit-font-feature-settings:'liga';font-feature-settings:'liga';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">laptop_mac</span></span>
+            <span style="font-size:12px;font-weight:600;color:var(--body)">Your Mac</span>
+          </div>
+          <div style="flex:1.3;display:flex;flex-direction:column;align-items:center;gap:5px">
+            <span style="font-family:'Material Symbols Outlined';font-weight:400;font-size:18px;line-height:1;color:var(--blue);-webkit-font-feature-settings:'liga';font-feature-settings:'liga';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">lock</span>
+            <div style="width:100%;height:2px;background:linear-gradient(90deg,transparent,var(--blue),transparent)"></div>
+            <span style="font-size:10.5px;font-weight:600;color:var(--blue-ink);letter-spacing:.02em;font-family:ui-monospace,SFMono-Regular,Menlo,monospace">encrypted</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex:1">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:14px;background:var(--wash)"><span style="font-family:'Material Symbols Outlined';font-weight:400;font-size:28px;line-height:1;color:var(--blue);-webkit-font-feature-settings:'liga';font-feature-settings:'liga';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">dns</span></span>
+            <span style="font-size:12px;font-weight:600;color:var(--body)">Your server</span>
+          </div>
+        </div>
+        <div style="margin-top:22px;padding-top:20px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:11px">
+          <div style="display:flex;align-items:center;gap:10px"><span style="font-family:'Material Symbols Outlined';font-weight:400;font-size:18px;line-height:1;color:var(--muted);-webkit-font-feature-settings:'liga';font-feature-settings:'liga';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">block</span><span style="font-size:13.5px;color:var(--body)">No analytics · No telemetry</span></div>
+          <div style="display:flex;align-items:center;gap:10px"><span style="font-family:'Material Symbols Outlined';font-weight:400;font-size:18px;line-height:1;color:var(--muted);-webkit-font-feature-settings:'liga';font-feature-settings:'liga';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">visibility_off</span><span style="font-size:13.5px;color:var(--body)">No third-party trackers or ads</span></div>
+        </div>
+      </div>
+    </div>
+    <div style="flex:1 1 380px;min-width:290px">
+      <span style="font-size:13px;font-weight:700;letter-spacing:.12em;color:var(--blue);text-transform:uppercase">Private by design</span>
+      <h2 style="font-size:clamp(26px,3.2vw,38px);letter-spacing:-.02em;color:var(--ink);margin:12px 0 16px;font-weight:800;line-height:1.1;text-wrap:balance">Your Nextcloud stays yours.</h2>
+      <p style="font-size:17px;color:var(--body);line-height:1.6;margin:0 0 22px">Cirruscope is a thin container: it simply loads your Nextcloud in a native window. Your files and credentials travel directly between your Mac and your server — never through us.</p>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:flex-start;gap:11px"><span style="font-family:'Material Symbols Outlined';font-weight:400;font-size:20px;line-height:1.35;color:#25a866;flex:none;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">check_circle</span><span style="font-size:15.5px;color:var(--body)">No accounts, no cloud, no data collection<sup style="font-size:.6em;font-weight:700;color:var(--blue-ink)">†</sup></span></div>
+        <div style="display:flex;align-items:flex-start;gap:11px"><span style="font-family:'Material Symbols Outlined';font-weight:400;font-size:20px;line-height:1.35;color:#25a866;flex:none;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">check_circle</span><span style="font-size:15.5px;color:var(--body)">Open source &amp; auditable, end to end</span></div>
+        <div style="display:flex;align-items:flex-start;gap:11px"><span style="font-family:'Material Symbols Outlined';font-weight:400;font-size:20px;line-height:1.35;color:#25a866;flex:none;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">check_circle</span><span style="font-size:15.5px;color:var(--body)">Connects only to servers you choose</span></div>
+      </div>
+      <a href="privacy.html" style="display:inline-flex;align-items:center;gap:6px;margin-top:24px;color:var(--blue-ink);font-weight:600;font-size:15.5px" class="h3">Read the privacy policy<span style="font-family:'Material Symbols Outlined';font-weight:400;font-size:19px;line-height:1;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">arrow_forward</span></a>
+      <p style="font-size:12px;color:var(--muted);line-height:1.6;margin:18px 0 0;max-width:46ch"><span style="color:var(--blue-ink);font-weight:700">†</span> No-collection refers to Cirruscope itself. Your data still lives on — and is processed by — the Nextcloud server you connect to, under its operator's privacy terms.</p>
+    </div>
+  </section>
+
+  <!-- ============ OPEN SOURCE ============ -->
+  <section style="background:linear-gradient(135deg,#0a8fd6 0%,#0082C9 55%,#02598f 100%);position:relative;overflow:hidden">
+    <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(560px 300px at 12% 0%,rgba(255,255,255,.16),transparent 60%);pointer-events:none"></div>
+    <div style="position:relative;width:min(1120px,92vw);margin:0 auto;padding:clamp(64px,7vw,88px) 0;text-align:center;color:#fff">
+      <span style="font-size:13px;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.85);text-transform:uppercase">Open source</span>
+      <h2 style="font-size:clamp(28px,3.6vw,40px);letter-spacing:-.02em;color:#fff;margin:12px auto 0;font-weight:800;max-width:16ch;text-wrap:balance">Built in the open.</h2>
+      <p style="font-size:17px;color:rgba(255,255,255,.9);margin:16px auto 0;max-width:56ch;line-height:1.6">Cirruscope is free and open source. Read every line of code, check the commit history, and file an issue any time.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:30px">
+        <a href="https://github.com/i2h3/cirruscope" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:10px;background:#fff;color:#0069a6;font-weight:700;font-size:15.5px;padding:13px 24px;border-radius:999px;transition:transform .15s" class="h4"><span style="font-family:'Material Symbols Outlined';font-weight:400;font-size:20px;line-height:1;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">code</span>View on GitHub</a>
+      </div>
+      <div style="max-width:640px;margin:40px auto 0;padding:16px 20px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:14px;display:flex;align-items:flex-start;gap:12px;text-align:left">
+        <span style="font-family:'Material Symbols Outlined';font-weight:400;font-size:20px;line-height:1.4;color:rgba(255,255,255,.85);flex:none;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">info</span>
+        <p style="font-size:13px;color:rgba(255,255,255,.92);line-height:1.55;margin:0">Cirruscope is an independent app. It is <strong style="color:#fff">not affiliated with, endorsed by, or sponsored by Nextcloud GmbH</strong>. “Nextcloud” and the Nextcloud logo are trademarks of Nextcloud GmbH.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DOWNLOAD CTA ============ -->
+  <section id="download" style="background:linear-gradient(135deg,#0a72b0 0%,#025a90 55%,#02416a 100%);position:relative;overflow:hidden;scroll-margin-top:64px">
+    <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(560px 280px at 84% 0%,rgba(255,255,255,.16),transparent 60%);pointer-events:none"></div>
+    <div style="position:relative;width:min(1120px,92vw);margin:0 auto;padding:clamp(64px,7vw,88px) 0;text-align:center;color:#fff">
+      <h2 style="font-size:clamp(30px,3.8vw,46px);letter-spacing:-.02em;color:#fff;margin:0;font-weight:800;text-wrap:balance">Bring your Nextcloud home.</h2>
+      <p style="font-size:18px;color:rgba(255,255,255,.9);margin:16px auto 0;max-width:46ch;line-height:1.55">Cirruscope is on its way to the Mac App Store — free, open source, and native to macOS.</p>
+      <span style="display:inline-flex;align-items:center;gap:10px;background:#fff;color:#0069a6;font-weight:700;font-size:16px;padding:16px 30px;border-radius:999px;margin-top:28px;box-shadow:0 18px 34px -14px rgba(3,40,80,.5)"><span style="font-family:'Material Symbols Outlined';font-weight:400;font-size:22px;line-height:1;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">schedule</span>Coming to the Mac App Store</span>
+      <p style="font-size:13.5px;color:rgba(255,255,255,.78);margin-top:18px">macOS 12 Monterey or later · Universal (Apple Silicon &amp; Intel) · Coming soon</p>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer style="background:var(--footer-bg);color:var(--footer-ink)">
+    <div style="width:min(1120px,92vw);margin:0 auto;padding:64px 0 28px">
+      <div style="display:flex;flex-wrap:wrap;gap:48px;justify-content:space-between">
+        <div style="flex:1 1 280px;max-width:340px">
+          <div style="display:flex;align-items:center;gap:11px"><img src="assets/cirruscope-icon-light.png" alt="" style="width:32px;height:32px"><span style="font-weight:800;font-size:19px;letter-spacing:-.02em;color:#fff">Cirruscope</span></div>
+          <p style="font-size:14px;line-height:1.6;margin:16px 0 0;color:var(--footer-ink);opacity:.85">A native macOS window into your Nextcloud. Free, open source, and independently built.</p>
+          <p style="font-size:13.5px;line-height:1.6;margin:14px 0 0;color:var(--footer-ink);opacity:.9">Built &amp; maintained by <strong style="color:#fff;font-weight:600">Iva Horn</strong>.</p>
+        </div>
+        <div style="display:flex;gap:56px;flex-wrap:wrap">
+          <div>
+            <div style="font-size:12.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#5f7488;margin-bottom:14px">Product</div>
+            <div style="display:flex;flex-direction:column;gap:11px">
+              <a href="#features" style="color:var(--footer-ink);font-size:14.5px" class="h5">Features</a>
+              <a href="privacy.html" style="color:var(--footer-ink);font-size:14.5px" class="h5">Privacy</a>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#5f7488;margin-bottom:14px">Project</div>
+            <div style="display:flex;flex-direction:column;gap:11px">
+              <a href="https://github.com/i2h3/cirruscope" target="_blank" rel="noopener" style="color:var(--footer-ink);font-size:14.5px" class="h5">GitHub</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:48px;padding-top:24px;border-top:1px solid rgba(255,255,255,.09);display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:center">
+        <p style="font-size:12.5px;color:#6f8497;margin:0;max-width:68ch;line-height:1.55">© 2026 Iva Horn · An independent project, not affiliated with or endorsed by Nextcloud GmbH. “Nextcloud” and the Nextcloud logo are trademarks of Nextcloud GmbH.</p>
+        <a href="https://github.com/i2h3/cirruscope/blob/main/LICENSE" target="_blank" rel="noopener" style="font-size:12.5px;color:var(--footer-ink);display:inline-flex;align-items:center;gap:6px" class="h5">Open source · MIT</a>
+      </div>
+    </div>
+  </footer>
+
+</div>
 </body>
 </html>
