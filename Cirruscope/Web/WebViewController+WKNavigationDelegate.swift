@@ -5,7 +5,7 @@ import AppKit
 import os
 import WebKit
 
-/// `WebViewController`'s conformance to `WKNavigationDelegate` confines the embedded `WKWebView` to the configured Nextcloud server, hands off any navigation that targets a different host to the user's default browser via `NSWorkspace`, turns responses the web view cannot display or that arrive as attachments into downloads, and reveals the storyboard-hidden web view once its initial page load has completed.
+/// `WebViewController`'s conformance to `WKNavigationDelegate` confines the embedded `WKWebView`'s main frame to the configured Nextcloud server, hands off any main-frame navigation that targets a different host to the user's default browser via `NSWorkspace`, turns responses the web view cannot display or that arrive as attachments into downloads, and reveals the storyboard-hidden web view once its initial page load has completed.
 ///
 /// Any navigation that becomes a download is handed to `DownloadManager.shared`, which takes over as the transfer's delegate so it continues even if this web window closes.
 /// Every method here logs its entry and each outcome at debug level so the navigation behaviour of a specific window — identified by the appended `logID` — can be reconstructed from a log capture when tracing misbehaviour.
@@ -33,6 +33,18 @@ extension WebViewController: WKNavigationDelegate {
             }
             closeWindowIfNeverRevealed()
             decisionHandler(.cancel)
+            return
+        }
+
+        // Nextcloud Office (and similarly embedded editors) loads its actual document-editing UI in a sub-frame
+        // hosted on a different domain than the configured server — e.g. a `cloud.nextcloud.com` page embedding an
+        // <iframe> from `eo.nextcloud.com`. That cross-host load is a normal, sandboxed part of the page, not the
+        // user navigating away, so only a main-frame navigation is subject to the external-host redirect below; a
+        // sub-frame navigation (or one with no target frame at all, i.e. a new-window request already handled by
+        // WebViewController+WKUIDelegate's createWebViewWith) is always allowed regardless of host.
+        guard navigationAction.targetFrame?.isMainFrame == true else {
+            logger.debug("Navigation action does not target the main frame; returning .allow regardless of host (WebViewController \(self.logID))")
+            decisionHandler(.allow)
             return
         }
 
