@@ -19,14 +19,9 @@ This is still under development but closing in fast on the initial release of ve
 
 ## Building
 
-Code signing is **Manual**, never Automatic, so Xcode never auto-creates or mutates App IDs, capabilities, or provisioning profiles for whoever builds this project.
+Code signing is **Manual**, never Automatic, so Xcode never auto-creates or mutates App IDs, capabilities, or provisioning profiles for whoever builds this project. This requires a real Apple Developer Team ID and an installed "Apple Development" signing certificate.
 
-- **Debug** builds self-sign ad hoc and need no Apple Developer account, team, or further setup at all — just open the project and build/run the `Cirruscope` scheme.
-- **Release** builds need a real Apple Developer Team ID, which is deliberately not committed. Copy [`Local.xcconfig.template`](Local.xcconfig.template) to `Local.xcconfig` (already gitignored) at the repository root and fill in your own Team ID:
-  ```
-  DEVELOPMENT_TEAM[config=Release] = YOUR_TEAM_ID
-  ```
-  Without it, a Release build fails with a clear signing error rather than silently picking up or registering anything on your behalf.
+For now, there's no override mechanism: to build, replace `DEVELOPMENT_TEAM` in [`Cirruscope.xcconfig`](Cirruscope.xcconfig) with your own Team ID (and `CODE_SIGN_IDENTITY`/`PROVISIONING_PROFILE_SPECIFIER` in [`Cirruscope/Cirruscope.xcconfig`](Cirruscope/Cirruscope.xcconfig) if needed). These are tracked files, so take care not to commit your own values over the maintainer's when contributing changes back.
 
 ## Logging
 

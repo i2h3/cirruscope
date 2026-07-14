@@ -172,6 +172,7 @@
 /* Begin XCBuildConfiguration section */
 		AA059CAF2FE407A900DE3094 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = AA8A9A90300522C20098151F /* Cirruscope.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -235,6 +236,7 @@
 		};
 		AA059CB02FE407A900DE3094 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = AA8A9A90300522C20098151F /* Cirruscope.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -341,7 +343,8 @@
 		};
 		AA059CB32FE407A900DE3094 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AA8A9A90300522C20098151F /* Cirruscope.xcconfig */;
+			baseConfigurationReferenceAnchor = AA059CA52FE407A700DE3094 /* Cirruscope */;
+			baseConfigurationReferenceRelativePath = Cirruscope.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;

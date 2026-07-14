@@ -7,3 +7,4 @@
 #include "../Cirruscope.xcconfig"
 
 MACOSX_DEPLOYMENT_TARGET = 12.4
+PROVISIONING_PROFILE_SPECIFIER = Cirruscope
