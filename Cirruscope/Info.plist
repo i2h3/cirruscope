@@ -10,8 +10,8 @@
 		<true/>
 	</dict>
 	<key>PrivacyPolicy</key>
-	<string>https://cirruscope.app/privacy-policy/</string>
+	<string>$(CIRRUSCOPE_PRIVACY_POLICY_URL)</string>
 	<key>SupportURL</key>
-	<string>https://cirruscope.app/support/</string>
+	<string>$(CIRRUSCOPE_SUPPORT_URL)</string>
 </dict>
 </plist>

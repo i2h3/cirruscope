@@ -63,3 +63,10 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+
+# Local signing overrides
+#
+# Holds the maintainer's own Apple Developer Team ID for Release builds; see
+# Local.xcconfig.template and README.md's "Building" section.
+
+Local.xcconfig

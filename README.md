@@ -17,6 +17,17 @@ For a more user-friendly introduction, see [the official website](https://cirrus
 
 This is still under development but closing in fast on the initial release of version 1.0.0.
 
+## Building
+
+Code signing is **Manual**, never Automatic, so Xcode never auto-creates or mutates App IDs, capabilities, or provisioning profiles for whoever builds this project.
+
+- **Debug** builds self-sign ad hoc and need no Apple Developer account, team, or further setup at all — just open the project and build/run the `Cirruscope` scheme.
+- **Release** builds need a real Apple Developer Team ID, which is deliberately not committed. Copy [`Local.xcconfig.template`](Local.xcconfig.template) to `Local.xcconfig` (already gitignored) at the repository root and fill in your own Team ID:
+  ```
+  DEVELOPMENT_TEAM[config=Release] = YOUR_TEAM_ID
+  ```
+  Without it, a Release build fails with a clear signing error rather than silently picking up or registering anything on your behalf.
+
 ## Logging
 
 Cirruscope logs through Apple's unified logging system (`os.Logger`). Every type logs under the subsystem `de.i2h3.cirruscope` with its own type name as the category, and the asynchronous facilities (asset caching, server validation, sign-in, downloads, launch, and page loads) additionally emit `OSSignposter` intervals.

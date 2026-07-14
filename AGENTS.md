@@ -44,6 +44,15 @@ You are an experienced software engineer specialized on native apps for macOS wr
 - Never wrap arguments in func declarations or calls.
 - Always run `swiftformat .` in the project root directory after applying changes.
 
+## Building and Signing
+
+- Code signing is Manual, never Automatic, so Xcode never auto-creates or mutates App IDs, capabilities, or provisioning profiles for whoever builds this project.
+- Build and verify changes with the **Debug** configuration, which self-signs ad hoc and needs no Apple Developer account, team, or `Local.xcconfig` at all:
+  ```bash
+  xcodebuild build -project Cirruscope.xcodeproj -scheme Cirruscope -configuration Debug -destination 'platform=macOS'
+  ```
+- Never create, populate, or suggest values for `Local.xcconfig` — it holds the maintainer's own Apple Developer Team ID for Release builds, is gitignored on purpose, and is not something an agent should ever need or touch. Do not attempt Release builds, which require it and will fail without it by design.
+
 ## REUSE Compliance
 
 This project is checked for [REUSE](https://reuse.software/) Specification 3.3 compliance by `.github/workflows/reuse.yml` (`fsfe/reuse-action@v6`): every file must carry SPDX copyright and license metadata, either as an inline header or as an entry in `REUSE.toml`.
