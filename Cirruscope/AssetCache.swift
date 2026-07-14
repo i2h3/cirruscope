@@ -9,7 +9,7 @@ import os
 ///
 /// `Settings.persist(theming:)` uses the `shared` instance to keep local copies of the Nextcloud server's branding assets up to date so they can be displayed without re-fetching them every launch.
 /// Cached files are addressed by the SHA-256 digest of their absolute URL so that distinct remote URLs map to distinct local files.
-final class AssetCache {
+final class AssetCache: Sendable {
     /// `shared` is the process-wide cache instance.
     ///
     /// `Settings.persist(theming:)` uses it to cache the server's branding assets, and other parts of the app read those cached files back via `localURL(for:)`.

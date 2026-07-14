@@ -9,6 +9,7 @@ import Rainmaker
 ///
 /// On launch it consults `Settings.serverAddress` to decide whether to present `WebViewController` directly or to first show `ServerAddressViewController`. When a server address is already configured it first re-validates the server's capabilities against `Settings.minimumSupportedServerMajorVersion` and falls back to `ServerAddressViewController` if the server is unreachable or runs an unsupported major version. It also keeps freshly instantiated `NSWindowController`s alive until their windows close.
 @main
+@MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
     /// `windowControllers` retains every `NSWindowController` that `present(windowController:sender:)` has shown so that their windows are not deallocated while visible.
     ///

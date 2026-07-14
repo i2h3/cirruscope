@@ -164,10 +164,19 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     ///
     /// `viewDidLoad()` calls this once after the web view has been configured. The observation reads `webView.title` on every change, including the in-page title updates Nextcloud performs as the user navigates its single-page interface, and substitutes an empty string while the page has not yet reported a title.
     private func observeWebViewTitle() {
-        titleObservation = webView.observe(\.title, options: [.initial, .new]) { [weak self] webView, _ in
-            // WKWebView delivers its title changes on the main thread, so mirroring them into the main-actor window title is safe here.
-            MainActor.assumeIsolated {
-                self?.view.window?.title = webView.title ?? ""
+        titleObservation = webView.observe(\.title, options: [.initial, .new], changeHandler: makeTitleChangeHandler())
+    }
+
+    /// `makeTitleChangeHandler()` builds the KVO change handler `observeWebViewTitle()` registers on `webView.title`.
+    ///
+    /// It is `nonisolated` so the closure it returns is not itself inferred main-actor-isolated: `WebViewController` is main-actor-isolated via `NSResponder`, so a closure written directly inside one of its methods would inherit that isolation too, and trip a dynamic isolation check if `WKWebView` ever delivered this KVO callback off the main thread instead of hopping to the main actor explicitly, as this handler now does.
+    ///
+    /// Only `change.newValue` — the `Sendable` `String?` KVO already snapshotted — crosses into the `Task`, rather than `webView` itself, since `WKWebView` is main-actor-isolated and not `Sendable`.
+    private nonisolated func makeTitleChangeHandler() -> @Sendable (WKWebView, NSKeyValueObservedChange<String?>) -> Void {
+        { [weak self] _, change in
+            let title = change.newValue.flatMap(\.self) ?? ""
+            Task { @MainActor [weak self] in
+                self?.view.window?.title = title
             }
         }
     }
