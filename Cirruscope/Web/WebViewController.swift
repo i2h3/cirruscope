@@ -181,8 +181,8 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
                     return
                 }
 
-                self.logger.debug("Web view title changed to \"\(title)\" (WebViewController \(self.logID))")
-                self.view.window?.title = title
+                logger.debug("Web view title changed to \"\(title)\" (WebViewController \(self.logID))")
+                view.window?.title = title
             }
         }
     }
@@ -214,7 +214,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
                     return
                 }
 
-                self.logger.debug("Web view URL changed to \(url?.absoluteString ?? "nil") (WebViewController \(self.logID))")
+                logger.debug("Web view URL changed to \(url?.absoluteString ?? "nil") (WebViewController \(self.logID))")
             }
         }
     }

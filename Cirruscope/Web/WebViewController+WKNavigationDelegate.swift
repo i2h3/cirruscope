@@ -31,6 +31,7 @@ extension WebViewController: WKNavigationDelegate {
             webView.startDownload(using: navigationAction.request) { download in
                 DownloadManager.shared.handle(download)
             }
+            closeWindowIfNeverRevealed()
             decisionHandler(.cancel)
             return
         }
@@ -93,6 +94,17 @@ extension WebViewController: WKNavigationDelegate {
         webView.startDownload(using: URLRequest(url: url)) { download in
             DownloadManager.shared.handle(download)
         }
+        closeWindowIfNeverRevealed()
+    }
+
+    /// `closeWindowIfNeverRevealed()` closes this controller's window when a download has just been started and no navigation in it has ever successfully completed, so a window opened solely to serve a download — for example via "Open Link in New Window" on a download link — does not linger on screen showing nothing but its background.
+    private func closeWindowIfNeverRevealed() {
+        guard hasRevealedAfterInitialLoad == false else {
+            return
+        }
+
+        logger.debug("Download started before this window ever revealed content; closing it (WebViewController \(self.logID))")
+        view.window?.close()
     }
 
     /// The explicit @objc selectors are load-bearing: WKNavigationDelegate is dispatched by selector, and without
@@ -102,12 +114,14 @@ extension WebViewController: WKNavigationDelegate {
     func webView(_: WKWebView, navigationAction _: WKNavigationAction, didBecome download: WKDownload) {
         logger.debug("Navigation action became a download; handing it to DownloadManager (WebViewController \(self.logID))")
         DownloadManager.shared.handle(download)
+        closeWindowIfNeverRevealed()
     }
 
     @objc(webView:navigationResponse:didBecomeDownload:)
     func webView(_: WKWebView, navigationResponse _: WKNavigationResponse, didBecome download: WKDownload) {
         logger.debug("Navigation response became a download; handing it to DownloadManager (WebViewController \(self.logID))")
         DownloadManager.shared.handle(download)
+        closeWindowIfNeverRevealed()
     }
 
     func webView(_ webView: WKWebView, didFinish _: WKNavigation!) {
