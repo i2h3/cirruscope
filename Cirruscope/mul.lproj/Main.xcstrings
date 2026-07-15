@@ -3392,30 +3392,30 @@
       }
     },
     "rJd-2U-O7V.label" : {
-      "comment" : "Class = \"NSTabViewItem\"; label = \"Server Apps\"; ObjectID = \"rJd-2U-O7V\";",
+      "comment" : "Class = \"NSTabViewItem\"; label = \"Speed Dials\"; ObjectID = \"rJd-2U-O7V\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Server-Apps"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Server Apps"
+            "value" : "Speed Dials"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Apps del servidor"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Applications du serveur"
           }
         }

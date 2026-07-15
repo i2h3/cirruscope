@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="24765" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
-        <deployment identifier="macosx"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24765"/>
         <plugIn identifier="com.apple.WebKit2IBPlugin" version="24765"/>
         <capability name="Image references" minToolsVersion="12.0"/>
@@ -850,7 +849,7 @@
                 <tabViewController selectedTabViewItemIndex="0" tabStyle="toolbar" id="Krt-iQ-b8b" userLabel="Settings Tab View" sceneMemberID="viewController">
                     <tabViewItems>
                         <tabViewItem label="General" identifier="" image="gear" catalog="system" id="7IU-fb-S0w"/>
-                        <tabViewItem label="Server Apps" identifier="" image="square.stack" catalog="system" id="rJd-2U-O7V"/>
+                        <tabViewItem label="Speed Dials" identifier="" image="hare" catalog="system" id="rJd-2U-O7V"/>
                     </tabViewItems>
                     <tabView key="tabView" type="noTabsNoBorder" id="C5g-9C-yaP">
                         <rect key="frame" x="0.0" y="0.0" width="450" height="300"/>
@@ -947,13 +946,13 @@
                         <rect key="frame" x="0.0" y="0.0" width="450" height="300"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <scrollView autohidesScrollers="YES" horizontalLineScroll="24" horizontalPageScroll="10" verticalLineScroll="24" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="L9M-NC-wVd">
+                            <scrollView autohidesScrollers="YES" horizontalLineScroll="28" horizontalPageScroll="10" verticalLineScroll="28" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="L9M-NC-wVd">
                                 <rect key="frame" x="0.0" y="0.0" width="450" height="300"/>
                                 <clipView key="contentView" id="Za0-D5-upR">
                                     <rect key="frame" x="1" y="1" width="448" height="298"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
-                                        <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="none" columnReordering="NO" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowHeight="24" rowSizeStyle="automatic" headerView="1uJ-kp-EXP" viewBased="YES" id="kKw-lQ-upa">
+                                        <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="none" columnReordering="NO" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowHeight="28" headerView="1uJ-kp-EXP" viewBased="YES" id="kKw-lQ-upa" customClass="ShortcutRecordingTableView" customModule="Cirruscope" customModuleProvider="target">
                                             <rect key="frame" x="0.0" y="0.0" width="448" height="270"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <size key="intercellSpacing" width="17" height="0.0"/>
@@ -992,7 +991,7 @@
                                                         </tableCellView>
                                                     </prototypeCellViews>
                                                 </tableColumn>
-                                                <tableColumn identifier="AutomaticTableColumnIdentifier.1" width="150" minWidth="40" maxWidth="1000" id="qmX-C4-sNh">
+                                                <tableColumn identifier="AutomaticTableColumnIdentifier.1" width="100" minWidth="40" maxWidth="1000" id="qmX-C4-sNh">
                                                     <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" title="Shortcut">
                                                         <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                         <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
@@ -1005,11 +1004,11 @@
                                                     <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                                     <prototypeCellViews>
                                                         <tableCellView id="KvN-TL-EbW">
-                                                            <rect key="frame" x="263" y="0.0" width="147" height="24"/>
+                                                            <rect key="frame" x="263" y="0.0" width="97" height="24"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                             <subviews>
                                                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="bSU-Ue-M7K">
-                                                                    <rect key="frame" x="0.0" y="4" width="147" height="16"/>
+                                                                    <rect key="frame" x="0.0" y="4" width="97" height="16"/>
                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
                                                                     <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Table View Cell" id="Phu-Ny-sSI">
                                                                         <font key="font" usesAppearanceFont="YES"/>
@@ -1335,9 +1334,9 @@
         <image name="arrow.down.circle" catalog="system" width="15" height="15"/>
         <image name="arrow.right.circle.fill" catalog="system" width="20" height="20"/>
         <image name="gear" catalog="system" width="17" height="16"/>
+        <image name="hare" catalog="system" width="23" height="17"/>
         <image name="magnifyingglass.circle.fill" catalog="system" width="20" height="20"/>
         <image name="plus" catalog="system" width="14" height="13"/>
-        <image name="square.stack" catalog="system" width="15" height="18"/>
         <image name="xmark.circle.fill" catalog="system" width="20" height="20"/>
     </resources>
 </document>

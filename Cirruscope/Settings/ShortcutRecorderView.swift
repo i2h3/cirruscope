@@ -6,8 +6,8 @@ import os
 
 /// `ShortcutRecorderView` is a focusable, text-field-style control that records a single keyboard shortcut.
 ///
-/// Clicking it makes it the first responder, which is the visual cue that it is recording; the next key combination the user presses (with at least one of Command, Option, or Control) becomes its value. A trailing clear button, shown only while a shortcut is assigned, removes the shortcut. `ServerAppsViewController` places one per row in its apps table and observes `onChange` to persist the recorded `KeyboardShortcut`, or `nil` when the user clears it, into `Settings.appShortcuts`.
-class ShortcutRecorderView: NSView {
+/// Clicking it makes it the first responder, which is the visual cue that it is recording; the next key combination the user presses becomes its value, provided it includes at least one of Command, Option, or Control, or is itself a function-region key (F-keys, arrows, Home/End, Page Up/Down, etc.) that can safely be recorded bare. A trailing clear button, shown only while a shortcut is assigned, removes the shortcut. `ServerAppsViewController` places one per row in its apps table and observes `onChange` to persist the recorded `KeyboardShortcut`, or `nil` when the user clears it, into `Settings.appShortcuts`.
+class ShortcutRecorderView: NSTableCellView {
     /// `shortcut` is the currently recorded shortcut, or `nil` when none is assigned.
     ///
     /// Setting it shows or hides the clear button and refreshes the displayed text; the user changes it by recording a new combination, pressing Delete while recording, or clicking the clear button.
@@ -64,7 +64,7 @@ class ShortcutRecorderView: NSView {
         displayField.isEditable = false
         displayField.isSelectable = false
         displayField.isBezeled = false
-        displayField.drawsBackground = true
+        displayField.drawsBackground = false
         displayField.focusRingType = .none
         displayField.lineBreakMode = .byTruncatingTail
         displayField.alignment = .left
@@ -89,8 +89,7 @@ class ShortcutRecorderView: NSView {
         NSLayoutConstraint.activate([
             displayField.leadingAnchor.constraint(equalTo: leadingAnchor),
             displayField.trailingAnchor.constraint(equalTo: trailingAnchor),
-            displayField.topAnchor.constraint(equalTo: topAnchor),
-            displayField.bottomAnchor.constraint(equalTo: bottomAnchor),
+            displayField.centerYAnchor.constraint(equalTo: centerYAnchor),
             clearButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -4),
             clearButton.centerYAnchor.constraint(equalTo: centerYAnchor),
             clearButton.widthAnchor.constraint(equalToConstant: 16),
@@ -141,6 +140,12 @@ class ShortcutRecorderView: NSView {
 
     override var focusRingMaskBounds: NSRect {
         bounds.insetBy(dx: 1, dy: 1)
+    }
+
+    override var backgroundStyle: NSView.BackgroundStyle {
+        didSet {
+            updateDisplay()
+        }
     }
 
     // MARK: - Recording
@@ -212,8 +217,13 @@ class ShortcutRecorderView: NSView {
             .intersection(.deviceIndependentFlagsMask)
             .intersection([.command, .option, .control, .shift])
 
-        // Require at least one of Command, Option, or Control so the shortcut cannot collide with plain typing.
-        guard modifiers.contains(.command) || modifiers.contains(.option) || modifiers.contains(.control) else {
+        // AppKit sets `.function` on any keyDown whose key is in the function/special-key region (F-keys, arrows,
+        // Home/End, Page Up/Down, etc.), regardless of whether the physical fn key is held.
+        let isFunctionRegionKey = modifierFlags.contains(.function)
+
+        // Require at least one of Command, Option, or Control so a bare shortcut cannot collide with plain typing —
+        // unless the key is a function-region key, which never collides with typing and so may be recorded bare.
+        guard isFunctionRegionKey || modifiers.contains(.command) || modifiers.contains(.option) || modifiers.contains(.control) else {
             return
         }
 
@@ -240,18 +250,54 @@ class ShortcutRecorderView: NSView {
     private func updateDisplay() {
         if isRecording {
             displayField.stringValue = "Press now"
-            displayField.textColor = .controlAccentColor
+            displayField.textColor = backgroundStyle == .emphasized ? .alternateSelectedControlTextColor : .controlAccentColor
             logger.debug("Updated display for recording")
         } else if let shortcut {
             displayField.stringValue = Self.displayString(for: shortcut)
-            displayField.textColor = .labelColor
+            displayField.textColor = backgroundStyle == .emphasized ? .alternateSelectedControlTextColor : .labelColor
             logger.debug("Updated display for shortcut presentation")
         } else {
             displayField.stringValue = "None"
-            displayField.textColor = .secondaryLabelColor
+            displayField.textColor = backgroundStyle == .emphasized ? .alternateSelectedControlTextColor : .secondaryLabelColor
             logger.debug("Updated display for empty presentation")
         }
     }
+
+    /// `functionRegionKeyNames` maps the Unicode Private Use Area scalars AppKit reserves for function-region keys
+    /// (e.g. `NSF4FunctionKey` at U+F707, `NSHomeFunctionKey` at U+F729) to a friendly name for `displayString(for:)`.
+    ///
+    /// `KeyboardShortcut.keyEquivalent` stores these scalars unchanged for such keys, since that raw value is what
+    /// `NSMenuItem.keyEquivalent` needs; this mapping only affects what is displayed, never what is stored.
+    private static let functionRegionKeyNames: [Unicode.Scalar: String] = [
+        Unicode.Scalar(0xF700)!: "↑",
+        Unicode.Scalar(0xF701)!: "↓",
+        Unicode.Scalar(0xF702)!: "←",
+        Unicode.Scalar(0xF703)!: "→",
+        Unicode.Scalar(0xF704)!: "F1",
+        Unicode.Scalar(0xF705)!: "F2",
+        Unicode.Scalar(0xF706)!: "F3",
+        Unicode.Scalar(0xF707)!: "F4",
+        Unicode.Scalar(0xF708)!: "F5",
+        Unicode.Scalar(0xF709)!: "F6",
+        Unicode.Scalar(0xF70A)!: "F7",
+        Unicode.Scalar(0xF70B)!: "F8",
+        Unicode.Scalar(0xF70C)!: "F9",
+        Unicode.Scalar(0xF70D)!: "F10",
+        Unicode.Scalar(0xF70E)!: "F11",
+        Unicode.Scalar(0xF70F)!: "F12",
+        Unicode.Scalar(0xF710)!: "F13",
+        Unicode.Scalar(0xF711)!: "F14",
+        Unicode.Scalar(0xF712)!: "F15",
+        Unicode.Scalar(0xF713)!: "F16",
+        Unicode.Scalar(0xF714)!: "F17",
+        Unicode.Scalar(0xF715)!: "F18",
+        Unicode.Scalar(0xF716)!: "F19",
+        Unicode.Scalar(0xF717)!: "F20",
+        Unicode.Scalar(0xF729)!: "Home",
+        Unicode.Scalar(0xF72B)!: "End",
+        Unicode.Scalar(0xF72C)!: "Page Up",
+        Unicode.Scalar(0xF72D)!: "Page Down",
+    ]
 
     /// `displayString(for:)` renders a shortcut as its symbolic representation, e.g. `⌃⌥⇧⌘F`.
     static func displayString(for shortcut: KeyboardShortcut) -> String {
@@ -274,7 +320,16 @@ class ShortcutRecorderView: NSView {
             result += "⌘"
         }
 
-        result += shortcut.keyEquivalent.uppercased()
+        // Function-region keys are stored as an unreadable Private Use Area scalar (see `functionRegionKeyNames`),
+        // so substitute a friendly name for display; every other key equivalent still just displays uppercased.
+        if shortcut.keyEquivalent.unicodeScalars.count == 1,
+           let scalar = shortcut.keyEquivalent.unicodeScalars.first,
+           let name = functionRegionKeyNames[scalar]
+        {
+            result += name
+        } else {
+            result += shortcut.keyEquivalent.uppercased()
+        }
 
         return result
     }
