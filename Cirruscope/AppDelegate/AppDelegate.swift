@@ -39,8 +39,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         UserNotifier.shared.configure()
         NotificationCenter.default.addObserver(self, selector: #selector(serverAppsDidChange), name: .serverAppsDidChange, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(downloadDidStart), name: .downloadDidStart, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(serverCredentialsRejected), name: .serverCredentialsRejected, object: nil)
         rebuildServerAppsMenu()
         presentInitialWindow(forLaunch: true)
+    }
+
+    func applicationDidBecomeActive(_: Notification) {
+        // Keep the Dock badge fresh when the user returns to the app; does nothing while the monitor is stopped.
+        NotificationMonitor.shared.refreshNow()
     }
 
     func applicationDockMenu(_: NSApplication) -> NSMenu? {
@@ -122,7 +128,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         Task {
             do {
                 switch try await ServerConnection.validate(server) {
-                    case .supported:
+                    case let .supported(capabilities):
                         logger.info("Server supported; presenting web window")
                         // At launch the validate round-trip runs after AppKit's local restoration, so any restored
                         // web windows are already tracked; open a fresh one only when nothing was restored. A
@@ -132,9 +138,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                         }
 
                         await ServerConnection.refreshNavigationApps(using: server)
+                        // Begin (or restart) tracking unread notifications for the Dock badge and banners.
+                        NotificationMonitor.shared.start(for: server, capabilities: capabilities)
 
                     case let .unsupported(version):
                         logger.notice("Server at \(serverAddress.absoluteString) runs unsupported version \(version)")
+                        NotificationMonitor.shared.stop()
+
                         if forLaunch {
                             closeWebViewWindows()
                         }
@@ -144,16 +154,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             } catch RainmakerError.credentialsRequired, RainmakerError.unexpectedStatus(code: 401) {
                 // The stored app password was revoked on the server; discard it and require a new login.
-                logger.notice("Stored credentials rejected (401); clearing keychain and requiring sign-in")
-                Keychain.clearAll()
-
-                if forLaunch {
-                    closeWebViewWindows()
-                }
-
-                presentWindow(withIdentifier: "ServerAddressWindowController")
+                requireSignIn()
             } catch {
                 logger.error("Could not reach server: \(error.localizedDescription)")
+                NotificationMonitor.shared.stop()
+
                 if forLaunch {
                     closeWebViewWindows()
                 }
@@ -164,10 +169,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// `requireSignIn()` discards the rejected credentials and returns the app to the sign-in screen.
+    ///
+    /// `presentInitialWindow(forLaunch:)` calls it when validation reports the stored app password was revoked, and the `serverCredentialsRejected` observer calls it when `NotificationMonitor`'s event stream detects the same during a session. It stops the monitor, clears the keychain, closes any web windows left on the now-unusable server, and presents `ServerAddressWindowController`.
+    private func requireSignIn() {
+        logger.notice("Credentials rejected; clearing keychain and requiring sign-in")
+        NotificationMonitor.shared.stop()
+        Keychain.clearAll()
+        closeWebViewWindows()
+        presentWindow(withIdentifier: "ServerAddressWindowController")
+    }
+
+    /// `serverCredentialsRejected()` returns the app to sign-in when `NotificationMonitor` reports its stream was rejected because the stored app password was revoked.
+    @objc
+    private func serverCredentialsRejected() {
+        logger.notice("Notification monitor reported rejected credentials")
+        requireSignIn()
+    }
+
     /// `hasOpenWebWindow` is `true` while at least one web window is open, including any AppKit restored at launch.
     ///
-    /// `presentInitialWindow(forLaunch:)` reads it at launch to avoid opening a duplicate window when AppKit already restored one.
-    private var hasOpenWebWindow: Bool {
+    /// `presentInitialWindow(forLaunch:)` reads it at launch to avoid opening a duplicate window when AppKit already restored one, and `NotificationMonitor` reads it to suppress its own banners while the embedded web interface can surface its own.
+    var hasOpenWebWindow: Bool {
         windowControllers.contains { $0 is WebWindowController }
     }
 
@@ -242,6 +265,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             logger.debug("No server address or stored credentials to revoke an app password for")
         }
+
+        // Stop tracking notifications and clear the Dock badge before the credentials it relies on are removed.
+        NotificationMonitor.shared.stop()
 
         for window in NSApplication.shared.windows {
             window.close()

@@ -324,4 +324,10 @@ extension Notification.Name {
 
     /// `downloadDidStart` is posted by `DownloadManager` when a new transfer begins so `AppDelegate` can open and bring the Downloads window to the foreground.
     static let downloadDidStart = Notification.Name("DownloadDidStart")
+
+    /// `unreadNotificationCountDidChange` is posted by `NotificationMonitor` whenever the unread server-notification count changes so other parts of the app can react without reaching into the monitor.
+    static let unreadNotificationCountDidChange = Notification.Name("UnreadNotificationCountDidChange")
+
+    /// `serverCredentialsRejected` is posted by `NotificationMonitor` when its event stream reports the stored app password was revoked so `AppDelegate` can clear the keychain and require a new sign-in.
+    static let serverCredentialsRejected = Notification.Name("ServerCredentialsRejected")
 }
