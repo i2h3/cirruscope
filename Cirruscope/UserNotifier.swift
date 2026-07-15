@@ -3,6 +3,7 @@
 
 import AppKit
 import os
+import Rainmaker
 import UserNotifications
 import WebKit
 
@@ -26,6 +27,11 @@ final class UserNotifier: NSObject, UNUserNotificationCenterDelegate {
     /// It is `nonisolated` so the `nonisolated` delegate callback that inspects a clicked notification can read it.
     private nonisolated static let downloadFilePathKey = "downloadFilePath"
 
+    /// `serverNotificationLinkKey` is the `userInfo` key under which `postServerNotification(_:serverAddress:)` stores a server notification's absolute link so a click can open it in a web window.
+    ///
+    /// It is `nonisolated` so the `nonisolated` delegate callback that inspects a clicked notification can read it.
+    private nonisolated static let serverNotificationLinkKey = "serverNotificationLink"
+
     /// `configure()` registers `shared` as the `UNUserNotificationCenter` delegate so notifications are presented even while Cirruscope is the active app and so clicks are delivered here.
     ///
     /// `AppDelegate.applicationDidFinishLaunching(_:)` calls it once, before the launch sequence completes, as `UNUserNotificationCenter` requires its delegate to be set by then.
@@ -33,11 +39,12 @@ final class UserNotifier: NSObject, UNUserNotificationCenterDelegate {
         UNUserNotificationCenter.current().delegate = self
     }
 
-    /// `requestAuthorization()` asks the user for permission to show alerts and play sounds, prompting only the first time the authorization state is undetermined.
+    /// `requestAuthorization()` asks the user for permission to show alerts, play sounds, and badge the app icon, prompting only the first time the authorization state is undetermined.
     ///
     /// `WebViewController` calls it when a web window opens so the prompt appears in the context of a connected server rather than at launch.
+    /// The `.badge` option is essential and not merely for `UNNotificationContent` badges: once an app becomes a `UNUserNotificationCenter` client, macOS gates the app-icon badge — including the `NSApp.dockTile.badgeLabel` count `NotificationMonitor` sets — behind the notification "Badges" setting, which this option authorizes. Without it the Dock badge is silently suppressed even though the label is assigned.
     func requestAuthorization() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { [logger] granted, error in
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { [logger] granted, error in
             if let error {
                 logger.error("Notification authorization failed: \(error.localizedDescription)")
             } else if granted == false {
@@ -75,6 +82,22 @@ final class UserNotifier: NSObject, UNUserNotificationCenterDelegate {
         UNUserNotificationCenter.current().add(request)
     }
 
+    /// `postServerNotification(_:serverAddress:)` posts a banner for a Nextcloud server notification, remembering its link so a click opens it in a web window.
+    ///
+    /// `NotificationMonitor` calls it for each newly arrived notification. The request identifier is derived from the notification's server id so the same notification, seen again on a later fetch, replaces its banner rather than posting a duplicate. The link is resolved against `serverAddress` because the server returns it relative to the instance root.
+    func postServerNotification(_ item: NotificationItem, serverAddress: URL) {
+        let content = UNMutableNotificationContent()
+        content.title = item.subject
+        content.body = item.message
+
+        if let url = URL(string: item.link, relativeTo: serverAddress)?.absoluteURL {
+            content.userInfo = [Self.serverNotificationLinkKey: url.absoluteString]
+        }
+
+        let request = UNNotificationRequest(identifier: "server-notification-\(item.id)", content: content, trigger: nil)
+        UNUserNotificationCenter.current().add(request)
+    }
+
     nonisolated func userNotificationCenter(_: UNUserNotificationCenter, willPresent _: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         completionHandler([.banner, .sound, .list])
     }
@@ -84,10 +107,13 @@ final class UserNotifier: NSObject, UNUserNotificationCenterDelegate {
         let userInfo = response.notification.request.content.userInfo
         let webNotificationID = userInfo["webNotificationID"] as? String
         let downloadFilePath = userInfo[Self.downloadFilePathKey] as? String
+        let serverNotificationLink = userInfo[Self.serverNotificationLinkKey] as? String
 
         Task { @MainActor in
             if let downloadFilePath {
                 self.revealDownloadedFile(atPath: downloadFilePath)
+            } else if let serverNotificationLink, let url = URL(string: serverNotificationLink) {
+                self.openServerNotificationLink(url)
             } else {
                 self.activate(identifier: identifier, webNotificationID: webNotificationID)
             }
@@ -121,5 +147,14 @@ final class UserNotifier: NSObject, UNUserNotificationCenterDelegate {
     private func revealDownloadedFile(atPath path: String) {
         NSApp.activate()
         NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
+    }
+
+    /// `openServerNotificationLink(_:)` brings the app forward and opens the server notification's target in a web window.
+    ///
+    /// `userNotificationCenter(_:didReceive:withCompletionHandler:)` calls it when the clicked notification was posted by `postServerNotification(_:serverAddress:)`.
+    @MainActor
+    private func openServerNotificationLink(_ url: URL) {
+        NSApp.activate(ignoringOtherApps: true)
+        (NSApp.delegate as? AppDelegate)?.presentWebViewWindow(targetURL: url)
     }
 }
