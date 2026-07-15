@@ -5,7 +5,7 @@ import Foundation
 import os
 import Rainmaker
 
-/// `Settings` provides typed accessors for values persisted in `UserDefaults` and configured statically in the app's `Info.plist`.
+/// `Settings` provides typed accessors for values persisted in a `UserDefaults` suite scoped to `AppGroup.identifier` — so a future app extension sharing the same App Group can read and write the same settings — and configured statically in the app's `Info.plist`.
 ///
 /// `AppDelegate` consults `Settings.serverAddress` on launch to choose between presenting `ServerAddressViewController` and `WebViewController`.
 /// `ServerAddressViewController` writes the user's chosen server address back to `Settings` after validating it against `Settings.minimumSupportedServerMajorVersion`, and `WebViewController` reads the address again to load the initial request.
@@ -50,6 +50,17 @@ enum Settings {
     /// `logger` records settings persistence failures — JSON coding and theming asset caching — under the `Settings` category.
     private static let logger = Logger(for: Settings.self)
 
+    /// `defaults` is the shared `UserDefaults` suite backing every property below, scoped to `AppGroup.identifier` so a future app extension sharing the same App Group can read and write the same settings.
+    ///
+    /// `nonisolated(unsafe)` because `UserDefaults` does not conform to `Sendable`, even though it is documented as thread-safe internally; this mirrors `Rainmaker.Server`'s own `nonisolated(unsafe) let fileManager = FileManager.default` for the same reason.
+    private nonisolated(unsafe) static let defaults: UserDefaults = {
+        guard let suite = UserDefaults(suiteName: AppGroup.identifier) else {
+            preconditionFailure("Could not create the UserDefaults suite for App Group \"\(AppGroup.identifier)\".")
+        }
+
+        return suite
+    }()
+
     /// `serverAddress` is the URL of the Nextcloud server the user has last connected to, or `nil` while no server has been configured yet.
     ///
     /// `AppDelegate` reads this property during launch to decide which storyboard scene to instantiate.
@@ -57,12 +68,12 @@ enum Settings {
     /// Setting this property to `nil` also clears `themeBackground`, `themeLogo`, `themeBackgroundPlain`, `serverVersion`, and `serverApps`, empties `AssetCache`, and clears the stored Login Flow v2 credentials via `Keychain` because those values, cached assets, and credentials describe the server identified by this address and become meaningless without it.
     static var serverAddress: URL? {
         get {
-            UserDefaults.standard.url(forKey: UserDefaultsKey.serverAddress.rawValue)
+            defaults.url(forKey: UserDefaultsKey.serverAddress.rawValue)
         }
 
         set {
             if newValue == nil {
-                UserDefaults.standard.removeObject(forKey: UserDefaultsKey.serverAddress.rawValue)
+                defaults.removeObject(forKey: UserDefaultsKey.serverAddress.rawValue)
                 themeBackground = nil
                 themeLogo = nil
                 themeBackgroundPlain = nil
@@ -71,7 +82,7 @@ enum Settings {
                 AssetCache.shared.clear()
                 Keychain.clearAll()
             } else {
-                UserDefaults.standard.set(newValue, forKey: UserDefaultsKey.serverAddress.rawValue)
+                defaults.set(newValue, forKey: UserDefaultsKey.serverAddress.rawValue)
             }
         }
     }
@@ -82,14 +93,14 @@ enum Settings {
     /// It is cleared together with `serverAddress` when the user disconnects from the server.
     static var themeBackground: String? {
         get {
-            UserDefaults.standard.string(forKey: UserDefaultsKey.themeBackground.rawValue)
+            defaults.string(forKey: UserDefaultsKey.themeBackground.rawValue)
         }
 
         set {
             if let newValue {
-                UserDefaults.standard.set(newValue, forKey: UserDefaultsKey.themeBackground.rawValue)
+                defaults.set(newValue, forKey: UserDefaultsKey.themeBackground.rawValue)
             } else {
-                UserDefaults.standard.removeObject(forKey: UserDefaultsKey.themeBackground.rawValue)
+                defaults.removeObject(forKey: UserDefaultsKey.themeBackground.rawValue)
             }
         }
     }
@@ -100,14 +111,14 @@ enum Settings {
     /// It is cleared together with `serverAddress` when the user disconnects from the server.
     static var themeLogo: URL? {
         get {
-            UserDefaults.standard.url(forKey: UserDefaultsKey.themeLogo.rawValue)
+            defaults.url(forKey: UserDefaultsKey.themeLogo.rawValue)
         }
 
         set {
             if let newValue {
-                UserDefaults.standard.set(newValue, forKey: UserDefaultsKey.themeLogo.rawValue)
+                defaults.set(newValue, forKey: UserDefaultsKey.themeLogo.rawValue)
             } else {
-                UserDefaults.standard.removeObject(forKey: UserDefaultsKey.themeLogo.rawValue)
+                defaults.removeObject(forKey: UserDefaultsKey.themeLogo.rawValue)
             }
         }
     }
@@ -118,14 +129,14 @@ enum Settings {
     /// It is cleared together with `serverAddress` when the user disconnects from the server.
     static var themeBackgroundPlain: Bool? {
         get {
-            UserDefaults.standard.object(forKey: UserDefaultsKey.themeBackgroundPlain.rawValue) as? Bool
+            defaults.object(forKey: UserDefaultsKey.themeBackgroundPlain.rawValue) as? Bool
         }
 
         set {
             if let newValue {
-                UserDefaults.standard.set(newValue, forKey: UserDefaultsKey.themeBackgroundPlain.rawValue)
+                defaults.set(newValue, forKey: UserDefaultsKey.themeBackgroundPlain.rawValue)
             } else {
-                UserDefaults.standard.removeObject(forKey: UserDefaultsKey.themeBackgroundPlain.rawValue)
+                defaults.removeObject(forKey: UserDefaultsKey.themeBackgroundPlain.rawValue)
             }
         }
     }
@@ -136,14 +147,14 @@ enum Settings {
     /// It is cleared together with `serverAddress` when the user disconnects from the server.
     static var serverVersion: String? {
         get {
-            UserDefaults.standard.string(forKey: UserDefaultsKey.serverVersion.rawValue)
+            defaults.string(forKey: UserDefaultsKey.serverVersion.rawValue)
         }
 
         set {
             if let newValue {
-                UserDefaults.standard.set(newValue, forKey: UserDefaultsKey.serverVersion.rawValue)
+                defaults.set(newValue, forKey: UserDefaultsKey.serverVersion.rawValue)
             } else {
-                UserDefaults.standard.removeObject(forKey: UserDefaultsKey.serverVersion.rawValue)
+                defaults.removeObject(forKey: UserDefaultsKey.serverVersion.rawValue)
             }
         }
     }
@@ -178,7 +189,7 @@ enum Settings {
     /// Setting it prunes `appShortcuts` entries for apps that are no longer offered and posts `Notification.Name.serverAppsDidChange`.
     static var serverApps: [ServerApp] {
         get {
-            guard let data = UserDefaults.standard.data(forKey: UserDefaultsKey.serverApps.rawValue) else {
+            guard let data = defaults.data(forKey: UserDefaultsKey.serverApps.rawValue) else {
                 return []
             }
 
@@ -192,7 +203,7 @@ enum Settings {
 
         set {
             do {
-                try UserDefaults.standard.set(JSONEncoder().encode(newValue), forKey: UserDefaultsKey.serverApps.rawValue)
+                try defaults.set(JSONEncoder().encode(newValue), forKey: UserDefaultsKey.serverApps.rawValue)
             } catch {
                 logger.error("Could not encode server apps: \(error.localizedDescription)")
             }
@@ -220,7 +231,7 @@ enum Settings {
     /// Setting it posts `Notification.Name.serverAppsDidChange`.
     static var appShortcuts: [String: KeyboardShortcut] {
         get {
-            guard let data = UserDefaults.standard.data(forKey: UserDefaultsKey.appShortcuts.rawValue) else {
+            guard let data = defaults.data(forKey: UserDefaultsKey.appShortcuts.rawValue) else {
                 return [:]
             }
 
@@ -234,7 +245,7 @@ enum Settings {
 
         set {
             do {
-                try UserDefaults.standard.set(JSONEncoder().encode(newValue), forKey: UserDefaultsKey.appShortcuts.rawValue)
+                try defaults.set(JSONEncoder().encode(newValue), forKey: UserDefaultsKey.appShortcuts.rawValue)
             } catch {
                 logger.error("Could not encode app shortcuts: \(error.localizedDescription)")
             }

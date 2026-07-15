@@ -5,7 +5,7 @@ import CryptoKit
 import Foundation
 import os
 
-/// `AssetCache` downloads remote assets into the app's caches directory and avoids redundant downloads by revalidating cached copies with the server using their HTTP `ETag`.
+/// `AssetCache` downloads remote assets into the shared App Group container's caches directory and avoids redundant downloads by revalidating cached copies with the server using their HTTP `ETag`.
 ///
 /// `Settings.persist(theming:)` uses the `shared` instance to keep local copies of the Nextcloud server's branding assets up to date so they can be displayed without re-fetching them every launch.
 /// Cached files are addressed by the SHA-256 digest of their absolute URL so that distinct remote URLs map to distinct local files.
@@ -18,7 +18,7 @@ final class AssetCache: Sendable {
     /// `logger` records asset caching activity under the `AssetCache` category.
     private let logger = Logger(for: AssetCache.self)
 
-    /// `directory` is the on-disk location, rooted in the app's caches directory, in which cached asset payloads and their `ETag` sidecars are stored.
+    /// `directory` is the on-disk location, rooted in the shared App Group container's caches directory, in which cached asset payloads and their `ETag` sidecars are stored.
     private let directory: URL
 
     /// `session` is the `URLSession` used to download assets.
@@ -26,9 +26,10 @@ final class AssetCache: Sendable {
 
     /// `init()` creates the cache and ensures its on-disk directory exists.
     ///
-    /// The directory is the `Assets` subdirectory of the app's caches directory and is created on first use.
+    /// The directory is the `Assets` subdirectory of `AppGroup.containerURL`'s `Library/Caches`, so a future app extension sharing the same App Group can reach the same cached assets, and is created on first use.
     init() {
-        directory = URL.cachesDirectory.appending(component: "Assets", directoryHint: .isDirectory)
+        let cachesRoot = AppGroup.containerURL.appending(path: "Library/Caches", directoryHint: .isDirectory)
+        directory = cachesRoot.appending(component: "Assets", directoryHint: .isDirectory)
         session = .shared
 
         do {
@@ -42,6 +43,7 @@ final class AssetCache: Sendable {
     /// `clear()` removes every cached payload and `ETag` sidecar stored by this cache.
     ///
     /// `Settings.serverAddress` invokes this when the user disconnects from the server so that no branding assets remain on disk that describe a server the app no longer talks to.
+    /// `directory` lives inside the shared App Group container; once a future app extension shares `Library/Caches/Assets/` with this app, this method's blanket removal would delete that shared subdirectory too, so it should stay scoped to files this cache itself owns if anything else ever starts writing there.
     func clear() {
         do {
             try FileManager.default.removeItem(at: directory)
