@@ -155,9 +155,10 @@ class ServerAddressViewController: NSViewController {
     ///
     /// While the grant is pending the endpoint yields no result and `server.poll(_:token:)` throws, so every failure is treated as "keep polling". It stops with `CirruscopeError.loginCancelled` if the user dismisses the sheet and `CirruscopeError.loginTimedOut` after a few minutes without completion.
     private func pollForCredentials(on server: Server, flow: LoginFlow) async throws -> LoginResult {
-        let deadline = Date().addingTimeInterval(300)
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: .seconds(300))
 
-        while Date() < deadline {
+        while clock.now < deadline {
             try Task.checkCancellation()
 
             if authenticationCancelled {
@@ -169,7 +170,7 @@ class ServerAddressViewController: NSViewController {
                 return result
             }
 
-            try await Task.sleep(nanoseconds: 1_000_000_000)
+            try await Task.sleep(for: .seconds(1))
         }
 
         logger.error("Sign-in timed out after 300 seconds")

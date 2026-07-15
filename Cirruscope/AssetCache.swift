@@ -28,8 +28,7 @@ final class AssetCache: Sendable {
     ///
     /// The directory is the `Assets` subdirectory of the app's caches directory and is created on first use.
     init() {
-        let cachesDirectory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-        directory = cachesDirectory.appendingPathComponent("Assets", isDirectory: true)
+        directory = URL.cachesDirectory.appending(component: "Assets", directoryHint: .isDirectory)
         session = .shared
 
         do {
@@ -64,7 +63,7 @@ final class AssetCache: Sendable {
     func localURL(for remoteURL: URL) -> URL? {
         let fileURL = fileURL(for: remoteURL)
 
-        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+        guard FileManager.default.fileExists(atPath: fileURL.path(percentEncoded: false)) else {
             logger.debug("Cache miss for \(remoteURL)")
             return nil
         }
@@ -84,7 +83,7 @@ final class AssetCache: Sendable {
         var request = URLRequest(url: remoteURL)
         request.cachePolicy = .reloadIgnoringLocalCacheData
 
-        if FileManager.default.fileExists(atPath: fileURL.path), let etag = etag(for: fileURL) {
+        if FileManager.default.fileExists(atPath: fileURL.path(percentEncoded: false)), let etag = etag(for: fileURL) {
             request.setValue(etag, forHTTPHeaderField: "If-None-Match")
             logger.debug("Revalidating cached asset with stored ETag")
         }
@@ -121,7 +120,7 @@ final class AssetCache: Sendable {
     private func fileURL(for remoteURL: URL) -> URL {
         let digest = SHA256.hash(data: Data(remoteURL.absoluteString.utf8))
         let name = digest.map { String(format: "%02x", $0) }.joined()
-        return directory.appendingPathComponent(name)
+        return directory.appending(component: name)
     }
 
     /// `etagURL(for:)` returns the file system URL of the `ETag` sidecar file that accompanies the cached payload at `fileURL`.

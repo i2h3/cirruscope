@@ -214,7 +214,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if let existing = windowControllers.first(where: { ($0.contentViewController as? WebViewController)?.currentAppID == app.id }) {
             logger.log("Found existing window for server app \(app.id) to bring to front")
             existing.window?.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
+            NSApp.activate()
             return
         }
 
@@ -277,7 +277,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             presentWindow(withIdentifier: "DownloadsWindowController")
         }
 
-        NSApp.activate(ignoringOtherApps: true)
+        NSApp.activate()
     }
 
     /// `downloadDidStart()` opens the Downloads window when `DownloadManager` reports that a transfer has begun.

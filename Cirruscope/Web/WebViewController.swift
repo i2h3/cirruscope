@@ -103,9 +103,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        if #available(macOS 13.3, *) {
-            webView.isInspectable = true
-        }
+        webView.isInspectable = true
         webView.navigationDelegate = self
         webView.uiDelegate = self
         observeWebViewTitle()

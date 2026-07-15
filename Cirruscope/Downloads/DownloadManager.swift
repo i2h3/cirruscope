@@ -75,9 +75,9 @@ final class DownloadManager: NSObject {
     ///
     /// `WKDownload` requires a destination whose file does not already exist in an existing directory, so this avoids clobbering a previous download and matches the auto-renaming a web browser performs.
     func uniqueDestination(for suggestedFilename: String) -> URL {
-        let directory = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
+        let directory = URL.downloadsDirectory
         let name = suggestedFilename.isEmpty ? "download" : suggestedFilename
-        let base = directory.appendingPathComponent(name)
+        let base = directory.appending(component: name)
         let ext = base.pathExtension
         let stem = base.deletingPathExtension().lastPathComponent
 
@@ -89,7 +89,7 @@ final class DownloadManager: NSObject {
         // two downloads that pick the same suggested name in the same instant would both see it free and collide.
         while isTaken(candidate) {
             let numberedName = ext.isEmpty ? "\(stem) (\(counter))" : "\(stem) (\(counter)).\(ext)"
-            candidate = directory.appendingPathComponent(numberedName)
+            candidate = directory.appending(component: numberedName)
             counter += 1
         }
 
@@ -99,6 +99,6 @@ final class DownloadManager: NSObject {
 
     /// `isTaken(_:)` reports whether `url` is unavailable as a download destination — either a file already exists there or another in-flight transfer has reserved it via `uniqueDestination(for:)`.
     private func isTaken(_ url: URL) -> Bool {
-        reservedDestinations.contains(url) || FileManager.default.fileExists(atPath: url.path)
+        reservedDestinations.contains(url) || FileManager.default.fileExists(atPath: url.path(percentEncoded: false))
     }
 }

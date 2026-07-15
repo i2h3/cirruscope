@@ -72,17 +72,13 @@ class DownloadTableCellView: NSTableCellView {
 
         switch download.state {
             case .inProgress:
-                // `NSProgressIndicator.observedProgress` would bind the bar to the download's `Progress` automatically,
-                // but it is macOS 14+, so drive the bar manually from the same `fractionCompleted` observation below.
                 // The total size is unknown until the response arrives, so run indeterminate until then.
-                progressIndicator.minValue = 0
-                progressIndicator.maxValue = 1
+                progressIndicator.observedProgress = download.progress
                 let hasKnownTotal = download.progress.totalUnitCount > 0
                 progressIndicator.isIndeterminate = !hasKnownTotal
 
                 if hasKnownTotal {
                     progressIndicator.stopAnimation(nil)
-                    progressIndicator.doubleValue = download.progress.fractionCompleted
                 } else {
                     progressIndicator.startAnimation(nil)
                 }
@@ -97,19 +93,9 @@ class DownloadTableCellView: NSTableCellView {
                 let downloadID = download.id
                 progressObservation = download.progress.observe(\.fractionCompleted, options: [.initial]) { [weak self] progress, _ in
                     let additionalDescription = progress.localizedAdditionalDescription
-                    let hasKnownTotal = progress.totalUnitCount > 0
-                    let fractionCompleted = progress.fractionCompleted
                     Task { @MainActor in
                         guard let self, let download = self.download, download.id == downloadID, download.state == .inProgress else {
                             return
-                        }
-
-                        self.progressIndicator.isIndeterminate = !hasKnownTotal
-                        if hasKnownTotal {
-                            self.progressIndicator.stopAnimation(nil)
-                            self.progressIndicator.doubleValue = fractionCompleted
-                        } else {
-                            self.progressIndicator.startAnimation(nil)
                         }
 
                         self.status.stringValue = additionalDescription ?? ""
@@ -117,14 +103,17 @@ class DownloadTableCellView: NSTableCellView {
                 }
 
             case .finished:
+                progressIndicator.observedProgress = nil
                 progressIndicator.stopAnimation(nil)
                 status.stringValue = ByteCountFormatter.string(fromByteCount: download.progress.completedUnitCount, countStyle: .file)
 
             case .failed:
+                progressIndicator.observedProgress = nil
                 progressIndicator.stopAnimation(nil)
                 status.stringValue = download.error?.localizedDescription ?? String(localized: "Download failed.", comment: "Status label shown when a download fails without a specific error description.")
 
             case .cancelled:
+                progressIndicator.observedProgress = nil
                 progressIndicator.stopAnimation(nil)
                 status.stringValue = String(localized: "Cancelled", comment: "Status label for a download the user cancelled.")
         }

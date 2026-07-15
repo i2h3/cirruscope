@@ -69,7 +69,7 @@ final class UserNotifier: NSObject, UNUserNotificationCenterDelegate {
         let content = UNMutableNotificationContent()
         content.title = String(localized: "Download Finished", comment: "Title of the notification shown when a file download finishes.")
         content.body = filename
-        content.userInfo = [Self.downloadFilePathKey: fileURL.path]
+        content.userInfo = [Self.downloadFilePathKey: fileURL.path(percentEncoded: false)]
 
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
         UNUserNotificationCenter.current().add(request)
@@ -101,7 +101,7 @@ final class UserNotifier: NSObject, UNUserNotificationCenterDelegate {
     /// If the originating window has since closed, it activates the app and does nothing further, since the page that knew the notification's target is gone.
     @MainActor
     private func activate(identifier: String, webNotificationID: String?) {
-        NSApp.activate(ignoringOtherApps: true)
+        NSApp.activate()
 
         guard let webView = webViewsByIdentifier.object(forKey: identifier as NSString) else {
             return
@@ -119,7 +119,7 @@ final class UserNotifier: NSObject, UNUserNotificationCenterDelegate {
     /// `userNotificationCenter(_:didReceive:withCompletionHandler:)` calls it when the clicked notification was posted by `postDownloadFinished(filename:fileURL:)`.
     @MainActor
     private func revealDownloadedFile(atPath path: String) {
-        NSApp.activate(ignoringOtherApps: true)
+        NSApp.activate()
         NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
     }
 }
