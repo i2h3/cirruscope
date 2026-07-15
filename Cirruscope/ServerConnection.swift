@@ -75,6 +75,18 @@ enum ServerConnection {
         }
     }
 
+    /// `revokeAppPassword(using:)` asks the server to revoke the Login Flow v2 app password `server` is currently authenticated with, so the credential the app is about to discard locally is also invalidated on the server.
+    ///
+    /// `AppDelegate.logOut()` calls this as a best-effort step, mirroring `refreshNavigationApps(using:)`: failures are logged and swallowed rather than thrown, because Nextcloud's own guidance is that app-password revocation is fail-open — if the server cannot be reached or rejects the request, the client should still remove the credential locally regardless. `server` must already carry the credentials to revoke, obtained via `authenticated(address:)` before the caller clears them from `Keychain`; this method never re-reads `Keychain` itself, so it stays valid to call even after the credential has been cleared locally.
+    static func revokeAppPassword(using server: Server) async {
+        do {
+            try await server.deleteAppPassword()
+            logger.info("Revoked the app password on the server")
+        } catch {
+            logger.notice("Could not revoke the app password on the server; proceeding with local sign-out regardless: \(error.localizedDescription)")
+        }
+    }
+
     /// `userAgent` is the HTTP user agent Cirruscope presents to the server, derived from the app's bundle name.
     private static var userAgent: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Cirruscope"

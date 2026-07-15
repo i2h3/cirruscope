@@ -4,6 +4,7 @@
 import Cocoa
 import os
 import Rainmaker
+import WebKit
 
 /// `AppDelegate` is the application delegate of Cirruscope and owns the lifecycle of every window the app shows.
 ///
@@ -223,6 +224,36 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         logger.log("Failed to find existing window for server app \(app.id) to bring to front, opening a new web view window")
         presentWebViewWindow(targetURL: url)
+    }
+
+    /// `logOut()` performs a full app-level logout: fires off a best-effort revocation of the stored Login Flow v2 app password on the server, closes every window, clears the web view's stored cookies and site data so no session for the old server lingers, clears `Settings.serverAddress` (which cascades into clearing the server's cached theme, version, apps, and the stored Login Flow v2 credentials), and presents a fresh `ServerAddressWindowController`.
+    ///
+    /// Both `GeneralSettingsViewController.logOut(_:)` (the explicit Settings button) and `WebViewController+WKNavigationDelegate`'s detection of the web view navigating to the server's own logout or login page call this shared implementation, so both entry points behave identically and go through the same tracked window-presentation path as every other window `AppDelegate` creates.
+    ///
+    /// The credentialed `Server` for revocation is captured synchronously before anything else runs, then handed to an unawaited `Task` so a slow or unreachable server can never delay the window-closing, site-data-clearing, or sign-in-presenting steps below, matching Nextcloud's own fail-open guidance for this call. `Server` captures the app password by value at construction, and `ServerConnection.revokeAppPassword(using:)` never re-reads `Keychain`, so the `Task` remains free to complete the request even after `Settings.serverAddress = nil` clears the same credential from `Keychain` further down in this method.
+    func logOut() {
+        logger.notice("Logging out; revoking the app password on the server, closing all windows, clearing the web view's site data, and clearing the server address and credentials")
+
+        if let serverAddress = Settings.serverAddress, let server = ServerConnection.authenticated(address: serverAddress) {
+            logger.debug("Attempting to revoke the app password on the server before completing local sign-out")
+            Task {
+                await ServerConnection.revokeAppPassword(using: server)
+            }
+        } else {
+            logger.debug("No server address or stored credentials to revoke an app password for")
+        }
+
+        for window in NSApplication.shared.windows {
+            window.close()
+        }
+
+        WKWebsiteDataStore.default().removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast) {
+            self.logger.debug("Cleared the web view's site data")
+        }
+
+        Settings.serverAddress = nil
+
+        presentWindow(withIdentifier: "ServerAddressWindowController")
     }
 
     /// `showDownloads(_:)` backs the "Downloads" menu item, opening the download history window or bringing it to the front when it is already open.

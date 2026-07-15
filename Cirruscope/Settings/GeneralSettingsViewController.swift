@@ -29,20 +29,6 @@ class GeneralSettingsViewController: NSViewController {
 
     @IBAction
     func logOut(_: Any) {
-        logger.notice("Logging out; closing all windows and clearing the server address and credentials")
-
-        for window in NSApplication.shared.windows {
-            window.close()
-        }
-
-        Settings.serverAddress = nil
-
-        let storyboard = NSStoryboard(name: "Main", bundle: nil)
-
-        guard let windowController = storyboard.instantiateController(withIdentifier: "ServerAddressWindowController") as? NSWindowController else {
-            return
-        }
-
-        windowController.showWindow(self)
+        (NSApp.delegate as? AppDelegate)?.logOut()
     }
 }

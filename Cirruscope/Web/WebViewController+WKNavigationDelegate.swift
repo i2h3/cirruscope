@@ -5,7 +5,7 @@ import AppKit
 import os
 import WebKit
 
-/// `WebViewController`'s conformance to `WKNavigationDelegate` confines the embedded `WKWebView`'s main frame to the configured Nextcloud server, hands off any main-frame navigation that targets a different host to the user's default browser via `NSWorkspace`, turns responses the web view cannot display or that arrive as attachments into downloads, and reveals the storyboard-hidden web view once its initial page load has completed.
+/// `WebViewController`'s conformance to `WKNavigationDelegate` confines the embedded `WKWebView`'s main frame to the configured Nextcloud server, hands off any main-frame navigation that targets a different host to the user's default browser via `NSWorkspace`, turns responses the web view cannot display or that arrive as attachments into downloads, reveals the storyboard-hidden web view once its initial page load has completed, and treats the web view landing on the server's own logout or login page as an app-level logout, so the app never keeps behaving as signed in once the web session it was mirroring is gone.
 ///
 /// Any navigation that becomes a download is handed to `DownloadManager.shared`, which takes over as the transfer's delegate so it continues even if this web window closes.
 /// Every method here logs its entry and each outcome at debug level so the navigation behaviour of a specific window — identified by the appended `logID` — can be reconstructed from a log capture when tracing misbehaviour.
@@ -45,6 +45,23 @@ extension WebViewController: WKNavigationDelegate {
         guard navigationAction.targetFrame?.isMainFrame == true else {
             logger.debug("Navigation action does not target the main frame; returning .allow regardless of host (WebViewController \(self.logID))")
             decisionHandler(.allow)
+            return
+        }
+
+        // The web view's browser session and the app's own stored Login Flow v2 credentials are independent: Nextcloud's
+        // logout invalidates only the current browser session's token, and landing on the login page (from session
+        // expiry, an admin revoking the session, or the logout link itself) means the browser session is gone either
+        // way. Catch both so the app never keeps behaving as signed in once that's true. The URL always carries a
+        // per-request CSRF token, so only the last path component can be matched, not the full URL.
+        if let url = navigationAction.request.url,
+           let host = url.host,
+           let serverHost = Settings.serverAddress?.host,
+           host.caseInsensitiveCompare(serverHost) == .orderedSame,
+           ["logout", "login"].contains(url.lastPathComponent.lowercased())
+        {
+            logger.notice("Navigation action targets the configured server's own \(url.lastPathComponent) page; logging out at the app level too and cancelling the navigation (WebViewController \(self.logID))")
+            (NSApp.delegate as? AppDelegate)?.logOut()
+            decisionHandler(.cancel)
             return
         }
 
