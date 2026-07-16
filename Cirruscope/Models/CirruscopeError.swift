@@ -30,22 +30,22 @@ enum CirruscopeError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
             case .invalidResponse:
-                "The server returned a response that could not be understood."
+                String(localized: "The server returned a response that could not be understood.", comment: "Error shown when the server's response was not a valid HTTP response.")
 
             case let .unexpectedStatus(code):
-                "The server returned an unexpected status code (\(code))."
+                String(localized: "The server returned an unexpected status code (\(code)).", comment: "Error shown when the server returned an unexpected HTTP status; the placeholder is the numeric status code.")
 
             case let .keychainFailure(status):
-                "The login credentials could not be stored in the keychain (status \(status))."
+                String(localized: "The login credentials could not be stored in the keychain (status \(status)).", comment: "Error shown when storing credentials in the macOS keychain failed; the placeholder is the numeric OSStatus.")
 
             case .loginPresentationFailed:
-                "The login window could not be opened."
+                String(localized: "The login window could not be opened.", comment: "Error shown when the Login Flow v2 authentication window could not be presented.")
 
             case .loginCancelled:
-                "The login was cancelled."
+                String(localized: "The login was cancelled.", comment: "Error shown when the user dismissed the login before completing it.")
 
             case .loginTimedOut:
-                "The login timed out before it was completed. Please try again."
+                String(localized: "The login timed out before it was completed. Please try again.", comment: "Error shown when the login was not completed within the allowed time.")
         }
     }
 }

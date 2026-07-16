@@ -24,6 +24,98 @@
         }
       }
     },
+    "Check your internet connection and make sure the server is online, then try again." : {
+      "comment" : "Explanation shown in the web window when a page load failed.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Überprüfen Sie Ihre Internetverbindung und stellen Sie sicher, dass der Server online ist. Versuchen Sie es dann erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comprueba tu conexión a internet y asegúrate de que el servidor esté en línea. Luego, vuelve a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vérifiez votre connexion Internet et assurez-vous que le serveur est en ligne, puis réessayez."
+          }
+        }
+      }
+    },
+    "Cirruscope requires Nextcloud server version %lld or later. The server at “%@” is running version %@." : {
+      "comment" : "Alert message shown when the server's Nextcloud version is too old; placeholders are the minimum supported major version, the server address, and the server's version.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cirruscope erfordert Nextcloud-Serverversion %lld oder neuer. Der Server unter “%@” verwendet Version %@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cirruscope requiere la versión %lld o posterior del servidor Nextcloud. El servidor en “%@” está ejecutando la versión %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cirruscope requiert la version %lld ou ultérieure du serveur Nextcloud. Le serveur à l'adresse “%@” exécute la version %@."
+          }
+        }
+      }
+    },
+    "Cirruscope requires Nextcloud version %lld or later. The server at “%@” is running version %@." : {
+      "comment" : "Alert message shown at launch when the configured server's Nextcloud version is too old; placeholders are the minimum supported major version, the server address, and the server's version.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cirruscope erfordert Nextcloud-Version %lld oder neuer. Der Server unter “%@” verwendet Version %@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cirruscope requiere la versión %lld o posterior de Nextcloud. El servidor en “%@” está ejecutando la versión %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cirruscope requiert la version %lld ou ultérieure de Nextcloud. Le serveur à l'adresse “%@” exécute la version %@."
+          }
+        }
+      }
+    },
+    "Could Not Reach Server" : {
+      "comment" : "Alert title shown when the server could not be reached during sign-in.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server nicht erreichbar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo conectar con el servidor"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serveur injoignable"
+          }
+        }
+      }
+    },
     "Download failed." : {
       "comment" : "Status label shown when a download fails without a specific error description.",
       "localizations" : {
@@ -66,6 +158,282 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Téléchargement terminé"
+          }
+        }
+      }
+    },
+    "Invalid Server Address" : {
+      "comment" : "Alert title shown when the entered server address is not a valid URL.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ungültige Serveradresse"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dirección de servidor no válida"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adresse de serveur non valide"
+          }
+        }
+      }
+    },
+    "Loading…" : {
+      "comment" : "Headline shown in the web window while the page is loading.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wird geladen…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cargando…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chargement…"
+          }
+        }
+      }
+    },
+    "Server unreachable" : {
+      "comment" : "Headline shown in the web window when a page load failed.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server nicht erreichbar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servidor no disponible"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serveur injoignable"
+          }
+        }
+      }
+    },
+    "The login credentials could not be stored in the keychain (status %d)." : {
+      "comment" : "Error shown when storing credentials in the macOS keychain failed; the placeholder is the numeric OSStatus.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anmeldedaten konnten nicht im Schlüsselbund gespeichert werden (Status %d)."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudieron guardar las credenciales de inicio de sesión en el llavero (estado %d)."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les identifiants de connexion n'ont pas pu être enregistrés dans le trousseau (statut %d)."
+          }
+        }
+      }
+    },
+    "The login timed out before it was completed. Please try again." : {
+      "comment" : "Error shown when the login was not completed within the allowed time.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anmeldung ist abgelaufen, bevor sie abgeschlossen wurde. Bitte versuchen Sie es erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El inicio de sesión caducó antes de completarse. Inténtalo de nuevo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La connexion a expiré avant d'être terminée. Veuillez réessayer."
+          }
+        }
+      }
+    },
+    "The login was cancelled." : {
+      "comment" : "Error shown when the user dismissed the login before completing it.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anmeldung wurde abgebrochen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El inicio de sesión se canceló."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La connexion a été annulée."
+          }
+        }
+      }
+    },
+    "The login window could not be opened." : {
+      "comment" : "Error shown when the Login Flow v2 authentication window could not be presented.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Anmeldefenster konnte nicht geöffnet werden."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo abrir la ventana de inicio de sesión."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La fenêtre de connexion n'a pas pu être ouverte."
+          }
+        }
+      }
+    },
+    "The server returned a response that could not be understood." : {
+      "comment" : "Error shown when the server's response was not a valid HTTP response.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Server hat eine Antwort zurückgegeben, die nicht verstanden werden konnte."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El servidor devolvió una respuesta que no se pudo interpretar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le serveur a renvoyé une réponse incompréhensible."
+          }
+        }
+      }
+    },
+    "The server returned an unexpected status code (%lld)." : {
+      "comment" : "Error shown when the server returned an unexpected HTTP status; the placeholder is the numeric status code.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Server hat einen unerwarteten Statuscode zurückgegeben (%lld)."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El servidor devolvió un código de estado inesperado (%lld)."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le serveur a renvoyé un code de statut inattendu (%lld)."
+          }
+        }
+      }
+    },
+    "Unsupported Server" : {
+      "comment" : "Alert title shown at launch when the configured server runs a Nextcloud version older than the app supports.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht unterstützter Server"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servidor no compatible"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serveur non pris en charge"
+          }
+        }
+      }
+    },
+    "Unsupported Server Version" : {
+      "comment" : "Alert title shown when the server runs a Nextcloud version older than the app supports.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht unterstützte Serverversion"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Versión de servidor no compatible"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Version de serveur non prise en charge"
+          }
+        }
+      }
+    },
+    "“%@” is not a valid URL. Please check the address and try again." : {
+      "comment" : "Alert message shown when the entered server address is not a valid URL; the placeholder is the address the user typed.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” ist keine gültige URL. Bitte überprüfen Sie die Adresse und versuchen Sie es erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” no es una URL válida. Comprueba la dirección y vuelve a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” n'est pas une URL valide. Veuillez vérifier l'adresse et réessayer."
           }
         }
       }

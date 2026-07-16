@@ -1304,48 +1304,73 @@
                                 <rect key="frame" x="0.0" y="0.0" width="1200" height="800"/>
                                 <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyUpOrDown" id="Wfu-an-mwi"/>
                             </imageView>
-                            <visualEffectView blendingMode="withinWindow" material="HUDWindow" state="followsWindowActiveState" translatesAutoresizingMaskIntoConstraints="NO" id="iAf-Qp-NNu">
-                                <rect key="frame" x="548" y="360" width="104" height="80"/>
+                            <stackView distribution="equalSpacing" orientation="vertical" alignment="centerX" spacing="16" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="TQI-hA-Tf7" customClass="StateOverlayStackView" customModule="Cirruscope" customModuleProvider="target">
+                                <rect key="frame" x="527" y="332" width="146" height="136"/>
                                 <subviews>
+                                    <progressIndicator wantsLayer="YES" maxValue="100" displayedWhenStopped="NO" indeterminate="YES" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="raH-BI-vv0">
+                                        <rect key="frame" x="57" y="104" width="32" height="32"/>
+                                    </progressIndicator>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="159-4F-xrb">
-                                        <rect key="frame" x="18" y="20" width="68" height="16"/>
-                                        <textFieldCell key="cell" lineBreakMode="clipping" title="Loading…" id="JU3-Zi-Xj2">
+                                        <rect key="frame" x="42" y="72" width="62" height="16"/>
+                                        <textFieldCell key="cell" lineBreakMode="clipping" title="Headline" id="JU3-Zi-Xj2">
                                             <font key="font" textStyle="headline" name=".SFNS-Bold"/>
                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                         </textFieldCell>
                                     </textField>
-                                    <progressIndicator wantsLayer="YES" maxValue="100" displayedWhenStopped="NO" indeterminate="YES" controlSize="small" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="raH-BI-vv0">
-                                        <rect key="frame" x="44" y="44" width="16" height="16"/>
-                                    </progressIndicator>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="lha-IA-uTb">
+                                        <rect key="frame" x="-2" y="40" width="150" height="16"/>
+                                        <textFieldCell key="cell" lineBreakMode="clipping" title="An optional explanation." id="0JK-xV-sCm">
+                                            <font key="font" metaFont="system"/>
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                        </textFieldCell>
+                                    </textField>
+                                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="h3g-kD-yq5">
+                                        <rect key="frame" x="37" y="0.0" width="72" height="24"/>
+                                        <buttonCell key="cell" type="push" title="Retry" bezelStyle="rounded" image="arrow.clockwise" catalog="system" imagePosition="leading" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="oaw-Ou-P2W">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
+                                        <connections>
+                                            <action selector="retryLoad:" target="XfG-lQ-9wD" id="Rty-Lo-aD5"/>
+                                        </connections>
+                                    </button>
                                 </subviews>
-                                <constraints>
-                                    <constraint firstItem="raH-BI-vv0" firstAttribute="top" secondItem="iAf-Qp-NNu" secondAttribute="top" constant="20" symbolic="YES" id="7yu-mu-W0M"/>
-                                    <constraint firstAttribute="trailing" secondItem="159-4F-xrb" secondAttribute="trailing" constant="20" id="9yx-qh-M8N"/>
-                                    <constraint firstItem="raH-BI-vv0" firstAttribute="centerX" secondItem="159-4F-xrb" secondAttribute="centerX" id="AjK-xX-TqA"/>
-                                    <constraint firstAttribute="bottom" secondItem="159-4F-xrb" secondAttribute="bottom" constant="20" id="DFi-0O-iF9"/>
-                                    <constraint firstItem="159-4F-xrb" firstAttribute="top" secondItem="raH-BI-vv0" secondAttribute="bottom" constant="8" symbolic="YES" id="Wqc-Mq-JBy"/>
-                                    <constraint firstItem="159-4F-xrb" firstAttribute="leading" secondItem="iAf-Qp-NNu" secondAttribute="leading" constant="20" id="cad-fn-F1Z"/>
-                                </constraints>
-                            </visualEffectView>
+                                <visibilityPriorities>
+                                    <integer value="1000"/>
+                                    <integer value="1000"/>
+                                    <integer value="1000"/>
+                                    <integer value="1000"/>
+                                </visibilityPriorities>
+                                <customSpacing>
+                                    <real value="3.4028234663852886e+38"/>
+                                    <real value="3.4028234663852886e+38"/>
+                                    <real value="3.4028234663852886e+38"/>
+                                    <real value="3.4028234663852886e+38"/>
+                                </customSpacing>
+                            </stackView>
                         </subviews>
                         <constraints>
-                            <constraint firstItem="iAf-Qp-NNu" firstAttribute="centerX" secondItem="m2S-Jp-Qdl" secondAttribute="centerX" id="1Ip-cM-VVw"/>
                             <constraint firstAttribute="bottom" secondItem="9eM-UK-O0L" secondAttribute="bottom" id="2QN-Zl-J7a"/>
                             <constraint firstAttribute="bottom" secondItem="edZ-kL-6y2" secondAttribute="bottom" id="3oX-aL-2yM"/>
+                            <constraint firstItem="TQI-hA-Tf7" firstAttribute="centerX" secondItem="m2S-Jp-Qdl" secondAttribute="centerX" id="4dN-qN-nxZ"/>
                             <constraint firstAttribute="trailing" secondItem="edZ-kL-6y2" secondAttribute="trailing" id="B47-ee-AH0"/>
                             <constraint firstItem="9eM-UK-O0L" firstAttribute="leading" secondItem="m2S-Jp-Qdl" secondAttribute="leading" id="HCg-xc-Zsa"/>
                             <constraint firstAttribute="trailing" secondItem="9eM-UK-O0L" secondAttribute="trailing" id="Jxx-YS-gGF"/>
                             <constraint firstItem="9eM-UK-O0L" firstAttribute="top" secondItem="m2S-Jp-Qdl" secondAttribute="top" id="SRa-sg-UKz"/>
                             <constraint firstItem="edZ-kL-6y2" firstAttribute="leading" secondItem="m2S-Jp-Qdl" secondAttribute="leading" id="WGc-BC-SiP"/>
+                            <constraint firstItem="TQI-hA-Tf7" firstAttribute="centerY" secondItem="m2S-Jp-Qdl" secondAttribute="centerY" id="Xql-gI-t51"/>
                             <constraint firstItem="edZ-kL-6y2" firstAttribute="top" secondItem="m2S-Jp-Qdl" secondAttribute="top" id="lQF-QF-lhq"/>
-                            <constraint firstItem="iAf-Qp-NNu" firstAttribute="centerY" secondItem="m2S-Jp-Qdl" secondAttribute="centerY" id="qCJ-Xs-HoI"/>
                         </constraints>
                     </view>
                     <connections>
                         <outlet property="backgroundImageView" destination="9eM-UK-O0L" id="PoX-1Z-ubZ"/>
+                        <outlet property="explanation" destination="lha-IA-uTb" id="hVk-cp-A6R"/>
+                        <outlet property="headline" destination="159-4F-xrb" id="uX7-EQ-YTc"/>
                         <outlet property="progressIndicator" destination="raH-BI-vv0" id="ax6-NQ-AFz"/>
-                        <outlet property="visualEffectsView" destination="iAf-Qp-NNu" id="Ijf-fw-9ss"/>
+                        <outlet property="retry" destination="h3g-kD-yq5" id="PjV-SU-mO4"/>
+                        <outlet property="stateOverlay" destination="TQI-hA-Tf7" id="V84-bx-RBf"/>
                         <outlet property="webView" destination="edZ-kL-6y2" id="Opc-Vh-CP9"/>
                     </connections>
                 </viewController>
@@ -1356,6 +1381,7 @@
     </scenes>
     <resources>
         <image name="Logo" width="1024" height="1024"/>
+        <image name="arrow.clockwise" catalog="system" width="14" height="16"/>
         <image name="arrow.down.circle" catalog="system" width="15" height="15"/>
         <image name="arrow.right.circle.fill" catalog="system" width="20" height="20"/>
         <image name="gear" catalog="system" width="17" height="16"/>

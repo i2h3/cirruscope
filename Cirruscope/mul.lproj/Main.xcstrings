@@ -1,6 +1,36 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "0JK-xV-sCm.title" : {
+      "comment" : "Class = \"NSTextFieldCell\"; title = \"An optional explanation.\"; ObjectID = \"0JK-xV-sCm\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine optionale Erläuterung."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "An optional explanation."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una explicación opcional."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une explication facultative."
+          }
+        }
+      }
+    },
     "1b7-l0-nxx.title" : {
       "comment" : "Class = \"NSMenu\"; title = \"Find\"; ObjectID = \"1b7-l0-nxx\";",
       "extractionState" : "extracted_with_value",
@@ -1885,6 +1915,36 @@
         }
       }
     },
+    "hoa-pe-yCP.title" : {
+      "comment" : "Class = \"NSButtonCell\"; title = \"Support\"; ObjectID = \"hoa-pe-yCP\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Support"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Support"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayuda"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aide"
+          }
+        }
+      }
+    },
     "hQb-2v-fYv.title" : {
       "comment" : "Class = \"NSMenuItem\"; title = \"Smart Quotes\"; ObjectID = \"hQb-2v-fYv\";",
       "extractionState" : "extracted_with_value",
@@ -2378,31 +2438,31 @@
       }
     },
     "JU3-Zi-Xj2.title" : {
-      "comment" : "Class = \"NSTextFieldCell\"; title = \"Loading…\"; ObjectID = \"JU3-Zi-Xj2\";",
+      "comment" : "Class = \"NSTextFieldCell\"; title = \"Headline\"; ObjectID = \"JU3-Zi-Xj2\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wird geladen…"
+            "value" : "Überschrift"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Loading…"
+            "value" : "Headline"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cargando…"
+            "value" : "Título"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Chargement…"
+            "value" : "Titre"
           }
         }
       }
@@ -2823,6 +2883,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ligne de base"
+          }
+        }
+      }
+    },
+    "oaw-Ou-P2W.title" : {
+      "comment" : "Class = \"NSButtonCell\"; title = \"Retry\"; ObjectID = \"oaw-Ou-P2W\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erneut versuchen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Retry"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reintentar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réessayer"
           }
         }
       }
@@ -3397,8 +3487,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Server-Apps"
+            "state" : "translated",
+            "value" : "Kurzwahlen"
           }
         },
         "en" : {
@@ -3409,14 +3499,14 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Apps del servidor"
+            "state" : "translated",
+            "value" : "Marcaciones rápidas"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Applications du serveur"
+            "state" : "translated",
+            "value" : "Numéros abrégés"
           }
         }
       }

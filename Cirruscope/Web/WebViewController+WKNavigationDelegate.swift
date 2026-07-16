@@ -153,35 +153,27 @@ extension WebViewController: WKNavigationDelegate {
         closeWindowIfNeverRevealed()
     }
 
-    func webView(_ webView: WKWebView, didFinish _: WKNavigation!) {
-        logger.debug("Navigation finished (WebViewController \(self.logID))")
+    func webView(_: WKWebView, didFinish _: WKNavigation!) {
+        logger.debug("Navigation finished; revealing web view (WebViewController \(self.logID))")
 
         // Re-save the window's restorable state after every navigation so a relaunch reopens the page now shown,
         // not the one the window started on. `WebWindow.encodeRestorableState(with:)` reads the current URL.
         view.window?.invalidateRestorableState()
 
-        guard !hasRevealedAfterInitialLoad else {
-            logger.debug("Web view already revealed; leaving it in place after this navigation (WebViewController \(self.logID))")
-            return
-        }
-
+        // Reveal the web view and tear down the overlay on every successful load, not only the first: a retry
+        // that follows a failed load has to restore the web view too. `hasRevealedAfterInitialLoad` still marks
+        // whether any content has ever been shown, which `closeWindowIfNeverRevealed()` relies on.
         hasRevealedAfterInitialLoad = true
-        logger.debug("Initial navigation finished; revealing web view (WebViewController \(self.logID))")
-
-        backgroundImageView.isHidden = true
-        visualEffectsView.isHidden = true
-        webView.isHidden = false
-
-        // Make the web view the first responder so it joins the key window's responder chain, which
-        // enables the Back/Forward/Reload menu items (WKWebView's own validated actions) for this window.
-        view.window?.makeFirstResponder(webView)
+        revealLoadedContent()
     }
 
     func webView(_: WKWebView, didFail _: WKNavigation!, withError error: any Error) {
         logger.error("Web navigation failed: \(error.localizedDescription) (WebViewController \(self.logID))")
+        handleNavigationFailure(error)
     }
 
     func webView(_: WKWebView, didFailProvisionalNavigation _: WKNavigation!, withError error: any Error) {
         logger.error("Web provisional navigation failed: \(error.localizedDescription) (WebViewController \(self.logID))")
+        handleNavigationFailure(error)
     }
 }

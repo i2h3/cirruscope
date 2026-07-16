@@ -13,14 +13,44 @@ import WebKit
 class WebViewController: NSViewController, WKScriptMessageHandler {
     // MARK: - Outlets
 
+    ///
+    /// Show the cached web user interface background image (if any available).
+    ///
     @IBOutlet
     var backgroundImageView: NSImageView!
 
     @IBOutlet
+    var stateOverlay: NSStackView!
+
+    ///
+    /// An animated activity indicator.
+    ///
+    /// Only visible during the initial page load, hidden when a load failed.
+    ///
+    @IBOutlet
     var progressIndicator: NSProgressIndicator!
 
+    ///
+    /// Multi-functional label for the current state.
+    ///
+    /// Should be something like "Loading" on window revelation and "Server unreachable" in case of failed page loads.
+    ///
     @IBOutlet
-    var visualEffectsView: NSVisualEffectView!
+    var headline: NSTextField!
+
+    ///
+    /// An optional and longer text to explain the failed page load, if so.
+    ///
+    @IBOutlet
+    var explanation: NSTextField!
+
+    ///
+    /// Optional retry button for failed page loads.
+    ///
+    /// Visibility depends on the web view state.
+    ///
+    @IBOutlet
+    var retry: NSButton!
 
     /// `webView` is the `WKWebView` that loads `Settings.serverAddress` and renders the Nextcloud web interface.
     ///
@@ -55,6 +85,11 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     /// `hasStartedInitialLoad` is `true` once the initial navigation has been issued, so `viewWillAppear()` triggers it exactly once.
     private var hasStartedInitialLoad = false
 
+    /// `pendingRetryURL` is the URL the retry button should reload: the address that last failed to load, or the initial target before the first load has been attempted.
+    ///
+    /// `startInitialLoadIfNeeded()` seeds it with the initial target, `handleNavigationFailure(_:)` updates it to the URL that actually failed, and `retryLoad(_:)` reloads it — rather than calling `WKWebView.reload()`, which does nothing after a provisional failure that never committed a page.
+    private var pendingRetryURL: URL?
+
     /// `webWindowController` is the `WebWindowController` hosting this controller, from which the `targetURL` to load is read once the view is in its window.
     private var webWindowController: WebWindowController? {
         view.window?.windowController as? WebWindowController
@@ -80,6 +115,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         }
 
         hasStartedInitialLoad = true
+        pendingRetryURL = url
         logger.info("Starting initial navigation (WebViewController \(self.logID))")
         webView.load(authenticatedRequest(for: url))
     }
@@ -114,9 +150,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         installNotificationBridge()
         updateBackgroundImage()
 
-        visualEffectsView.wantsLayer = true
-        visualEffectsView.layer?.cornerRadius = 20
-        visualEffectsView.layer?.masksToBounds = true
+        showLoadingState()
     }
 
     override func viewWillAppear() {
@@ -127,6 +161,80 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     override func viewDidAppear() {
         super.viewDidAppear()
         progressIndicator.startAnimation(self)
+    }
+
+    // MARK: - State Overlay
+
+    /// `showLoadingState()` configures `stateOverlay` for an in-progress page load: the spinner and `headline` are shown, `explanation` and `retry` are hidden, and the web view stays hidden behind the background until the load finishes.
+    ///
+    /// `viewDidLoad()` calls it for the initial load and `retryLoad(_:)` calls it again when the user retries after a failure. Because `stateOverlay` detaches hidden arranged views, toggling each child's `isHidden` also collapses it out of the card's layout.
+    private func showLoadingState() {
+        headline.stringValue = String(localized: "Loading…", comment: "Headline shown in the web window while the page is loading.")
+        headline.isHidden = false
+        progressIndicator.isHidden = false
+        progressIndicator.startAnimation(self)
+        explanation.isHidden = true
+        retry.isHidden = true
+        webView.isHidden = true
+        backgroundImageView.isHidden = false
+        stateOverlay.isHidden = false
+    }
+
+    /// `handleNavigationFailure(_:)` switches `stateOverlay` to its failure state — hiding the spinner and showing the "Server unreachable" headline, a friendly explanation, and the retry button — and records the URL a retry should reload.
+    ///
+    /// `WebViewController+WKNavigationDelegate` calls it from both `didFail` and `didFailProvisionalNavigation`. Navigations the app cancels itself — an external host handed to the browser, the server's own logout/login page, or a response turned into a download — surface here as cancellation errors rather than genuine load failures, so those are ignored to keep the overlay from flashing over content the user is still using.
+    func handleNavigationFailure(_ error: any Error) {
+        let nsError = error as NSError
+
+        if nsError.domain == NSURLErrorDomain, nsError.code == NSURLErrorCancelled {
+            return
+        }
+
+        // `WebKitErrorFrameLoadInterruptedByPolicyChange` (102): a navigation cancelled by one of our own policy decisions.
+        if nsError.domain == "WebKitErrorDomain", nsError.code == 102 {
+            return
+        }
+
+        pendingRetryURL = (nsError.userInfo[NSURLErrorFailingURLErrorKey] as? URL)
+            ?? webView.url
+            ?? webWindowController?.targetURL
+            ?? Settings.serverAddress
+
+        progressIndicator.stopAnimation(self)
+        progressIndicator.isHidden = true
+        headline.stringValue = String(localized: "Server unreachable", comment: "Headline shown in the web window when a page load failed.")
+        headline.isHidden = false
+        explanation.stringValue = String(localized: "Check your internet connection and make sure the server is online, then try again.", comment: "Explanation shown in the web window when a page load failed.")
+        explanation.isHidden = false
+        retry.isHidden = false
+        webView.isHidden = true
+        backgroundImageView.isHidden = false
+        stateOverlay.isHidden = false
+    }
+
+    /// `revealLoadedContent()` hides `stateOverlay` and the background and reveals the web view once a navigation has finished.
+    ///
+    /// `WebViewController+WKNavigationDelegate`'s `didFinish` calls it after every successful load, so a retry that follows a failure restores the web view too, not only the very first load. It makes the web view the first responder each time so it rejoins the key window's responder chain and re-enables the Back/Forward/Reload menu items: `handleNavigationFailure(_:)` hides the web view on a failure, which makes AppKit resign its first-responder status, so it has to be restored on every reveal rather than only the first.
+    func revealLoadedContent() {
+        progressIndicator.stopAnimation(self)
+        stateOverlay.isHidden = true
+        backgroundImageView.isHidden = true
+        webView.isHidden = false
+        view.window?.makeFirstResponder(webView)
+    }
+
+    /// `retryLoad(_:)` re-issues the failed navigation when the user taps the retry button, returning `stateOverlay` to its loading state until the load succeeds or fails again.
+    ///
+    /// It reloads `pendingRetryURL` rather than calling `WKWebView.reload()`, which would do nothing after a provisional failure that never committed a page.
+    @IBAction
+    func retryLoad(_: Any?) {
+        guard let url = pendingRetryURL ?? webWindowController?.targetURL ?? Settings.serverAddress else {
+            return
+        }
+
+        logger.info("Retrying navigation to \(url.absoluteString) (WebViewController \(self.logID))")
+        showLoadingState()
+        webView.load(authenticatedRequest(for: url))
     }
 
     // MARK: - Background

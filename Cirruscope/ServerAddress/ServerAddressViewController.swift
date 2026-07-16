@@ -59,7 +59,7 @@ class ServerAddressViewController: NSViewController {
 
         guard let url = URL(string: sanitizedServerAddress) else {
             logger.error("Entered server address is not a valid URL")
-            presentAlert(title: "Invalid Server Address", message: "“\(sanitizedServerAddress)” is not a valid URL. Please check the address and try again.")
+            presentAlert(title: String(localized: "Invalid Server Address", comment: "Alert title shown when the entered server address is not a valid URL."), message: String(localized: "“\(sanitizedServerAddress)” is not a valid URL. Please check the address and try again.", comment: "Alert message shown when the entered server address is not a valid URL; the placeholder is the address the user typed."))
             return
         }
 
@@ -82,7 +82,7 @@ class ServerAddressViewController: NSViewController {
                 switch try await ServerConnection.validate(server) {
                     case let .unsupported(version):
                         logger.notice("Server version \(version) is unsupported")
-                        presentAlert(title: "Unsupported Server Version", message: "Cirruscope requires Nextcloud server version \(Settings.minimumSupportedServerMajorVersion) or later. The server at “\(url.absoluteString)” is running version \(version).")
+                        presentAlert(title: String(localized: "Unsupported Server Version", comment: "Alert title shown when the server runs a Nextcloud version older than the app supports."), message: String(localized: "Cirruscope requires Nextcloud server version \(Settings.minimumSupportedServerMajorVersion) or later. The server at “\(url.absoluteString)” is running version \(version).", comment: "Alert message shown when the server's Nextcloud version is too old; placeholders are the minimum supported major version, the server address, and the server's version."))
 
                     case .supported:
                         logger.info("Server supported; starting Login Flow v2")
@@ -101,7 +101,7 @@ class ServerAddressViewController: NSViewController {
                 logger.notice("Sign-in cancelled by the user")
             } catch {
                 logger.error("Sign-in failed: \(error.localizedDescription)")
-                presentAlert(title: "Could Not Reach Server", message: error.localizedDescription)
+                presentAlert(title: String(localized: "Could Not Reach Server", comment: "Alert title shown when the server could not be reached during sign-in."), message: error.localizedDescription)
             }
         }
     }

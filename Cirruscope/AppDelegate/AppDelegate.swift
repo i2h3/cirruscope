@@ -8,7 +8,7 @@ import WebKit
 
 /// `AppDelegate` is the application delegate of Cirruscope and owns the lifecycle of every window the app shows.
 ///
-/// On launch it consults `Settings.serverAddress` to decide whether to present `WebViewController` directly or to first show `ServerAddressViewController`. When a server address is already configured it first re-validates the server's capabilities against `Settings.minimumSupportedServerMajorVersion` and falls back to `ServerAddressViewController` if the server is unreachable or runs an unsupported major version. It also keeps freshly instantiated `NSWindowController`s alive until their windows close.
+/// On launch it consults `Settings.serverAddress` to decide whether to present `WebViewController` directly or to first show `ServerAddressViewController`. When a server address is already configured it first re-validates the server's capabilities against `Settings.minimumSupportedServerMajorVersion`, falling back to `ServerAddressViewController` only when the stored credentials were revoked or the server runs an unsupported major version; an unreachable server is treated as transient and keeps the web window, which surfaces its own retry UI. It also keeps freshly instantiated `NSWindowController`s alive until their windows close.
 @main
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -106,9 +106,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSWorkspace.shared.open(Settings.supportURL)
     }
 
-    /// `presentInitialWindow(forLaunch:)` validates the configured server and presents the window the app should show: a `WebViewWindowController` when a supported server is reachable, otherwise a `ServerAddressWindowController`.
+    /// `presentInitialWindow(forLaunch:)` validates the configured server and presents the window the app should show: a `WebViewWindowController` when a supported server is reachable or merely unreachable — in which case the web view shows its own "Server unreachable" retry UI — and a `ServerAddressWindowController` when no server is configured, the stored credentials were revoked, or the server runs an unsupported major version.
     ///
-    /// `applicationDidFinishLaunching(_:)` calls it with `forLaunch` set to coordinate with AppKit window restoration: it opens a fresh web window only when none was restored, and if the server is now unreachable, unsupported, or has revoked the credentials it closes any restored web windows so none lingers on a server the app can no longer use. `newWindow(_:)` and `applicationShouldHandleReopen(_:hasVisibleWindows:)` call it with `forLaunch` cleared, which always opens a new web window on success and leaves any already-open windows untouched on failure.
+    /// `applicationDidFinishLaunching(_:)` calls it with `forLaunch` set to coordinate with AppKit window restoration: it opens a fresh web window only when none was restored. When the server reports an unsupported version or revoked credentials it closes any restored web windows so none lingers on a server the app can no longer use; an unreachable server is treated as transient, so restored windows are left in place to show their retry UI. `newWindow(_:)` and `applicationShouldHandleReopen(_:hasVisibleWindows:)` call it with `forLaunch` cleared, which always opens a new web window on success and leaves any already-open windows untouched on failure.
     private func presentInitialWindow(forLaunch: Bool) {
         logger.log("Presenting initial window")
 
@@ -149,22 +149,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                             closeWebViewWindows()
                         }
 
-                        presentAlert(title: "Unsupported Server", message: "Cirruscope requires Nextcloud version \(Settings.minimumSupportedServerMajorVersion) or later. The server at “\(serverAddress.absoluteString)” is running version \(version).")
+                        presentAlert(title: String(localized: "Unsupported Server", comment: "Alert title shown at launch when the configured server runs a Nextcloud version older than the app supports."), message: String(localized: "Cirruscope requires Nextcloud version \(Settings.minimumSupportedServerMajorVersion) or later. The server at “\(serverAddress.absoluteString)” is running version \(version).", comment: "Alert message shown at launch when the configured server's Nextcloud version is too old; placeholders are the minimum supported major version, the server address, and the server's version."))
                         presentWindow(withIdentifier: "ServerAddressWindowController")
                 }
             } catch RainmakerError.credentialsRequired, RainmakerError.unexpectedStatus(code: 401) {
                 // The stored app password was revoked on the server; discard it and require a new login.
                 requireSignIn()
             } catch {
-                logger.error("Could not reach server: \(error.localizedDescription)")
+                // The server is unreachable — network down, server offline, DNS/TLS/timeout — as opposed to
+                // reporting revoked credentials, which is handled above. This is transient and must not look
+                // like a reset: keep the configured server address and stored credentials, keep or open the
+                // web window, and let `WebViewController` surface its own "Server unreachable" retry UI.
+                // Showing an alert or falling back to the sign-in window here would appear to wipe the user's
+                // settings. As in the `.supported` case, only open a fresh window when none was restored.
+                logger.error("Could not reach server; leaving the web window to show its retry UI: \(error.localizedDescription)")
                 NotificationMonitor.shared.stop()
 
-                if forLaunch {
-                    closeWebViewWindows()
+                if forLaunch == false || hasOpenWebWindow == false {
+                    presentWebViewWindow()
                 }
-
-                presentAlert(title: "Could Not Reach Server", message: error.localizedDescription)
-                presentWindow(withIdentifier: "ServerAddressWindowController")
             }
         }
     }
