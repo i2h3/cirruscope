@@ -14,7 +14,7 @@ extension WebViewController: WKUIDelegate {
     func webView(_: WKWebView, decideMediaCapturePermissionsFor origin: WKSecurityOrigin, initiatedBy _: WKFrameInfo, type _: WKMediaCaptureType) async -> WKPermissionDecision {
         logger.debug("Deciding media capture permission for origin \(origin.host) (WebViewController \(self.logID))")
 
-        guard let serverHost = Settings.serverAddress?.host, origin.host.caseInsensitiveCompare(serverHost) == .orderedSame else {
+        guard let serverHost = AccountStore.shared.serverAddress?.host, origin.host.caseInsensitiveCompare(serverHost) == .orderedSame else {
             logger.debug("Origin is not the configured server; returning .prompt (WebViewController \(self.logID))")
             return .prompt
         }
@@ -64,7 +64,7 @@ extension WebViewController: WKUIDelegate {
         }
 
         if let host = url.host,
-           let serverHost = Settings.serverAddress?.host,
+           let serverHost = AccountStore.shared.serverAddress?.host,
            host.caseInsensitiveCompare(serverHost) != .orderedSame
         {
             logger.debug("New-window request targets external host \(host); opening it in the system browser (WebViewController \(self.logID))")

@@ -8,7 +8,7 @@ import WebKit
 
 /// `AppDelegate` is the application delegate of Cirruscope and owns the lifecycle of every window the app shows.
 ///
-/// On launch it consults `Settings.serverAddress` to decide whether to present `WebViewController` directly or to first show `ServerAddressViewController`. When a server address is already configured it first re-validates the server's capabilities against `Settings.minimumSupportedServerMajorVersion`, falling back to `ServerAddressViewController` only when the stored credentials were revoked or the server runs an unsupported major version; an unreachable server is treated as transient and keeps the web window, which surfaces its own retry UI. It also keeps freshly instantiated `NSWindowController`s alive until their windows close.
+/// On launch it consults `AccountStore.serverAddress` to decide whether to present `WebViewController` directly or to first show `ServerAddressViewController`. When a server address is already configured it first re-validates the server's capabilities against `Settings.minimumSupportedServerMajorVersion`, falling back to `ServerAddressViewController` only when the stored credentials were revoked or the server runs an unsupported major version; an unreachable server is treated as transient and keeps the web window, which surfaces its own retry UI. It also keeps freshly instantiated `NSWindowController`s alive until their windows close.
 @main
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -24,7 +24,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// `serverAppsSeparator` is the View-menu separator after which the dynamic server-app menu items are inserted.
     ///
-    /// `rebuildServerAppsMenu()` inserts one item per `Settings.serverApps` entry directly after it, so the apps occupy the section the storyboard brackets with a separator above and below.
+    /// `rebuildServerAppsMenu()` inserts one item per `AccountStore.serverApps` entry directly after it, so the apps occupy the section the storyboard brackets with a separator above and below.
     @IBOutlet
     var serverAppsSeparator: NSMenuItem!
 
@@ -50,7 +50,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDockMenu(_: NSApplication) -> NSMenu? {
-        let apps = Settings.serverApps
+        let apps = AccountStore.shared.serverApps
 
         guard apps.isEmpty == false else {
             return nil
@@ -112,7 +112,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func presentInitialWindow(forLaunch: Bool) {
         logger.log("Presenting initial window")
 
-        guard let serverAddress = Settings.serverAddress else {
+        guard let serverAddress = AccountStore.shared.serverAddress else {
             logger.info("No server address configured; presenting sign-in")
             presentWindow(withIdentifier: "ServerAddressWindowController")
             return
@@ -209,7 +209,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// `presentWebViewWindow(targetURL:)` opens and tracks a web window, loading `targetURL` when given or `Settings.serverAddress` otherwise.
+    /// `presentWebViewWindow(targetURL:)` opens and tracks a web window, loading `targetURL` when given or `AccountStore.serverAddress` otherwise.
     ///
     /// `presentInitialWindow()` and `ServerAddressViewController` open the root window through it, and `openServerApp(_:)` opens app-specific windows, so every web window is created, cascaded, and retained the same way.
     func presentWebViewWindow(targetURL: URL? = nil) {
@@ -230,10 +230,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// `openServerApp(_:)` brings the web window already showing `app` to the front, or opens a new window loading the app when none is open.
     ///
     /// The currently shown app of each window is reported by `WebViewController.currentAppID`. It does nothing when no server address is configured.
-    func openServerApp(_ app: ServerApp) {
+    func openServerApp(_ app: ServerAppTransferObject) {
         logger.log("Opening server app…")
 
-        guard let serverAddress = Settings.serverAddress else {
+        guard let serverAddress = AccountStore.shared.serverAddress else {
             return
         }
 
@@ -252,15 +252,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         presentWebViewWindow(targetURL: url)
     }
 
-    /// `logOut()` performs a full app-level logout: fires off a best-effort revocation of the stored Login Flow v2 app password on the server, closes every window, clears the web view's stored cookies and site data so no session for the old server lingers, clears `Settings.serverAddress` (which cascades into clearing the server's cached theme, version, apps, and the stored Login Flow v2 credentials), and presents a fresh `ServerAddressWindowController`.
+    /// `logOut()` performs a full app-level logout: fires off a best-effort revocation of the stored Login Flow v2 app password on the server, closes every window, clears the web view's stored cookies and site data so no session for the old server lingers, disconnects the account via `AccountStore.disconnect()` (which deletes the account — cascading into its cached theme, version, apps, and shortcuts — empties `AssetCache`, and clears the stored Login Flow v2 credentials), and presents a fresh `ServerAddressWindowController`.
     ///
     /// Both `GeneralSettingsViewController.logOut(_:)` (the explicit Settings button) and `WebViewController+WKNavigationDelegate`'s detection of the web view navigating to the server's own logout or login page call this shared implementation, so both entry points behave identically and go through the same tracked window-presentation path as every other window `AppDelegate` creates.
     ///
-    /// The credentialed `Server` for revocation is captured synchronously before anything else runs, then handed to an unawaited `Task` so a slow or unreachable server can never delay the window-closing, site-data-clearing, or sign-in-presenting steps below, matching Nextcloud's own fail-open guidance for this call. `Server` captures the app password by value at construction, and `ServerConnection.revokeAppPassword(using:)` never re-reads `Keychain`, so the `Task` remains free to complete the request even after `Settings.serverAddress = nil` clears the same credential from `Keychain` further down in this method.
+    /// The credentialed `Server` for revocation is captured synchronously before anything else runs, then handed to an unawaited `Task` so a slow or unreachable server can never delay the window-closing, site-data-clearing, or sign-in-presenting steps below, matching Nextcloud's own fail-open guidance for this call. `Server` captures the app password by value at construction, and `ServerConnection.revokeAppPassword(using:)` never re-reads `Keychain`, so the `Task` remains free to complete the request even after `AccountStore.disconnect()` clears the same credential from `Keychain` further down in this method.
     func logOut() {
         logger.notice("Logging out; revoking the app password on the server, closing all windows, clearing the web view's site data, and clearing the server address and credentials")
 
-        if let serverAddress = Settings.serverAddress, let server = ServerConnection.authenticated(address: serverAddress) {
+        if let serverAddress = AccountStore.shared.serverAddress, let server = ServerConnection.authenticated(address: serverAddress) {
             logger.debug("Attempting to revoke the app password on the server before completing local sign-out")
             Task {
                 await ServerConnection.revokeAppPassword(using: server)
@@ -280,7 +280,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self.logger.debug("Cleared the web view's site data")
         }
 
-        Settings.serverAddress = nil
+        AccountStore.shared.disconnect()
 
         presentWindow(withIdentifier: "ServerAddressWindowController")
     }
@@ -321,7 +321,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @IBAction
     func performServerApp(_ sender: NSMenuItem) {
         guard let id = sender.representedObject as? String,
-              let app = Settings.serverApps.first(where: { $0.id == id })
+              let app = AccountStore.shared.serverApps.first(where: { $0.id == id })
         else {
             return
         }
@@ -336,7 +336,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         rebuildServerAppsMenu()
     }
 
-    /// `rebuildServerAppsMenu()` replaces the dynamic server-app items in the View menu with the current `Settings.serverApps`, applying each app's configured shortcut.
+    /// `rebuildServerAppsMenu()` replaces the dynamic server-app items in the View menu with the current `AccountStore.serverApps`, applying each app's configured shortcut.
     ///
     /// It removes the items it previously inserted and inserts the current apps directly after `serverAppsSeparator`, which keeps them within the storyboard's bracketed section.
     private func rebuildServerAppsMenu() {
@@ -354,7 +354,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         var index = menu.index(of: serverAppsSeparator) + 1
 
-        for app in Settings.serverApps {
+        for app in AccountStore.shared.serverApps {
             let item = menuItem(for: app)
             menu.insertItem(item, at: index)
             serverAppMenuItems.append(item)
@@ -365,12 +365,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// `menuItem(for:)` builds a menu item that opens `app` via `performServerApp(_:)`, applying the user's configured keyboard shortcut for it when one exists.
-    private func menuItem(for app: ServerApp) -> NSMenuItem {
+    private func menuItem(for app: ServerAppTransferObject) -> NSMenuItem {
         let item = NSMenuItem(title: app.name, action: #selector(performServerApp(_:)), keyEquivalent: "")
         item.target = self
         item.representedObject = app.id
 
-        if let shortcut = Settings.appShortcuts[app.id] {
+        if let shortcut = AccountStore.shared.shortcut(forAppID: app.id) {
             item.keyEquivalent = shortcut.keyEquivalent
             item.keyEquivalentModifierMask = shortcut.modifierMask
         }

@@ -6,7 +6,7 @@ import os
 
 /// `Keychain` stores the `Credentials` obtained from Login Flow v2 in the macOS Keychain, keyed by the address of the server they authenticate against.
 ///
-/// `ServerAddressViewController` writes credentials here after a successful login, `ServerConnection.authenticated(address:)` and `WebViewController` read them back, and `Settings.serverAddress`'s setter clears them when the user disconnects.
+/// `ServerAddressViewController` writes credentials here after a successful login, `ServerConnection.authenticated(address:)` and `WebViewController` read them back, and `AccountStore.disconnect()` clears them when the user disconnects.
 /// Items use the app's default Keychain access group, so no `keychain-access-groups` entitlement is required under the App Sandbox.
 enum Keychain {
     /// `service` is the constant `kSecAttrService` value under which every credential item is filed, so the app's items can be enumerated and cleared as a group.
@@ -84,7 +84,7 @@ enum Keychain {
 
     /// `clearAll()` removes every credential item the app has stored.
     ///
-    /// `Settings.serverAddress`'s setter calls this when the address is cleared so that no credentials remain for a server the app no longer talks to.
+    /// `AccountStore.disconnect()` calls this when the account is disconnected so that no credentials remain for a server the app no longer talks to.
     static func clearAll() {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,

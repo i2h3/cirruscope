@@ -15,12 +15,12 @@ class GeneralSettingsViewController: NSViewController {
         super.viewDidLoad()
         logger.debug("General settings tab loaded")
 
-        serverAddressButton.title = Settings.serverAddress?.absoluteString ?? "Not set"
+        serverAddressButton.title = AccountStore.shared.serverAddress?.absoluteString ?? "Not set"
     }
 
     @IBAction
     func openServerAddress(_: Any) {
-        guard let url = Settings.serverAddress else {
+        guard let url = AccountStore.shared.serverAddress else {
             return
         }
 

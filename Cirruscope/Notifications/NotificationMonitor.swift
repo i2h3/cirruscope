@@ -143,7 +143,7 @@ final class NotificationMonitor {
             NSApp.dockTile.display()
         }
 
-        guard Settings.serverAddress != nil, unreadCount > 0 else {
+        guard AccountStore.shared.serverAddress != nil, unreadCount > 0 else {
             NSApp.dockTile.badgeLabel = nil
             return
         }
@@ -168,7 +168,7 @@ final class NotificationMonitor {
             banneredIDs = Set(items.map(\.id))
         }
 
-        guard bannersAllowed, let serverAddress = Settings.serverAddress else {
+        guard bannersAllowed, let serverAddress = AccountStore.shared.serverAddress else {
             return
         }
 

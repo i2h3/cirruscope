@@ -37,7 +37,7 @@ enum ServerConnection {
         return Server(address: address, password: credentials.appPassword, user: credentials.user, userAgent: userAgent)
     }
 
-    /// `validate(_:)` fetches `server`'s capabilities, persists its theming, and reports whether its major version is supported, recording the version string of a supported server in `Settings.serverVersion`.
+    /// `validate(_:)` fetches `server`'s capabilities, persists its theming, and reports whether its major version is supported, recording the version string of a supported server via `AccountStore.setServerVersion(_:)`.
     ///
     /// It rethrows any error raised while fetching the capabilities so callers can distinguish an unreachable or unauthorized server from an unsupported one.
     static func validate(_ server: Server) async throws -> ValidationOutcome {
@@ -45,7 +45,7 @@ enum ServerConnection {
         let capabilities = try await server.capabilities()
 
         if let theming = try? capabilities.get(Theming.self) {
-            await Settings.persist(theming: theming)
+            await AccountStore.shared.persist(theming: theming)
         } else {
             logger.debug("No theming capability present")
         }
@@ -57,19 +57,19 @@ enum ServerConnection {
             return .unsupported(version: capabilities.version.string)
         }
 
-        Settings.serverVersion = capabilities.version.string
+        await AccountStore.shared.setServerVersion(capabilities.version.string)
         logger.info("Server version \(capabilities.version.string) is supported")
 
         return .supported(capabilities)
     }
 
-    /// `refreshNavigationApps(using:)` fetches the server's navigation apps with the authenticated `server` and persists them via `Settings.persist(navigationApps:)`.
+    /// `refreshNavigationApps(using:)` fetches the server's navigation apps with the authenticated `server` and persists them via `AccountStore.persist(navigationApps:)`.
     ///
     /// Failures are ignored because the apps list is non-critical: when it cannot be fetched the previously persisted list is simply left in place.
     static func refreshNavigationApps(using server: Server) async {
         do {
             let apps = try await server.navigation()
-            Settings.persist(navigationApps: apps)
+            await AccountStore.shared.persist(navigationApps: apps)
         } catch {
             logger.notice("Could not refresh navigation apps; keeping the previous list: \(error.localizedDescription)")
         }

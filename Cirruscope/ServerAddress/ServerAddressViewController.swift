@@ -8,7 +8,7 @@ import Rainmaker
 
 /// `ServerAddressViewController` backs the storyboard scene that asks the user for the address of the Nextcloud server they want to connect to.
 ///
-/// It is presented by `AppDelegate` on launch when `Settings.serverAddress` is `nil`, validates the entered address by fetching the server's capabilities via `ServerConnection`, runs Nextcloud's Login Flow v2 in an `ASWebAuthenticationSession` to obtain an app password, and on success persists the address to `Settings.serverAddress` and the credentials to `Keychain` before handing off to `WebViewController`.
+/// It is presented by `AppDelegate` on launch when `AccountStore.serverAddress` is `nil`, validates the entered address by fetching the server's capabilities via `ServerConnection`, runs Nextcloud's Login Flow v2 in an `ASWebAuthenticationSession` to obtain an app password, and on success persists the address via `AccountStore.connect(to:)` and the credentials to `Keychain` before handing off to `WebViewController`.
 class ServerAddressViewController: NSViewController {
     /// `progressIndicator` is the indeterminate spinner that is animated while a server is being validated and the login is in progress.
     ///
@@ -88,7 +88,7 @@ class ServerAddressViewController: NSViewController {
                         logger.info("Server supported; starting Login Flow v2")
                         let result = try await logIn(to: server)
                         try Keychain.store(Credentials(user: result.name, appPassword: result.password), for: result.server)
-                        Settings.serverAddress = result.server
+                        AccountStore.shared.connect(to: result.server)
                         logger.info("Stored credentials and connected to \(result.server)")
                         (NSApp.delegate as? AppDelegate)?.presentWebViewWindow()
                         view.window?.close()

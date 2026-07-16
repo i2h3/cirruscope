@@ -55,7 +55,7 @@ extension WebViewController: WKNavigationDelegate {
         // per-request CSRF token, so only the last path component can be matched, not the full URL.
         if let url = navigationAction.request.url,
            let host = url.host,
-           let serverHost = Settings.serverAddress?.host,
+           let serverHost = AccountStore.shared.serverAddress?.host,
            host.caseInsensitiveCompare(serverHost) == .orderedSame,
            ["logout", "login"].contains(url.lastPathComponent.lowercased())
         {
@@ -67,7 +67,7 @@ extension WebViewController: WKNavigationDelegate {
 
         guard let url = navigationAction.request.url,
               let host = url.host,
-              let serverHost = Settings.serverAddress?.host,
+              let serverHost = AccountStore.shared.serverAddress?.host,
               host.caseInsensitiveCompare(serverHost) != .orderedSame
         else {
             logger.debug("Navigation action stays on the configured server or has no comparable host; returning .allow (WebViewController \(self.logID))")

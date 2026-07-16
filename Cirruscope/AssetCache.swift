@@ -7,12 +7,12 @@ import os
 
 /// `AssetCache` downloads remote assets into the shared App Group container's caches directory and avoids redundant downloads by revalidating cached copies with the server using their HTTP `ETag`.
 ///
-/// `Settings.persist(theming:)` uses the `shared` instance to keep local copies of the Nextcloud server's branding assets up to date so they can be displayed without re-fetching them every launch.
+/// `AccountStore.persist(theming:)` uses the `shared` instance to keep local copies of the Nextcloud server's branding assets up to date so they can be displayed without re-fetching them every launch.
 /// Cached files are addressed by the SHA-256 digest of their absolute URL so that distinct remote URLs map to distinct local files.
 final class AssetCache: Sendable {
     /// `shared` is the process-wide cache instance.
     ///
-    /// `Settings.persist(theming:)` uses it to cache the server's branding assets, and other parts of the app read those cached files back via `localURL(for:)`.
+    /// `AccountStore.persist(theming:)` uses it to cache the server's branding assets, and other parts of the app read those cached files back via `localURL(for:)`.
     static let shared = AssetCache()
 
     /// `logger` records asset caching activity under the `AssetCache` category.
@@ -42,7 +42,7 @@ final class AssetCache: Sendable {
 
     /// `clear()` removes every cached payload and `ETag` sidecar stored by this cache.
     ///
-    /// `Settings.serverAddress` invokes this when the user disconnects from the server so that no branding assets remain on disk that describe a server the app no longer talks to.
+    /// `AccountStore.disconnect()` invokes this when the user disconnects from the server so that no branding assets remain on disk that describe a server the app no longer talks to.
     /// `directory` lives inside the shared App Group container; once a future app extension shares `Library/Caches/Assets/` with this app, this method's blanket removal would delete that shared subdirectory too, so it should stay scoped to files this cache itself owns if anything else ever starts writing there.
     func clear() {
         do {

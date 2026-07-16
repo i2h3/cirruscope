@@ -19,7 +19,7 @@ extension AppDelegate: NSWindowRestoration {
     ///
     /// The window is tracked but neither cascaded nor shown here: AppKit applies the saved frame and brings it on screen, after which `WebViewController.startInitialLoadIfNeeded()` loads the restored URL with the stored credentials.
     private func restoreWebWindow(identifier: NSUserInterfaceItemIdentifier, state: NSCoder) -> NSWindow? {
-        guard let serverAddress = Settings.serverAddress, Keychain.credentials(for: serverAddress) != nil else {
+        guard let serverAddress = AccountStore.shared.serverAddress, Keychain.credentials(for: serverAddress) != nil else {
             return nil
         }
 

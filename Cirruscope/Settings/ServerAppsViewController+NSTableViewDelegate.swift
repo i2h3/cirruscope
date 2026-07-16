@@ -3,7 +3,7 @@
 
 import Cocoa
 
-/// `ServerAppsViewController`'s conformance to `NSTableViewDelegate` builds each row's views: the app name in the first column and a `ShortcutRecorderView` bound to `Settings.appShortcuts` in the second.
+/// `ServerAppsViewController`'s conformance to `NSTableViewDelegate` builds each row's views: the app name in the first column and a `ShortcutRecorderView` bound to the app's shortcut in `AccountStore` in the second.
 extension ServerAppsViewController: NSTableViewDelegate {
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         guard let tableColumn,
@@ -24,12 +24,10 @@ extension ServerAppsViewController: NSTableViewDelegate {
 
             case 1:
                 let recorder = ShortcutRecorderView(frame: .zero)
-                recorder.shortcut = Settings.appShortcuts[app.id]
+                recorder.shortcut = AccountStore.shared.shortcut(forAppID: app.id)
 
                 recorder.onChange = { shortcut in
-                    var shortcuts = Settings.appShortcuts
-                    shortcuts[app.id] = shortcut
-                    Settings.appShortcuts = shortcuts
+                    AccountStore.shared.setShortcut(shortcut, forAppID: app.id)
                 }
 
                 return recorder

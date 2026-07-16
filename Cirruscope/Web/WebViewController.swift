@@ -7,7 +7,7 @@ import WebKit
 
 /// `WebViewController` backs the storyboard scene that hosts the embedded `WKWebView` Cirruscope uses to display Nextcloud.
 ///
-/// `AppDelegate` presents it on launch when `Settings.serverAddress` is non-`nil`, and `ServerAddressViewController` transitions to it after persisting a freshly validated server address.
+/// `AppDelegate` presents it on launch when `AccountStore.serverAddress` is non-`nil`, and `ServerAddressViewController` transitions to it after persisting a freshly validated server address.
 /// It injects the bundled `Cirruscope.css` stylesheet, bridges custom title-bar drag behaviour, and tracks the state of Nextcloud's sidebar so that `WebViewController+NSMenuItemValidation` can drive the "Show/Hide Sidebar" menu item. The drag and sidebar behaviours are driven by the JavaScript resources enumerated in `WebViewScript`, which are loaded from the bundle on demand rather than embedded in this source file.
 /// The hosted `WKWebView` is hidden in the storyboard and only revealed by `WebViewController+WKNavigationDelegate` once its initial page load completes so the user is not exposed to the unstyled intermediate paint of the Nextcloud interface.
 class WebViewController: NSViewController, WKScriptMessageHandler {
@@ -52,7 +52,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     @IBOutlet
     var retry: NSButton!
 
-    /// `webView` is the `WKWebView` that loads `Settings.serverAddress` and renders the Nextcloud web interface.
+    /// `webView` is the `WKWebView` that loads `AccountStore.serverAddress` and renders the Nextcloud web interface.
     ///
     /// `viewDidLoad()` configures it, installs the user scripts produced by `injectCustomStyleSheet()`, `installWindowDragBridge()`, and `installSidebarToggleBridge()`, and triggers the initial navigation.
     /// The view is hidden in the storyboard and unhidden by `webView(_:didFinish:)` after the initial navigation has completed.
@@ -102,7 +102,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         webView.url ?? webWindowController?.targetURL
     }
 
-    /// `startInitialLoadIfNeeded()` issues the initial navigation the first time the view appears, loading the host window controller's `targetURL` when set or `Settings.serverAddress` otherwise.
+    /// `startInitialLoadIfNeeded()` issues the initial navigation the first time the view appears, loading the host window controller's `targetURL` when set or `AccountStore.serverAddress` otherwise.
     ///
     /// It runs from `viewWillAppear()` rather than `viewDidLoad()` because the host `WebWindowController` and its `targetURL` are only reachable once the view has been placed in its window.
     private func startInitialLoadIfNeeded() {
@@ -110,8 +110,8 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
             return
         }
 
-        guard let url = webWindowController?.targetURL ?? Settings.serverAddress else {
-            preconditionFailure("WebViewController was loaded without a server address in Settings.")
+        guard let url = webWindowController?.targetURL ?? AccountStore.shared.serverAddress else {
+            preconditionFailure("WebViewController was loaded without a connected server address.")
         }
 
         hasStartedInitialLoad = true
@@ -120,13 +120,13 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         webView.load(authenticatedRequest(for: url))
     }
 
-    /// `authenticatedRequest(for:)` builds the request that loads `url`, attaching HTTP Basic authentication derived from the `Credentials` stored for `Settings.serverAddress` when they are available.
+    /// `authenticatedRequest(for:)` builds the request that loads `url`, attaching HTTP Basic authentication derived from the `Credentials` stored for the connected server address when they are available.
     ///
     /// Nextcloud accepts the app password as Basic authentication and establishes a web session from it, so the embedded web view is signed in without a separate in-page login. When no credentials are stored the request is unauthenticated and the server presents its normal login page.
     private func authenticatedRequest(for url: URL) -> URLRequest {
         var request = URLRequest(url: url)
 
-        if let serverAddress = Settings.serverAddress, let credentials = Keychain.credentials(for: serverAddress) {
+        if let serverAddress = AccountStore.shared.serverAddress, let credentials = Keychain.credentials(for: serverAddress) {
             let encoded = Data("\(credentials.user):\(credentials.appPassword)".utf8).base64EncodedString()
             request.setValue("Basic \(encoded)", forHTTPHeaderField: "Authorization")
         }
@@ -198,7 +198,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         pendingRetryURL = (nsError.userInfo[NSURLErrorFailingURLErrorKey] as? URL)
             ?? webView.url
             ?? webWindowController?.targetURL
-            ?? Settings.serverAddress
+            ?? AccountStore.shared.serverAddress
 
         progressIndicator.stopAnimation(self)
         progressIndicator.isHidden = true
@@ -228,7 +228,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     /// It reloads `pendingRetryURL` rather than calling `WKWebView.reload()`, which would do nothing after a provisional failure that never committed a page.
     @IBAction
     func retryLoad(_: Any?) {
-        guard let url = pendingRetryURL ?? webWindowController?.targetURL ?? Settings.serverAddress else {
+        guard let url = pendingRetryURL ?? webWindowController?.targetURL ?? AccountStore.shared.serverAddress else {
             return
         }
 
@@ -241,15 +241,15 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
 
     /// `updateBackgroundImage()` shows the server's cached theming background behind the web view, or nothing when no background image is available so the window background shows through.
     ///
-    /// `viewDidLoad()` calls it. The image is the cached copy of the theming background, so it relies on `Settings.persist(theming:)` having already downloaded it via `AssetCache`, which `ServerConnection.validate(_:)` awaits before the web window is presented.
+    /// `viewDidLoad()` calls it. The image is the cached copy of the theming background, so it relies on `AccountStore.persist(theming:)` having already downloaded it via `AssetCache`, which `ServerConnection.validate(_:)` awaits before the web window is presented.
     private func updateBackgroundImage() {
         backgroundImageView.image = cachedBackgroundImage()
     }
 
     /// `cachedBackgroundImage()` returns the cached theming background image, or `nil` when the server publishes a plain color, the background is not an `http`/`https` image URL, or no cached copy exists yet.
     private func cachedBackgroundImage() -> NSImage? {
-        guard Settings.themeBackgroundPlain != true,
-              let background = Settings.themeBackground,
+        guard AccountStore.shared.themeBackgroundPlain != true,
+              let background = AccountStore.shared.themeBackground,
               let url = URL(string: background),
               url.scheme == "http" || url.scheme == "https",
               let localURL = AssetCache.shared.localURL(for: url)
@@ -336,7 +336,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         }
 
         guard let host = url.host,
-              let serverHost = Settings.serverAddress?.host,
+              let serverHost = AccountStore.shared.serverAddress?.host,
               host.caseInsensitiveCompare(serverHost) == .orderedSame
         else {
             return nil
