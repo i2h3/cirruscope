@@ -5,8 +5,9 @@ name: SwiftFormat
 
 on:
   pull_request:
-    paths:
-      - '**/*.swift'
+    branches:
+      - main
+      - develop
 
 jobs:
   Lint:

@@ -5,7 +5,9 @@ SPDX-License-Identifier: MIT
 
 # Cirruscope
 
-[![REUSE](https://api.reuse.software/badge/github.com/i2h3/cirruscope)](https://api.reuse.software/info/github.com/i2h3/cirruscope)
+[![SwiftFormat](https://github.com/i2h3/cirruscope/actions/workflows/swiftformat.yml/badge.svg)](https://github.com/i2h3/cirruscope/actions/workflows/swiftformat.yml)
+[![REUSE](https://github.com/i2h3/cirruscope/actions/workflows/reuse.yml/badge.svg)](https://github.com/i2h3/cirruscope/actions/workflows/reuse.yml)
+[![Website](https://github.com/i2h3/cirruscope/actions/workflows/website.yml/badge.svg)](https://github.com/i2h3/cirruscope/actions/workflows/website.yml)
 
 An app-like Nextcloud experience on macOS.
 This elevates your Nextcloud user interface to the next level by leveraging native platform features and WebKit.
