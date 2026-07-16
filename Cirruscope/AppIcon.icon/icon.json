@@ -2,22 +2,25 @@
   "fill" : "automatic",
   "groups" : [
     {
-      "blur-material" : 0.2,
+      "blur-material" : 0.3,
       "layers" : [
         {
-          "fill" : "automatic",
-          "image-name" : "White Nextcloud Mark.svg",
-          "name" : "White Nextcloud Mark",
+          "fill" : {
+            "solid" : "extended-gray:1.00000,1.00000"
+          },
+          "glass" : true,
+          "image-name" : "Cloud.svg",
+          "name" : "Cloud",
           "position" : {
-            "scale" : 1.1,
+            "scale" : 0.17,
             "translation-in-points" : [
-              -4.1237470327359915e-08,
-              3.9591145833333314
+              4.2062197280756664e-08,
+              16.198603720686265
             ]
           }
         }
       ],
-      "name" : "Group",
+      "name" : "Symbol",
       "position" : {
         "scale" : 6,
         "translation-in-points" : [
@@ -55,7 +58,7 @@
           ],
           "glass" : true,
           "image-name" : "Zoom.svg",
-          "name" : "Zoom",
+          "name" : "Resize",
           "position" : {
             "scale" : 1,
             "translation-in-points" : [
@@ -79,7 +82,7 @@
             }
           ],
           "image-name" : "Zoom.svg",
-          "name" : "Zoom",
+          "name" : "Minimize",
           "position" : {
             "scale" : 1,
             "translation-in-points" : [
@@ -103,7 +106,7 @@
             }
           ],
           "image-name" : "Zoom.svg",
-          "name" : "Zoom",
+          "name" : "Close",
           "position" : {
             "scale" : 1,
             "translation-in-points" : [
@@ -114,6 +117,7 @@
         }
       ],
       "lighting" : "individual",
+      "name" : "Traffic Lights",
       "shadow-specializations" : [
         {
           "value" : {
@@ -133,7 +137,7 @@
       "translucency-specializations" : [
         {
           "value" : {
-            "enabled" : true,
+            "enabled" : false,
             "value" : 0.7
           }
         },
@@ -163,7 +167,7 @@
           },
           "glass" : true,
           "image-name" : "Cloud.svg",
-          "name" : "Cloud",
+          "name" : "Left",
           "position" : {
             "scale" : 1,
             "translation-in-points" : [
@@ -178,7 +182,7 @@
           },
           "glass" : true,
           "image-name" : "Cloud.svg",
-          "name" : "Cloud",
+          "name" : "Right",
           "position" : {
             "scale" : 1,
             "translation-in-points" : [
@@ -188,6 +192,7 @@
           }
         }
       ],
+      "name" : "Clouds",
       "opacity-specializations" : [
         {
           "value" : 0.5
@@ -257,7 +262,7 @@
           ],
           "glass" : false,
           "image-name" : "layer-0-background.svg",
-          "name" : "layer-0-background",
+          "name" : "Sky",
           "opacity-specializations" : [
             {
               "value" : 1
@@ -269,6 +274,7 @@
           ]
         }
       ],
+      "name" : "Background",
       "opacity" : 1,
       "shadow" : {
         "kind" : "neutral",
