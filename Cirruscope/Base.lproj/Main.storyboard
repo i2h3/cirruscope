@@ -706,7 +706,7 @@
                         <rect key="frame" x="0.0" y="0.0" width="400" height="447"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="hJR-Eu-VYI">
+                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="hJR-Eu-VYI" userLabel="App Name">
                                 <rect key="frame" x="137" y="216" width="127" height="31"/>
                                 <textFieldCell key="cell" lineBreakMode="clipping" title="Cirruscope" id="YMm-Pw-AmD">
                                     <font key="font" textStyle="largeTitle" name=".SFNS-Regular"/>
@@ -714,7 +714,7 @@
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                 </textFieldCell>
                             </textField>
-                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="RBx-9A-EGs">
+                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="RBx-9A-EGs" userLabel="Address Label">
                                 <rect key="frame" x="58" y="160" width="229" height="16"/>
                                 <textFieldCell key="cell" lineBreakMode="clipping" title="Enter your Nextcloud server address:" id="aZ0-zr-lPD">
                                     <font key="font" metaFont="system"/>
@@ -722,7 +722,7 @@
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                 </textFieldCell>
                             </textField>
-                            <textField focusRingType="none" verticalHuggingPriority="750" contentType="url" translatesAutoresizingMaskIntoConstraints="NO" id="YlJ-G9-LcR">
+                            <textField focusRingType="none" verticalHuggingPriority="750" contentType="url" translatesAutoresizingMaskIntoConstraints="NO" id="YlJ-G9-LcR" userLabel="Address Field">
                                 <rect key="frame" x="60" y="128" width="252" height="24"/>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" placeholderString="https://your.nextcloud.com" drawsBackground="YES" usesSingleLineMode="YES" id="wwU-wS-wXs">
                                     <font key="font" metaFont="system"/>
@@ -733,10 +733,10 @@
                                     <action selector="performClick:" target="k1i-ML-nxX" id="nbX-nn-9aL"/>
                                 </connections>
                             </textField>
-                            <progressIndicator hidden="YES" wantsLayer="YES" horizontalHuggingPriority="750" verticalHuggingPriority="750" maxValue="100" indeterminate="YES" controlSize="small" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="ech-1t-Ipm">
+                            <progressIndicator hidden="YES" wantsLayer="YES" horizontalHuggingPriority="750" verticalHuggingPriority="750" maxValue="100" indeterminate="YES" controlSize="small" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="ech-1t-Ipm" userLabel="Activity Indicator">
                                 <rect key="frame" x="192" y="104" width="16" height="16"/>
                             </progressIndicator>
-                            <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="46a-hj-1ne">
+                            <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="46a-hj-1ne" userLabel="App Icon">
                                 <rect key="frame" x="150" y="267" width="100" height="100"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="100" id="NBx-hp-Saj"/>
@@ -744,42 +744,67 @@
                                 </constraints>
                                 <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="Logo" id="bqR-tO-fAe"/>
                             </imageView>
-                            <button translatesAutoresizingMaskIntoConstraints="NO" id="k1i-ML-nxX">
+                            <button translatesAutoresizingMaskIntoConstraints="NO" id="k1i-ML-nxX" userLabel="Login Button">
                                 <rect key="frame" x="320" y="131" width="20" height="20"/>
                                 <buttonCell key="cell" type="bevel" title="Open" bezelStyle="rounded" imagePosition="only" alignment="center" enabled="NO" imageScaling="proportionallyDown" inset="2" id="stm-Nb-RXX">
                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                     <font key="font" metaFont="system"/>
                                     <imageReference key="image" image="arrow.right.circle.fill" catalog="system" symbolScale="large"/>
                                 </buttonCell>
+                                <color key="contentTintColor" name="controlAccentColor" catalog="System" colorSpace="catalog"/>
                                 <connections>
                                     <action selector="open:" target="CSm-iM-xwx" id="twh-wo-lFG"/>
                                 </connections>
                             </button>
-                            <button translatesAutoresizingMaskIntoConstraints="NO" id="mVU-k2-QDL">
-                                <rect key="frame" x="156" y="20" width="88" height="24"/>
-                                <buttonCell key="cell" type="bevel" title="Privacy Policy" bezelStyle="rounded" alignment="center" imageScaling="proportionallyDown" inset="2" id="641-vb-mzY">
-                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                    <font key="font" metaFont="system"/>
-                                </buttonCell>
-                                <color key="contentTintColor" name="linkColor" catalog="System" colorSpace="catalog"/>
-                                <connections>
-                                    <action selector="openPrivacyPolicy:" target="ZVT-ow-fmy" id="Ppb-It-pol"/>
-                                </connections>
-                            </button>
+                            <stackView distribution="equalSpacing" orientation="horizontal" alignment="centerY" spacing="16" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ekq-sM-rjr" userLabel="Bottom Links">
+                                <rect key="frame" x="122" y="20" width="157" height="16"/>
+                                <subviews>
+                                    <button translatesAutoresizingMaskIntoConstraints="NO" id="mVU-k2-QDL">
+                                        <rect key="frame" x="0.0" y="0.0" width="88" height="16"/>
+                                        <buttonCell key="cell" type="bevel" title="Privacy Policy" bezelStyle="rounded" alignment="center" imageScaling="proportionallyDown" inset="2" id="641-vb-mzY">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
+                                        <color key="contentTintColor" name="controlAccentColor" catalog="System" colorSpace="catalog"/>
+                                        <connections>
+                                            <action selector="openPrivacyPolicy:" target="ZVT-ow-fmy" id="Ppb-It-pol"/>
+                                        </connections>
+                                    </button>
+                                    <button translatesAutoresizingMaskIntoConstraints="NO" id="51v-jE-Cfp">
+                                        <rect key="frame" x="104" y="0.0" width="53" height="16"/>
+                                        <buttonCell key="cell" type="bevel" title="Support" bezelStyle="rounded" alignment="center" imageScaling="proportionallyDown" inset="2" id="hoa-pe-yCP">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
+                                        <color key="contentTintColor" name="controlAccentColor" catalog="System" colorSpace="catalog"/>
+                                        <connections>
+                                            <action selector="openSupportPage:" target="ZVT-ow-fmy" id="MPu-bF-G6c"/>
+                                        </connections>
+                                    </button>
+                                </subviews>
+                                <visibilityPriorities>
+                                    <integer value="1000"/>
+                                    <integer value="1000"/>
+                                </visibilityPriorities>
+                                <customSpacing>
+                                    <real value="3.4028234663852886e+38"/>
+                                    <real value="3.4028234663852886e+38"/>
+                                </customSpacing>
+                            </stackView>
                         </subviews>
                         <constraints>
-                            <constraint firstItem="mVU-k2-QDL" firstAttribute="centerX" secondItem="JXc-I7-b73" secondAttribute="centerX" id="9Ba-Cd-wHB"/>
+                            <constraint firstItem="Ekq-sM-rjr" firstAttribute="centerX" secondItem="JXc-I7-b73" secondAttribute="centerX" id="3wJ-QI-0zb"/>
                             <constraint firstItem="YlJ-G9-LcR" firstAttribute="top" secondItem="RBx-9A-EGs" secondAttribute="bottom" constant="8" symbolic="YES" id="Bsv-FU-npx"/>
                             <constraint firstItem="YlJ-G9-LcR" firstAttribute="leading" secondItem="JXc-I7-b73" secondAttribute="leading" constant="60" id="Cbi-y6-i1D"/>
                             <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="RBx-9A-EGs" secondAttribute="trailing" constant="60" id="HgC-UQ-5kR"/>
                             <constraint firstItem="46a-hj-1ne" firstAttribute="top" secondItem="JXc-I7-b73" secondAttribute="top" constant="80" id="LSX-ep-Iuw"/>
                             <constraint firstItem="k1i-ML-nxX" firstAttribute="centerY" secondItem="YlJ-G9-LcR" secondAttribute="centerY" id="LsY-hP-fhi"/>
                             <constraint firstItem="hJR-Eu-VYI" firstAttribute="top" secondItem="46a-hj-1ne" secondAttribute="bottom" constant="20" id="Wxj-la-Cfv"/>
-                            <constraint firstItem="mVU-k2-QDL" firstAttribute="top" secondItem="ech-1t-Ipm" secondAttribute="bottom" constant="60" id="XMO-Oh-N3I"/>
-                            <constraint firstAttribute="bottom" secondItem="mVU-k2-QDL" secondAttribute="bottom" constant="20" symbolic="YES" id="Xjb-dV-5Ha"/>
                             <constraint firstAttribute="trailing" secondItem="k1i-ML-nxX" secondAttribute="trailing" constant="60" id="aQd-oB-iZS"/>
                             <constraint firstItem="ech-1t-Ipm" firstAttribute="centerX" secondItem="JXc-I7-b73" secondAttribute="centerX" id="aZc-gt-3ye"/>
                             <constraint firstItem="46a-hj-1ne" firstAttribute="centerX" secondItem="JXc-I7-b73" secondAttribute="centerX" id="dD9-Lb-YOS"/>
+                            <constraint firstItem="Ekq-sM-rjr" firstAttribute="top" secondItem="ech-1t-Ipm" secondAttribute="bottom" constant="68" id="hUx-3G-KFj"/>
+                            <constraint firstAttribute="bottom" secondItem="Ekq-sM-rjr" secondAttribute="bottom" constant="20" symbolic="YES" id="k59-fG-Vrn"/>
                             <constraint firstItem="ech-1t-Ipm" firstAttribute="top" secondItem="YlJ-G9-LcR" secondAttribute="bottom" constant="8" symbolic="YES" id="m5m-7F-C7y"/>
                             <constraint firstItem="hJR-Eu-VYI" firstAttribute="centerX" secondItem="JXc-I7-b73" secondAttribute="centerX" id="phN-2T-nbT"/>
                             <constraint firstItem="k1i-ML-nxX" firstAttribute="leading" secondItem="YlJ-G9-LcR" secondAttribute="trailing" constant="8" symbolic="YES" id="rk6-nx-Pm7"/>
