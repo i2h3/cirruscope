@@ -1,9 +1,11 @@
 # SPDX-FileCopyrightText: 2026 Iva Horn
 # SPDX-License-Identifier: MIT
 
-xcuserdata
 *.ipa
 *.dSYM.zip
 *.dSYM
+*.hmap
 .swiftpm
 .build
+DerivedData
+xcuserdata

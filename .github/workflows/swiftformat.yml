@@ -8,6 +8,8 @@ on:
     branches:
       - main
       - develop
+    paths:
+      - '**/*.swift'
 
 jobs:
   Lint:
