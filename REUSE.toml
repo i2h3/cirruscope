@@ -68,14 +68,6 @@ precedence = "override"
 SPDX-FileCopyrightText = "2026 Iva Horn"
 SPDX-License-Identifier = "MIT"
 
-# App icon — Nextcloud mark layer: Nextcloud's own trademark/logo, not
-# relicensed as this project's own MIT-licensed work.
-[[annotations]]
-path = "Cirruscope/AppIcon.icon/Assets/White Nextcloud Mark.svg"
-precedence = "override"
-SPDX-FileCopyrightText = "Nextcloud GmbH"
-SPDX-License-Identifier = "LicenseRef-Nextcloud-Trademark"
-
 # Miscellaneous Xcode-GUI-editable or generated files, all added in 2026:
 # Interface Builder storyboard, the Privacy Manifest editor's file, the
 # Info tab's file, the two String Catalogs (JSON, one for Swift strings, one
