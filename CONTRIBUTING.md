@@ -1,0 +1,64 @@
+<!--
+SPDX-FileCopyrightText: 2026 Iva Horn
+SPDX-License-Identifier: MIT
+-->
+
+# Contributing to Cirruscope
+
+Thanks for your interest in contributing. This document is written for developers, in the same spirit as [README.md](./README.md).
+
+## Developer Certificate of Origin
+
+Every contribution to Cirruscope must be signed off under the [Developer Certificate of Origin](https://developercertificate.org/) (DCO). By signing off a commit, you certify that you wrote it (or otherwise have the right to submit it) under this project's license.
+
+Add a `Signed-off-by: Your Name <your@email.com>` trailer to every commit message, using the name and email address you want associated with the contribution:
+
+```
+git commit -s -m "Your commit message"
+```
+
+To avoid typing `-s` every time, set up a git alias:
+
+```
+git config --global alias.ci 'commit -s'
+```
+
+If you forgot to sign off a commit you already made, amend it:
+
+```
+git commit --amend -s
+```
+
+For multiple commits on a branch, sign them all off at once against the branch you're merging into (e.g. `develop`):
+
+```
+git rebase --exec 'git commit --amend --no-edit -s' develop
+```
+
+then force-push your branch to update the pull request.
+
+[.github/workflows/dco.yml](.github/workflows/dco.yml) checks every commit on every push and pull request against `main`/`develop` for a `Signed-off-by:` trailer, and must pass before a pull request can be merged.
+
+> **Note:** GitHub's default "Squash and merge" only carries commit *titles* into the squashed commit, dropping `Signed-off-by:` trailers along the way. Either merge with "Create a merge commit" instead, or manually keep a `Signed-off-by:` line in the squash commit message before confirming the merge.
+
+## AI-Assisted Contributions
+
+If you used an AI tool (e.g. GitHub Copilot, ChatGPT, Claude, or similar) to help write any part of a contribution — code, tests, documentation, or commit messages — check the corresponding box in the pull request template.
+
+Disclosure doesn't lower the bar: you must be able to explain every part of your contribution — what it does, why it's written the way it is, and any trade-offs involved — in review, and you are personally accountable for it regardless of how it was produced. Do not open a pull request for code you have not reviewed and understood yourself. This doesn't replace the Developer Certificate of Origin above either: signing off a commit still certifies that you have the right to submit its content.
+
+## Code Quality Checks
+
+- Run `swiftformat .` before committing; CI lints with `swiftformat --lint`.
+- New files need SPDX copyright/license headers; run `reuse lint` to confirm compliance.
+- See [AGENTS.md](./AGENTS.md) for the full set of project conventions followed by human and AI contributors alike.
+
+## Contribution Workflow
+
+1. Fork the repository or create a branch.
+2. Open a pull request against `develop`.
+3. Make sure CI (SwiftFormat, REUSE, DCO) is green before requesting review.
+
+## License
+
+By contributing to Cirruscope, you agree that your contributions will be licensed under this project's [LICENSE](./LICENSE) (MIT).

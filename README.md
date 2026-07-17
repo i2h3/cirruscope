@@ -7,6 +7,7 @@ SPDX-License-Identifier: MIT
 
 [![SwiftFormat](https://github.com/i2h3/cirruscope/actions/workflows/swiftformat.yml/badge.svg)](https://github.com/i2h3/cirruscope/actions/workflows/swiftformat.yml)
 [![REUSE](https://github.com/i2h3/cirruscope/actions/workflows/reuse.yml/badge.svg)](https://github.com/i2h3/cirruscope/actions/workflows/reuse.yml)
+[![DCO](https://github.com/i2h3/cirruscope/actions/workflows/dco.yml/badge.svg)](https://github.com/i2h3/cirruscope/actions/workflows/dco.yml)
 [![Website](https://github.com/i2h3/cirruscope/actions/workflows/website.yml/badge.svg)](https://github.com/i2h3/cirruscope/actions/workflows/website.yml)
 
 An app-like Nextcloud experience on macOS.
@@ -99,6 +100,10 @@ Double-click the file, then approve it under **System Settings ▸ General ▸ D
 
 This is an unofficial third-party app out of the Nextcloud community.
 It is not associated with or endorsed by Nextcloud GmbH.
+
+## Contributing
+
+Contributions are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) for the workflow — commits must be signed off under the Developer Certificate of Origin, and CI must pass before a pull request can be merged.
 
 ## License
 
