@@ -578,8 +578,7 @@
                                                 <action selector="goForward:" target="Ady-hI-5gd" id="AsQ-us-ikW"/>
                                             </connections>
                                         </menuItem>
-                                        <menuItem title="Reload" id="mdf-Pa-v7a">
-                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                        <menuItem title="Reload" keyEquivalent="r" id="mdf-Pa-v7a">
                                             <connections>
                                                 <action selector="reload:" target="Ady-hI-5gd" id="90b-QT-tlo"/>
                                             </connections>
