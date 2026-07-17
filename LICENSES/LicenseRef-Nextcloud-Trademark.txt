@@ -1,5 +1,0 @@
-The Nextcloud name and logo are registered trademarks of Nextcloud GmbH.
-This file is used to visually indicate compatibility with Nextcloud servers
-and is not relicensed under this project's MIT license.
-
-See: https://nextcloud.com/trademarks/
