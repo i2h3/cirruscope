@@ -1,0 +1,69 @@
+# SPDX-FileCopyrightText: 2026 Iva Horn
+# SPDX-License-Identifier: MIT
+
+name: DCO
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Signed-off-by Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Check Signed-off-by trailer
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_AFTER: ${{ github.event.after }}
+        run: |
+          set -e
+
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            base="$BASE_SHA"
+            head="$HEAD_SHA"
+          else
+            base="$PUSH_BEFORE"
+            head="$PUSH_AFTER"
+          fi
+
+          if [ "$base" = "0000000000000000000000000000000000000000" ]; then
+            # Newly created branch: no prior "before" commit to diff against.
+            commits="$head"
+          else
+            commits="$(git log --no-merges --format=%H "$base..$head")"
+          fi
+
+          missing=""
+          for sha in $commits; do
+            if ! git log -1 --format=%B "$sha" | grep -qE '^Signed-off-by: .+ <.+>$'; then
+              missing="$missing $sha"
+            fi
+          done
+
+          if [ -n "$missing" ]; then
+            echo "The following commits are missing a 'Signed-off-by' trailer required by this project's Developer Certificate of Origin policy (see CONTRIBUTING.md):"
+            for sha in $missing; do
+              echo "  - $sha $(git log -1 --format='%s' "$sha")"
+            done
+            exit 1
+          fi
+
+          echo "All commits in range are signed off."

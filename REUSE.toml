@@ -95,3 +95,13 @@ path = "Website/**"
 precedence = "override"
 SPDX-FileCopyrightText = "2026 Iva Horn"
 SPDX-License-Identifier = "MIT"
+
+# GitHub pre-fills a new pull request's description textarea (unrendered, so
+# HTML comments show up as literal visible text) with this file's raw content,
+# so it is annotated here instead of carrying an inline header like other
+# Markdown files.
+[[annotations]]
+path = ".github/PULL_REQUEST_TEMPLATE.md"
+precedence = "override"
+SPDX-FileCopyrightText = "2026 Iva Horn"
+SPDX-License-Identifier = "MIT"

@@ -63,7 +63,7 @@ This project is checked for [REUSE](https://reuse.software/) Specification 3.3 c
   git log --follow --format=%ad --date=format:%Y -- <path> | tail -1
   ```
 - Files that cannot safely hold an inline comment — binaries, pure JSON, or anything Xcode/SwiftPM/Icon Composer regenerates or rewrites through its own GUI or tooling (the asset catalog, the `AppIcon.icon` bundle, `project.pbxproj`, `contents.xcworkspacedata`, `Package.resolved`, `Main.storyboard`, `Info.plist`, `PrivacyInfo.xcprivacy`, `Localizable.xcstrings`, `.swift-version`) — are covered by a `[[annotations]]` entry in `REUSE.toml` instead. Add new files of these kinds to an existing matching `path` glob there only if its year already matches, or a new annotation block otherwise; never hand-edit an SPDX comment into them.
-- `Cirruscope/AppIcon.icon/Assets/White Nextcloud Mark.svg` is the one deliberate exception: it is Nextcloud's own trademark, not this project's work, so its `REUSE.toml` entry attributes it to `Nextcloud GmbH` under `LicenseRef-Nextcloud-Trademark` (see `LICENSES/LicenseRef-Nextcloud-Trademark.txt`) rather than `Iva Horn`/`MIT`.
+- `.github/PULL_REQUEST_TEMPLATE.md` is one exception: GitHub pre-fills a new pull request's description textarea with this file's raw, unrendered content, so an inline HTML comment header would show up as literal visible clutter for every contributor opening a PR — it is covered by a `REUSE.toml` entry instead, even though Markdown normally takes an inline header.
 - Whenever a change adds a new file, give it SPDX coverage immediately — an inline header or a `REUSE.toml` entry — rather than leaving it for later.
 - Always run `reuse lint` in the project root directory after applying changes (install via `brew install reuse` if missing), and confirm it reports "Congratulations! Your project is compliant with version 3.3 of the REUSE Specification" before considering the change complete.
 
@@ -175,6 +175,7 @@ Use `log show` to read logs already recorded in a past time range, and `log stre
 - Do not commit automatically.
 - Suggest commit title after applying changes. If the changes relate to specific GitHub issues, mention them.
 - Suggest commit description after applying changes.
+- Every commit must carry a `Signed-off-by:` trailer per this project's [Developer Certificate of Origin](./CONTRIBUTING.md#developer-certificate-of-origin) policy, matching the git identity of whoever is being committed on behalf of in the current session (`git config user.name`/`user.email` — never a hardcoded name, since a different contributor's session must sign off as themselves), in addition to any `Co-Authored-By:` trailer already appended.
 
 ## Pull Request Instructions
 
