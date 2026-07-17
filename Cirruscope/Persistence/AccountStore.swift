@@ -130,14 +130,21 @@ final class AccountStore {
     /// `persist(theming:)` records the server's branding into the account and downloads the referenced assets into `AssetCache`.
     ///
     /// The metadata write and its save happen synchronously on the main actor; the asset downloads are awaited afterwards and run off the main actor, so a slow download never blocks it and cannot interleave with the commit. `ServerConnection.validate(_:)` awaits this before any UI relying on the cached branding is shown. The background download is skipped when `theming.background` is a color value rather than an `http`/`https` image URL.
+    ///
+    /// `theming.background` may be an absolute URL or a server-root-relative path — Nextcloud returns a relative path for backgrounds picked from its shipped gallery — so it is resolved against `account.serverAddress` before being stored and cached. Resolution is skipped when `theming.backgroundPlain` is `true`, since `background` then holds a color value (e.g. `"#00679e"`) that would otherwise resolve into a bogus fetchable URL (the server address with a `#`-fragment).
     func persist(theming: Theming) async {
         let account = currentAccount(createIfNeeded: true)
-        account?.themeBackground = theming.background
+
+        let backgroundURL = theming.backgroundPlain
+            ? nil
+            : URL(string: theming.background, relativeTo: account?.serverAddress)?.absoluteURL
+
+        account?.themeBackground = backgroundURL?.absoluteString ?? theming.background
         account?.themeLogo = theming.logo
         account?.themeBackgroundPlain = theming.backgroundPlain
         save()
 
-        if let backgroundURL = URL(string: theming.background), backgroundURL.scheme == "http" || backgroundURL.scheme == "https" {
+        if let backgroundURL, backgroundURL.scheme == "http" || backgroundURL.scheme == "https" {
             do {
                 try await AssetCache.shared.cache(remote: backgroundURL)
             } catch {

@@ -66,11 +66,11 @@ final class AssetCache: Sendable {
         let fileURL = fileURL(for: remoteURL)
 
         guard FileManager.default.fileExists(atPath: fileURL.path(percentEncoded: false)) else {
-            logger.debug("Cache miss for \(remoteURL)")
+            logger.debug("Cache miss for \(remoteURL, privacy: .public)")
             return nil
         }
 
-        logger.debug("Cache hit for \(remoteURL)")
+        logger.debug("Cache hit for \(remoteURL, privacy: .public)")
         return fileURL
     }
 
@@ -81,25 +81,30 @@ final class AssetCache: Sendable {
     @discardableResult
     func cache(remote remoteURL: URL) async throws -> URL {
         let fileURL = fileURL(for: remoteURL)
+        let localETag = etag(for: fileURL)
 
         var request = URLRequest(url: remoteURL)
         request.cachePolicy = .reloadIgnoringLocalCacheData
 
-        if FileManager.default.fileExists(atPath: fileURL.path(percentEncoded: false)), let etag = etag(for: fileURL) {
-            request.setValue(etag, forHTTPHeaderField: "If-None-Match")
-            logger.debug("Revalidating cached asset with stored ETag")
+        if FileManager.default.fileExists(atPath: fileURL.path(percentEncoded: false)), let localETag {
+            request.setValue(localETag, forHTTPHeaderField: "If-None-Match")
+            logger.debug("Revalidating \(remoteURL, privacy: .public) with locally cached ETag \(localETag, privacy: .public)")
+        } else {
+            logger.debug("Requesting \(remoteURL, privacy: .public) unconditionally; no locally cached ETag")
         }
 
         let (data, response) = try await session.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
-            logger.error("Non-HTTP response caching \(remoteURL)")
+            logger.error("Non-HTTP response caching \(remoteURL, privacy: .public)")
             throw CirruscopeError.invalidResponse
         }
 
+        let serverETag = httpResponse.value(forHTTPHeaderField: "ETag") ?? "none"
+
         switch httpResponse.statusCode {
             case 304:
-                logger.debug("Asset not modified (HTTP 304); using cached copy")
+                logger.debug("Asset not modified (HTTP 304) for \(remoteURL, privacy: .public); server ETag \(serverETag, privacy: .public)")
                 return fileURL
             case 200 ..< 300:
                 try data.write(to: fileURL, options: .atomic)
@@ -108,10 +113,10 @@ final class AssetCache: Sendable {
                 } else {
                     removeETag(for: fileURL)
                 }
-                logger.info("Cached asset (HTTP \(httpResponse.statusCode))")
+                logger.info("Cached asset (HTTP \(httpResponse.statusCode)) for \(remoteURL, privacy: .public); server ETag \(serverETag, privacy: .public)")
                 return fileURL
             default:
-                logger.error("Unexpected status \(httpResponse.statusCode) caching asset")
+                logger.error("Unexpected status \(httpResponse.statusCode) caching \(remoteURL, privacy: .public)")
                 throw CirruscopeError.unexpectedStatus(httpResponse.statusCode)
         }
     }
