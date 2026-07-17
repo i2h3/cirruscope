@@ -1,0 +1,11 @@
+{
+  "name": "Cirruscope",
+  "short_name": "Cirruscope",
+  "icons": [
+    { "src": "/assets/favicon-48.png", "sizes": "48x48", "type": "image/png" },
+    { "src": "/assets/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ],
+  "theme_color": "#0082c9",
+  "background_color": "#ffffff",
+  "display": "browser"
+}

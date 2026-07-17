@@ -4,6 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a121c">
 
   <title>Cirruscope — une expérience Nextcloud à l'aise sur macOS</title>
   <meta name="description" content="Cirruscope transforme ton Nextcloud en une application macOS rapide et native – avec de vraies fenêtres, des notifications natives, et sans le désordre des onglets de navigateur.">
@@ -18,6 +20,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/favicon-16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
 
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Cirruscope">
@@ -27,6 +30,7 @@
   <meta property="og:image" content="https://cirruscope.app/assets/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Cirruscope — une expérience Nextcloud à l'aise sur macOS">
   <meta property="og:locale" content="fr_FR">
   <meta property="og:locale:alternate" content="en_US">
   <meta property="og:locale:alternate" content="de_DE">
@@ -35,18 +39,36 @@
   <meta name="twitter:title" content="Cirruscope — une expérience Nextcloud à l'aise sur macOS">
   <meta name="twitter:description" content="Cirruscope transforme ton Nextcloud en une application macOS rapide et native – avec de vraies fenêtres, des notifications natives, et sans le désordre des onglets de navigateur.">
   <meta name="twitter:image" content="https://cirruscope.app/assets/og-image.png">
+  <meta name="twitter:image:alt" content="Cirruscope — une expérience Nextcloud à l'aise sur macOS">
 
   <link rel="stylesheet" href="../css/styles.css">
   <script src="../js/site.js" defer></script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Cirruscope",
+  "description": "Cirruscope transforme ton Nextcloud en une application macOS rapide et native – avec de vraies fenêtres, des notifications natives, et sans le désordre des onglets de navigateur.",
+  "url": "https://cirruscope.app/fr/",
+  "applicationCategory": "ProductivityApplication",
+  "operatingSystem": "macOS",
+  "image": "https://cirruscope.app/assets/og-image.png",
+  "author": {
+    "@type": "Organization",
+    "name": "Cirruscope",
+    "url": "https://cirruscope.app/"
+  }
+}
+  </script>
 </head>
 <body data-page="home">
   <header class="site-header">
     <div class="container site-header__inner">
       <a class="brand" href="index.html">
-        <span class="brand__mark">
-          <img class="img-light" src="../assets/icon-light.png" alt="" width="28" height="28">
-          <img class="img-dark" src="../assets/icon-dark.png" alt="" width="28" height="28">
-        </span>
+        <picture class="brand__mark">
+          <source srcset="../assets/icon-dark-56.png" media="(prefers-color-scheme: dark)">
+          <img src="../assets/icon-light-56.png" alt="" width="28" height="28">
+        </picture>
         <span>Cirruscope</span>
       </a>
 
@@ -96,8 +118,10 @@
 
     <section class="shot">
       <div class="shot__frame">
-        <img class="img-light" src="../assets/screenshot-light.jpg" alt="Cirruscope showing Nextcloud Files on macOS" width="3400" height="2240">
-        <img class="img-dark" src="../assets/screenshot-dark.jpg" alt="Cirruscope showing Nextcloud Files on macOS" width="3400" height="2240">
+        <picture>
+          <source srcset="../assets/screenshot-dark.jpg" media="(prefers-color-scheme: dark)">
+          <img src="../assets/screenshot-light.jpg" alt="Cirruscope showing Nextcloud Files on macOS" width="2080" height="1369">
+        </picture>
       </div>
     </section>
 
@@ -170,10 +194,10 @@
     <div class="container site-footer__top">
       <div class="site-footer__brand">
         <div class="site-footer__brand-row">
-          <span class="site-footer__mark">
-            <img class="img-light" src="../assets/icon-light.png" alt="" width="24" height="24">
-            <img class="img-dark" src="../assets/icon-dark.png" alt="" width="24" height="24">
-          </span>
+          <picture class="site-footer__mark">
+            <source srcset="../assets/icon-dark-56.png" media="(prefers-color-scheme: dark)">
+            <img src="../assets/icon-light-56.png" alt="" width="24" height="24">
+          </picture>
           <span class="site-footer__name">Cirruscope</span>
         </div>
         <p class="site-footer__tagline">Une expérience Nextcloud qui se sent chez elle sur macOS.</p>

@@ -101,20 +101,6 @@ h3 {
   white-space: nowrap;
 }
 
-/* Adaptive light/dark artwork ------------------------------------------- */
-.img-dark {
-  display: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  .img-light {
-    display: none;
-  }
-  .img-dark {
-    display: block;
-  }
-}
-
 /* Header ---------------------------------------------------------------- */
 .site-header {
   position: sticky;
@@ -146,7 +132,6 @@ h3 {
 }
 
 .brand__mark {
-  position: relative;
   width: 28px;
   height: 28px;
 }
@@ -155,11 +140,6 @@ h3 {
   width: 28px;
   height: 28px;
   border-radius: 7px;
-}
-
-.brand__mark .img-dark {
-  position: absolute;
-  inset: 0;
 }
 
 .nav {
@@ -393,23 +373,6 @@ h3 {
 .shot__frame img {
   width: 100%;
   height: auto;
-}
-
-.shot__frame .img-light {
-  display: block;
-}
-
-.shot__frame .img-dark {
-  display: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  .shot__frame .img-light {
-    display: none;
-  }
-  .shot__frame .img-dark {
-    display: block;
-  }
 }
 
 /* Section headings ------------------------------------------------------ */
@@ -726,7 +689,6 @@ h3 {
 }
 
 .site-footer__mark {
-  position: relative;
   width: 24px;
   height: 24px;
 }
@@ -735,11 +697,6 @@ h3 {
   width: 24px;
   height: 24px;
   border-radius: 6px;
-}
-
-.site-footer__mark .img-dark {
-  position: absolute;
-  inset: 0;
 }
 
 .site-footer__name {

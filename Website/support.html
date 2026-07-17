@@ -4,6 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a121c">
 
   <title>Support — Cirruscope</title>
   <meta name="description" content="Get help, report a bug, or find answers to common questions.">
@@ -18,6 +20,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
 
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Cirruscope">
@@ -27,6 +30,7 @@
   <meta property="og:image" content="https://cirruscope.app/assets/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Support — Cirruscope">
   <meta property="og:locale" content="en_US">
   <meta property="og:locale:alternate" content="de_DE">
   <meta property="og:locale:alternate" content="fr_FR">
@@ -35,18 +39,99 @@
   <meta name="twitter:title" content="Support — Cirruscope">
   <meta name="twitter:description" content="Get help, report a bug, or find answers to common questions.">
   <meta name="twitter:image" content="https://cirruscope.app/assets/og-image.png">
+  <meta name="twitter:image:alt" content="Support — Cirruscope">
 
   <link rel="stylesheet" href="css/styles.css">
   <script src="js/site.js" defer></script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Is Cirruscope free?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Cirruscope is free and open source under the MIT license — you can read or contribute to the code on GitHub anytime."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does Cirruscope collect any of my data?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Cirruscope doesn't collect, transmit, or sell any data about you or your usage. See our Privacy Policy for the details."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Which Nextcloud servers does it work with?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Any Nextcloud instance — your own self-hosted server or one run by a hosting provider. Cirruscope isn't tied to a specific provider."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What do I need to run it?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A Mac running a recent version of macOS. We'll publish exact system requirements once Cirruscope reaches the App Store."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I get it?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Cirruscope is putting the finishing touches on its first release and will head into App Store review shortly. It isn't available to download yet, but it's coming soon."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Will there be an iOS or iPadOS version?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Not right now. We're focused on making Cirruscope the best native Nextcloud experience on macOS first. We're not ruling it out, but there's nothing to announce yet."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What about Windows?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The whole point of Cirruscope is deep integration with Apple's native platform technologies — so a Windows version wouldn't really be a port, it'd be a completely different project built from the ground up. That's not something we have the resources for right now, but it's not ruled out forever."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What about Linux?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Same reasoning as Windows: Cirruscope's value comes from being deeply native to Apple's platform, so a Linux version would mean starting a separate project from scratch, not porting this one. Not something we can take on right now. Nextcloud's own web interface works great in any browser on Linux, though."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How can I contribute?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Cirruscope is open source under the MIT license. Bug reports, feature ideas, and pull requests are all welcome on GitHub."
+      }
+    }
+  ]
+}
+  </script>
 </head>
 <body data-page="support">
   <header class="site-header">
     <div class="container site-header__inner">
       <a class="brand" href="index.html">
-        <span class="brand__mark">
-          <img class="img-light" src="assets/icon-light.png" alt="" width="28" height="28">
-          <img class="img-dark" src="assets/icon-dark.png" alt="" width="28" height="28">
-        </span>
+        <picture class="brand__mark">
+          <source srcset="assets/icon-dark-56.png" media="(prefers-color-scheme: dark)">
+          <img src="assets/icon-light-56.png" alt="" width="28" height="28">
+        </picture>
         <span>Cirruscope</span>
       </a>
 
@@ -190,10 +275,10 @@
     <div class="container site-footer__top">
       <div class="site-footer__brand">
         <div class="site-footer__brand-row">
-          <span class="site-footer__mark">
-            <img class="img-light" src="assets/icon-light.png" alt="" width="24" height="24">
-            <img class="img-dark" src="assets/icon-dark.png" alt="" width="24" height="24">
-          </span>
+          <picture class="site-footer__mark">
+            <source srcset="assets/icon-dark-56.png" media="(prefers-color-scheme: dark)">
+            <img src="assets/icon-light-56.png" alt="" width="24" height="24">
+          </picture>
           <span class="site-footer__name">Cirruscope</span>
         </div>
         <p class="site-footer__tagline">A Nextcloud experience that feels at home on macOS.</p>
