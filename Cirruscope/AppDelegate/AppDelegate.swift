@@ -172,14 +172,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// `requireSignIn()` discards the rejected credentials and returns the app to the sign-in screen.
+    /// `requireSignIn()` discards the rejected credentials, alerts the user, and returns the app to the sign-in screen.
     ///
-    /// `presentInitialWindow(forLaunch:)` calls it when validation reports the stored app password was revoked, and the `serverCredentialsRejected` observer calls it when `NotificationMonitor`'s event stream detects the same during a session. It stops the monitor, clears the keychain, closes any web windows left on the now-unusable server, and presents `ServerAddressWindowController`.
-    private func requireSignIn() {
+    /// `presentInitialWindow(forLaunch:)` calls it when validation reports the stored app password was revoked, the `serverCredentialsRejected` observer calls it when `NotificationMonitor`'s event stream detects the same during a session, and `WebViewController+WKNavigationDelegate` calls it when a silent retry of the server's login page with the stored app password lands back on the login page a second time. In every case the app is signing the user out on its own initiative rather than because the user asked to, so — unlike `logOut()` — it shows an alert explaining why before presenting the sign-in screen. It stops the monitor, clears the keychain, closes any web windows left on the now-unusable server, and presents `ServerAddressWindowController`. It does not attempt to revoke the app password: the server has already rejected it, so revoking it again would be pointless.
+    func requireSignIn() {
         logger.notice("Credentials rejected; clearing keychain and requiring sign-in")
         NotificationMonitor.shared.stop()
         Keychain.clearAll()
         closeWebViewWindows()
+
+        presentAlert(
+            title: String(localized: "Signed Out", comment: "Alert title shown when the app signs the user out on its own because the server rejected the stored credentials."),
+            message: String(localized: "Your Nextcloud credentials are no longer valid, so Cirruscope signed you out. Sign in again to continue.", comment: "Alert message shown when the app signs the user out because the server rejected the stored credentials.")
+        )
+
         presentWindow(withIdentifier: "ServerAddressWindowController")
     }
 

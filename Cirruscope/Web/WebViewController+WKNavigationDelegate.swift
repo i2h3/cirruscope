@@ -5,7 +5,7 @@ import AppKit
 import os
 import WebKit
 
-/// `WebViewController`'s conformance to `WKNavigationDelegate` confines the embedded `WKWebView`'s main frame to the configured Nextcloud server, hands off any main-frame navigation that targets a different host to the user's default browser via `NSWorkspace`, turns responses the web view cannot display or that arrive as attachments into downloads, reveals the storyboard-hidden web view once its initial page load has completed, and treats the web view landing on the server's own logout or login page as an app-level logout, so the app never keeps behaving as signed in once the web session it was mirroring is gone.
+/// `WebViewController`'s conformance to `WKNavigationDelegate` confines the embedded `WKWebView`'s main frame to the configured Nextcloud server, hands off any main-frame navigation that targets a different host to the user's default browser via `NSWorkspace`, turns responses the web view cannot display or that arrive as attachments into downloads, reveals the storyboard-hidden web view once its initial page load has completed, treats the web view navigating to the server's own logout link as an app-level logout, and silently retries with the stored app password when the web view is instead redirected to the server's login page, since that only means the browser session's cookie expired, not that the app's own stored credentials are invalid.
 ///
 /// Any navigation that becomes a download is handed to `DownloadManager.shared`, which takes over as the transfer's delegate so it continues even if this web window closes.
 /// Every method here logs its entry and each outcome at debug level so the navigation behaviour of a specific window — identified by the appended `logID` — can be reconstructed from a log capture when tracing misbehaviour.
@@ -48,19 +48,53 @@ extension WebViewController: WKNavigationDelegate {
             return
         }
 
-        // The web view's browser session and the app's own stored Login Flow v2 credentials are independent: Nextcloud's
-        // logout invalidates only the current browser session's token, and landing on the login page (from session
-        // expiry, an admin revoking the session, or the logout link itself) means the browser session is gone either
-        // way. Catch both so the app never keeps behaving as signed in once that's true. The URL always carries a
-        // per-request CSRF token, so only the last path component can be matched, not the full URL.
+        // Nextcloud's own "Log out" link always navigates to a URL whose last path component is "logout" (the URL
+        // also carries a per-request CSRF token, so only the last path component can be matched, not the full URL).
+        // That is an unambiguous, explicit sign-out, so it is still treated as an app-level logout too.
         if let url = navigationAction.request.url,
            let host = url.host,
            let serverHost = AccountStore.shared.serverAddress?.host,
            host.caseInsensitiveCompare(serverHost) == .orderedSame,
-           ["logout", "login"].contains(url.lastPathComponent.lowercased())
+           url.lastPathComponent.lowercased() == "logout"
         {
-            logger.notice("Navigation action targets the configured server's own \(url.lastPathComponent) page; logging out at the app level too and cancelling the navigation (WebViewController \(self.logID))")
+            logger.notice("Navigation action targets the configured server's own logout page; logging out at the app level too and cancelling the navigation (WebViewController \(self.logID))")
             (NSApp.delegate as? AppDelegate)?.logOut()
+            decisionHandler(.cancel)
+            return
+        }
+
+        // Landing on the login page by itself is NOT treated as a logout: the web view's browser-session cookie and
+        // the app's own stored Login Flow v2 app password are independent, and the browser session alone expires
+        // routinely — e.g. Nextcloud redirects an already-authenticated request to `/login?redirect_url=...`
+        // whenever that cookie has lapsed, which has nothing to do with whether the stored app password used for
+        // the app's own background REST calls is still valid. So instead of forcing the user to sign in again, the
+        // originally-requested page (decoded from `redirect_url`, or the server address when there is none) is
+        // silently reloaded with that stored app password attached, the same way the initial page load already
+        // signs the web view in with no visible login step. Only if that retry itself lands back on the login page
+        // — recorded via `hasRetriedLoginRedirect` — is the stored app password treated as genuinely rejected, at
+        // which point `AppDelegate.requireSignIn()` takes over: the softer sign-out that, unlike `logOut()`, does
+        // not try to revoke an already-invalid credential and alerts the user why they were signed out.
+        if let url = navigationAction.request.url,
+           let host = url.host,
+           let serverHost = AccountStore.shared.serverAddress?.host,
+           host.caseInsensitiveCompare(serverHost) == .orderedSame,
+           url.lastPathComponent.lowercased() == "login"
+        {
+            guard hasRetriedLoginRedirect == false else {
+                logger.notice("Silently retrying the login page with the stored app password already failed once; the app password appears to be rejected, so requiring sign-in (WebViewController \(self.logID))")
+                (NSApp.delegate as? AppDelegate)?.requireSignIn()
+                decisionHandler(.cancel)
+                return
+            }
+
+            hasRetriedLoginRedirect = true
+            let target = redirectTarget(from: url) ?? AccountStore.shared.serverAddress
+            logger.notice("Navigation action targets the configured server's own login page; retrying \(target?.absoluteString ?? "no URL") with the stored app password instead of prompting the user and cancelling the navigation (WebViewController \(self.logID))")
+
+            if let target {
+                webView.load(authenticatedRequest(for: target))
+            }
+
             decisionHandler(.cancel)
             return
         }
@@ -78,6 +112,19 @@ extension WebViewController: WKNavigationDelegate {
         NSWorkspace.shared.open(url)
         logger.debug("Navigation action targets external host \(host); opened it in the system browser and returning .cancel (WebViewController \(self.logID))")
         decisionHandler(.cancel)
+    }
+
+    /// `redirectTarget(from:)` decodes the `redirect_url` query parameter Nextcloud attaches to its login page — the page the user was actually trying to reach before the browser session's cookie expired — resolved against the configured server address, or `nil` when the login URL carries no such parameter.
+    ///
+    /// `webView(_:decidePolicyFor:decisionHandler:)` uses this to know what to silently reload with the stored app password once the login page's redirect is intercepted, falling back to the server address itself when this returns `nil`.
+    private func redirectTarget(from loginURL: URL) -> URL? {
+        guard let components = URLComponents(url: loginURL, resolvingAgainstBaseURL: false),
+              let redirectPath = components.queryItems?.first(where: { $0.name == "redirect_url" })?.value
+        else {
+            return nil
+        }
+
+        return URL(string: redirectPath, relativeTo: AccountStore.shared.serverAddress)?.absoluteURL
     }
 
     @objc(webView:decidePolicyForNavigationResponse:decisionHandler:)
@@ -155,6 +202,10 @@ extension WebViewController: WKNavigationDelegate {
 
     func webView(_: WKWebView, didFinish _: WKNavigation!) {
         logger.debug("Navigation finished; revealing web view (WebViewController \(self.logID))")
+
+        // A successful load means any silent login-redirect retry (see `decidePolicyFor navigationAction`) worked,
+        // or none was needed; clear the flag so a later, unrelated session expiry still gets its own retry attempt.
+        hasRetriedLoginRedirect = false
 
         // Re-save the window's restorable state after every navigation so a relaunch reopens the page now shown,
         // not the one the window started on. `WebWindow.encodeRestorableState(with:)` reads the current URL.
