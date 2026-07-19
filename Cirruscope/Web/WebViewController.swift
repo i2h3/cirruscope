@@ -90,6 +90,11 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     /// `startInitialLoadIfNeeded()` seeds it with the initial target, `handleNavigationFailure(_:)` updates it to the URL that actually failed, and `retryLoad(_:)` reloads it — rather than calling `WKWebView.reload()`, which does nothing after a provisional failure that never committed a page.
     private var pendingRetryURL: URL?
 
+    /// `hasRetriedLoginRedirect` is `true` once `WebViewController+WKNavigationDelegate` has silently re-issued a navigation redirected to the server's login page with the stored app password, so a second such redirect is recognized as the credential itself being rejected rather than an ordinary expired browser-session cookie.
+    ///
+    /// `webView(_:decidePolicyFor:decisionHandler:)` sets it before retrying and consults it to decide whether to retry again or fall back to `AppDelegate.requireSignIn()`; `webView(_:didFinish:)` clears it on every successful load so a later, unrelated session expiry still gets its own retry attempt.
+    var hasRetriedLoginRedirect = false
+
     /// `webWindowController` is the `WebWindowController` hosting this controller, from which the `targetURL` to load is read once the view is in its window.
     private var webWindowController: WebWindowController? {
         view.window?.windowController as? WebWindowController
@@ -123,7 +128,8 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     /// `authenticatedRequest(for:)` builds the request that loads `url`, attaching HTTP Basic authentication derived from the `Credentials` stored for the connected server address when they are available.
     ///
     /// Nextcloud accepts the app password as Basic authentication and establishes a web session from it, so the embedded web view is signed in without a separate in-page login. When no credentials are stored the request is unauthenticated and the server presents its normal login page.
-    private func authenticatedRequest(for url: URL) -> URLRequest {
+    /// Not `private`: `WebViewController+WKNavigationDelegate` also calls this, to silently retry with the stored app password when the web view is redirected to the login page mid-session rather than at the initial load.
+    func authenticatedRequest(for url: URL) -> URLRequest {
         var request = URLRequest(url: url)
 
         if let serverAddress = AccountStore.shared.serverAddress, let credentials = Keychain.credentials(for: serverAddress) {

@@ -42,6 +42,7 @@ You are an experienced software engineer specialized on native apps for macOS wr
 - Documentation comments should have one empty line at their top and their bottom each.
 - Documentation comments must not wrap at a fixed column count but when a sentence is finished. Line lengths do not matter in documentation comments. A full sentence should always be written into a single line.
 - Never wrap arguments in func declarations or calls.
+- Instead of declaring multiple values in a single guard-let statement, write one dedicated guard-let statement per value.
 - Always run `swiftformat .` in the project root directory after applying changes.
 
 ## Building and Signing
