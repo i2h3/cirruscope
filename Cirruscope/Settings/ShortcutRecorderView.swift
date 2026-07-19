@@ -44,6 +44,11 @@ class ShortcutRecorderView: NSTableCellView {
     /// It is only ever assigned on the main actor while recording starts and stops, and read again in `deinit` once no other reference remains, so `nonisolated(unsafe)` lets the `nonisolated` deinit tear it down without a data race.
     private nonisolated(unsafe) var eventMonitor: Any?
 
+    /// `conflictRevertTask` reverts the display from a rejected-shortcut message back to "Press now" a short while after `showConflict(named:)` shows it.
+    ///
+    /// `showConflict(named:)` replaces any still-pending one before scheduling a new one; `stopRecording()` and `deinit` cancel it so it never fires once the row stops recording or is reused by the table view. It is `nonisolated(unsafe)` for the same reason as `eventMonitor`: `deinit` is not main-actor-isolated, so it needs unsynchronized access to cancel this on teardown.
+    private nonisolated(unsafe) var conflictRevertTask: Task<Void, Never>?
+
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         configure()
@@ -58,6 +63,8 @@ class ShortcutRecorderView: NSTableCellView {
         if let eventMonitor {
             NSEvent.removeMonitor(eventMonitor)
         }
+
+        conflictRevertTask?.cancel()
     }
 
     private func configure() {
@@ -189,6 +196,8 @@ class ShortcutRecorderView: NSTableCellView {
         }
 
         eventMonitor = nil
+        conflictRevertTask?.cancel()
+        conflictRevertTask = nil
     }
 
     /// `endRecording()` resigns first-responder status so recording stops and the focus ring disappears, called once a combination has been captured or recording has been cancelled.
@@ -233,9 +242,25 @@ class ShortcutRecorderView: NSTableCellView {
             return
         }
 
-        endRecording()
+        // Preserve `characters`' case as produced (do not lowercase it): AppKit's own key-equivalent matching
+        // derives whether Shift is required entirely from the character itself — an uppercase letter (or, for
+        // symbols, whichever character Shift actually produces) — not from an independent modifier bit, so
+        // discarding the case here would make a Shift-inclusive shortcut indistinguishable from its bare form
+        // once applied to a real `NSMenuItem` (confirmed against real `NSMenu.performKeyEquivalent(with:)`
+        // behavior: a lowercase keyEquivalent with an explicit `.shift` bit in `keyEquivalentModifierMask` matches
+        // nothing at all, while an uppercase one with no such bit correctly requires Shift).
+        let recorded = AppShortcutTransferObject(keyEquivalent: characters, modifierFlags: modifiers.rawValue)
 
-        let recorded = AppShortcutTransferObject(keyEquivalent: characters.lowercased(), modifierFlags: modifiers.rawValue)
+        // Reject a shortcut that already appears elsewhere in the menu bar (e.g. ⌃⌘S for "Show/Hide Sidebar") —
+        // recording it here would let it silently shadow the fixed item once AppKit's key-equivalent lookup falls
+        // through to this server app's always-enabled menu item. Keep recording so the user can try another combination.
+        if let reservedName = AppDelegate.reservedShortcutName(for: recorded) {
+            logger.debug("Ignored reserved shortcut")
+            showConflict(named: reservedName)
+            return
+        }
+
+        endRecording()
         shortcut = recorded
         onChange?(recorded)
     }
@@ -249,9 +274,37 @@ class ShortcutRecorderView: NSTableCellView {
 
     // MARK: - Display
 
+    /// `showConflict(named:)` briefly shows that the shortcut just pressed is already used by Cirruscope's `name` menu item, instead of silently ignoring the keypress.
+    ///
+    /// `handle(keyCode:modifierFlags:charactersIgnoringModifiers:)` calls it when a recorded combination matches `AppDelegate.reservedShortcutName(for:)`. It stays non-modal — no `NSAlert` — reusing `displayField`'s existing text/color channel plus the standard system beep for rejected input, and leaves recording active so the user can immediately try another combination. `conflictRevertTask` restores the normal "Press now" prompt shortly after; if recording ends first (a valid shortcut recorded, Escape, Delete, or clicking away) or a fresh conflict replaces it, `updateDisplay()` itself clears the tooltip this set, so it never lingers regardless of which happens first.
+    private func showConflict(named name: String) {
+        NSSound.beep()
+
+        displayField.stringValue = String(localized: "Already Used", comment: "Shown briefly in the shortcut recorder when the just-pressed combination is already used by one of Cirruscope's own menu items.")
+        displayField.textColor = backgroundStyle == .emphasized ? .alternateSelectedControlTextColor : .systemRed
+        displayField.toolTip = String(localized: "“\(name)” already uses this shortcut.", comment: "Tooltip on the shortcut recorder explaining which of Cirruscope's own menu items the just-rejected shortcut is already used by.")
+
+        conflictRevertTask?.cancel()
+        conflictRevertTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(1.5))
+
+            guard Task.isCancelled == false else {
+                return
+            }
+
+            self?.updateDisplay()
+        }
+    }
+
     private func updateDisplay() {
+        // Retire any conflict tooltip `showConflict(named:)` left behind: recording can end — a valid shortcut
+        // recorded, Escape, Delete, or clicking away — before its 1.5s revert task fires, cancelling that task
+        // without ever clearing the tooltip itself. Every such path changes `isRecording` or `shortcut`, both of
+        // which call this, so clearing it here unconditionally is the one place that reliably catches all of them.
+        displayField.toolTip = nil
+
         if isRecording {
-            displayField.stringValue = "Press now"
+            displayField.stringValue = String(localized: "Press now", comment: "Shown in the shortcut recorder while it is waiting to capture the next key combination.")
             displayField.textColor = backgroundStyle == .emphasized ? .alternateSelectedControlTextColor : .controlAccentColor
             logger.debug("Updated display for recording")
         } else if let shortcut {
@@ -259,7 +312,7 @@ class ShortcutRecorderView: NSTableCellView {
             displayField.textColor = backgroundStyle == .emphasized ? .alternateSelectedControlTextColor : .labelColor
             logger.debug("Updated display for shortcut presentation")
         } else {
-            displayField.stringValue = "None"
+            displayField.stringValue = String(localized: "None", comment: "Shown in the shortcut recorder when no shortcut is assigned.")
             displayField.textColor = backgroundStyle == .emphasized ? .alternateSelectedControlTextColor : .secondaryLabelColor
             logger.debug("Updated display for empty presentation")
         }

@@ -1,6 +1,75 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "“%@” already uses this shortcut." : {
+      "comment" : "Tooltip on the shortcut recorder explaining which of Cirruscope's own menu items the just-rejected shortcut is already used by.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” verwendet diese Tastenkombination bereits."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” ya usa este atajo de teclado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” utilise déjà ce raccourci clavier."
+          }
+        }
+      }
+    },
+    "“%@” is not a valid URL. Please check the address and try again." : {
+      "comment" : "Alert message shown when the entered server address is not a valid URL; the placeholder is the address the user typed.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” ist keine gültige URL. Bitte überprüfen Sie die Adresse und versuchen Sie es erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” no es una URL válida. Comprueba la dirección y vuelve a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” n'est pas une URL valide. Veuillez vérifier l'adresse et réessayer."
+          }
+        }
+      }
+    },
+    "Already Used" : {
+      "comment" : "Shown briefly in the shortcut recorder when the just-pressed combination is already used by one of Cirruscope's own menu items.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bereits belegt"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ya en uso"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Déjà utilisé"
+          }
+        }
+      }
+    },
     "Cancelled" : {
       "comment" : "Status label for a download the user cancelled.",
       "localizations" : {
@@ -162,6 +231,29 @@
         }
       }
     },
+    "Hide Sidebar" : {
+      "comment" : "Title of the \"Show/Hide Sidebar\" menu item while Nextcloud's sidebar is currently shown.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seitenleiste ausblenden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar barra lateral"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer la barre latérale"
+          }
+        }
+      }
+    },
     "Invalid Server Address" : {
       "comment" : "Alert title shown when the entered server address is not a valid URL.",
       "localizations" : {
@@ -208,6 +300,52 @@
         }
       }
     },
+    "None" : {
+      "comment" : "Shown in the shortcut recorder when no shortcut is assigned.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ninguno"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun"
+          }
+        }
+      }
+    },
+    "Press now" : {
+      "comment" : "Shown in the shortcut recorder while it is waiting to capture the next key combination.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jetzt drücken"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pulsa ahora"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appuyez maintenant"
+          }
+        }
+      }
+    },
     "Server unreachable" : {
       "comment" : "Headline shown in the web window when a page load failed.",
       "localizations" : {
@@ -227,6 +365,52 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Serveur injoignable"
+          }
+        }
+      }
+    },
+    "Show Sidebar" : {
+      "comment" : "Title of the \"Show/Hide Sidebar\" menu item while Nextcloud's sidebar is currently hidden.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seitenleiste einblenden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar barra lateral"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher la barre latérale"
+          }
+        }
+      }
+    },
+    "Signed Out" : {
+      "comment" : "Alert title shown when the app signs the user out on its own because the server rejected the stored credentials.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abgemeldet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sesión cerrada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Déconnecté"
           }
         }
       }
@@ -415,25 +599,25 @@
         }
       }
     },
-    "“%@” is not a valid URL. Please check the address and try again." : {
-      "comment" : "Alert message shown when the entered server address is not a valid URL; the placeholder is the address the user typed.",
+    "Your Nextcloud credentials are no longer valid, so Cirruscope signed you out. Sign in again to continue." : {
+      "comment" : "Alert message shown when the app signs the user out because the server rejected the stored credentials.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "“%@” ist keine gültige URL. Bitte überprüfen Sie die Adresse und versuchen Sie es erneut."
+            "value" : "Ihre Nextcloud-Anmeldedaten sind nicht mehr gültig, daher hat Cirruscope Sie abgemeldet. Melden Sie sich erneut an, um fortzufahren."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "“%@” no es una URL válida. Comprueba la dirección y vuelve a intentarlo."
+            "value" : "Tus credenciales de Nextcloud ya no son válidas, por lo que Cirruscope cerró tu sesión. Inicia sesión de nuevo para continuar."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "“%@” n'est pas une URL valide. Veuillez vérifier l'adresse et réessayer."
+            "value" : "Vos identifiants Nextcloud ne sont plus valides, Cirruscope vous a donc déconnecté. Connectez-vous à nouveau pour continuer."
           }
         }
       }
