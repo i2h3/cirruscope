@@ -228,13 +228,14 @@ final class AccountStore {
 
     // MARK: - App Shortcuts
 
-    /// `shortcut(forAppID:)` is the user's keyboard shortcut for the app with `appID`, or `nil` when none is assigned or the app is unknown.
+    /// `shortcut(forAppID:)` is the user's keyboard shortcut for the app with `appID`, or `nil` when none is assigned, the app is unknown, or the stored shortcut collides with one of Cirruscope's own reserved shortcuts (see `AppDelegate.reservedShortcutName(for:)`) — which can happen if it was recorded before that check existed, since `ShortcutRecorderView` now refuses to record one going forward.
     func shortcut(forAppID appID: String) -> AppShortcutTransferObject? {
         guard let stored = currentAccount(createIfNeeded: false)?.apps.first(where: { $0.appID == appID })?.shortcut else {
             return nil
         }
 
-        return AppShortcutTransferObject(keyEquivalent: stored.keyEquivalent, modifierFlags: stored.modifierFlags)
+        let shortcut = AppShortcutTransferObject(keyEquivalent: stored.keyEquivalent, modifierFlags: stored.modifierFlags)
+        return AppDelegate.reservedShortcutName(for: shortcut) == nil ? shortcut : nil
     }
 
     /// `setShortcut(_:forAppID:)` assigns, replaces, or (when `shortcut` is `nil`) clears the keyboard shortcut of the app with `appID`, then notifies observers so the menus update.
