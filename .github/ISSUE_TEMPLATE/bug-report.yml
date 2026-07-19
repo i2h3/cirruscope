@@ -77,3 +77,11 @@ body:
       placeholder: What happened instead?
     validations:
       required: true
+  - type: textarea
+    id: remarks
+    attributes:
+      label: Further remarks
+      description: Add any extra context that does not fit the fields above.
+      placeholder: Optional additional details
+    validations:
+      required: false
