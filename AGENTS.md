@@ -31,6 +31,7 @@ You are an experienced software engineer specialized on native apps for macOS wr
 - `Frameworks/` contains the bundled frameworks the app links against.
 - `Products/` contains the built app bundle.
 - `.github/ISSUE_TEMPLATE/` contains the GitHub issue forms for feature requests, bug reports, and the blank issue entry point.
+- `.github/workflows/` contains the GitHub Actions workflows used for DCO checks, formatting, website checks, REUSE compliance, and CI builds.
 
 ## Code Style
 

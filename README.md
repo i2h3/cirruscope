@@ -8,6 +8,7 @@ SPDX-License-Identifier: MIT
 [![SwiftFormat](https://github.com/i2h3/cirruscope/actions/workflows/swiftformat.yml/badge.svg)](https://github.com/i2h3/cirruscope/actions/workflows/swiftformat.yml)
 [![REUSE](https://github.com/i2h3/cirruscope/actions/workflows/reuse.yml/badge.svg)](https://github.com/i2h3/cirruscope/actions/workflows/reuse.yml)
 [![DCO](https://github.com/i2h3/cirruscope/actions/workflows/dco.yml/badge.svg)](https://github.com/i2h3/cirruscope/actions/workflows/dco.yml)
+[![Build](https://github.com/i2h3/cirruscope/actions/workflows/build.yml/badge.svg)](https://github.com/i2h3/cirruscope/actions/workflows/build.yml)
 [![Website](https://github.com/i2h3/cirruscope/actions/workflows/website.yml/badge.svg)](https://github.com/i2h3/cirruscope/actions/workflows/website.yml)
 
 An app-like Nextcloud experience on macOS.
