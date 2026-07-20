@@ -45,6 +45,7 @@ You are an experienced software engineer specialized on native apps for macOS wr
 - Never wrap arguments in func declarations or calls.
 - Instead of declaring multiple values in a single guard-let statement, write one dedicated guard-let statement per value.
 - Always run `swiftformat .` in the project root directory after applying changes.
+- Do not place business or user interface logic into data transfer objects.
 
 ## Building and Signing
 
