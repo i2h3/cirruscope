@@ -18,11 +18,4 @@ struct ServerAppTransferObject: Codable, Identifiable, Sendable {
 
     /// `name` is the localized display name of the app, used as its menu item label.
     let name: String
-
-    init(id: String, order: Int, href: String, name: String) {
-        self.id = id
-        self.order = order
-        self.href = href
-        self.name = name
-    }
 }
