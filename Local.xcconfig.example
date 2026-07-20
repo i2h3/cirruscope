@@ -1,0 +1,15 @@
+// SPDX-FileCopyrightText: 2026 Iva Horn
+// SPDX-License-Identifier: MIT
+
+// Copy this file to Local.xcconfig (gitignored, next to this one) and fill in your own team to build and run
+// Cirruscope on-device with a real "Apple Development" signing identity instead of the project's ad-hoc default.
+// Cirruscope.xcconfig includes Local.xcconfig last, so whatever you set here overrides its ad-hoc defaults.
+
+CODE_SIGN_IDENTITY = Apple Development
+CODE_SIGN_STYLE = Manual
+DEVELOPMENT_TEAM = <your team ID>
+PROVISIONING_PROFILE_SPECIFIER = Cirruscope
+
+// The App Group and Keychain-sharing entitlements above need a real certificate to sign, so the default/CI build
+// carries none at all; set this to restore them for a real, fully-functional local build.
+CODE_SIGN_ENTITLEMENTS = Cirruscope/Cirruscope.entitlements

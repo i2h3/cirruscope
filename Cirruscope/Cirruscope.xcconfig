@@ -5,6 +5,3 @@
 // https://developer.apple.com/documentation/xcode/adding-a-build-configuration-file-to-your-project
 
 #include "../Cirruscope.xcconfig"
-
-CODE_SIGN_ENTITLEMENTS = Cirruscope/Cirruscope.entitlements
-PROVISIONING_PROFILE_SPECIFIER = Cirruscope
