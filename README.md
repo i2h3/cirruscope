@@ -3,6 +3,8 @@ SPDX-FileCopyrightText: 2026 Iva Horn
 SPDX-License-Identifier: MIT
 -->
 
+<img src="Website/assets/og-image.png" alt="Social Preview" />
+
 # Cirruscope
 
 [![SwiftFormat](https://github.com/i2h3/cirruscope/actions/workflows/swiftformat.yml/badge.svg)](https://github.com/i2h3/cirruscope/actions/workflows/swiftformat.yml)
@@ -13,13 +15,11 @@ SPDX-License-Identifier: MIT
 
 An app-like Nextcloud experience on macOS.
 This elevates your Nextcloud user interface to the next level by leveraging native platform features and WebKit.
-
-This document is written for developers.
-For a more user-friendly introduction, see [the official website](https://cirruscope.app).
+**This document is written for developers. For a more general introduction, see [the official website](https://cirruscope.app).**
 
 ## Project Status
 
-This is still under development but closing in fast on the initial release of version 1.0.0.
+The app is in the App Store review process.
 
 ## Building
 
