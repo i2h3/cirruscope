@@ -47,6 +47,10 @@ If you used an AI tool (e.g. GitHub Copilot, ChatGPT, Claude, or similar) to hel
 
 Disclosure doesn't lower the bar: you must be able to explain every part of your contribution — what it does, why it's written the way it is, and any trade-offs involved — in review, and you are personally accountable for it regardless of how it was produced. Do not open a pull request for code you have not reviewed and understood yourself. This doesn't replace the Developer Certificate of Origin above either: signing off a commit still certifies that you have the right to submit its content.
 
+## Local Code Signing
+
+The project builds ad-hoc by default (see [Cirruscope.xcconfig](./Cirruscope.xcconfig)), so a plain checkout builds with no Apple Developer account needed — this is also what CI uses. To run Cirruscope on-device with a real "Apple Development" identity instead, copy [Local.xcconfig.example](./Local.xcconfig.example) to `Local.xcconfig` (gitignored) next to it and fill in your own team; it overrides the ad-hoc defaults for your local builds only.
+
 ## Code Quality Checks
 
 - Run `swiftformat .` before committing; CI lints with `swiftformat --lint`.

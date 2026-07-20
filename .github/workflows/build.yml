@@ -27,5 +27,8 @@ jobs:
       - name: Show Xcode Version
         run: xcodebuild -version
 
+      - name: Resolve Dependencies
+        run: xcodebuild -resolvePackageDependencies -project Cirruscope.xcodeproj
+
       - name: Build
-        run: xcodebuild -project Cirruscope.xcodeproj -target Cirruscope -configuration Release -destination 'platform=macOS' build
+        run: xcodebuild -project Cirruscope.xcodeproj -scheme Cirruscope -configuration Release -destination 'platform=macOS' build
