@@ -51,6 +51,7 @@ Disclosure doesn't lower the bar: you must be able to explain every part of your
 
 - Run `swiftformat .` before committing; CI lints with `swiftformat --lint`.
 - New files need SPDX copyright/license headers; run `reuse lint` to confirm compliance.
+- Any claimed performance improvement must be backed by evidence: include the benchmark, profiling data, or test results that show the before/after impact and explain the scenario it applies to.
 - See [AGENTS.md](./AGENTS.md) for the full set of project conventions followed by human and AI contributors alike.
 
 ## Contribution Workflow
