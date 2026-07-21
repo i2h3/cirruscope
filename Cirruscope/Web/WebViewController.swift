@@ -250,6 +250,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     /// `viewDidLoad()` calls it. The image is the cached copy of the theming background, so it relies on `AccountStore.persist(theming:)` having already downloaded it via `AssetCache`, which `ServerConnection.validate(_:)` awaits before the web window is presented.
     private func updateBackgroundImage() {
         backgroundImageView.image = cachedBackgroundImage()
+        backgroundImageView.needsDisplay = true
     }
 
     /// `cachedBackgroundImage()` returns the cached theming background image, or `nil` when the server publishes a plain color, the background is not an `http`/`https` image URL, or no cached copy exists yet.
