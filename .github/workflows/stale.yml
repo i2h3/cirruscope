@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2026 Iva Horn
+# SPDX-License-Identifier: MIT
+
+name: Stale
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    name: Mark and Close Stale Issues and Pull Requests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close Stale Issues and Pull Requests
+        uses: actions/stale@v10
+        with:
+          days-before-issue-stale: 7
+          days-before-issue-close: 7
+          only-issue-labels: question
+          stale-issue-label: stale
+          stale-issue-message: >-
+            This issue has been automatically marked as stale because it has had no activity for 7 days.
+            It will be closed in 7 days unless the stale label is removed or the issue is updated.
+          close-issue-message: >-
+            This issue has been automatically closed because it has been stale for 7 days with no further activity.
+
+          days-before-pr-stale: 7
+          days-before-pr-close: 7
+          stale-pr-label: stale
+          stale-pr-message: >-
+            This pull request has been automatically marked as stale because it has had no activity for 7 days.
+            It will be closed in 7 days unless the stale label is removed or the pull request is updated.
+          close-pr-message: >-
+            This pull request has been automatically closed because it has been stale for 7 days with no further activity.
