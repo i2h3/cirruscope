@@ -5,7 +5,7 @@ import AppKit
 
 /// `BackgroundImageView` is an `NSImageView` that renders its image scaled to fill its bounds and center-cropped, matching the CSS `background-size: cover` of Nextcloud's own background rather than the aspect-fit scaling `NSImageView` offers.
 ///
-/// `WebViewController` uses it for the themed backdrop shown behind the web view during the initial page load; with no image assigned it draws nothing, letting the window background show through.
+/// `WebViewController` uses it for the themed backdrop shown behind the web view during the initial page load; with no image assigned it can draw a solid fill from the theme background color rather than always drawing nothing.
 class BackgroundImageView: NSImageView {
     override func draw(_: NSRect) {
         if let image, image.size.width > 0, image.size.height > 0 {
@@ -16,7 +16,7 @@ class BackgroundImageView: NSImageView {
             image.draw(in: NSRect(origin: origin, size: size))
         } else if let hex = AccountStore.shared.themeBackground, let color = NSColor(hex: hex) {
             color.setFill()
-            bounds.fill()
+            NSRectFill(bounds)
         }
     }
 
@@ -34,7 +34,8 @@ private extension NSColor {
         var rgb: UInt64 = 0
         let length = hexSanitized.count
 
-        guard Scanner(string: hexSanitized).scanHexInt64(&rgb) else {
+        let scanner = Scanner(string: hexSanitized)
+        guard scanner.scanHexInt64(&rgb), scanner.isAtEnd else {
             return nil
         }
 
