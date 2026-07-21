@@ -6,6 +6,13 @@ description: Report a bug or unexpected behavior in Cirruscope.
 labels:
   - bug
 body:
+  - type: checkboxes
+    id: not-reproducible-in-safari
+    attributes:
+      label: Confirmation
+      options:
+        - label: I confirmed that the problem does not occur when opening the Nextcloud server web user interface directly in Safari.
+          required: true
   - type: textarea
     id: server-version
     attributes:
