@@ -5,11 +5,14 @@ SPDX-License-Identifier: MIT
 
 # Contributing to Cirruscope
 
-Thanks for your interest in contributing. This document is written for developers, in the same spirit as [README.md](./README.md).
+Thanks for your interest in contributing.
+This document is written for developers, in the same spirit as [README.md](./README.md).
+For a more general introduction, see [the official website](https://cirruscope.app).
 
 ## Developer Certificate of Origin
 
-Every contribution to Cirruscope must be signed off under the [Developer Certificate of Origin](https://developercertificate.org/) (DCO). By signing off a commit, you certify that you wrote it (or otherwise have the right to submit it) under this project's license.
+Every contribution to Cirruscope must be signed off under the [Developer Certificate of Origin](https://developercertificate.org/) (DCO).
+By signing off a commit, you certify that you wrote it (or otherwise have the right to submit it) under this project's license.
 
 Add a `Signed-off-by: Your Name <your@email.com>` trailer to every commit message, using the name and email address you want associated with the contribution:
 
@@ -62,8 +65,8 @@ The project builds ad-hoc by default (see [Cirruscope.xcconfig](./Cirruscope.xcc
 
 1. Fork the repository or create a branch.
 2. Open a pull request against `develop`.
-3. Make sure CI (SwiftFormat, REUSE, DCO) is green before requesting review.
+3. All CI actions must pass successfully before a pull request can be accepted.
 
 ## License
 
-By contributing to Cirruscope, you agree that your contributions will be licensed under this project's [LICENSE](./LICENSE) (MIT).
+By contributing to Cirruscope, you agree that your contributions will be licensed under this project's [LICENSE](./LICENSE).
