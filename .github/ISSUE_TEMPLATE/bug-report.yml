@@ -9,9 +9,15 @@ body:
   - type: checkboxes
     id: not-reproducible-in-safari
     attributes:
-      label: Confirmation
+      label: Reproducibility in Safari
+      description: >-
+        Cirruscope is a wrapper around your Nextcloud server's own web front-end.
+        Bugs in the Files, Calendar, Contacts, Talk, Mail, Photos, Deck, Notes, or Tasks web interface itself (rendering glitches, broken buttons, missing features, incorrect behavior, and the like) come from the Nextcloud server or its apps, not from Cirruscope, and cannot be fixed here. 
+        Before filing a report, please reproduce the problem in Safari against the same server.
+        If it also occurs there, report it to the [Nextcloud server](https://github.com/nextcloud/server/issues) or the relevant [Nextcloud app](https://github.com/nextcloud) repository instead.
+        Only continue here if the problem happens in Cirruscope but not in Safari.
       options:
-        - label: I confirmed that the problem does not occur when opening the Nextcloud server web user interface directly in Safari.
+        - label: I verified that the problem is **not reproducible** in the Nextcloud server web user interface in Safari.
           required: true
   - type: textarea
     id: server-version
