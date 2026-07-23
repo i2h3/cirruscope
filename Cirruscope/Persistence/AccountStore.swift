@@ -189,6 +189,17 @@ final class AccountStore {
             .map { ServerAppTransferObject(id: $0.appID, order: $0.order, href: $0.href, name: $0.name) }
     }
 
+    /// `serverApp(forID:)` is the connected server's app with `appID` as a value snapshot, or `nil` when the account offers no such app.
+    ///
+    /// It is the single-app counterpart of `serverApps`, added for the App Intents layer: `ServerAppEntityQuery.entities(for:)` and `OpenServerAppIntent.perform()` resolve a donated or saved app id back to a `ServerAppTransferObject`. Like every other read here it returns a value-type DTO, never the managed `ServerApp`, and reuses the same `currentAccount` cache and `first(where:)` lookup as `shortcut(forAppID:)`.
+    func serverApp(forID appID: String) -> ServerAppTransferObject? {
+        guard let app = currentAccount(createIfNeeded: false)?.apps.first(where: { $0.appID == appID }) else {
+            return nil
+        }
+
+        return ServerAppTransferObject(id: app.appID, order: app.order, href: app.href, name: app.name)
+    }
+
     /// `persist(navigationApps:)` upserts the server's navigation apps: existing rows are updated in place, new ones inserted, and ones the server no longer offers deleted — which cascades to their shortcuts.
     ///
     /// Matching by `appID` rather than replacing the list wholesale is what lets a user's keyboard shortcut survive an app-list refresh; a shortcut is pruned only when its app actually disappears. `ServerConnection.refreshNavigationApps(using:)` calls it after fetching the apps.

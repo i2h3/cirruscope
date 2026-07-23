@@ -1,0 +1,55 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Open ${applicationName} ${target}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Öffne ${applicationName} ${target}",
+              "Öffne ${target} in ${applicationName}",
+              "Öffne Nextcloud ${target} in ${applicationName}",
+              "Öffne eine Nextcloud-App in ${applicationName}"
+            ]
+          }
+        },
+        "en" : {
+          "stringSet" : {
+            "state" : "new",
+            "values" : [
+              "Open ${applicationName} ${target}",
+              "Open ${target} in ${applicationName}",
+              "Open Nextcloud ${target} in ${applicationName}",
+              "Open a Nextcloud app in ${applicationName}"
+            ]
+          }
+        },
+        "es" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Abrir ${applicationName} ${target}",
+              "Abrir ${target} en ${applicationName}",
+              "Abrir Nextcloud ${target} en ${applicationName}",
+              "Abrir una app de Nextcloud en ${applicationName}"
+            ]
+          }
+        },
+        "fr" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Ouvrir ${applicationName} ${target}",
+              "Ouvrir ${target} dans ${applicationName}",
+              "Ouvrir Nextcloud ${target} dans ${applicationName}",
+              "Ouvrir une app Nextcloud dans ${applicationName}"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
