@@ -13,6 +13,6 @@ enum SchemaV1: VersionedSchema {
     }
 
     static var models: [any PersistentModel.Type] {
-        [Account.self, ServerApp.self, AppShortcut.self]
+        [Account.self, ServerApp.self, KeyboardShortcut.self]
     }
 }
