@@ -144,15 +144,8 @@ struct NextcloudView: View {
                             Label("Profile", systemImage: "person.text.rectangle")
                         }
 
-                        // TODO: only show this button when user theming is enabled
                         Button {
-                            // TODO: navigate to "/settings/user/theming"
-                        } label: {
-                            Label("Appearance", systemImage: "accessibility")
-                        }
-
-                        Button {
-                            // TODO: navigate to "/settings/user"
+                            navigate(to: "/settings/user")
                         } label: {
                             Label("Settings", systemImage: "gear")
                         }
@@ -353,6 +346,24 @@ struct NextcloudView: View {
 
         guard let target = SameOriginURL(path: app.href, relativeTo: account.server) else {
             Self.logger.error("The path offered for server app \(app.id) does not stay on the connected server; refusing to open it")
+            return
+        }
+
+        page.load(authenticatedRequest(for: target.url))
+    }
+
+    ///
+    /// Load one of the connected server's own pages into the web view, named by the path it lives at.
+    ///
+    /// The path is one the app knows rather than one the server offered, and it is resolved through `SameOriginURL` all the same. `authenticatedRequest(for:)` attaches the app password to whatever it is given, so the rule that nothing receives that credential without first being proven to stay on the connected server is worth keeping unconditional rather than reasoned about per call site. A literal path only fails to resolve where the server address itself cannot be resolved against, which is why the refusal is logged without naming a culprit.
+    ///
+    private func navigate(to path: String) {
+        guard let account = store.account else {
+            return
+        }
+
+        guard let target = SameOriginURL(path: path, relativeTo: account.server) else {
+            Self.logger.error("The path \(path) does not resolve on the connected server; refusing to open it")
             return
         }
 
