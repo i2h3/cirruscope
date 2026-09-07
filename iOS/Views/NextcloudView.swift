@@ -31,6 +31,14 @@ struct NextcloudView: View {
     private var appNavigation: AppNavigationBridge
 
     ///
+    /// Carries what the loaded page reports about its notifications menu: which selector found it, and whether its panel is open.
+    ///
+    /// Nothing on screen is gated on it. It is here so a selector that no longer matches shows up in the log, and so a panel that has just closed can prompt a fresh reading of the unread count.
+    ///
+    @State
+    private var notificationsPanel: NotificationsPanelBridge
+
+    ///
     /// The page's own script store, kept so the document-start scripts can be re-registered with a fresh measurement rather than only ever seeded once.
     ///
     /// `WebPage.Configuration` is a struct the page copies at initialization, but this property of it is a class, so the copy and this reference are the same object and a script added through it still reaches the page.
@@ -56,22 +64,25 @@ struct NextcloudView: View {
     init() {
         var configuration = WebPage.Configuration()
         let appNavigation = AppNavigationBridge()
+        let notificationsPanel = NotificationsPanelBridge()
 
         // Completes the user agent into one Safari sends, so Nextcloud does not warn about an unrecognized browser.
         // It has to be set here for the same reason as the handler below, and stays set for the whole session: the
         // Cirruscope name the server associates a login with belongs to the sign-in request, not to this web view.
         configuration.applicationNameForUserAgent = SafariUserAgent.applicationName
 
-        // The handler has to be on the configuration before the page is built: `WebPage.Configuration` is a struct the
-        // page copies at initialization, so one registered afterwards would never reach it. User scripts are not
+        // The handlers have to be on the configuration before the page is built: `WebPage.Configuration` is a struct
+        // the page copies at initialization, so one registered afterwards would never reach it. User scripts are not
         // installed here at all — they are installed from the first measurement, which does not exist yet.
         configuration.userContentController.add(appNavigation, name: AppNavigationBridge.messageName)
+        configuration.userContentController.add(notificationsPanel, name: NotificationsPanelBridge.messageName)
 
         let page = WebPage(configuration: configuration)
         page.isInspectable = true
 
         _page = State(initialValue: page)
         _appNavigation = State(initialValue: appNavigation)
+        _notificationsPanel = State(initialValue: notificationsPanel)
         _userContentController = State(initialValue: configuration.userContentController)
     }
 
@@ -126,22 +137,14 @@ struct NextcloudView: View {
 
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
-                        // TODO: only show this button when there are unread notifications
-                        Button {
-                            // TODO: present scrollable list of unread notifications as a popover (check alternative of just simulating a tap on the hidden notifications button)
-                        } label: {
-                            Label("Notifications", systemImage: "bell.badge.fill")
-                                .symbolRenderingMode(.palette)
-                                .foregroundStyle(.red, .primary)
-                        }
+                        if store.unreadNotificationCount > 0 {
+                            Button {
+                                openNotificationsPanel()
+                            } label: {
+                                Label("Notifications", systemImage: "bell.badge.fill")
+                            }
 
-                        Divider()
-
-                        // TODO: only show this button when user profiles are enabled
-                        Button {
-                            // TODO: navigate to "/u/<user-id>"
-                        } label: {
-                            Label("Profile", systemImage: "person.text.rectangle")
+                            Divider()
                         }
 
                         Button {
@@ -160,11 +163,23 @@ struct NextcloudView: View {
                     } label: {
                         Label("Account", systemImage: "person.fill")
                     }
-                    .badge(3) // TODO: show total count only, if there are unread notifications.
+                    // `badge(_:)` draws nothing at all for a count of zero, so what this needs is the value itself
+                    // rather than a branch around it.
+                    .badge(store.unreadNotificationCount)
                 }
             }
             .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
+            .onChange(of: notificationsPanel.isOpen) { wasOpen, isOpen in
+                // A panel that has just closed is a panel notifications may just have been dismissed from. Nothing
+                // else would correct the count until the next time the app is brought forward, which is long enough
+                // for the badge to be visibly arguing with what the user has just read.
+                guard wasOpen, isOpen == false else {
+                    return
+                }
+
+                store.refreshUnreadNotifications()
+            }
         }
         .task(id: insets) {
             guard insets != nil else {
@@ -242,8 +257,8 @@ struct NextcloudView: View {
     ///
     /// Registers every user script the page runs, with `measurement` baked into the one that publishes the insets.
     ///
-    /// All three are re-registered together on every measurement rather than the insets script alone, because a `WKUserContentController` can only be emptied wholesale. Doing it at all is what keeps a document loaded after a rotation from being seeded with the insets of the previous orientation.
-    /// The stylesheet runs at document start so the page never paints unstyled, the insets script immediately after it so the properties it declares are set before the first layout, and the app-navigation observer at document end, once there is a document for it to observe.
+    /// All four are re-registered together on every measurement rather than the insets script alone, because a `WKUserContentController` can only be emptied wholesale. Doing it at all is what keeps a document loaded after a rotation from being seeded with the insets of the previous orientation.
+    /// The stylesheet runs at document start so the page never paints unstyled, the insets script immediately after it so the properties it declares are set before the first layout, and the two observers — of the app navigation and of the notifications menu — at document end, once there is a document for them to observe.
     ///
     private func installUserScripts(with measurement: WebPageInsets) {
         userContentController.removeAllUserScripts()
@@ -257,6 +272,10 @@ struct NextcloudView: View {
         }
 
         if let source = Script.sidebarToggleState.source {
+            userContentController.addUserScript(WKUserScript(source: source, injectionTime: .atDocumentEnd, forMainFrameOnly: false))
+        }
+
+        if let source = iOSScript.notificationsPanelState.source {
             userContentController.addUserScript(WKUserScript(source: source, injectionTime: .atDocumentEnd, forMainFrameOnly: false))
         }
     }
@@ -314,6 +333,25 @@ struct NextcloudView: View {
                 _ = try await page.callJavaScript(source)
             } catch {
                 Self.logger.error("Could not toggle the app navigation: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    ///
+    /// Ask the page to open Nextcloud's own notifications panel, by clicking the bell the web interface offers in its header.
+    ///
+    /// The header is hidden on iOS, so a click alone would open a panel that never paints; `Cirruscope.css` reveals it through a rule scoped to the menu's own open state, which is also what closes it again and why there is nothing here to undo. Nothing is assumed about the outcome, as with `toggleAppNavigation()`: `NotificationsPanelBridge` reports what the page actually did, and the log is where a selector that no longer matches shows up.
+    ///
+    private func openNotificationsPanel() {
+        guard let source = iOSScript.notificationsPanel.source else {
+            return
+        }
+
+        Task {
+            do {
+                _ = try await page.callJavaScript(source)
+            } catch {
+                Self.logger.error("Could not open the notifications panel: \(error.localizedDescription)")
             }
         }
     }

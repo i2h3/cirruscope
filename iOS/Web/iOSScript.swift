@@ -12,6 +12,20 @@ import os
 ///
 enum iOSScript: String {
     ///
+    /// `notificationsPanel` clicks Nextcloud's notifications bell to open the panel it hangs in the page header.
+    ///
+    /// `NextcloudView.openNotificationsPanel()` evaluates it on demand from the account menu's "Notifications" item, as both platforms evaluate `Script.sidebarToggle` from their app-navigation control. It carries no selector of its own: it reads the one `notificationsPanelState` published onto `<html>`, so the candidate list that found the control exists in exactly one place.
+    ///
+    case notificationsPanel = "NotificationsPanel"
+
+    ///
+    /// `notificationsPanelState` resolves Nextcloud's notifications menu, publishes the selector that matched onto `<html>`, and reports its availability and open state through the `notificationsPanelState` message handler.
+    ///
+    /// `NextcloudView` installs it as a user script that runs at the end of every document load. Its `MutationObserver` is what carries it across Nextcloud's single-page navigations, which never reload the document, exactly as `Script.sidebarToggleState`'s does.
+    ///
+    case notificationsPanelState = "NotificationsPanelState"
+
+    ///
     /// `safeAreaInsets` publishes the margins the app's own interface covers onto `<html>` as the four `--cirruscope-safe-area-*` custom properties `Cirruscope.css` insets Nextcloud's content by.
     ///
     /// Its resource is a function expression rather than a self-invoking script, as `macOSScript.appearanceAttributes` is: `NextcloudView` invokes it with the measurements SwiftUI took, both to install it as a document-start user script and to push a new measurement into a page already on screen.

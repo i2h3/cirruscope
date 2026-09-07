@@ -290,6 +290,16 @@ struct ServerAddressView: View {
                     Self.logger.info("Stored credentials and connected to \(result.server)")
 
                     store.account = ServerAccount(server: result.server, credentials: credentials)
+
+                    // Asked here so the prompt arrives with a server actually connected, rather than in front of an
+                    // empty launch. Not awaited: it would otherwise hold this screen's spinner up until the user
+                    // answered, when the account is already adopted and the screen is already on its way out.
+                    Task {
+                        await AppIconBadge.requestAuthorization()
+                    }
+
+                    // There was nothing to fetch for a moment ago and now there is.
+                    NotificationRefreshTask.submitRequest(reason: "sign-in")
             }
         } catch CirruscopeError.loginCancelled {
             Self.logger.notice("Sign-in cancelled by the user")

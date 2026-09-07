@@ -30,6 +30,30 @@ class Store {
     var apps: [ServerAppTransferObject]
 
     ///
+    /// The notifications the connected server still has queued for the user.
+    ///
+    /// Not persisted, deliberately: the server is the only record of these, and nothing in the app needs them to outlive its own process. They are kept for as long as the app runs so the account menu can say how many there are and, in time, list them. The background refresh keeps none of this — it has no store at all — and writes the badge from the same fetch before discarding what came back.
+    /// There is no read/unread flag on a Nextcloud notification: the server returns exactly the ones still queued, so this array is the unread set.
+    ///
+    private(set) var unreadNotifications: [NotificationItem] = []
+
+    ///
+    /// How many notifications the connected server still has queued for the user.
+    ///
+    /// Derived rather than stored, so it cannot come to disagree with the array it counts.
+    ///
+    var unreadNotificationCount: Int {
+        unreadNotifications.count
+    }
+
+    ///
+    /// Whether a refresh of the unread notifications is already in flight, so a second one does not start beside it.
+    ///
+    /// Returning to the foreground triggers a refresh, and that happens more often than a fetch takes — pulling Notification Center down and letting it go is one round trip of it — so without this the app would run overlapping requests whose answers could land in either order.
+    ///
+    private var isRefreshingUnreadNotifications = false
+
+    ///
     /// Counts how many times the apps' icons have changed, so a view drawing them redraws when they do.
     ///
     /// The icons live outside this store — they are files on disk, shared with macOS, found by app identifier — so nothing about `apps` changes when one arrives and observation alone would not notice. This is the one observable thing that does change, and reading it in a view is what subscribes that view to the arrival.
@@ -53,9 +77,10 @@ class Store {
     ///
     /// The app itself uses `restored()` instead; this initializer is what previews and tests use, so they cannot pick up whatever credentials happen to sit in the Keychain of the machine they run on.
     ///
-    init(account: ServerAccount? = nil, apps: [ServerAppTransferObject] = []) {
+    init(account: ServerAccount? = nil, apps: [ServerAppTransferObject] = [], notifications: [NotificationItem] = []) {
         self.account = account
         self.apps = apps
+        self.unreadNotifications = notifications
 
         server = account.flatMap { ServerConnection.authenticated(address: $0.server) }
     }
@@ -108,6 +133,43 @@ class Store {
     }
 
     ///
+    /// Fetch the notifications the server has queued for the user, publish them, and update the app icon badge.
+    ///
+    /// The shape is `updateApps()`': everything decidable without the network is decided here and synchronously, and only the network half goes to a `Task`. The fetch is `UnreadNotifications.fetch(reason:)` — the very call the background refresh makes, with no store involved — so the two cannot arrive at different counts, and the badge is written from the same decision whichever path produced it.
+    /// Having no account is deliberately not an early exit. A signed-out app still has a badge to clear, and letting the shared fetch report that there is no account is what clears it without a second rule about when clearing is due.
+    /// Only a fetch that actually reached the server replaces what is published. A cancelled or failed one leaves the array exactly as it stands, for the same reason it leaves the badge alone: a network blip must not read as "everything was read".
+    ///
+    func refreshUnreadNotifications() {
+        guard isRefreshingUnreadNotifications == false else {
+            logger.debug("A refresh of the unread notifications is already in flight")
+            return
+        }
+
+        isRefreshingUnreadNotifications = true
+
+        Task {
+            defer {
+                isRefreshingUnreadNotifications = false
+            }
+
+            let outcome = await UnreadNotifications.fetch(reason: "foreground")
+
+            switch outcome {
+                case let .fetched(items):
+                    unreadNotifications = items
+
+                case .noAccount, .endpointUnavailable, .credentialsRejected:
+                    unreadNotifications = []
+
+                case .cancelled, .unreachable:
+                    break
+            }
+
+            await AppIconBadge.apply(outcome.badgeUpdate)
+        }
+    }
+
+    ///
     /// The server app a page belongs to, or `nil` when it belongs to none of them.
     ///
     /// The rule is the shared one in `ServerAppTransferObject+Resolution.swift`, so this and the Mac's window reuse cannot come to different conclusions about the same address. It answers `nil` with no account configured, there being no server to resolve against.
@@ -125,9 +187,10 @@ class Store {
     /// Log out the current user from the connected server.
     ///
     /// The app password is revoked on the server first, so the credential this device is about to forget is invalidated rather than left standing in the account's device list. That request is fire-and-forget: revocation is fail-open — an unreachable server must not be able to keep someone signed in locally — which is the same bargain `AppDelegate.logOut()` strikes on macOS. The web view's site data goes with it, so a later account does not inherit a session from this one.
+    /// The background refresh is disarmed and the app icon badge cleared before the credentials it counted with are gone, so the home screen does not keep advertising a number from a session that no longer exists. Neither is strictly load-bearing — the next foreground refresh would find no account and clear the badge anyway — but a badge that outlives a sign-out even briefly is the kind of thing a user reports as the app still being logged in.
     ///
     func logout() {
-        logger.notice("Logging out; revoking the app password on the server, clearing the web view's site data, and clearing the stored credentials")
+        logger.notice("Logging out; revoking the app password on the server, clearing the web view's site data, disarming the background refresh, clearing the app icon badge, and clearing the stored credentials")
 
         if let server {
             Task {
@@ -143,7 +206,14 @@ class Store {
 
         Keychain.clearAll()
 
+        NotificationRefreshTask.cancelRequest()
+
+        Task {
+            await AppIconBadge.apply(.clear)
+        }
+
         apps = []
+        unreadNotifications = []
         account = nil
     }
 }
