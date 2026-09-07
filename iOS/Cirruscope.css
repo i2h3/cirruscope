@@ -55,6 +55,110 @@ body {
     display: none !important;
 }
 
+/* MARK: - Notifications Panel */
+
+/*
+ * Nextcloud hangs its notifications panel inside #header, which the rule above
+ * hides outright — so clicking the bell from the account menu would open a panel
+ * that never paints, display: none not being something a descendant can opt out
+ * of. #header therefore has to come back for as long as that panel is open, and
+ * nothing else in it may be seen while it does.
+ *
+ * What makes that cheap is that the panel does not depend on the header's
+ * geometry at all: @nextcloud/vue lays .header-menu__wrapper out as
+ * position: fixed against the viewport, and #header carries no transform or
+ * filter that would make it the containing block instead. So the header only has
+ * to exist. It is collapsed to a zero-height box that paints nothing and takes
+ * no taps, and the panel alone declares itself visible again — visibility being
+ * the one property a descendant can reverse on itself, which is what makes this
+ * a rule about two elements rather than a list of every header child that has to
+ * stay hidden. Such a list would also have to track the server's markup, since
+ * Nextcloud 36 inserts a .header-center between .header-start and .header-end,
+ * and this does not.
+ *
+ * The reveal is keyed on Nextcloud's own open state rather than on an attribute
+ * Cirruscope writes, so there is nothing to keep in step and nothing to undo:
+ * the menu closes itself on a tap outside it, on Escape, and on "Dismiss all",
+ * and the header goes with it in the same style recalculation. An attribute set
+ * from Swift would instead leave a revealed, empty header on screen for the rest
+ * of the document's life the first time a single "closed" report went missing.
+ *
+ * The two selectors are independent probes of one fact — the class the menu sets
+ * on itself, and the ARIA state its trigger reports — so a rename of either
+ * alone does not cost the reveal. Both are scoped to #notifications, because
+ * #contactsmenu and #user-menu are the same component and must reveal nothing.
+ */
+
+#header:has(:is(#notifications.header-menu--opened, #notifications .header-menu__trigger[aria-expanded="true"])) {
+    display: block !important;
+    visibility: hidden !important;
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    left: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: none !important;
+    overflow: visible !important;
+    pointer-events: none !important;
+}
+
+/*
+ * A transparent scrim, so that dismissing the panel is a tap on nothing.
+ * @nextcloud/vue closes the menu on any pointer event outside it and draws no
+ * scrim of its own, which is right in a desktop browser where the header stays
+ * on screen around it. Here the header is invisible, so without this the tap
+ * that dismisses the panel would also open whatever file or conversation happens
+ * to be under the finger.
+ *
+ * It is a pseudo-element of #header rather than of the menu, so that close
+ * handler still counts it as outside; it re-declares visibility and
+ * pointer-events because both are inherited from the collapsed header above; and
+ * it stays below the panel, which carries z-index 2000 of its own.
+ */
+
+#header:has(:is(#notifications.header-menu--opened, #notifications .header-menu__trigger[aria-expanded="true"]))::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+/*
+ * The panel itself, inset clear of the app's own navigation bar and bounded by
+ * what is left of the screen, from the same --cirruscope-safe-area-* properties
+ * the rest of this stylesheet insets Nextcloud's content by. Nextcloud's own
+ * top: var(--header-height) would put it behind that bar, which is drawn above
+ * the page rather than in it.
+ *
+ * The inline inset is symmetric and taken as the larger of the two horizontal
+ * insets rather than applied to one edge, because those two properties are
+ * physical while the margin Nextcloud sets is logical: matching them up would
+ * mean reasoning about the layout direction to place a panel that is 350px wide
+ * on a screen with hundreds of points to spare. 8px is Nextcloud's own margin,
+ * and the floor.
+ *
+ * Neither rule is scoped to the reveal above. Both are inert while the header is
+ * display: none, so stating them unconditionally costs nothing and keeps that
+ * long selector to the two rules which genuinely need it.
+ */
+
+#notifications .header-menu__wrapper {
+    visibility: visible !important;
+    pointer-events: auto !important;
+    top: calc(var(--cirruscope-safe-area-top) + 8px) !important;
+    margin-inline: max(8px, var(--cirruscope-safe-area-left), var(--cirruscope-safe-area-right)) !important;
+}
+
+#notifications .header-menu__content {
+    max-height: calc(100vh - var(--cirruscope-safe-area-top) - var(--cirruscope-safe-area-bottom) - 16px) !important;
+    max-width: calc(100vw - 2 * max(8px, var(--cirruscope-safe-area-left), var(--cirruscope-safe-area-right))) !important;
+}
+
 /* MARK: - App Content */
 
 /* The full-bleed container: it must not be inset, or the page stops reaching the edges. */
