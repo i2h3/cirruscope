@@ -80,7 +80,7 @@ class Store {
     init(account: ServerAccount? = nil, apps: [ServerAppTransferObject] = [], notifications: [NotificationItem] = []) {
         self.account = account
         self.apps = apps
-        self.unreadNotifications = notifications
+        unreadNotifications = notifications
 
         server = account.flatMap { ServerConnection.authenticated(address: $0.server) }
     }

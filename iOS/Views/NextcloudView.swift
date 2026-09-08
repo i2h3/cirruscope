@@ -101,6 +101,25 @@ struct NextcloudView: View {
                     .onChange(of: measurement(in: proxy), initial: true) { _, measurement in
                         apply(measurement)
                     }
+                    // Over the web view rather than over the `NavigationStack`, so the toolbar above it stays live
+                    // while the cover is up: a request that never finishes leaves it up indefinitely, and the way
+                    // out of that is the app menu or the account menu. It also takes the web view's own frame,
+                    // which is the whole screen — the safe area is ignored just above, so there is no inset here
+                    // to leave a strip of blank page showing under the navigation bar or along the bottom edge.
+                    //
+                    // `isLoading` is WebKit's own answer and the condition is deliberately nothing more. Extending
+                    // it to also catch the frame or two between this screen appearing and its first request going
+                    // out would trade a flicker nobody sees for a cover that can fail to lift: a load that never
+                    // commits leaves `page.url` at `nil` for good, so a condition resting on that would sit over
+                    // the failure. What is here clears itself for a failed and a cancelled load alike.
+                    //
+                    // It follows that this covers document loads only, which is the whole of what empties the
+                    // view. Nextcloud's own navigation inside an app — opening a folder in Files, changing
+                    // conversation in Talk — is a history entry rather than a request, so nothing goes blank there
+                    // and there is nothing to cover.
+                    .overlay {
+                        LoadingOverlay(isLoading: page.isLoading)
+                    }
             }
             .toolbar {
                 // Not every Nextcloud app offers an app navigation, so the control leaves the toolbar rather
