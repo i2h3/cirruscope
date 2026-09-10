@@ -19,6 +19,11 @@ enum InfoPlist {
         ///
         /// Property list key.
         ///
+        static let keychainServiceIdentifier = "KeychainServiceIdentifier"
+
+        ///
+        /// Property list key.
+        ///
         static let privacyPolicy = "PrivacyPolicy"
 
         ///
@@ -44,6 +49,23 @@ enum InfoPlist {
         }
 
         preconditionFailure("Info.plist entry \"\(Key.minimumSupportedServerMajorVersion)\" must be an integer or a string representing one but was \(type(of: value)).")
+    }
+
+    ///
+    /// The `kSecAttrService` value every Keychain item of this app group is filed under.
+    ///
+    /// Every bundle in the group — both apps and the widget extension — resolves the same string, which is what lets the extension read what an app wrote. Deriving it from `Bundle.main.bundleIdentifier` instead would give the extension its own identifier and silently match nothing.
+    ///
+    static var keychainServiceIdentifier: String {
+        guard let value = Bundle.main.object(forInfoDictionaryKey: Key.keychainServiceIdentifier) else {
+            preconditionFailure("Info.plist is missing the \"\(Key.keychainServiceIdentifier)\" entry.")
+        }
+
+        guard let stringValue = value as? String else {
+            preconditionFailure("Info.plist entry \"\(Key.keychainServiceIdentifier)\" must be a string but was \(value).")
+        }
+
+        return stringValue
     }
 
     ///
