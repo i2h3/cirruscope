@@ -7,19 +7,13 @@ import os
 ///
 /// `Keychain` stores the `Credentials` obtained from Login Flow v2, keyed by the address of the server they authenticate against.
 ///
-/// Items use the app's default Keychain access group, so no `keychain-access-groups` entitlement is required under the App Sandbox — and the same holds on iOS, where the default group is the app's own.
+/// Items use the default Keychain access group, which the `keychain-access-groups` entitlement in `Cirruscope.entitlements` sets to the base bundle identifier for every bundle that carries it. Two apps alone would need no entitlement at all — the default group is each app's own — but the widget extension does: its own identifier is `…cirruscope.widgets`, and that entitlement is what puts its items in the same group as the apps'.
 ///
 enum Keychain {
-    /// `service` is the constant `kSecAttrService` value under which every credential item is filed, so the app's items can be enumerated and cleared as a group.
+    /// `service` is the constant `kSecAttrService` value under which every credential item is filed, so the items can be enumerated and cleared as a group.
     ///
-    /// It is derived from the app's bundle identifier rather than hardcoded so the Keychain items stay tied to the app across future renames without a code change.
-    private static let service: String = {
-        guard let bundleIdentifier = Bundle.main.bundleIdentifier else {
-            preconditionFailure("Missing bundle identifier")
-        }
-
-        return bundleIdentifier
-    }()
+    /// It comes from `InfoPlist.keychainServiceIdentifier` rather than from `Bundle.main.bundleIdentifier`, because the two agree only inside the apps. In the widget extension the running bundle is `…cirruscope.widgets`, so deriving it from there would file and query under a service nothing was ever written to, and `accounts()` would answer an empty array indistinguishable from a signed-out account. Reading it from the `Info.plist` keeps the value tied to the base bundle identifier — still a single build setting, so a rename still needs no code change — and makes every bundle in the group agree on it.
+    private static let service: String = InfoPlist.keychainServiceIdentifier
 
     /// `logger` records Keychain access under the `Keychain` category, at debug level for successful reads, writes, and clears and at error level for failures.
     private static let logger = Logger(for: Keychain.self)
