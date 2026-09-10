@@ -223,6 +223,18 @@ struct ServerAddressView: View {
         } message: { failure in
             Text(verbatim: failure.message)
         }
+        // A second alert rather than another `Failure`: this one is not about a sign-in attempt but about why this
+        // screen is on display at all, and it is raised before the user has done anything here. The two cannot
+        // collide — nothing has been attempted yet at the moment this one appears.
+        .alert("Signed Out", isPresented: Binding(get: { store.wasSignedOutBySystem }, set: {
+            if $0 == false {
+                store.acknowledgeSignOut()
+            }
+        })) {
+            // As above: SwiftUI supplies its own localized dismiss button, and there is nothing else to offer.
+        } message: {
+            Text("Your Nextcloud credentials are no longer valid, so Cirruscope signed you out. Sign in again to continue.")
+        }
     }
 
     ///

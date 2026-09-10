@@ -440,6 +440,29 @@
         }
       }
     },
+    "Signed Out" : {
+      "comment" : "Alert title shown when the app signs the user out on its own because the server rejected the stored credentials.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abgemeldet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sesión cerrada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Déconnecté"
+          }
+        }
+      }
+    },
     "Support" : {
       "comment" : "Link at the bottom of the iOS sign-in screen opening the project's support page. German keeps the English word, which is the established term there.",
       "localizations" : {
@@ -689,6 +712,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Version de serveur non prise en charge"
+          }
+        }
+      }
+    },
+    "Your Nextcloud credentials are no longer valid, so Cirruscope signed you out. Sign in again to continue." : {
+      "comment" : "Alert message shown when the app signs the user out because the server rejected the stored credentials.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ihre Nextcloud-Anmeldedaten sind nicht mehr gültig, daher hat Cirruscope Sie abgemeldet. Melden Sie sich erneut an, um fortzufahren."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus credenciales de Nextcloud ya no son válidas, por lo que Cirruscope cerró tu sesión. Inicia sesión de nuevo para continuar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vos identifiants Nextcloud ne sont plus valides, Cirruscope vous a donc déconnecté. Connectez-vous à nouveau pour continuer."
           }
         }
       }

@@ -19,7 +19,7 @@ struct Credentials: Codable {
 
     /// `basicAuthorizationValue` is the `Authorization` header value that signs an embedded web view in with these credentials.
     ///
-    /// Nextcloud accepts the app password as HTTP Basic authentication and establishes a web session from it, so the web view is signed in without a separate in-page login. `WebViewController.authenticatedRequest(for:)` on macOS and `NextcloudView` on iOS both attach it; it lives on the value rather than at either call site so the two cannot encode it differently.
+    /// Nextcloud accepts the app password as HTTP Basic authentication and establishes a web session from it, so the web view is signed in without a separate in-page login. `WebViewController.authenticatedRequest(for:)` on macOS and `ServerAccount.authenticatedRequest(for:)` on iOS both attach it; it lives on the value rather than at either call site so the two cannot encode it differently.
     var basicAuthorizationValue: String {
         "Basic \(Data("\(user):\(appPassword)".utf8).base64EncodedString())"
     }
