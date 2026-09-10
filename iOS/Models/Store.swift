@@ -54,6 +54,13 @@ class Store {
     private var isRefreshingUnreadNotifications = false
 
     ///
+    /// Whether the app signed the user out on its own initiative rather than because the user asked it to.
+    ///
+    /// `ServerAddressView` reads it to explain itself: a sign-in screen the user did not ask for looks like the app forgot them, and the alert is what says otherwise. A user-initiated `logout()` deliberately leaves it alone, there being nothing to explain.
+    ///
+    private(set) var wasSignedOutBySystem = false
+
+    ///
     /// Counts how many times the apps' icons have changed, so a view drawing them redraws when they do.
     ///
     /// The icons live outside this store — they are files on disk, shared with macOS, found by app identifier — so nothing about `apps` changes when one arrives and observation alone would not notice. This is the one observable thing that does change, and reading it in a view is what subscribes that view to the arrival.
@@ -186,8 +193,7 @@ class Store {
     ///
     /// Log out the current user from the connected server.
     ///
-    /// The app password is revoked on the server first, so the credential this device is about to forget is invalidated rather than left standing in the account's device list. That request is fire-and-forget: revocation is fail-open — an unreachable server must not be able to keep someone signed in locally — which is the same bargain `AppDelegate.logOut()` strikes on macOS. The web view's site data goes with it, so a later account does not inherit a session from this one.
-    /// The background refresh is disarmed and the app icon badge cleared before the credentials it counted with are gone, so the home screen does not keep advertising a number from a session that no longer exists. Neither is strictly load-bearing — the next foreground refresh would find no account and clear the badge anyway — but a badge that outlives a sign-out even briefly is the kind of thing a user reports as the app still being logged in.
+    /// The app password is revoked on the server first, so the credential this device is about to forget is invalidated rather than left standing in the account's device list. That request is fire-and-forget: revocation is fail-open — an unreachable server must not be able to keep someone signed in locally — which is the same bargain `AppDelegate.logOut()` strikes on macOS. Everything after it is `discardSession()`, which is also what `requireSignIn()` does; revoking is the whole of the difference between the two.
     ///
     func logout() {
         logger.notice("Logging out; revoking the app password on the server, clearing the web view's site data, disarming the background refresh, clearing the app icon badge, and clearing the stored credentials")
@@ -200,6 +206,36 @@ class Store {
             logger.debug("No server to revoke an app password on")
         }
 
+        discardSession()
+    }
+
+    ///
+    /// Sign the user out because the server no longer accepts the stored app password, and say so.
+    ///
+    /// The counterpart of `logout()` for the case where the app is signing the user out rather than the user. `NextcloudNavigationDecider` calls it when a page re-requested with the stored app password lands back on the server's sign-in form, which is the point at which an expired browser session has been ruled out and the credential itself is what is being refused.
+    /// Unlike `logout()` it does not revoke the app password: the server has just rejected it, so there is nothing left to revoke and the request would only fail. What it adds instead is `wasSignedOutBySystem`, which is what makes the sign-in screen explain why it is there. macOS strikes the same bargain in `AppDelegate.requireSignIn()`.
+    ///
+    func requireSignIn() {
+        logger.notice("The stored app password is no longer accepted; clearing the web view's site data, disarming the background refresh, clearing the app icon badge, and clearing the stored credentials without revoking them")
+
+        wasSignedOutBySystem = true
+
+        discardSession()
+    }
+
+    ///
+    /// Note that the user has read why they were signed out, so it is not said to them twice.
+    ///
+    func acknowledgeSignOut() {
+        wasSignedOutBySystem = false
+    }
+
+    ///
+    /// Forget everything this device holds about the connected account, which is the half `logout()` and `requireSignIn()` have in common.
+    ///
+    /// The web view's site data goes with the credentials, so a later account does not inherit a session from this one. The background refresh is disarmed and the app icon badge cleared before the credentials they counted with are gone, so the home screen does not keep advertising a number from a session that no longer exists. Neither is strictly load-bearing — the next foreground refresh would find no account and clear the badge anyway — but a badge that outlives a sign-out even briefly is the kind of thing a user reports as the app still being logged in.
+    ///
+    private func discardSession() {
         WKWebsiteDataStore.default().removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast) {
             self.logger.debug("Cleared the web view's site data")
         }

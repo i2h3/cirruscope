@@ -39,6 +39,14 @@ struct NextcloudView: View {
     private var notificationsPanel: NotificationsPanelBridge
 
     ///
+    /// Decides what the page may navigate to, which is how a sign-in form reached on an expired browser session is turned back into the page the user was on.
+    ///
+    /// Built here and handed to the page at initialization because that is the only moment a `WebPage` accepts one. The page is given back to it immediately afterwards, an object having to exist before another can be built around it, and the store from `body`, there being no environment to read one from yet.
+    ///
+    @State
+    private var navigationDecider: NextcloudNavigationDecider
+
+    ///
     /// The page's own script store, kept so the document-start scripts can be re-registered with a fresh measurement rather than only ever seeded once.
     ///
     /// `WebPage.Configuration` is a struct the page copies at initialization, but this property of it is a class, so the copy and this reference are the same object and a script added through it still reaches the page.
@@ -65,6 +73,7 @@ struct NextcloudView: View {
         var configuration = WebPage.Configuration()
         let appNavigation = AppNavigationBridge()
         let notificationsPanel = NotificationsPanelBridge()
+        let navigationDecider = NextcloudNavigationDecider()
 
         // Completes the user agent into one Safari sends, so Nextcloud does not warn about an unrecognized browser.
         // It has to be set here for the same reason as the handler below, and stays set for the whole session: the
@@ -77,12 +86,17 @@ struct NextcloudView: View {
         configuration.userContentController.add(appNavigation, name: AppNavigationBridge.messageName)
         configuration.userContentController.add(notificationsPanel, name: NotificationsPanelBridge.messageName)
 
-        let page = WebPage(configuration: configuration)
+        // The decider is passed by value and held by the page from here on, which is why it is a reference type: the
+        // page it reloads through is the very object being constructed, so it can only be given afterwards, and it
+        // holds it weakly for the same reason.
+        let page = WebPage(configuration: configuration, navigationDecider: navigationDecider)
         page.isInspectable = true
+        navigationDecider.page = page
 
         _page = State(initialValue: page)
         _appNavigation = State(initialValue: appNavigation)
         _notificationsPanel = State(initialValue: notificationsPanel)
+        _navigationDecider = State(initialValue: navigationDecider)
         _userContentController = State(initialValue: configuration.userContentController)
     }
 
@@ -201,6 +215,12 @@ struct NextcloudView: View {
             }
         }
         .task(id: insets) {
+            // Above the guards, and deliberately: this task's first run is the one with no measurement yet, and it
+            // has to be the run that hands the decider its store. Nothing has been loaded at that point, so the
+            // decider is holding an account before the first navigation it could be asked about — which is the load
+            // below. The store is one object for the life of the app, so assigning it again costs nothing.
+            navigationDecider.store = store
+
             guard insets != nil else {
                 return
             }
@@ -213,7 +233,7 @@ struct NextcloudView: View {
                 return
             }
 
-            page.load(authenticatedRequest(for: account.server))
+            page.load(account.authenticatedRequest(for: account.server))
             store.updateApps()
         }
         .task {
@@ -323,17 +343,22 @@ struct NextcloudView: View {
     }
 
     ///
-    /// Publishes the current measurement again each time a new document commits.
+    /// Publishes the current measurement again each time a new document commits, for as long as this screen is on display.
     ///
     /// A backstop, not the mechanism: the user script has already set the properties by the time this runs. It is here for the case where a document commits carrying a seed that predates the last measurement, and it costs nothing when it has nothing to correct. `.committed` rather than `.finished` because the document exists from that point on, well before the page has finished loading and painting.
+    /// The subscription is re-entered after a failure rather than abandoned, because `WebPage.navigations` reports a failed navigation by throwing, which ends the sequence — and a cancelled one counts as failed. `NextcloudNavigationDecider` cancels every sign-in redirect it intercepts, so a single expired browser session would otherwise retire this backstop for the rest of the screen's life. The loop ends when the task is cancelled, which is when the screen goes away.
     ///
     private func republishInsetsOnNavigation() async {
-        do {
-            for try await event in page.navigations where event == .committed {
-                publishInsets()
+        while Task.isCancelled == false {
+            do {
+                for try await event in page.navigations where event == .committed {
+                    publishInsets()
+                }
+
+                return
+            } catch {
+                Self.logger.debug("Navigation observation ended with \(error.localizedDescription); subscribing again")
             }
-        } catch {
-            Self.logger.error("Stopped observing navigations: \(error.localizedDescription)")
         }
     }
 
@@ -394,7 +419,7 @@ struct NextcloudView: View {
     ///
     /// Load one server app into the web view.
     ///
-    /// The path comes from the server, and `authenticatedRequest(for:)` attaches the app password to whatever it resolves to, so it is proven to stay on the connected server first. macOS resolves the same value the same way, through the same type.
+    /// The path comes from the server, and `ServerAccount.authenticatedRequest(for:)` attaches the app password to whatever it is handed, so it is proven to stay on the connected server first. macOS resolves the same value the same way, through the same type.
     ///
     func navigateToApp(_ app: ServerAppTransferObject) {
         guard let account = store.account else {
@@ -406,13 +431,13 @@ struct NextcloudView: View {
             return
         }
 
-        page.load(authenticatedRequest(for: target.url))
+        page.load(account.authenticatedRequest(for: target.url))
     }
 
     ///
     /// Load one of the connected server's own pages into the web view, named by the path it lives at.
     ///
-    /// The path is one the app knows rather than one the server offered, and it is resolved through `SameOriginURL` all the same. `authenticatedRequest(for:)` attaches the app password to whatever it is given, so the rule that nothing receives that credential without first being proven to stay on the connected server is worth keeping unconditional rather than reasoned about per call site. A literal path only fails to resolve where the server address itself cannot be resolved against, which is why the refusal is logged without naming a culprit.
+    /// The path is one the app knows rather than one the server offered, and it is resolved through `SameOriginURL` all the same. `ServerAccount.authenticatedRequest(for:)` attaches the app password to whatever it is given, so the rule that nothing receives that credential without first being proven to stay on the connected server is worth keeping unconditional rather than reasoned about per call site. A literal path only fails to resolve where the server address itself cannot be resolved against, which is why the refusal is logged without naming a culprit.
     ///
     private func navigate(to path: String) {
         guard let account = store.account else {
@@ -424,22 +449,7 @@ struct NextcloudView: View {
             return
         }
 
-        page.load(authenticatedRequest(for: target.url))
-    }
-
-    ///
-    /// Build the request that loads `url`, attaching HTTP Basic authentication derived from the connected account's app password.
-    ///
-    /// Nextcloud accepts the app password as Basic authentication and establishes a web session from it, so the embedded web view is signed in without a second in-page login after the native one. macOS does the same thing in `WebViewController.authenticatedRequest(for:)`; both encode the header through `Credentials.basicAuthorizationValue` so they cannot encode it differently. With no account configured the request goes out unauthenticated and the server presents its normal login page.
-    ///
-    private func authenticatedRequest(for url: URL) -> URLRequest {
-        var request = URLRequest(url: url)
-
-        if let account = store.account {
-            request.setValue(account.credentials.basicAuthorizationValue, forHTTPHeaderField: "Authorization")
-        }
-
-        return request
+        page.load(account.authenticatedRequest(for: target.url))
     }
 }
 
