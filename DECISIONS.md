@@ -243,6 +243,24 @@ Both halves are reasonable alone. Nextcloud describes its own resources by path 
 
 [`SameOriginURL`](./Core/SameOriginURL.swift) is therefore what a path resolves into, and what everything attaching credentials takes. Anything landing on a different scheme, host, or port — including the protocol-relative form, which reads like a path and is not one — does not produce a value at all. The rule is then enforced by the type system rather than by remembering to check, which is the difference between a rule and a habit; it also covers the navigation `href`, which had exactly the same exposure and is now resolved the same way on both platforms.
 
+## Why does the web view intercept the sign-in and sign-out routes instead of just displaying them?
+
+Because both are the server telling the app something about the session, and neither is something the user can act on inside the page.
+
+Nextcloud's sign-in form is where the server sends any unauthenticated request for a page, and the web view's browser cookie expires on the server's schedule rather than the app's — reopen the app the next morning and the first navigation is redirected there. That says nothing about the app password Cirruscope holds, and the form itself is a dead end: signing in happens natively through Login Flow v2, not in the page. So the navigation is cancelled and the page the request had been for is re-requested with the app password attached, exactly as the first load of the session already does. The user sees the page they left.
+
+Sign-out is the mirror image. Nextcloud's own "Log out" would end the browser session while leaving the app holding a perfectly good app password, so it is widened into an app-level sign-out. Because the navigation is cancelled, the server never processes the request, which is why the app has to revoke that password itself.
+
+The interesting part is what happens when the retry fails. A retry that lands back on the sign-in form means the app password is genuinely rejected, and the account is signed out — but *exactly one* retry may be outstanding, and getting that bookkeeping wrong signs people out of working accounts. Both apps did, in different ways. The budget is therefore [one shared type](./Cirruscope/SilentRetryBudget.swift) keyed to the address being retried and released the moment the server answers it, with a one-minute window so a retry lost to a dropped connection cannot poison the next genuine expiry. Recognizing the routes is [shared too](./Cirruscope/NextcloudSessionRoute.swift), and anchored immediately below the instance's web root: matching on the last path component instead — which macOS did — means a file a user named `logout` revokes their app password.
+
+## Why is anything off the server's origin handed to the system rather than shown in the web view?
+
+Because the web view carries the account's session, and because a page shown inside the app borrows the app's window and the trust that comes with it.
+
+The rule is [one shared decision](./Cirruscope/WebViewDestination.swift) on origin — scheme, host and port together. Host alone is not enough, and that is not theoretical: it was what both apps compared, so a plain-HTTP listener or a differently-ported service on the very machine the server runs on counted as the server, and could be loaded in a window that attaches the app password. The same comparison now guards the `redirect_url` the sign-in retry follows, the link a notification banner opens, and the request a download is re-issued as.
+
+Deciding by origin also answers a question that was previously unanswered: what to do with an address that is not a page at all. A `tel:` or `mailto:` link is not the server's, so it goes to the system, which is how it reaches the app that can act on it — neither platform used to do anything with one. The exceptions are the schemes a document uses on itself — `about:`, `blob:`, `data:`, `javascript:`, `file:` — which mean nothing outside WebKit and stay there. Nothing guesses which schemes the machine can open: macOS asks Launch Services and iOS asks SwiftUI's `openURL` and reads its answer, and anything the system declines is handed back to the web view rather than silently swallowed.
+
 ## Why is a Nextcloud app's icon a little window in Spotlight, but a bare glyph in the menus?
 
 Because those two surfaces draw the same bytes in opposite ways, and only one of them will tint them.

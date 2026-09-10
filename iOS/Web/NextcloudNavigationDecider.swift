@@ -37,26 +37,11 @@ final class NextcloudNavigationDecider: WebPage.NavigationDeciding {
     var openURL: OpenURLAction?
 
     ///
-    /// The address a silent retry is outstanding for and the moment it went out, or `nil` while none is.
+    /// The one silent retry allowed while a lapsed browser session is being worked through, and whether it has been spent.
     ///
-    /// This is the retry budget, and both halves of it are load-bearing. The address is what keeps the budget from being spent by an unrelated page: a stale value can only ever be consumed by a second expiry on the very page that was retried. The moment is what keeps it from being spent at all once the retry can no longer be in flight, which is the case a retry that is never answered would otherwise leave open forever — the address in `redirect_url` is by construction the page the user was on and will most likely return to, so "never released" and "released on the wrong occasion" are the same defect here.
-    /// A clock is the backstop rather than the mechanism. The ordinary release is `decidePolicy(for:)`'s response half, which fires the moment the server answers the retry at all; only a retry that gets no answer relies on the window below.
+    /// Shared with macOS rather than reimplemented here, the bookkeeping being the subtle half of this whole decision and the half both apps previously got wrong in different ways.
     ///
-    private var outstandingRetry: (target: URL, issuedAt: ContinuousClock.Instant)?
-
-    ///
-    /// How long a retry may go unanswered before it is presumed lost rather than still outstanding.
-    ///
-    /// A sign-in form that is the server refusing the app password arrives as the redirected response to the retry, so it is one round trip behind it — well inside this. Anything still unanswered a minute later has failed, and `URLRequest`'s own default timeout says the same, so treating the budget as spent past that point could only ever sign out a user whose credentials are fine.
-    ///
-    private static let retryWindow = Duration.seconds(60)
-
-    ///
-    /// The URL schemes a page lives at, and therefore the only ones worth handing to a browser.
-    ///
-    /// Everything else a navigation can carry is either the document's own machinery — `about:`, `blob:`, `data:` — which belongs to WebKit and would be meaningless outside it, or a scheme for some other app entirely, which this web view does not open today and which is not what confining it to one server is about.
-    ///
-    private static let browsableSchemes: Set<String> = ["http", "https"]
+    private var retryBudget = SilentRetryBudget()
 
     ///
     /// Records this decider's activity under the `NextcloudNavigationDecider` category.
@@ -94,12 +79,17 @@ final class NextcloudNavigationDecider: WebPage.NavigationDeciding {
         }
 
         guard let route = NextcloudSessionRoute.matching(url, on: account.server) else {
-            guard handOverToBrowser(url, insteadOf: account.server) else {
-                logger.debug("Navigation action addresses neither of the connected server's session routes and is not the browser's to take over; returning .allow")
+            guard WebViewDestination.of(url, connectedTo: account.server) == .system else {
+                logger.debug("Navigation action addresses neither of the connected server's session routes and is the web view's own to display; returning .allow")
                 return .allow
             }
 
-            logger.notice("Navigation action targets \(url.absoluteString), which is off the connected server; handed it to the browser and returning .cancel")
+            guard await systemOpened(url) else {
+                logger.notice("Navigation action targets \(url.absoluteString), which is off the connected server, but the system did not open it; leaving it to the web view and returning .allow")
+                return .allow
+            }
+
+            logger.notice("Navigation action targets \(url.absoluteString), which is off the connected server; the system opened it, so returning .cancel")
 
             return .cancel
         }
@@ -120,15 +110,15 @@ final class NextcloudNavigationDecider: WebPage.NavigationDeciding {
         // checked against the connected server, the server's own root is somewhere to land that always exists.
         let target = NextcloudSessionRoute.redirectTarget(of: url, on: account.server) ?? account.server
 
-        guard hasOutstandingRetry(for: target) == false else {
+        guard retryBudget.isSpent(on: target) == false else {
             logger.notice("Re-requesting \(target.absoluteString) with the stored app password already landed back on the sign-in form; the app password is no longer accepted, so requiring a new sign-in and returning .cancel")
-            outstandingRetry = nil
+            retryBudget.release()
             store.requireSignIn()
 
             return .cancel
         }
 
-        outstandingRetry = (target, ContinuousClock.now)
+        retryBudget.spend(on: target)
         logger.notice("Navigation action targets the connected server's sign-in form; re-requesting \(target.absoluteString) with the stored app password instead of showing it, and returning .cancel")
         page?.load(account.authenticatedRequest(for: target))
 
@@ -136,33 +126,22 @@ final class NextcloudNavigationDecider: WebPage.NavigationDeciding {
     }
 
     ///
-    /// Whether `url` is somewhere the browser should take over, and hands it there when it is.
+    /// Whether the system took `url` off this web view's hands, having been offered it because it is not the connected server's.
     ///
-    /// The web view is the Nextcloud interface and nothing else. A page on another site displayed inside it would borrow the app's chrome and the trust that goes with it while being none of the app's business, so it is handed to the browser instead, where it arrives with an address bar of its own. macOS does the same at the same point, through `NSWorkspace`.
-    /// Origin decides it, not host: a different port or a plain-HTTP spelling of the same machine is a different site, and this is the guard that keeps the web view — which carries the account's session — from being pointed at one.
-    /// Only pages are handed over. A scheme the browser does not speak is left to WebKit, which is the right answer for the ones a document uses on itself — `about:`, `blob:`, `data:` — and, for the ones the system could open instead, an existing gap rather than one opened here: a `mailto:` or `tel:` link does nothing in this web view today and still does nothing.
+    /// `WebViewDestination` decides what is worth offering; this is the iOS half of acting on that, and the offer is made through SwiftUI's own `openURL` rather than `UIApplication`, so the app never has to ask which schemes the device can open. That question has an official answer only for schemes an app declares in advance, and it does not need asking: opening reports whether it worked, and everything the system declines is handed straight back to WebKit, which then fails the navigation the way it would have anyway.
+    /// The completion is awaited rather than ignored because the policy this informs cannot be given twice. Cancelling a navigation the system then refused to open would leave the user tapping a link that does nothing at all.
     ///
-    private func handOverToBrowser(_ url: URL, insteadOf serverAddress: URL) -> Bool {
-        guard SameOriginURL(path: url.absoluteString, relativeTo: serverAddress) == nil else {
-            return false
-        }
-
-        guard let scheme = url.scheme?.lowercased() else {
-            return false
-        }
-
-        guard Self.browsableSchemes.contains(scheme) else {
-            return false
-        }
-
+    private func systemOpened(_ url: URL) async -> Bool {
         guard let openURL else {
             logger.error("Navigation action to \(url.absoluteString) leaves the connected server, but no way to open it has been handed over; leaving it to the web view")
             return false
         }
 
-        openURL(url)
-
-        return true
+        return await withCheckedContinuation { continuation in
+            openURL(url) { accepted in
+                continuation.resume(returning: accepted)
+            }
+        }
     }
 
     func decidePolicy(for response: WebPage.NavigationResponse) async -> WKNavigationResponsePolicy {
@@ -172,31 +151,10 @@ final class NextcloudNavigationDecider: WebPage.NavigationDeciding {
         // answered. That cannot be read off the page's navigation events instead: cancelling the sign-in redirect
         // fails it provisionally, and `WebPage.navigations` reports a failure by throwing, which ends the sequence —
         // so the one signal that arrives reliably after an interception is this one.
-        // Matched by address rather than taken as any response at all, so that a sub-frame of the document being
-        // navigated away from cannot answer for the retry. A retry whose own chain ends somewhere else is left to
-        // the window instead, which is the honest outcome: it is no longer a retry of what was asked for.
-        if let outstandingRetry, response.response.url == outstandingRetry.target {
-            logger.debug("The response answers the outstanding silent retry; retiring it")
-            self.outstandingRetry = nil
-        }
+        retryBudget.releaseIfAnswered(by: response.response.url)
 
         logger.debug("Returning .allow")
 
         return .allow
-    }
-
-    ///
-    /// Whether a silent retry of `target` is still outstanding, which is what makes a sign-in form reached again a rejected app password rather than a second expired cookie.
-    ///
-    private func hasOutstandingRetry(for target: URL) -> Bool {
-        guard let outstandingRetry else {
-            return false
-        }
-
-        guard outstandingRetry.target == target else {
-            return false
-        }
-
-        return ContinuousClock.now - outstandingRetry.issuedAt < Self.retryWindow
     }
 }

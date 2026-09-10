@@ -84,14 +84,17 @@ final class UserNotifier: NSObject, UNUserNotificationCenterDelegate {
 
     /// `postServerNotification(_:serverAddress:)` posts a banner for a Nextcloud server notification, remembering its link so a click opens it in a web window.
     ///
-    /// `NotificationMonitor` calls it for each newly arrived notification. The request identifier is derived from the notification's server id so the same notification, seen again on a later fetch, replaces its banner rather than posting a duplicate. The link is resolved against `serverAddress` because the server returns it relative to the instance root.
+    /// `NotificationMonitor` calls it for each newly arrived notification. The request identifier is derived from the notification's server id so the same notification, seen again on a later fetch, replaces its banner rather than posting a duplicate.
+    /// The link is resolved through `SameOriginURL` because the server returns it relative to the instance root — and because it is the server that chose it. Clicking the banner opens the link in a web window, which loads it with the app password attached, so a link naming somewhere else would hand that password to whatever it named. This is the same rule every other server-named path in the app is resolved by; a notification whose link does not stay on the server is posted without one rather than not posted at all, the text still being worth reading.
     func postServerNotification(_ item: NotificationItem, serverAddress: URL) {
         let content = UNMutableNotificationContent()
         content.title = item.subject
         content.body = item.message
 
-        if let url = URL(string: item.link, relativeTo: serverAddress)?.absoluteURL {
-            content.userInfo = [Self.serverNotificationLinkKey: url.absoluteString]
+        if let link = SameOriginURL(path: item.link, relativeTo: serverAddress) {
+            content.userInfo = [Self.serverNotificationLinkKey: link.url.absoluteString]
+        } else {
+            logger.error("The link offered for server notification \(item.id) does not stay on the connected server; posting its banner without one")
         }
 
         let request = UNNotificationRequest(identifier: "server-notification-\(item.id)", content: content, trigger: nil)
