@@ -21,6 +21,12 @@ struct NextcloudView: View {
     @Environment(\.displayScale)
     private var displayScale
 
+    ///
+    /// How the app opens an address itself, which for a link off the connected server means handing it to the browser.
+    ///
+    @Environment(\.openURL)
+    private var openURL
+
     @State
     private var page: WebPage
 
@@ -216,10 +222,11 @@ struct NextcloudView: View {
         }
         .task(id: insets) {
             // Above the guards, and deliberately: this task's first run is the one with no measurement yet, and it
-            // has to be the run that hands the decider its store. Nothing has been loaded at that point, so the
+            // has to be the run that hands the decider what it cannot be built with. Nothing has been loaded at that point, so the
             // decider is holding an account before the first navigation it could be asked about — which is the load
             // below. The store is one object for the life of the app, so assigning it again costs nothing.
             navigationDecider.store = store
+            navigationDecider.openURL = openURL
 
             guard insets != nil else {
                 return
