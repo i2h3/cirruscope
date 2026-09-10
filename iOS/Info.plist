@@ -4,6 +4,8 @@
 <dict>
 	<key>AppGroupIdentifier</key>
 	<string>group.$(CIRRUSCOPE_BASE_BUNDLE_IDENTIFIER)</string>
+	<key>ApplicationName</key>
+	<string>$(CIRRUSCOPE_BUNDLE_NAME)</string>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
 		<string>$(CIRRUSCOPE_NOTIFICATION_REFRESH_TASK_IDENTIFIER)</string>

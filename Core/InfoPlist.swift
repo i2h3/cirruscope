@@ -19,6 +19,11 @@ enum InfoPlist {
         ///
         /// Property list key.
         ///
+        static let applicationName = "ApplicationName"
+
+        ///
+        /// Property list key.
+        ///
         static let keychainServiceIdentifier = "KeychainServiceIdentifier"
 
         ///
@@ -49,6 +54,23 @@ enum InfoPlist {
         }
 
         preconditionFailure("Info.plist entry \"\(Key.minimumSupportedServerMajorVersion)\" must be an integer or a string representing one but was \(type(of: value)).")
+    }
+
+    ///
+    /// The name of the application every bundle in this app group belongs to, as presented to a server.
+    ///
+    /// This is deliberately not `CFBundleName`, which Xcode derives from `PRODUCT_NAME` and therefore reads `Widgets` inside the extension — an explicit `CFBundleName` in the extension's own `Info.plist` does not win, because the generated property list overwrites it. A server administrator reading a session list should see one application, not one entry per bundle that happens to make requests.
+    ///
+    static var applicationName: String {
+        guard let value = Bundle.main.object(forInfoDictionaryKey: Key.applicationName) else {
+            preconditionFailure("Info.plist is missing the \"\(Key.applicationName)\" entry.")
+        }
+
+        guard let stringValue = value as? String else {
+            preconditionFailure("Info.plist entry \"\(Key.applicationName)\" must be a string but was \(value).")
+        }
+
+        return stringValue
     }
 
     ///

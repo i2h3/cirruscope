@@ -74,8 +74,10 @@ enum ServerConnection {
         }
     }
 
-    /// `userAgent` is the HTTP user agent Cirruscope presents to the server, derived from the app's bundle name.
+    /// `userAgent` is the HTTP user agent Cirruscope presents to the server, taken from `InfoPlist.applicationName`.
+    ///
+    /// It deliberately does not read `CFBundleName`, which Xcode derives from `PRODUCT_NAME`: this type is compiled into the widget extension too, where that resolves to `Widgets` and every request the extension makes would name itself that in the server's session list.
     static var userAgent: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Cirruscope"
+        InfoPlist.applicationName
     }
 }
