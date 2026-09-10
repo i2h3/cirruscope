@@ -3,6 +3,7 @@
 
 import Foundation
 import os
+import SwiftUI
 import WebKit
 
 ///
@@ -29,6 +30,13 @@ final class NextcloudNavigationDecider: WebPage.NavigationDeciding {
     var store: Store?
 
     ///
+    /// How an address off the connected server is handed to the browser, or `nil` until `NextcloudView` has one to give.
+    ///
+    /// SwiftUI's own action, taken from the view's environment for the same reason the store is taken from there: it is not available at the moment this object is built. Until it arrives, an outward link is left to the web view rather than swallowed, which is the milder of the two ways to be wrong about it.
+    ///
+    var openURL: OpenURLAction?
+
+    ///
     /// The address a silent retry is outstanding for and the moment it went out, or `nil` while none is.
     ///
     /// This is the retry budget, and both halves of it are load-bearing. The address is what keeps the budget from being spent by an unrelated page: a stale value can only ever be consumed by a second expiry on the very page that was retried. The moment is what keeps it from being spent at all once the retry can no longer be in flight, which is the case a retry that is never answered would otherwise leave open forever — the address in `redirect_url` is by construction the page the user was on and will most likely return to, so "never released" and "released on the wrong occasion" are the same defect here.
@@ -44,6 +52,13 @@ final class NextcloudNavigationDecider: WebPage.NavigationDeciding {
     private static let retryWindow = Duration.seconds(60)
 
     ///
+    /// The URL schemes a page lives at, and therefore the only ones worth handing to a browser.
+    ///
+    /// Everything else a navigation can carry is either the document's own machinery — `about:`, `blob:`, `data:` — which belongs to WebKit and would be meaningless outside it, or a scheme for some other app entirely, which this web view does not open today and which is not what confining it to one server is about.
+    ///
+    private static let browsableSchemes: Set<String> = ["http", "https"]
+
+    ///
     /// Records this decider's activity under the `NextcloudNavigationDecider` category.
     ///
     private let logger = Logger(for: NextcloudNavigationDecider.self)
@@ -51,11 +66,15 @@ final class NextcloudNavigationDecider: WebPage.NavigationDeciding {
     func decidePolicy(for action: WebPage.NavigationAction, preferences _: inout WebPage.NavigationPreferences) async -> WKNavigationActionPolicy {
         logger.debug("Deciding policy for a navigation action to \(action.request.url?.absoluteString ?? "no URL")")
 
-        // Only the main frame. Nextcloud Office and similar editors load their own interface in a sub-frame, and a
-        // sign-in form appearing inside one of those is not the session having lapsed on the page the user is looking
-        // at. macOS draws the line in the same place, and for the same reason.
-        guard action.target?.isMainFrame == true else {
-            logger.debug("Navigation action does not target the main frame; returning .allow")
+        // A sub-frame is left alone. Nextcloud Office and similar editors load their own interface in one, hosted on
+        // a different domain than the server itself, and neither a sign-in form nor an outside address appearing
+        // inside such a frame is the user leaving the page — it is the page. macOS draws the line in the same place.
+        // A navigation carrying no target frame at all is not a sub-frame but a request for a new window, which is
+        // what `target="_blank"` produces and what most of Nextcloud's outward links are. There is no second window
+        // to put it in here, so it is decided like any other navigation of the frame the user is looking at; macOS
+        // sends the same case to a `WKUIDelegate` that opens a window instead.
+        if let target = action.target, target.isMainFrame == false {
+            logger.debug("Navigation action targets a sub-frame; returning .allow")
             return .allow
         }
 
@@ -74,14 +93,32 @@ final class NextcloudNavigationDecider: WebPage.NavigationDeciding {
             return .allow
         }
 
-        guard NextcloudLoginPage.matches(url, on: account.server) else {
-            logger.debug("Navigation action is not the connected server's sign-in form; returning .allow")
-            return .allow
+        guard let route = NextcloudSessionRoute.matching(url, on: account.server) else {
+            guard handOverToBrowser(url, insteadOf: account.server) else {
+                logger.debug("Navigation action addresses neither of the connected server's session routes and is not the browser's to take over; returning .allow")
+                return .allow
+            }
+
+            logger.notice("Navigation action targets \(url.absoluteString), which is off the connected server; handed it to the browser and returning .cancel")
+
+            return .cancel
+        }
+
+        // Nextcloud's own "Log out" is an unambiguous instruction, so it is widened rather than reversed: the
+        // navigation is cancelled and the account signed out of the app too. Cancelling means the server never
+        // processes the request, which is why the sign-out has to revoke the app password itself — `Store.logout()`
+        // does, and without it the browser session would end while a working credential stayed on the account's
+        // device list. macOS reads the same link the same way.
+        guard route != .signOut else {
+            logger.notice("Navigation action targets the connected server's sign-out link; signing out of the app as well and returning .cancel")
+            store.logout()
+
+            return .cancel
         }
 
         // The server names the page the redirected request had been for; where it names none that survives being
         // checked against the connected server, the server's own root is somewhere to land that always exists.
-        let target = NextcloudLoginPage.redirectTarget(of: url, on: account.server) ?? account.server
+        let target = NextcloudSessionRoute.redirectTarget(of: url, on: account.server) ?? account.server
 
         guard hasOutstandingRetry(for: target) == false else {
             logger.notice("Re-requesting \(target.absoluteString) with the stored app password already landed back on the sign-in form; the app password is no longer accepted, so requiring a new sign-in and returning .cancel")
@@ -96,6 +133,36 @@ final class NextcloudNavigationDecider: WebPage.NavigationDeciding {
         page?.load(account.authenticatedRequest(for: target))
 
         return .cancel
+    }
+
+    ///
+    /// Whether `url` is somewhere the browser should take over, and hands it there when it is.
+    ///
+    /// The web view is the Nextcloud interface and nothing else. A page on another site displayed inside it would borrow the app's chrome and the trust that goes with it while being none of the app's business, so it is handed to the browser instead, where it arrives with an address bar of its own. macOS does the same at the same point, through `NSWorkspace`.
+    /// Origin decides it, not host: a different port or a plain-HTTP spelling of the same machine is a different site, and this is the guard that keeps the web view — which carries the account's session — from being pointed at one.
+    /// Only pages are handed over. A scheme the browser does not speak is left to WebKit, which is the right answer for the ones a document uses on itself — `about:`, `blob:`, `data:` — and, for the ones the system could open instead, an existing gap rather than one opened here: a `mailto:` or `tel:` link does nothing in this web view today and still does nothing.
+    ///
+    private func handOverToBrowser(_ url: URL, insteadOf serverAddress: URL) -> Bool {
+        guard SameOriginURL(path: url.absoluteString, relativeTo: serverAddress) == nil else {
+            return false
+        }
+
+        guard let scheme = url.scheme?.lowercased() else {
+            return false
+        }
+
+        guard Self.browsableSchemes.contains(scheme) else {
+            return false
+        }
+
+        guard let openURL else {
+            logger.error("Navigation action to \(url.absoluteString) leaves the connected server, but no way to open it has been handed over; leaving it to the web view")
+            return false
+        }
+
+        openURL(url)
+
+        return true
     }
 
     func decidePolicy(for response: WebPage.NavigationResponse) async -> WKNavigationResponsePolicy {
