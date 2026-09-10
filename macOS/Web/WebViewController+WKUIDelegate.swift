@@ -63,16 +63,29 @@ extension WebViewController: WKUIDelegate {
             return nil
         }
 
-        if let host = url.host,
-           let serverHost = AccountStore.shared.serverAddress?.host,
-           host.caseInsensitiveCompare(serverHost) != .orderedSame
-        {
-            logger.debug("New-window request targets external host \(host); opening it in the system browser (WebViewController \(self.logID))")
-            NSWorkspace.shared.open(url)
-        } else {
-            logger.debug("New-window request stays on the configured server or has no comparable host; presenting a new web view window (WebViewController \(self.logID))")
-            (NSApp.delegate as? AppDelegate)?.presentWebViewWindow(targetURL: url)
+        guard let serverAddress = AccountStore.shared.serverAddress else {
+            logger.debug("No server is configured, so there is nothing to open this against; ignoring (WebViewController \(self.logID))")
+            return nil
         }
+
+        // The same decision the navigation delegate makes, through the same type: a window opened here loads its
+        // target with the app password attached, so "is this the configured server" has to be answered the same way
+        // in both places. It used to be answered here by comparing hosts, which let a differently-ported service on
+        // the server's own machine be opened in a credentialed window.
+        guard WebViewDestination.of(url, connectedTo: serverAddress) == .webView else {
+            guard NSWorkspace.shared.urlForApplication(toOpen: url) != nil else {
+                logger.debug("New-window request targets \(url.absoluteString), which is off the configured server, but nothing is registered to open it; ignoring (WebViewController \(self.logID))")
+                return nil
+            }
+
+            logger.debug("New-window request targets \(url.absoluteString), which is off the configured server; handing it to the system (WebViewController \(self.logID))")
+            NSWorkspace.shared.open(url)
+
+            return nil
+        }
+
+        logger.debug("New-window request stays on the configured server; presenting a new web view window (WebViewController \(self.logID))")
+        (NSApp.delegate as? AppDelegate)?.presentWebViewWindow(targetURL: url)
 
         return nil
     }

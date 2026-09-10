@@ -93,10 +93,11 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     /// `startInitialLoadIfNeeded()` seeds it with the initial target, `handleNavigationFailure(_:)` updates it to the URL that actually failed, and `retryLoad(_:)` reloads it — rather than calling `WKWebView.reload()`, which does nothing after a provisional failure that never committed a page.
     private var pendingRetryURL: URL?
 
-    /// `hasRetriedLoginRedirect` is `true` once `WebViewController+WKNavigationDelegate` has silently re-issued a navigation redirected to the server's login page with the stored app password, so a second such redirect is recognized as the credential itself being rejected rather than an ordinary expired browser-session cookie.
+    /// `retryBudget` is the one silent retry this window is allowed while working through a lapsed browser session, so a second sign-in redirect for the same page is recognized as the credential itself being rejected rather than an ordinary expired cookie.
     ///
-    /// `webView(_:decidePolicyFor:decisionHandler:)` sets it before retrying and consults it to decide whether to retry again or fall back to `AppDelegate.requireSignIn()`; `webView(_:didFinish:)` clears it on every successful load so a later, unrelated session expiry still gets its own retry attempt.
-    var hasRetriedLoginRedirect = false
+    /// `webView(_:decidePolicyFor:decisionHandler:)` spends it before retrying and consults it to decide whether to retry again or fall back to `AppDelegate.requireSignIn()`; the response half of the same method releases it the moment the server answers the retry at all.
+    /// It replaced a plain flag cleared in `webView(_:didFinish:)`, which was wrong in a way that cost users their session: a retry that ended as a download, as an external redirect, or as a network failure never reached `didFinish`, so the flag stayed raised and the next perfectly ordinary expiry signed the account out. `SilentRetryBudget` is shared with iOS, the bookkeeping being the subtle half of this decision.
+    var retryBudget = SilentRetryBudget()
 
     /// `webWindowController` is the `WebWindowController` hosting this controller, from which the `targetURL` to load is read once the view is in its window.
     private var webWindowController: WebWindowController? {
