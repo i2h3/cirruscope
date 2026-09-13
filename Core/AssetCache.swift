@@ -126,6 +126,32 @@ final class AssetCache: Sendable {
         return try? Data(contentsOf: fileURL)
     }
 
+    /// `store(_:forKey:)` writes bytes this cache did not fetch itself under `key`, replacing whatever was there.
+    ///
+    /// Everything else here fetches what it stores, which is what lets it keep an `ETag` beside a payload and revalidate against it later. Some assets cannot be obtained that way: a user's avatar is read through Rainmaker, because the only thing distinguishing a photograph the user chose from a monogram the server drew is a response header, and a caller that fetched the bytes through this type would never see it. Those bytes still belong in the shared container, so this is the way in.
+    /// No `ETag` is kept, and any stale one is removed: this cache did not see the response, so it cannot claim to know what the server would revalidate against. A caller storing bytes this way owns deciding when they are refetched.
+    func store(_ data: Data, forKey key: String) {
+        let fileURL = fileURL(forKey: key)
+
+        do {
+            try data.write(to: fileURL, options: .atomic)
+            removeETag(for: fileURL)
+            logger.info("Stored \(data.count) externally fetched byte(s) for \(key, privacy: .public)")
+        } catch {
+            logger.error("Could not store externally fetched bytes for \(key, privacy: .public): \(error.localizedDescription)")
+        }
+    }
+
+    /// `remove(forKey:)` deletes the copy cached under `key`, along with its `ETag`, if either exists.
+    ///
+    /// A caller that learns an asset it cached is no longer the right one to show uses this — an account whose avatar stopped being a photograph and became a generated monogram, for instance, where leaving the old file in place would keep showing a picture the user has since removed.
+    func remove(forKey key: String) {
+        let fileURL = fileURL(forKey: key)
+
+        try? FileManager.default.removeItem(at: fileURL)
+        removeETag(for: fileURL)
+    }
+
     /// `cache(remote:)` downloads the asset at `remoteURL` into the cache directory, unless the server confirms via the `ETag` sent in `If-None-Match` that the cached copy is still up to date.
     ///
     /// Returns the file system URL of the cached copy.

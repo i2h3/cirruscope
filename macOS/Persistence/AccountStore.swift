@@ -129,7 +129,7 @@ final class AccountStore {
         save()
     }
 
-    /// `disconnect()` deletes the account — cascading to its apps and their shortcuts — then empties `AssetCache` and the app icons already drawn from it, and clears the stored Login Flow v2 credentials, so nothing describing the old server remains.
+    /// `disconnect()` deletes the account — cascading to its apps and their shortcuts — then empties `AssetCache` and the app icons and user avatars already drawn from it, and clears the stored Login Flow v2 credentials, so nothing describing the old server — or the people on it — remains.
     ///
     /// `AppDelegate.logOut()` calls it; this reproduces the old `Settings.serverAddress = nil` cascade in one place. The announcement now happens in `deleteAccount()`, ahead of the two clears rather than after them, which is unobservable: the post is delivered on the next main-thread turn, while both clears are synchronous and finish inside the current one.
     func disconnect() {
@@ -137,6 +137,7 @@ final class AccountStore {
 
         AssetCache.shared.clear()
         ServerAppIcons.shared.clear()
+        ServerAvatars.shared.clear()
         Keychain.clearAll()
     }
 
