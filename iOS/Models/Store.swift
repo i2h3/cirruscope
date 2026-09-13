@@ -233,7 +233,7 @@ class Store {
     ///
     /// Forget everything this device holds about the connected account, which is the half `logout()` and `requireSignIn()` have in common.
     ///
-    /// The web view's site data goes with the credentials, so a later account does not inherit a session from this one. The background refresh is disarmed and the app icon badge cleared before the credentials they counted with are gone, so the home screen does not keep advertising a number from a session that no longer exists. Neither is strictly load-bearing — the next foreground refresh would find no account and clear the badge anyway — but a badge that outlives a sign-out even briefly is the kind of thing a user reports as the app still being logged in.
+    /// The web view's site data goes with the credentials, so a later account does not inherit a session from this one, and so do the cached assets, which include the avatars of everyone whose activity this account could see. The background refresh is disarmed and the app icon badge cleared before the credentials they counted with are gone, so the home screen does not keep advertising a number from a session that no longer exists. Neither is strictly load-bearing — the next foreground refresh would find no account and clear the badge anyway — but a badge that outlives a sign-out even briefly is the kind of thing a user reports as the app still being logged in.
     ///
     private func discardSession() {
         WKWebsiteDataStore.default().removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast) {
@@ -241,6 +241,12 @@ class Store {
         }
 
         Keychain.clearAll()
+
+        // The cached assets go too. Branding outliving a sign-out would only be untidy, but the avatar cache holds
+        // photographs of the people on that server, and those must not survive the account that was allowed to see them.
+        AssetCache.shared.clear()
+        ServerAppIcons.shared.clear()
+        ServerAvatars.shared.clear()
 
         NotificationRefreshTask.cancelRequest()
 
