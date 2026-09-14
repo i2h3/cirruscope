@@ -1,75 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "“%@” is not a valid server name. Please check the address and try again." : {
-      "comment" : "Error shown when the server name in the entered address cannot name a server; the placeholder is that name.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "“%@” ist kein gültiger Servername. Bitte überprüfen Sie die Adresse und versuchen Sie es erneut."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "“%@” no es un nombre de servidor válido. Comprueba la dirección y vuelve a intentarlo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "“%@” n'est pas un nom de serveur valide. Veuillez vérifier l'adresse et réessayer."
-          }
-        }
-      }
-    },
-    "“%@” is not a valid URL. Please check the address and try again." : {
-      "comment" : "Alert message shown when the entered server address is not a valid URL; the placeholder is the address the user typed.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "“%@” ist keine gültige URL. Bitte überprüfen Sie die Adresse und versuchen Sie es erneut."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "“%@” no es una URL válida. Comprueba la dirección y vuelve a intentarlo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "“%@” n'est pas une URL valide. Veuillez vérifier l'adresse et réessayer."
-          }
-        }
-      }
-    },
-    "“%lld” is not a valid port number. Please enter a port between 1 and 65535." : {
-      "comment" : "Error shown when the port in the entered server address is out of range; the placeholder is that port.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "“%lld” ist keine gültige Portnummer. Bitte geben Sie einen Port zwischen 1 und 65535 ein."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "“%lld” no es un número de puerto válido. Introduce un puerto entre 1 y 65535."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "“%lld” n'est pas un numéro de port valide. Veuillez saisir un port compris entre 1 et 65535."
-          }
-        }
-      }
-    },
     "Account" : {
       "comment" : "Label of the toolbar control that opens the account menu.",
       "localizations" : {
@@ -393,9 +324,8 @@
         }
       }
     },
-    "Server address" : {},
-    "Server Address" : {
-      "comment" : "Accessibility label of the server address field on the iOS sign-in screen. It is not displayed: the field shows an example address as its prompt instead.",
+    "Server address" : {
+      "comment" : "The server address field on the iOS sign-in screen: both the label above it and the field's own accessibility label, which are one string because they are the same words. The field itself displays an example address as its prompt rather than this.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -758,6 +688,75 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Votre expérience Nextcloud, sublimée."
+          }
+        }
+      }
+    },
+    "“%@” is not a valid server name. Please check the address and try again." : {
+      "comment" : "Error shown when the server name in the entered address cannot name a server; the placeholder is that name.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” ist kein gültiger Servername. Bitte überprüfen Sie die Adresse und versuchen Sie es erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” no es un nombre de servidor válido. Comprueba la dirección y vuelve a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” n'est pas un nom de serveur valide. Veuillez vérifier l'adresse et réessayer."
+          }
+        }
+      }
+    },
+    "“%@” is not a valid URL. Please check the address and try again." : {
+      "comment" : "Alert message shown when the entered server address is not a valid URL; the placeholder is the address the user typed.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” ist keine gültige URL. Bitte überprüfen Sie die Adresse und versuchen Sie es erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” no es una URL válida. Comprueba la dirección y vuelve a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” n'est pas une URL valide. Veuillez vérifier l'adresse et réessayer."
+          }
+        }
+      }
+    },
+    "“%lld” is not a valid port number. Please enter a port between 1 and 65535." : {
+      "comment" : "Error shown when the port in the entered server address is out of range; the placeholder is that port.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%lld” ist keine gültige Portnummer. Bitte geben Sie einen Port zwischen 1 und 65535 ein."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%lld” no es un número de puerto válido. Introduce un puerto entre 1 y 65535."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%lld” n'est pas un numéro de port valide. Veuillez saisir un port compris entre 1 et 65535."
           }
         }
       }
