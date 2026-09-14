@@ -7,7 +7,7 @@ import Foundation
 ///
 /// Nextcloud names an activity by a type string rather than by a verb, and the files app alone registers more of them than a badge could distinguish — downloads and favourite changes among them. This maps the ones the server's own `files` filter admits, which is exactly `file_created`, `file_changed`, `file_deleted` and `file_restored`, and answers `nil` for anything else so an unrecognized type is dropped rather than drawn under a badge that would misdescribe it.
 /// Sharing activities are deliberately absent. They belong to the `files_sharing` app, and the server offers no filter covering file changes and shares together — see `DECISIONS.md`. Should that scope ever widen, a `shared` case belongs here beside these four rather than at the view.
-enum ActivityVerb: String, CaseIterable, Sendable {
+enum ActivityVerb: String, CaseIterable, Codable, Sendable {
     /// `created` is a file or folder appearing, which the server reports as `file_created`.
     case created
 

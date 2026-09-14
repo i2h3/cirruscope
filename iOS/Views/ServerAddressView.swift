@@ -128,7 +128,7 @@ struct ServerAddressView: View {
                     Text("Server address")
                         .font(.subheadline.weight(.semibold))
 
-                    TextField("Server Address", text: $enteredAddress, prompt: Text(verbatim: "https://your.nextcloud.com"))
+                    TextField("Server address", text: $enteredAddress, prompt: Text(verbatim: "https://your.nextcloud.com"))
                         .autocorrectionDisabled()
                         .keyboardType(.URL)
                         .textContentType(.URL)
