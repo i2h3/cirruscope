@@ -1,0 +1,104 @@
+// SPDX-FileCopyrightText: 2026 Iva Horn
+// SPDX-License-Identifier: MIT
+
+{
+    "$schema": "https://biomejs.dev/schemas/2.5.13/schema.json",
+
+    // Only the four folders holding hand-written JavaScript are ever read or written, and every pattern is
+    // pinned to *.js so nothing else can match. This is the safety boundary, not tidiness: Biome enables the
+    // CSS and JSON formatters by default, so without this allowlist a bare `biome check --write` would rewrite
+    // the Xcode-owned JSON that REUSE.toml annotates precisely because it must never be hand-edited — the
+    // Xcode Cloud manifest, the app icon bundle, the asset catalogue, the website's PWA manifest — along with
+    // the three hand-written stylesheets. A file matching no pattern here is never processed.
+    "files": {
+        "includes": [
+            "Cirruscope/Scripts/*.js",
+            "iOS/Scripts/*.js",
+            "macOS/Scripts/*.js",
+            "Website/js/*.js"
+        ],
+
+        // The repository is overwhelmingly Swift; do not report every file Biome cannot handle.
+        "ignoreUnknown": true
+    },
+
+    // Belt and braces behind files.includes, so even an explicit path argument or a later broadening of the
+    // allowlist is a no-op for these languages. HTML's formatter is off upstream, but its linter is not, and it
+    // would otherwise run the accessibility rules across the website's pages.
+    "css": { "formatter": { "enabled": false }, "linter": { "enabled": false }, "assist": { "enabled": false } },
+    "json": { "formatter": { "enabled": false }, "linter": { "enabled": false }, "assist": { "enabled": false } },
+    "html": { "formatter": { "enabled": false }, "linter": { "enabled": false }, "assist": { "enabled": false } },
+
+    // indentStyle has to be stated: Biome's own default is "tab". indentWidth (2), lineWidth (80) and
+    // lineEnding ("lf") are already the defaults and are left unstated.
+    "formatter": {
+        "indentStyle": "space",
+        "indentWidth": 2
+    },
+
+    "javascript": {
+        // Both restate Biome's defaults, deliberately. `semicolons` is the one that matters historically: the
+        // two scripts the app invokes with arguments used to be bare function expressions whose text Swift
+        // completed by appending a call, and a terminating semicolon would have orphaned that call and stopped
+        // them working without throwing. They now assign onto the `Cirruscope` namespace instead, which is a
+        // valid program either way — see DECISIONS.md → "Why does a Swift project carry a JavaScript linter?".
+        "formatter": {
+            "quoteStyle": "double",
+            "semicolons": "always"
+        }
+
+        // "globals" is deliberately absent. Every script reaches the native side through
+        // `window.webkit.messageHandlers.<name>.postMessage`, a member access on a built-in global rather than
+        // a bare `webkit` reference, so noUndeclaredVariables resolves every name in the tree already. A
+        // Nextcloud page global (OC, OCA) would have to be declared here.
+    },
+
+    "linter": {
+        "rules": {
+            "preset": "recommended",
+
+            "complexity": {
+                // Recommended with a safe fix, so `check --write` applies it. It exempts function expressions
+                // using `this` or `arguments`, which is what keeps NotificationBridge.js's prototype methods
+                // intact.
+                "useArrowFunction": "error"
+            },
+
+            "correctness": {
+                // Not recommended upstream; enabled because these scripts are injected into a page the project
+                // does not own, where a typo'd global fails silently rather than loudly. It reports nothing
+                // today.
+                "noUndeclaredVariables": "error",
+
+                // Recommended at warning, raised to error. Note this covers catch bindings, which is why the
+                // storage guards use ES2019 optional catch binding.
+                "noUnusedFunctionParameters": "error",
+                "noUnusedVariables": "error"
+            },
+
+            "style": {
+                // Only ever narrows `let` to `const`; it never looks at `var`.
+                "useConst": "error"
+            },
+
+            "suspicious": {
+                // Enabled so an empty block has to say why it is empty. The rule ignores blocks containing a
+                // comment, which is how the guards in these scripts already document themselves.
+                "noEmptyBlockStatements": "error",
+
+                // Off deliberately, and defensively. Biome parses every .js file as a module, so it reads the
+                // "use strict" in Website/js/site.js as redundant and offers a *safe* fix deleting it — but
+                // that file is loaded as a classic script, so the directive is load-bearing and removing it
+                // would drop the file into sloppy mode. The rule is not in the recommended preset today; this
+                // pins it off in case a later release promotes it.
+                "noRedundantUseStrict": "off",
+
+                // Not recommended upstream, and its fix is unsafe — so `check --write` will not quietly
+                // rewrite a new `var`, but `check` and `ci` will refuse it. Safe across these scripts because
+                // every one wraps its body in a function, so nothing is declared at realm top level and the
+                // scripts re-evaluated repeatedly in one page context cannot redeclare anything.
+                "noVar": "error"
+            }
+        }
+    }
+}
