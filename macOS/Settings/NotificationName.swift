@@ -27,7 +27,7 @@ extension Notification.Name {
     /// It is the system-driven counterpart to `appearanceSettingsDidChange`, which carries the account's own appearance settings; both funnel into `WebViewController.reapplyAppearance()`.
     static let accentColorDidChange = Notification.Name("AccentColorDidChange")
 
-    /// `nextcloudHeaderHeightDidChange` is posted by `NextcloudHeaderHeight` whenever a page reports a header height different from the one recorded so every open `WebWindow` re-centers its standard window buttons in the new one.
+    /// `nextcloudHeaderHeightDidChange` is posted by `NextcloudHeaderHeight` whenever a page reports a header height different from the one recorded so every open `WebWindowController` re-centers its window's standard window buttons in the new one.
     ///
     /// It is needed because a change in that height triggers no layout pass of its own, so a window would otherwise keep its old placement until it was next resized — and because the height reported by one page belongs to every open window, all of them showing the same server, rather than only to the one whose page reported it.
     static let nextcloudHeaderHeightDidChange = Notification.Name("NextcloudHeaderHeightDidChange")

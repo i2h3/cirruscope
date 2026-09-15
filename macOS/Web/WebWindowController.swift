@@ -26,5 +26,21 @@ class WebWindowController: NSWindowController {
         // encodes which page it shows. The per-window identifier is assigned by whoever creates the window.
         window?.isRestorable = true
         window?.restorationClass = AppDelegate.self
+
+        observeHeaderHeight()
+    }
+
+    /// `observeHeaderHeight()` subscribes to `Notification.Name.nextcloudHeaderHeightDidChange` so a newly reported Nextcloud header height re-centers this window's standard window buttons in it.
+    ///
+    /// It is observed here rather than on `WebWindow` itself because `windowDidLoad()` is the documented hook every window of this scene passes through, while what a storyboard sends the window object it unarchives is not something to rest a placement on. Observing per window rather than once for the app is what keeps every open window correct: the height one page reports belongs to all of them, all of them showing the same server.
+    /// The observer needs no explicit removal: `NotificationCenter` drops selector-based observers automatically when the observing object is deallocated.
+    private func observeHeaderHeight() {
+        NotificationCenter.default.addObserver(self, selector: #selector(headerHeightDidChange), name: .nextcloudHeaderHeightDidChange, object: nil)
+    }
+
+    @objc
+    private func headerHeightDidChange() {
+        logger.debug("Nextcloud header height changed; re-centering the window buttons in it")
+        (window as? WebWindow)?.repositionControlButtons()
     }
 }

@@ -60,8 +60,8 @@ class WebWindow: NSWindow {
     ///
     /// In fullscreen macOS relocates the window buttons into the auto-revealing title bar; the custom placement is skipped there so the buttons stay reachable in that title bar (including the green button used to leave fullscreen) instead of being pulled into the hidden content area.
     /// Stepping aside while `NextcloudHeaderHeight` knows no height is what keeps a guess about one server release out of the code: AppKit's own placement is then left in force, which is the state a fresh install's very first window is shown in until its first page load reports (see `NextcloudHeaderHeight` for why that shift is accepted).
-    /// Besides the two layout hooks above, `headerHeightDidChange()` calls it as well: a newly reported height triggers no layout pass of its own, so a window already on screen would otherwise keep its old placement until it was next resized.
-    private func repositionControlButtons() {
+    /// Besides the two layout hooks above, `WebWindowController` calls it when a page reports a header height different from the one recorded: that change triggers no layout pass of its own, so a window already on screen would otherwise keep its old placement until it was next resized. Hence not `private`.
+    func repositionControlButtons() {
         guard styleMask.contains(.fullScreen) == false else {
             return
         }
@@ -94,19 +94,5 @@ class WebWindow: NSWindow {
         let leading = leadingInset + CGFloat(index) * buttonSpacing
 
         return NSPoint(x: leading, y: windowHeight - topInset - buttonHeight)
-    }
-
-    /// `awakeFromNib()` subscribes to `Notification.Name.nextcloudHeaderHeightDidChange` so a newly reported header height re-centers this window's buttons without waiting for a layout pass that may never come.
-    ///
-    /// The storyboard's "Web Window" scene is the only place a `WebWindow` comes from — `AppDelegate` instantiates that scene's window controller for every web window, including the ones it restores — so this is the one initialization hook every instance passes through. Overriding `NSWindow`'s initializers instead would mean overriding both of its designated ones to keep either path working, for no gain over a hook AppKit sends after unarchiving.
-    /// The observer needs no explicit removal: `NotificationCenter` drops selector-based observers automatically when the observing object is deallocated.
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        NotificationCenter.default.addObserver(self, selector: #selector(headerHeightDidChange), name: .nextcloudHeaderHeightDidChange, object: nil)
-    }
-
-    @objc
-    private func headerHeightDidChange() {
-        repositionControlButtons()
     }
 }
