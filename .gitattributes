@@ -4,6 +4,10 @@
 # Swift: force LF
 *.swift text eol=lf
 
+# JavaScript and its tooling configuration: force LF
+*.js text eol=lf
+*.jsonc text eol=lf
+
 # Xcode project files: force LF
 *.pbxproj text eol=lf
 *.xcworkspacedata text eol=lf
