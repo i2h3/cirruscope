@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: 2026 Iva Horn
+# SPDX-License-Identifier: MIT
+
+name: Biome
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - '**/*.js'
+      - biome.jsonc
+      - .github/workflows/biome.yml
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - '**/*.js'
+      - biome.jsonc
+      - .github/workflows/biome.yml
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Lint and Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # Unlike SwiftFormat, which the macOS image ships, Biome is on no runner image and has to be
+      # installed. The version is pinned to the one biome.jsonc names in its $schema, so the version CI
+      # enforces and the version a contributor installs are the same number written in two places.
+      - name: Setup Biome
+        uses: biomejs/setup-biome@v2
+        with:
+          version: 2.5.13
+
+      # `biome ci` runs the formatter and the linter in one read-only pass and prints its findings as
+      # GitHub annotations, so each one lands on the pull request's own diff. Warnings do not fail a run
+      # by default, hence --error-on-warnings. No Xcode is involved, hence ubuntu-latest.
+      - name: Biome
+        run: biome ci --error-on-warnings .
