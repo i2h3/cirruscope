@@ -8,7 +8,7 @@
      - the language menu, mobile navigation and the FAQ accordion.
    Dark/light appearance is handled entirely in CSS via prefers-color-scheme.
    ========================================================================== */
-(function () {
+(() => {
   "use strict";
 
   var SUPPORTED = ["en", "de", "fr", "es"];
@@ -22,7 +22,9 @@
     try {
       var saved = localStorage.getItem(STORAGE_KEY);
       if (saved && SUPPORTED.indexOf(saved) !== -1) return saved;
-    } catch (e) {}
+    } catch {
+      // Storage is unreachable in a private window; fall back to the browser language.
+    }
     var nav = (navigator.language || "en").slice(0, 2).toLowerCase();
     return SUPPORTED.indexOf(nav) !== -1 ? nav : "en";
   }
@@ -34,7 +36,9 @@
     if (document.body.hasAttribute("data-no-lang-redirect")) return;
     try {
       if (sessionStorage.getItem("cirruscope-redirected")) return;
-    } catch (e) {}
+    } catch {
+      // Storage is unreachable; treat this as a first visit and redirect.
+    }
     var target = preferredLang();
     if (target === "en") return;
     var link = document.querySelector(
@@ -45,7 +49,9 @@
     if (!href) return;
     try {
       sessionStorage.setItem("cirruscope-redirected", "1");
-    } catch (e) {}
+    } catch {
+      // Storage is unreachable; redirect anyway rather than stay on the wrong language.
+    }
     window.location.replace(href);
   }
 
@@ -63,23 +69,25 @@
       toggle.setAttribute("aria-expanded", "true");
     }
 
-    toggle.addEventListener("click", function (e) {
+    toggle.addEventListener("click", (e) => {
       e.stopPropagation();
       if (menu.hidden) open();
       else close();
     });
-    menu.querySelectorAll(".lang__option").forEach(function (opt) {
-      opt.addEventListener("click", function () {
+    menu.querySelectorAll(".lang__option").forEach((opt) => {
+      opt.addEventListener("click", () => {
         try {
           localStorage.setItem(STORAGE_KEY, opt.getAttribute("data-lang"));
-        } catch (e) {}
+        } catch {
+          // Storage is unreachable; the choice simply is not remembered for next time.
+        }
       });
     });
-    document.addEventListener("click", function (e) {
+    document.addEventListener("click", (e) => {
       if (!menu.hidden && !menu.contains(e.target) && e.target !== toggle)
         close();
     });
-    document.addEventListener("keydown", function (e) {
+    document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") close();
     });
   }
@@ -88,7 +96,7 @@
     var toggle = document.querySelector(".hamburger");
     var nav = document.getElementById("mobile-nav");
     if (!toggle || !nav) return;
-    toggle.addEventListener("click", function () {
+    toggle.addEventListener("click", () => {
       nav.hidden = !nav.hidden;
       toggle.setAttribute("aria-expanded", nav.hidden ? "false" : "true");
     });
@@ -96,16 +104,16 @@
 
   function initFaq() {
     var questions = document.querySelectorAll(".faq__question");
-    questions.forEach(function (btn) {
+    questions.forEach((btn) => {
       var item = btn.closest(".faq__item");
       var answer = item.querySelector(".faq__answer");
       var sign = btn.querySelector(".faq__sign");
-      btn.addEventListener("click", function () {
+      btn.addEventListener("click", () => {
         var willOpen = answer.hidden;
-        document.querySelectorAll(".faq__answer").forEach(function (a) {
+        document.querySelectorAll(".faq__answer").forEach((a) => {
           a.hidden = true;
         });
-        document.querySelectorAll(".faq__question").forEach(function (q) {
+        document.querySelectorAll(".faq__question").forEach((q) => {
           q.setAttribute("aria-expanded", "false");
           var s = q.querySelector(".faq__sign");
           if (s) s.textContent = "+";
