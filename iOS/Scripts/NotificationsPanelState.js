@@ -43,7 +43,7 @@
 // happened" is what lets the native side log every one of them at .notice
 // without flooding the log store.
 
-(function () {
+(() => {
   var candidates = [
     "#notifications .header-menu__trigger",
     '#notifications button[aria-controls="header-menu-notifications"]',
@@ -96,14 +96,14 @@
       });
 
       reported = state;
-    } catch (error) {
+    } catch {
       // The native message handler is unavailable; leave the state unreported.
     }
   }
 
   reportState();
 
-  var observer = new MutationObserver(function () {
+  var observer = new MutationObserver(() => {
     reportState();
   });
 

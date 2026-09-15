@@ -14,7 +14,7 @@
 //
 // Injected at document start so the replacement is in place before the page's own scripts read the API.
 
-(function () {
+(() => {
   var counter = 0;
   var registry = {};
 
@@ -44,7 +44,7 @@
         body: String(this.body),
         tag: String(this.tag),
       });
-    } catch (error) {
+    } catch {
       // The native message handler is unavailable; drop the notification silently.
     }
   }
@@ -52,7 +52,7 @@
   CirruscopeNotification.permission = "granted";
   CirruscopeNotification.maxActions = 0;
 
-  CirruscopeNotification.requestPermission = function (callback) {
+  CirruscopeNotification.requestPermission = (callback) => {
     if (typeof callback === "function") {
       callback("granted");
     }
@@ -65,7 +65,11 @@
   };
 
   CirruscopeNotification.prototype.addEventListener = function (type, handler) {
-    (this._listeners[type] = this._listeners[type] || []).push(handler);
+    if (!this._listeners[type]) {
+      this._listeners[type] = [];
+    }
+
+    this._listeners[type].push(handler);
   };
 
   CirruscopeNotification.prototype.removeEventListener = function (
@@ -102,7 +106,7 @@
   // idempotently so a document that already carries one is not disturbed.
   window.Cirruscope = window.Cirruscope || {};
 
-  window.Cirruscope.activateNotification = function (id) {
+  window.Cirruscope.activateNotification = (id) => {
     var notification = registry[id];
     if (!notification) {
       return;
@@ -110,7 +114,7 @@
 
     try {
       window.focus();
-    } catch (error) {
+    } catch {
       // Ignore; the native side already brings the window forward.
     }
 
@@ -123,7 +127,7 @@
       writable: true,
       value: CirruscopeNotification,
     });
-  } catch (error) {
+  } catch {
     window.Notification = CirruscopeNotification;
   }
 })();
