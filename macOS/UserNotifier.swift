@@ -139,7 +139,7 @@ final class UserNotifier: NSObject, UNUserNotificationCenterDelegate {
         webView.window?.makeKeyAndOrderFront(nil)
 
         if let webNotificationID {
-            webView.evaluateJavaScript("window.__cirruscopeActivateNotification && window.__cirruscopeActivateNotification(\"\(webNotificationID)\")")
+            webView.evaluateJavaScript("window.Cirruscope?.activateNotification?.(\"\(webNotificationID)\")")
         }
     }
 

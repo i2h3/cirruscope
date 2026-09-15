@@ -566,11 +566,11 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
 
     /// `appearanceAttributeScript()` builds the JavaScript that mirrors the account's current appearance settings and the app's effective accent color onto `<html>` — as the `data-cirruscope-translucency`, `data-cirruscope-full-width`, `data-cirruscope-accent`, and `data-cirruscope-accent-bright` attributes `Cirruscope.css` scopes its rules to, plus the `--cirruscope-accent-color` custom property it reads the color out of — or `nil` if the bundled `AppearanceAttributes.js` resource is missing.
     ///
-    /// It invokes the bundled `macOSScript.appearanceAttributes` function expression with the current values as its arguments. The same script backs both the document-start seed (`installAppearanceAttributes()`) and the live re-application (`reapplyAppearance()`), so the two paths never diverge. Translucency defaults off and full-width on until the account records a choice, and the accent argument is `null` when the color cannot be expressed in sRGB, which closes the stylesheet's gate and leaves Nextcloud's own primary color in place.
+    /// It emits the bundled `macOSScript.appearanceAttributes` script, which contributes `applyAppearanceAttributes` to the page's `Cirruscope` namespace, followed by a call to it with the current values as its arguments. Both parts go together on every evaluation because the namespace assignment is idempotent, so a document that already carries one is simply rebound rather than disturbed. The same script backs both the document-start seed (`installAppearanceAttributes()`) and the live re-application (`reapplyAppearance()`), so the two paths never diverge. Translucency defaults off and full-width on until the account records a choice, and the accent argument is `null` when the color cannot be expressed in sRGB, which closes the stylesheet's gate and leaves Nextcloud's own primary color in place.
     /// The accent color is resolved against `webView.effectiveAppearance` rather than the application's, because that is the appearance the page is rendered under, and it carries the increased-contrast axis as well as light and dark. It is interpolated into a JavaScript string literal without escaping, which is safe because `WebAccentColor.hexString` can only ever be `#` followed by six hexadecimal digits — an invariant `WebAccentColorTests` pins for exactly this reason. Any future value that is not machine-generated in that form would need proper encoding instead.
     /// Note that nothing here consults the translucency setting before resolving the accent color: the value is always forwarded and `Cirruscope.css` decides whether it applies, so switching translucency on picks up the accent that is current at that moment rather than one cached from whenever it was last on.
     private func appearanceAttributeScript() -> String? {
-        guard let function = macOSScript.appearanceAttributes.source else {
+        guard let script = macOSScript.appearanceAttributes.source else {
             return nil
         }
 
@@ -579,7 +579,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         let accentColor = WebAccentColor.effective(in: webView.effectiveAppearance)
         let accentColorArgument = accentColor.map { "'\($0.hexString)'" } ?? "null"
         let accentIsBright = accentColor?.isBright ?? false
-        return "\(function)(\(translucency), \(fullWidth), \(accentColorArgument), \(accentIsBright));"
+        return "\(script)\nwindow.Cirruscope.applyAppearanceAttributes(\(translucency), \(fullWidth), \(accentColorArgument), \(accentIsBright));"
     }
 
     /// `updateBackgroundImageVisibility()` hides the cached theming background whenever the translucent appearance is enabled — so the window material shows through instead of the server's background image — or once the web view has been revealed, leaving it visible only behind the loading and failure overlays when translucency is off.

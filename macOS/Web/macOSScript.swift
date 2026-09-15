@@ -32,7 +32,7 @@ enum macOSScript: String {
 
     /// `appearanceAttributes` sets the `data-cirruscope-translucency`, `data-cirruscope-full-width`, `data-cirruscope-accent`, and `data-cirruscope-accent-bright` attributes on `<html>` that `Cirruscope.css` scopes its translucency, full-width, and accent-color rules to, along with the `--cirruscope-accent-color` custom property those accent rules re-derive Nextcloud's primary color family from.
     ///
-    /// Unlike the other cases its resource is a function expression rather than a self-invoking script: `WebViewController.appearanceAttributeScript()` invokes it with the account's current appearance settings and the app's effective accent color, both to install it as a document-start user script and to re-apply it on demand with `WKWebView.evaluateJavaScript(_:)`.
+    /// Unlike the other cases its resource runs nothing on its own: it contributes `applyAppearanceAttributes` to the page's `Cirruscope` namespace, and `WebViewController.appearanceAttributeScript()` emits it followed by a call carrying the account's current appearance settings and the app's effective accent color — both to install as a document-start user script and to re-apply on demand with `WKWebView.evaluateJavaScript(_:)`. The namespace assignment is idempotent, so the second path cannot disturb a document that already ran the first.
     case appearanceAttributes = "AppearanceAttributes"
 
     /// `logger` records failures to load a bundled script under the `macOSScript` category.

@@ -8,7 +8,7 @@
 //
 // Each notification is kept in a registry keyed by an id that is also sent to the native side. When
 // the user clicks the notification in the Notification Center, the app calls
-// window.__cirruscopeActivateNotification(id), which runs the page's own click handler — so whatever
+// window.Cirruscope.activateNotification(id), which runs the page's own click handler — so whatever
 // the web interface does on click (typically navigating to the notification's target) happens, just
 // as it would for a native web notification.
 //
@@ -94,8 +94,12 @@
         return true;
     };
 
-    // Invoked from native code when the user clicks the notification in the Notification Center.
-    window.__cirruscopeActivateNotification = function(id) {
+    // Invoked from native code when the user clicks the notification in the Notification Center. It
+    // hangs off the Cirruscope namespace with everything else the app calls into the page, assigned
+    // idempotently so a document that already carries one is not disturbed.
+    window.Cirruscope = window.Cirruscope || {};
+
+    window.Cirruscope.activateNotification = function(id) {
         var notification = registry[id];
         if (!notification) {
             return;
