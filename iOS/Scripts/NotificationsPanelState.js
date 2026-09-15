@@ -44,18 +44,18 @@
 // without flooding the log store.
 
 (() => {
-  var candidates = [
+  const candidates = [
     "#notifications .header-menu__trigger",
     '#notifications button[aria-controls="header-menu-notifications"]',
     ".notifications-button .header-menu__trigger",
     "#notifications button",
   ];
 
-  var reported = "";
+  let reported = "";
 
   function resolve() {
-    for (var index = 0; index < candidates.length; index++) {
-      var element = document.querySelector(candidates[index]);
+    for (let index = 0; index < candidates.length; index++) {
+      const element = document.querySelector(candidates[index]);
 
       if (element) {
         return { element: element, selector: candidates[index] };
@@ -66,12 +66,12 @@
   }
 
   function reportState() {
-    var match = resolve();
-    var available = !!match;
-    var open =
+    const match = resolve();
+    const available = !!match;
+    const open =
       available && match.element.getAttribute("aria-expanded") === "true";
-    var selector = available ? match.selector : "";
-    var state = available + "|" + open + "|" + selector;
+    const selector = available ? match.selector : "";
+    const state = `${available}|${open}|${selector}`;
 
     if (state === reported) {
       return;
@@ -103,7 +103,7 @@
 
   reportState();
 
-  var observer = new MutationObserver(() => {
+  const observer = new MutationObserver(() => {
     reportState();
   });
 

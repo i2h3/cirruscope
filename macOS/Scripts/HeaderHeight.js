@@ -22,21 +22,21 @@
 // forMainFrameOnly: false, and an embedded editor's iframe has no header of the
 // app's window to describe.
 
-(function () {
+(() => {
   if (window !== window.top) {
     return;
   }
 
-  var lastReportedHeight = null;
+  let lastReportedHeight = null;
 
   function reportHeight() {
-    var header = document.querySelector("#header:not(.header-guest)");
+    const header = document.querySelector("#header:not(.header-guest)");
 
     if (!header) {
       return;
     }
 
-    var height = Math.round(header.getBoundingClientRect().height);
+    const height = Math.round(header.getBoundingClientRect().height);
 
     if (height === lastReportedHeight) {
       return;
@@ -51,10 +51,10 @@
 
   reportHeight();
 
-  var header = document.querySelector("#header:not(.header-guest)");
+  const header = document.querySelector("#header:not(.header-guest)");
 
   if (header) {
-    var observer = new ResizeObserver(function () {
+    const observer = new ResizeObserver(() => {
       reportHeight();
     });
 

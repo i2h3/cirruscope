@@ -5,19 +5,19 @@
 // but not on interactive elements within it, to the `windowDrag` message
 // handler so the host window can begin a drag.
 
-(function () {
-  var interactiveSelector =
+(() => {
+  const interactiveSelector =
     'a, button, input, textarea, select, label, [role="button"], [role="link"], [contenteditable="true"], [contenteditable=""]';
 
   document.addEventListener(
     "mousedown",
-    function (event) {
+    (event) => {
       if (event.button !== 0) {
         return;
       }
 
-      var header = document.querySelector("#header");
-      if (!header || !header.contains(event.target)) {
+      const header = document.querySelector("#header");
+      if (!header?.contains(event.target)) {
         return;
       }
 

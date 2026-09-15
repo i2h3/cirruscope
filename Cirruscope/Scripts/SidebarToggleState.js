@@ -5,11 +5,11 @@
 // the `sidebarToggleState` message handler, both once on injection and on every
 // subsequent DOM mutation that could change either value.
 
-(function () {
+(() => {
   function reportState() {
-    var element = document.querySelector(".app-navigation-toggle");
-    var available = !!element;
-    var expanded =
+    const element = document.querySelector(".app-navigation-toggle");
+    const available = !!element;
+    const expanded =
       available && element.getAttribute("aria-expanded") === "true";
     window.webkit.messageHandlers.sidebarToggleState.postMessage({
       available: available,
@@ -19,7 +19,7 @@
 
   reportState();
 
-  var observer = new MutationObserver(function () {
+  const observer = new MutationObserver(() => {
     reportState();
   });
 
