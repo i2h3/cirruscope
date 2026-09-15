@@ -43,68 +43,74 @@
 // happened" is what lets the native side log every one of them at .notice
 // without flooding the log store.
 
-(function() {
-    var candidates = [
-        '#notifications .header-menu__trigger',
-        '#notifications button[aria-controls="header-menu-notifications"]',
-        '.notifications-button .header-menu__trigger',
-        '#notifications button'
-    ];
+(function () {
+  var candidates = [
+    "#notifications .header-menu__trigger",
+    '#notifications button[aria-controls="header-menu-notifications"]',
+    ".notifications-button .header-menu__trigger",
+    "#notifications button",
+  ];
 
-    var reported = '';
+  var reported = "";
 
-    function resolve() {
-        for (var index = 0; index < candidates.length; index++) {
-            var element = document.querySelector(candidates[index]);
+  function resolve() {
+    for (var index = 0; index < candidates.length; index++) {
+      var element = document.querySelector(candidates[index]);
 
-            if (element) {
-                return { element: element, selector: candidates[index] };
-            }
-        }
-
-        return null;
+      if (element) {
+        return { element: element, selector: candidates[index] };
+      }
     }
 
-    function reportState() {
-        var match = resolve();
-        var available = !!match;
-        var open = available && match.element.getAttribute('aria-expanded') === 'true';
-        var selector = available ? match.selector : '';
-        var state = available + '|' + open + '|' + selector;
+    return null;
+  }
 
-        if (state === reported) {
-            return;
-        }
+  function reportState() {
+    var match = resolve();
+    var available = !!match;
+    var open =
+      available && match.element.getAttribute("aria-expanded") === "true";
+    var selector = available ? match.selector : "";
+    var state = available + "|" + open + "|" + selector;
 
-        if (available) {
-            document.documentElement.setAttribute('data-cirruscope-notifications-trigger', selector);
-        } else {
-            document.documentElement.removeAttribute('data-cirruscope-notifications-trigger');
-        }
-
-        try {
-            window.webkit.messageHandlers.notificationsPanelState.postMessage({
-                available: available,
-                open: open,
-                selector: selector
-            });
-
-            reported = state;
-        } catch (error) {
-            // The native message handler is unavailable; leave the state unreported.
-        }
+    if (state === reported) {
+      return;
     }
 
+    if (available) {
+      document.documentElement.setAttribute(
+        "data-cirruscope-notifications-trigger",
+        selector,
+      );
+    } else {
+      document.documentElement.removeAttribute(
+        "data-cirruscope-notifications-trigger",
+      );
+    }
+
+    try {
+      window.webkit.messageHandlers.notificationsPanelState.postMessage({
+        available: available,
+        open: open,
+        selector: selector,
+      });
+
+      reported = state;
+    } catch (error) {
+      // The native message handler is unavailable; leave the state unreported.
+    }
+  }
+
+  reportState();
+
+  var observer = new MutationObserver(function () {
     reportState();
+  });
 
-    var observer = new MutationObserver(function() {
-        reportState();
-    });
-
-    observer.observe(document.documentElement, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['aria-expanded', 'class']
-    });
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["aria-expanded", "class"],
+  });
 })();

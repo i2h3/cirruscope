@@ -14,113 +14,116 @@
 //
 // Injected at document start so the replacement is in place before the page's own scripts read the API.
 
-(function() {
-    var counter = 0;
-    var registry = {};
+(function () {
+  var counter = 0;
+  var registry = {};
 
-    function CirruscopeNotification(title, options) {
-        options = options || {};
+  function CirruscopeNotification(title, options) {
+    options = options || {};
 
-        var id = "cirruscope-" + (++counter);
+    var id = "cirruscope-" + ++counter;
 
-        this.title = title || "";
-        this.body = options.body || "";
-        this.tag = options.tag || "";
-        this.icon = options.icon || "";
-        this.data = options.data;
-        this.onclick = null;
-        this.onclose = null;
-        this.onerror = null;
-        this.onshow = null;
-        this._id = id;
-        this._listeners = {};
+    this.title = title || "";
+    this.body = options.body || "";
+    this.tag = options.tag || "";
+    this.icon = options.icon || "";
+    this.data = options.data;
+    this.onclick = null;
+    this.onclose = null;
+    this.onerror = null;
+    this.onshow = null;
+    this._id = id;
+    this._listeners = {};
 
-        registry[id] = this;
-
-        try {
-            window.webkit.messageHandlers.notification.postMessage({
-                id: id,
-                title: String(this.title),
-                body: String(this.body),
-                tag: String(this.tag)
-            });
-        } catch (error) {
-            // The native message handler is unavailable; drop the notification silently.
-        }
-    }
-
-    CirruscopeNotification.permission = "granted";
-    CirruscopeNotification.maxActions = 0;
-
-    CirruscopeNotification.requestPermission = function(callback) {
-        if (typeof callback === "function") {
-            callback("granted");
-        }
-
-        return Promise.resolve("granted");
-    };
-
-    CirruscopeNotification.prototype.close = function() {
-        delete registry[this._id];
-    };
-
-    CirruscopeNotification.prototype.addEventListener = function(type, handler) {
-        (this._listeners[type] = this._listeners[type] || []).push(handler);
-    };
-
-    CirruscopeNotification.prototype.removeEventListener = function(type, handler) {
-        var handlers = this._listeners[type];
-        if (!handlers) {
-            return;
-        }
-
-        var index = handlers.indexOf(handler);
-        if (index !== -1) {
-            handlers.splice(index, 1);
-        }
-    };
-
-    CirruscopeNotification.prototype.dispatchEvent = function(event) {
-        var handlers = (this._listeners[event.type] || []).slice();
-        for (var i = 0; i < handlers.length; i++) {
-            handlers[i].call(this, event);
-        }
-
-        var handler = this["on" + event.type];
-        if (typeof handler === "function") {
-            handler.call(this, event);
-        }
-
-        return true;
-    };
-
-    // Invoked from native code when the user clicks the notification in the Notification Center. It
-    // hangs off the Cirruscope namespace with everything else the app calls into the page, assigned
-    // idempotently so a document that already carries one is not disturbed.
-    window.Cirruscope = window.Cirruscope || {};
-
-    window.Cirruscope.activateNotification = function(id) {
-        var notification = registry[id];
-        if (!notification) {
-            return;
-        }
-
-        try {
-            window.focus();
-        } catch (error) {
-            // Ignore; the native side already brings the window forward.
-        }
-
-        notification.dispatchEvent(new Event("click"));
-    };
+    registry[id] = this;
 
     try {
-        Object.defineProperty(window, "Notification", {
-            configurable: true,
-            writable: true,
-            value: CirruscopeNotification
-        });
+      window.webkit.messageHandlers.notification.postMessage({
+        id: id,
+        title: String(this.title),
+        body: String(this.body),
+        tag: String(this.tag),
+      });
     } catch (error) {
-        window.Notification = CirruscopeNotification;
+      // The native message handler is unavailable; drop the notification silently.
     }
+  }
+
+  CirruscopeNotification.permission = "granted";
+  CirruscopeNotification.maxActions = 0;
+
+  CirruscopeNotification.requestPermission = function (callback) {
+    if (typeof callback === "function") {
+      callback("granted");
+    }
+
+    return Promise.resolve("granted");
+  };
+
+  CirruscopeNotification.prototype.close = function () {
+    delete registry[this._id];
+  };
+
+  CirruscopeNotification.prototype.addEventListener = function (type, handler) {
+    (this._listeners[type] = this._listeners[type] || []).push(handler);
+  };
+
+  CirruscopeNotification.prototype.removeEventListener = function (
+    type,
+    handler,
+  ) {
+    var handlers = this._listeners[type];
+    if (!handlers) {
+      return;
+    }
+
+    var index = handlers.indexOf(handler);
+    if (index !== -1) {
+      handlers.splice(index, 1);
+    }
+  };
+
+  CirruscopeNotification.prototype.dispatchEvent = function (event) {
+    var handlers = (this._listeners[event.type] || []).slice();
+    for (var i = 0; i < handlers.length; i++) {
+      handlers[i].call(this, event);
+    }
+
+    var handler = this["on" + event.type];
+    if (typeof handler === "function") {
+      handler.call(this, event);
+    }
+
+    return true;
+  };
+
+  // Invoked from native code when the user clicks the notification in the Notification Center. It
+  // hangs off the Cirruscope namespace with everything else the app calls into the page, assigned
+  // idempotently so a document that already carries one is not disturbed.
+  window.Cirruscope = window.Cirruscope || {};
+
+  window.Cirruscope.activateNotification = function (id) {
+    var notification = registry[id];
+    if (!notification) {
+      return;
+    }
+
+    try {
+      window.focus();
+    } catch (error) {
+      // Ignore; the native side already brings the window forward.
+    }
+
+    notification.dispatchEvent(new Event("click"));
+  };
+
+  try {
+    Object.defineProperty(window, "Notification", {
+      configurable: true,
+      writable: true,
+      value: CirruscopeNotification,
+    });
+  } catch (error) {
+    window.Notification = CirruscopeNotification;
+  }
 })();

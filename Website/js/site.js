@@ -37,7 +37,9 @@
     } catch (e) {}
     var target = preferredLang();
     if (target === "en") return;
-    var link = document.querySelector('.lang__option[data-lang="' + target + '"]');
+    var link = document.querySelector(
+      '.lang__option[data-lang="' + target + '"]',
+    );
     if (!link) return;
     var href = link.getAttribute("href");
     if (!href) return;
@@ -74,7 +76,8 @@
       });
     });
     document.addEventListener("click", function (e) {
-      if (!menu.hidden && !menu.contains(e.target) && e.target !== toggle) close();
+      if (!menu.hidden && !menu.contains(e.target) && e.target !== toggle)
+        close();
     });
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") close();
@@ -99,7 +102,9 @@
       var sign = btn.querySelector(".faq__sign");
       btn.addEventListener("click", function () {
         var willOpen = answer.hidden;
-        document.querySelectorAll(".faq__answer").forEach(function (a) { a.hidden = true; });
+        document.querySelectorAll(".faq__answer").forEach(function (a) {
+          a.hidden = true;
+        });
         document.querySelectorAll(".faq__question").forEach(function (q) {
           q.setAttribute("aria-expanded", "false");
           var s = q.querySelector(".faq__sign");
