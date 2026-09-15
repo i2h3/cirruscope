@@ -15,13 +15,13 @@
 // Injected at document start so the replacement is in place before the page's own scripts read the API.
 
 (() => {
-  var counter = 0;
-  var registry = {};
+  let counter = 0;
+  const registry = {};
 
   function CirruscopeNotification(title, options) {
     options = options || {};
 
-    var id = "cirruscope-" + ++counter;
+    const id = `cirruscope-${++counter}`;
 
     this.title = title || "";
     this.body = options.body || "";
@@ -76,24 +76,24 @@
     type,
     handler,
   ) {
-    var handlers = this._listeners[type];
+    const handlers = this._listeners[type];
     if (!handlers) {
       return;
     }
 
-    var index = handlers.indexOf(handler);
+    const index = handlers.indexOf(handler);
     if (index !== -1) {
       handlers.splice(index, 1);
     }
   };
 
   CirruscopeNotification.prototype.dispatchEvent = function (event) {
-    var handlers = (this._listeners[event.type] || []).slice();
-    for (var i = 0; i < handlers.length; i++) {
+    const handlers = (this._listeners[event.type] || []).slice();
+    for (let i = 0; i < handlers.length; i++) {
       handlers[i].call(this, event);
     }
 
-    var handler = this["on" + event.type];
+    const handler = this[`on${event.type}`];
     if (typeof handler === "function") {
       handler.call(this, event);
     }
@@ -107,7 +107,7 @@
   window.Cirruscope = window.Cirruscope || {};
 
   window.Cirruscope.activateNotification = (id) => {
-    var notification = registry[id];
+    const notification = registry[id];
     if (!notification) {
       return;
     }

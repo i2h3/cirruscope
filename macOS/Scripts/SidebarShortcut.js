@@ -18,11 +18,11 @@
 // `stopImmediatePropagation()` then keeps it from reaching them at all, and
 // `preventDefault()` keeps the page from acting on it by default.
 
-(function () {
+(() => {
   window.addEventListener(
     "keydown",
-    function (event) {
-      if (!event.key || event.key.toLowerCase() !== "s") {
+    (event) => {
+      if (event.key?.toLowerCase() !== "s") {
         return;
       }
 

@@ -11,8 +11,8 @@
 (() => {
   "use strict";
 
-  var SUPPORTED = ["en", "de", "fr", "es"];
-  var STORAGE_KEY = "cirruscope-lang";
+  const SUPPORTED = ["en", "de", "fr", "es"];
+  const STORAGE_KEY = "cirruscope-lang";
 
   function currentLang() {
     return document.documentElement.lang || "en";
@@ -20,12 +20,12 @@
 
   function preferredLang() {
     try {
-      var saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(STORAGE_KEY);
       if (saved && SUPPORTED.indexOf(saved) !== -1) return saved;
     } catch {
       // Storage is unreachable in a private window; fall back to the browser language.
     }
-    var nav = (navigator.language || "en").slice(0, 2).toLowerCase();
+    const nav = (navigator.language || "en").slice(0, 2).toLowerCase();
     return SUPPORTED.indexOf(nav) !== -1 ? nav : "en";
   }
 
@@ -39,13 +39,11 @@
     } catch {
       // Storage is unreachable; treat this as a first visit and redirect.
     }
-    var target = preferredLang();
+    const target = preferredLang();
     if (target === "en") return;
-    var link = document.querySelector(
-      '.lang__option[data-lang="' + target + '"]',
-    );
+    const link = document.querySelector(`.lang__option[data-lang="${target}"]`);
     if (!link) return;
-    var href = link.getAttribute("href");
+    const href = link.getAttribute("href");
     if (!href) return;
     try {
       sessionStorage.setItem("cirruscope-redirected", "1");
@@ -56,8 +54,8 @@
   }
 
   function initLanguageMenu() {
-    var toggle = document.querySelector(".lang__button");
-    var menu = document.querySelector(".lang__menu");
+    const toggle = document.querySelector(".lang__button");
+    const menu = document.querySelector(".lang__menu");
     if (!toggle || !menu) return;
 
     function close() {
@@ -93,8 +91,8 @@
   }
 
   function initMobileNav() {
-    var toggle = document.querySelector(".hamburger");
-    var nav = document.getElementById("mobile-nav");
+    const toggle = document.querySelector(".hamburger");
+    const nav = document.getElementById("mobile-nav");
     if (!toggle || !nav) return;
     toggle.addEventListener("click", () => {
       nav.hidden = !nav.hidden;
@@ -103,19 +101,19 @@
   }
 
   function initFaq() {
-    var questions = document.querySelectorAll(".faq__question");
+    const questions = document.querySelectorAll(".faq__question");
     questions.forEach((btn) => {
-      var item = btn.closest(".faq__item");
-      var answer = item.querySelector(".faq__answer");
-      var sign = btn.querySelector(".faq__sign");
+      const item = btn.closest(".faq__item");
+      const answer = item.querySelector(".faq__answer");
+      const sign = btn.querySelector(".faq__sign");
       btn.addEventListener("click", () => {
-        var willOpen = answer.hidden;
+        const willOpen = answer.hidden;
         document.querySelectorAll(".faq__answer").forEach((a) => {
           a.hidden = true;
         });
         document.querySelectorAll(".faq__question").forEach((q) => {
           q.setAttribute("aria-expanded", "false");
-          var s = q.querySelector(".faq__sign");
+          const s = q.querySelector(".faq__sign");
           if (s) s.textContent = "+";
         });
         if (willOpen) {

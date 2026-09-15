@@ -21,8 +21,8 @@
 // already does through that same rule, and Cirruscope.css is what makes the panel
 // it opens actually visible.
 
-(function () {
-  var selector = document.documentElement.getAttribute(
+(() => {
+  const selector = document.documentElement.getAttribute(
     "data-cirruscope-notifications-trigger",
   );
 
@@ -30,7 +30,7 @@
     return;
   }
 
-  var element = document.querySelector(selector);
+  const element = document.querySelector(selector);
 
   if (!element) {
     return;
