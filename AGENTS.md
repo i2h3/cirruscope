@@ -78,7 +78,7 @@ The project builds two apps and one widget extension from five source folders. T
 - Never wrap arguments in func declarations or calls.
 - Instead of declaring multiple values in a single guard-let statement, write one dedicated guard-let statement per value.
 - Always run `swiftformat .` in the project root directory after applying changes.
-- Always run `biome check --write .` in the project root directory after changing any JavaScript (install via `brew install biome` if missing), and never hand-format a `.js` file against it.
+- Always run `biome check --write --error-on-warnings .` in the project root directory after changing any JavaScript (install via `brew install biome` if missing), and never hand-format a `.js` file against it. The flag is what makes the command agree with CI: several recommended rules report at warning level, and without it such a diagnostic passes locally while `biome.yml` still rejects it.
 - Everything the app calls into the page from Swift hangs off one `window.Cirruscope` namespace, assigned idempotently (`window.Cirruscope = window.Cirruscope || {};`) by each script that contributes a member, because injection order is not something a script should have to assume. What scripts tell *each other* stays on `<html>` attributes instead: a `window` global is visible only in the content world that defined it, and whether an evaluated script and a user script share a world fails silently when it is wrong. The namespace holds what Swift calls; the DOM holds what scripts tell each other.
 - Do not place business or user interface logic into data transfer objects.
 
