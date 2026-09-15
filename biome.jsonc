@@ -94,9 +94,12 @@
                 "noRedundantUseStrict": "off",
 
                 // Not recommended upstream, and its fix is unsafe — so `check --write` will not quietly
-                // rewrite a new `var`, but `check` and `ci` will refuse it. Safe across these scripts because
-                // every one wraps its body in a function, so nothing is declared at realm top level and the
-                // scripts re-evaluated repeatedly in one page context cannot redeclare anything.
+                // rewrite a new `var`, but `check` and `ci` will refuse it. What makes that safe here is that
+                // no script declares a binding at the top level of the realm: most keep theirs inside an
+                // IIFE, and the two the app invokes with arguments declare nothing at all, assigning onto
+                // `window.Cirruscope` instead. So no `const` this rule produces can be the one a second
+                // evaluation of the same script collides with — which is also what the rule goes on
+                // protecting, since a new top-level `var` would be the easy way to reintroduce exactly that.
                 "noVar": "error"
             }
         }
