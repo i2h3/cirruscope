@@ -10,6 +10,7 @@ SPDX-License-Identifier: MIT
 # Cirruscope
 
 [![SwiftFormat](https://github.com/i2h3/cirruscope/actions/workflows/swiftformat.yml/badge.svg)](https://github.com/i2h3/cirruscope/actions/workflows/swiftformat.yml)
+[![Biome](https://github.com/i2h3/cirruscope/actions/workflows/biome.yml/badge.svg)](https://github.com/i2h3/cirruscope/actions/workflows/biome.yml)
 [![REUSE](https://github.com/i2h3/cirruscope/actions/workflows/reuse.yml/badge.svg)](https://github.com/i2h3/cirruscope/actions/workflows/reuse.yml)
 [![DCO](https://github.com/i2h3/cirruscope/actions/workflows/dco.yml/badge.svg)](https://github.com/i2h3/cirruscope/actions/workflows/dco.yml)
 [![Test](https://github.com/i2h3/cirruscope/actions/workflows/test.yml/badge.svg)](https://github.com/i2h3/cirruscope/actions/workflows/test.yml)
