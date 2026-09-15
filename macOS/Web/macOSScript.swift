@@ -20,6 +20,11 @@ enum macOSScript: String {
     /// `WebViewController.installSidebarShortcutBridge()` installs it as a user script that runs at the start of every document load, before the page's own scripts attach the keyboard handlers it has to be offered the event ahead of.
     case sidebarShortcut = "SidebarShortcut"
 
+    /// `headerHeight` measures Nextcloud's own header and reports its height through the `headerHeight` message handler, once on injection and again whenever that header is resized.
+    ///
+    /// `WebViewController.installHeaderHeightBridge()` installs it as a user script that runs at the end of every document load, there being no header to measure before the document exists.
+    case headerHeight = "HeaderHeight"
+
     /// `notificationBridge` overrides the web Notification API so notifications created by the Nextcloud web interface are forwarded to the `notification` message handler instead of being lost.
     ///
     /// `WebViewController.installNotificationBridge()` installs it as a user script that runs at the start of every document load, before the page's own scripts read the API.

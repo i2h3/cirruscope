@@ -5,11 +5,10 @@ import AppKit
 
 /// `WebWindow` is the window of the storyboard "Web Window" scene that hosts `WebViewController`.
 ///
-/// It keeps the standard close, miniaturize, and zoom buttons aligned with Cirruscope's custom title bar. AppKit returns those buttons to their default position on every layout pass, so `WebWindow` repositions them again at the end of the same pass — synchronously, so they are never displayed at the default position and do not visibly jump.
+/// It keeps the standard close, miniaturize, and zoom buttons aligned with Nextcloud's own header bar, which is Cirruscope's title bar: the window hides its own (`titlebarAppearsTransparent`, `titleVisibility`, and `fullSizeContentView` are all set in the storyboard) and the web view reaches the top edge underneath. AppKit returns those buttons to their default position on every layout pass, so `WebWindow` repositions them again at the end of the same pass — synchronously, so they are never displayed at the default position and do not visibly jump.
+///
+/// How tall that bar is, is the server's to decide and `NextcloudHeaderHeight`'s to remember; it is deliberately no longer a constant here, which is what placed the buttons too low on Nextcloud server 35 (issue #102). While no height has ever been reported the buttons are left exactly where AppKit puts them.
 class WebWindow: NSWindow {
-    /// `toolbarHeight` is the height of Cirruscope's custom title bar that the window buttons are vertically centered within.
-    private static let toolbarHeight: CGFloat = 50
-
     /// `leadingInset` is the distance from the window's leading edge to the first window button.
     private static let leadingInset: CGFloat = 20
 
@@ -57,11 +56,17 @@ class WebWindow: NSWindow {
         repositionControlButtons()
     }
 
-    /// `repositionControlButtons()` moves the close, miniaturize, and zoom buttons to align with the custom title bar, leaving them untouched while they are not yet available or while the window is in fullscreen.
+    /// `repositionControlButtons()` moves the close, miniaturize, and zoom buttons to align with Nextcloud's header bar, leaving them untouched while no header height has been reported yet, while they are not yet available, or while the window is in fullscreen.
     ///
     /// In fullscreen macOS relocates the window buttons into the auto-revealing title bar; the custom placement is skipped there so the buttons stay reachable in that title bar (including the green button used to leave fullscreen) instead of being pulled into the hidden content area.
+    /// Stepping aside while `NextcloudHeaderHeight` knows no height is what keeps a guess about one server release out of the code: AppKit's own placement is then left in force, which is the state a fresh install's very first window is shown in until its first page load reports (see `NextcloudHeaderHeight` for why that shift is accepted).
+    /// Besides the two layout hooks above, `headerHeightDidChange()` calls it as well: a newly reported height triggers no layout pass of its own, so a window already on screen would otherwise keep its old placement until it was next resized.
     private func repositionControlButtons() {
         guard styleMask.contains(.fullScreen) == false else {
+            return
+        }
+
+        guard let headerHeight = NextcloudHeaderHeight.lastKnown() else {
             return
         }
 
@@ -74,13 +79,34 @@ class WebWindow: NSWindow {
                 continue
             }
 
-            let buttonHeight = button.bounds.height
-            let topInset = (Self.toolbarHeight - buttonHeight) / 2
-            let leading = Self.leadingInset + CGFloat(index) * Self.buttonSpacing
-
-            let originInWindow = NSPoint(x: leading, y: frame.height - topInset - buttonHeight)
+            let originInWindow = Self.buttonOriginInWindow(index: index, buttonHeight: button.bounds.height, windowHeight: frame.height, headerHeight: headerHeight)
 
             button.setFrameOrigin(superview.convert(originInWindow, from: nil))
         }
+    }
+
+    /// `buttonOriginInWindow(index:buttonHeight:windowHeight:headerHeight:)` is where the window button at `index` belongs in window coordinates: laid out from the leading edge in the order the buttons are, and vertically centered in a header of `headerHeight` measured down from the top of a window of `windowHeight`.
+    ///
+    /// It is a pure function of its four inputs so the arithmetic can be exercised directly — `repositionControlButtons()` needs a live window and the standard buttons AppKit only vends to one — and that arithmetic is exactly where issue #102 lived: it was correct throughout and fed one wrong number. `WebWindowFrame.isRecordable(styleMask:)` is split out from its own caller for the same reason.
+    /// Nextcloud's header is `position: absolute; top: 0`, so measuring down from the window's top edge is the same as measuring down from the header's: the web view reaches that edge underneath the hidden title bar.
+    static func buttonOriginInWindow(index: Int, buttonHeight: CGFloat, windowHeight: CGFloat, headerHeight: CGFloat) -> NSPoint {
+        let topInset = (headerHeight - buttonHeight) / 2
+        let leading = leadingInset + CGFloat(index) * buttonSpacing
+
+        return NSPoint(x: leading, y: windowHeight - topInset - buttonHeight)
+    }
+
+    /// `awakeFromNib()` subscribes to `Notification.Name.nextcloudHeaderHeightDidChange` so a newly reported header height re-centers this window's buttons without waiting for a layout pass that may never come.
+    ///
+    /// The storyboard's "Web Window" scene is the only place a `WebWindow` comes from — `AppDelegate` instantiates that scene's window controller for every web window, including the ones it restores — so this is the one initialization hook every instance passes through. Overriding `NSWindow`'s initializers instead would mean overriding both of its designated ones to keep either path working, for no gain over a hook AppKit sends after unarchiving.
+    /// The observer needs no explicit removal: `NotificationCenter` drops selector-based observers automatically when the observing object is deallocated.
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        NotificationCenter.default.addObserver(self, selector: #selector(headerHeightDidChange), name: .nextcloudHeaderHeightDidChange, object: nil)
+    }
+
+    @objc
+    private func headerHeightDidChange() {
+        repositionControlButtons()
     }
 }

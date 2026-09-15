@@ -160,6 +160,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         installUserScript(Script.styleSheet.source, injectionTime: .atDocumentStart)
         installAppearanceAttributes()
         installWindowDragBridge()
+        installHeaderHeightBridge()
         installSidebarToggleBridge()
         installSidebarShortcutBridge()
         installNotificationBridge()
@@ -445,6 +446,17 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         installUserScript(macOSScript.windowDrag.source, injectionTime: .atDocumentEnd)
     }
 
+    // MARK: - Header Height
+
+    /// `installHeaderHeightBridge()` registers the `headerHeight` message handler and injects `macOSScript.headerHeight`, which measures Nextcloud's header and reports how tall the server draws it.
+    ///
+    /// `viewDidLoad()` calls it beside `installWindowDragBridge()`, the other bridge concerned with the header bar that stands in for this window's title bar. What is reported goes to `NextcloudHeaderHeight`, which is where `WebWindow` reads it back to center the standard window buttons in that bar — a height the app used to assume, and assumed wrongly the moment Nextcloud server 35 changed it (issue #102).
+    /// Document end, like the window-drag bridge: there is no header to measure at document start. The script goes on reporting after that on its own, a `ResizeObserver` covering a header that settles to its final height only once the page's own scripts have run.
+    private func installHeaderHeightBridge() {
+        webView.configuration.userContentController.add(self, name: ScriptMessageName.headerHeight.rawValue)
+        installUserScript(macOSScript.headerHeight.source, injectionTime: .atDocumentEnd)
+    }
+
     // MARK: - Sidebar
 
     /// `sidebarToggleAvailable` is `true` while the currently loaded Nextcloud page exposes a sidebar toggle that can be activated.
@@ -607,6 +619,9 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         /// `windowDrag` is posted by `macOSScript.windowDrag` to ask the host window to begin a drag.
         case windowDrag
 
+        /// `headerHeight` is posted by `macOSScript.headerHeight` to report how tall the server draws Nextcloud's header.
+        case headerHeight
+
         /// `sidebarToggleState` is posted by `macOSScript.sidebarToggleState` to report whether Nextcloud's sidebar toggle is available and expanded.
         case sidebarToggleState
 
@@ -638,6 +653,15 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
                     return
                 }
                 window.performDrag(with: event)
+
+            case .headerHeight:
+                guard let body = message.body as? [String: Any] else {
+                    return
+                }
+                guard let height = body["height"] as? Double else {
+                    return
+                }
+                NextcloudHeaderHeight.record(CGFloat(height))
 
             case .sidebarToggleState:
                 guard let body = message.body as? [String: Any] else {
