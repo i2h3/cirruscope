@@ -79,14 +79,14 @@ enum Keychain {
 
     /// `accounts()` returns every server the app currently holds credentials for, paired with those credentials; in no particular order, the Keychain imposing none.
     ///
-    /// It exists because the address a credential was filed under is itself the fact iOS needs to restore its account at launch: `store(_:for:)` writes it as the item's `kSecAttrAccount`, so an item carries both halves of a `ServerAccount` and reading it back recovers the address without a second place to persist it. `Store.restored()` takes the first one. macOS does not use this — `AccountStore` is authoritative there, the Keychain merely follows it, and `credentials(for:)` is the lookup that fits.
+    /// It exists because the address a credential was filed under is itself the fact a process with no store needs to recover an account: `store(_:for:)` writes it as the item's `kSecAttrAccount`, so an item carries both halves of a `ServerAccount` and reading it back recovers the address without a second place to persist it. `Store.restored()` takes the first one on iOS, and the widget extension takes it on both platforms, having no store at all. The macOS app itself does not use this — `AccountStore` is authoritative there, the Keychain merely follows it, and `credentials(for:)` is the lookup that fits.
+    /// **The enumeration asks for attributes only and reads each item's data separately, and must keep doing so.** macOS's file-based Keychain refuses to return item *data* for more than one match: `kSecReturnData` together with `kSecMatchLimitAll` is rejected with `errSecParam`, whether or not anything matches. iOS has only the data-protection Keychain and accepts it, so the combination reads as correct everywhere it was first used and fails on exactly one platform. `kSecUseDataProtectionKeychain` would also make macOS accept it, and is deliberately not set: it selects a different Keychain, so every credential already stored by a shipped release would become invisible and every Mac would silently sign itself out. A second lookup per account costs nothing at the one or two items this holds.
     /// An item whose account attribute is not a parsable URL, or whose data does not decode, is skipped rather than reported: the only way one gets in is a hand-edited Keychain item, and there is nothing useful for a caller to do about it.
     static func accounts() -> [ServerAccount] {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecReturnAttributes as String: true,
-            kSecReturnData as String: true,
             kSecMatchLimit as String: kSecMatchLimitAll,
         ]
 
@@ -107,8 +107,7 @@ enum Keychain {
             guard
                 let account = item[kSecAttrAccount as String] as? String,
                 let server = URL(string: account),
-                let data = item[kSecValueData as String] as? Data,
-                let credentials = try? JSONDecoder().decode(Credentials.self, from: data)
+                let credentials = credentials(for: server)
             else {
                 logger.error("Skipped a stored credential that could not be read back")
                 return nil
