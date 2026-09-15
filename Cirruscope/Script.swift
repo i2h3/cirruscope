@@ -8,7 +8,7 @@ import os
 /// `Script` enumerates the JavaScript both apps inject into their web view, and loads it from the bundle on demand.
 ///
 /// Each case's raw value is the name of the resource behind it, so the JavaScript and CSS stay standalone files that can be edited with their own tooling instead of being embedded as string literals in Swift source. Lookup is by name against the flat bundle, which is why moving those resources between source folders does not disturb either app.
-/// It lives here rather than in `Core/` because only the two apps drive a web view; the widget extension has none. macOS's own `macOSScript` enumerates the four scripts that are macOS-only — window dragging, the ⌃⌘S claim, the appearance attributes, and the notification bridge — and this holds what turned out to be the same job on both platforms.
+/// It lives here rather than in `Core/` because only the two apps drive a web view; the widget extension has none. macOS's own `macOSScript` enumerates the five scripts that are macOS-only — window dragging, the ⌃⌘S claim, the appearance attributes, the notification bridge, and the header measurement — and this holds what turned out to be the same job on both platforms.
 ///
 enum Script: String {
     ///
