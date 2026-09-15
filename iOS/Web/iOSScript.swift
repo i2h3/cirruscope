@@ -28,7 +28,7 @@ enum iOSScript: String {
     ///
     /// `safeAreaInsets` publishes the margins the app's own interface covers onto `<html>` as the four `--cirruscope-safe-area-*` custom properties `Cirruscope.css` insets Nextcloud's content by.
     ///
-    /// Its resource is a function expression rather than a self-invoking script, as `macOSScript.appearanceAttributes` is: `NextcloudView` invokes it with the measurements SwiftUI took, both to install it as a document-start user script and to push a new measurement into a page already on screen.
+    /// Its resource runs nothing on its own, as `macOSScript.appearanceAttributes` does not: it contributes `applySafeAreaInsets` to the page's `Cirruscope` namespace, and `NextcloudView` emits it followed by a call carrying the measurements SwiftUI took — both to install as a document-start user script and to push a new measurement into a page already on screen. The namespace assignment is idempotent, so the two paths can both send it.
     ///
     case safeAreaInsets = "SafeAreaInsets"
 

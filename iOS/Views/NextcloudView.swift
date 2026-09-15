@@ -75,6 +75,13 @@ struct NextcloudView: View {
     ///
     private static let logger = Logger(for: NextcloudView.self)
 
+    ///
+    /// The function `iOSScript.safeAreaInsets` contributes to the page, which both the document-start seed and the live update call with a measurement.
+    ///
+    /// Naming it once here is what keeps those two paths from disagreeing about it, since neither can be verified against the script by the compiler.
+    ///
+    private static let safeAreaInsetsEntryPoint = "window.Cirruscope.applySafeAreaInsets"
+
     init() {
         var configuration = WebPage.Configuration()
         let appNavigation = AppNavigationBridge()
@@ -313,8 +320,8 @@ struct NextcloudView: View {
             userContentController.addUserScript(WKUserScript(source: source, injectionTime: .atDocumentStart, forMainFrameOnly: false))
         }
 
-        if let function = iOSScript.safeAreaInsets.source {
-            userContentController.addUserScript(WKUserScript(source: measurement.invocation(of: function), injectionTime: .atDocumentStart, forMainFrameOnly: false))
+        if let script = iOSScript.safeAreaInsets.source {
+            userContentController.addUserScript(WKUserScript(source: "\(script)\n\(measurement.invocation(of: Self.safeAreaInsetsEntryPoint))", injectionTime: .atDocumentStart, forMainFrameOnly: false))
         }
 
         if let source = Script.sidebarToggleState.source {
@@ -336,13 +343,13 @@ struct NextcloudView: View {
             return
         }
 
-        guard let function = iOSScript.safeAreaInsets.source else {
+        guard let script = iOSScript.safeAreaInsets.source else {
             return
         }
 
         Task {
             do {
-                _ = try await page.callJavaScript(insets.invocation(of: function))
+                _ = try await page.callJavaScript("\(script)\n\(insets.invocation(of: Self.safeAreaInsetsEntryPoint))")
             } catch {
                 Self.logger.error("Could not publish the safe area insets: \(error.localizedDescription)")
             }

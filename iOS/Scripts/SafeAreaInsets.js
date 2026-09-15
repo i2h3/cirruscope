@@ -9,10 +9,14 @@
 // content inside them keeps clear of the notch, the toolbar, and the home
 // indicator without any of it being hardcoded per device.
 //
-// Like AppearanceAttributes.js on macOS this is a function expression rather
-// than a self-invoking script: NextcloudView invokes it with the measurements
-// SwiftUI took, both as a document-start user script and live through
-// WebPage.callJavaScript when the geometry changes.
+// Like AppearanceAttributes.js on macOS this script runs nothing on its own: it
+// contributes applySafeAreaInsets to the Cirruscope namespace, and NextcloudView
+// calls it with the measurements SwiftUI took, both as a document-start user
+// script and live through WebPage.callJavaScript when the geometry changes. The
+// namespace is assigned rather than declared, and assigned idempotently, so that
+// re-publishing into a document that already has one cannot throw — and because
+// WebPage.callJavaScript evaluates its argument as a function body, where a
+// declaration would be scoped to that call and vanish with it.
 //
 // The values go on <html> for the same reason the Mac's accent color does:
 // Nextcloud owns <body>'s attributes and rewrites them as themes change, so
@@ -29,11 +33,13 @@
 // this runs — the viewport meta has not been applied yet and clientWidth still
 // reports the 980-pixel default, which would inset the page by roughly 2.4×.
 
-(function(top, right, bottom, left) {
-    var root = document.documentElement;
+window.Cirruscope = window.Cirruscope || {};
 
-    root.style.setProperty('--cirruscope-safe-area-top', top + 'px');
-    root.style.setProperty('--cirruscope-safe-area-right', right + 'px');
-    root.style.setProperty('--cirruscope-safe-area-bottom', bottom + 'px');
-    root.style.setProperty('--cirruscope-safe-area-left', left + 'px');
-})
+window.Cirruscope.applySafeAreaInsets = (top, right, bottom, left) => {
+  const root = document.documentElement;
+
+  root.style.setProperty("--cirruscope-safe-area-top", `${top}px`);
+  root.style.setProperty("--cirruscope-safe-area-right", `${right}px`);
+  root.style.setProperty("--cirruscope-safe-area-bottom", `${bottom}px`);
+  root.style.setProperty("--cirruscope-safe-area-left", `${left}px`);
+};

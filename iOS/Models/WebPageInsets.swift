@@ -5,7 +5,7 @@ import CoreGraphics
 import Foundation
 
 ///
-/// `WebPageInsets` is one measurement of how much of the web view the app's own interface covers, in the form `iOSScript.safeAreaInsets` expects to be invoked with.
+/// `WebPageInsets` is one measurement of how much of the web view the app's own interface covers, in the form the entry point `iOSScript.safeAreaInsets` contributes to the page expects to be invoked with.
 ///
 /// The web view ignores the safe area so the page can paint to the bezel, which leaves the device's own insets and the height of the navigation bar floating above it as margins the page has to keep its content clear of on its own. This carries those four margins from the measurement SwiftUI took to the JavaScript call that publishes them, and nothing else: it holds no state, reads no geometry, and decides nothing about when a measurement is taken.
 /// Being `Equatable` is what lets a caller push only when the geometry actually changed rather than on every layout pass.
@@ -47,7 +47,7 @@ struct WebPageInsets: Equatable, Sendable {
     ///
     /// The JavaScript statement that invokes `function` with this measurement.
     ///
-    /// `function` is the text of the bundled function expression, which is invoked rather than interpolated into, so the measurement never becomes part of a string the page parses as anything but numbers. No escaping or locale-aware formatting is needed for the arguments themselves: `sanitized(_:)` has already reduced each one to a finite, non-negative value, and Swift's own description of a floating-point number is decimal-separated the same way in every locale.
+    /// `function` is the expression naming the function to call — `iOSScript.safeAreaInsets` contributes `window.Cirruscope.applySafeAreaInsets`, and the bundled script that defines it is emitted ahead of this statement. The measurement is passed as arguments rather than interpolated into the script's text, so it never becomes part of a string the page parses as anything but numbers. No escaping or locale-aware formatting is needed for the arguments themselves: `sanitized(_:)` has already reduced each one to a finite, non-negative value, and Swift's own description of a floating-point number is decimal-separated the same way in every locale.
     /// The values cross as points and are written as CSS pixels unconverted, which holds for as long as the page declares a viewport of `width=device-width` at scale 1, as Nextcloud does.
     ///
     func invocation(of function: String) -> String {
