@@ -27,6 +27,7 @@
 
   <link rel="stylesheet" href="css/styles.css">
   <script src="js/site.js" defer></script>
+  <script src="js/brand-colors.js" defer></script>
 </head>
 <body data-no-lang-redirect>
   <header class="site-header">
@@ -272,23 +273,5 @@
       <p>© 2026 Cirruscope. Open source under the MIT license.</p>
     </div>
   </footer>
-
-  <script>
-    (function () {
-      var links = [].slice.call(document.querySelectorAll(".article__toc a"));
-      if (!links.length || !("IntersectionObserver" in window)) return;
-      var map = {};
-      links.forEach(function (l) { map[l.getAttribute("href").slice(1)] = l; });
-      var heads = document.querySelectorAll(".article__main h2[id]");
-      var obs = new IntersectionObserver(function (entries) {
-        entries.forEach(function (e) {
-          if (!e.isIntersecting) return;
-          links.forEach(function (l) { l.classList.remove("is-active"); });
-          if (map[e.target.id]) map[e.target.id].classList.add("is-active");
-        });
-      }, { rootMargin: "-88px 0px -70% 0px" });
-      heads.forEach(function (h) { obs.observe(h); });
-    })();
-  </script>
 </body>
 </html>
