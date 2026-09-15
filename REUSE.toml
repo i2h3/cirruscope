@@ -27,6 +27,16 @@ precedence = "override"
 SPDX-FileCopyrightText = "2026 Iva Horn"
 SPDX-License-Identifier = "MIT"
 
+# Xcode Cloud's build manifest, written by Xcode 27 into the project's shared
+# data when the workflow was set up. It names the targets Xcode Cloud builds,
+# is rewritten by Xcode rather than edited by hand, and is pure JSON, so it can
+# carry no inline header.
+[[annotations]]
+path = "Cirruscope.xcodeproj/xcshareddata/xcodecloud/manifest.json"
+precedence = "override"
+SPDX-FileCopyrightText = "2026 Iva Horn"
+SPDX-License-Identifier = "MIT"
+
 # SwiftPM's resolved-dependency lockfile: deleted and regenerated fresh in
 # 2026 when the app was rewritten, so its current content dates from then.
 [[annotations]]
