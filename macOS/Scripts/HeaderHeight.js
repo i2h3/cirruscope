@@ -22,42 +22,42 @@
 // forMainFrameOnly: false, and an embedded editor's iframe has no header of the
 // app's window to describe.
 
-(function() {
-    if (window !== window.top) {
-        return;
+(function () {
+  if (window !== window.top) {
+    return;
+  }
+
+  var lastReportedHeight = null;
+
+  function reportHeight() {
+    var header = document.querySelector("#header:not(.header-guest)");
+
+    if (!header) {
+      return;
     }
 
-    var lastReportedHeight = null;
+    var height = Math.round(header.getBoundingClientRect().height);
 
-    function reportHeight() {
-        var header = document.querySelector('#header:not(.header-guest)');
-
-        if (!header) {
-            return;
-        }
-
-        var height = Math.round(header.getBoundingClientRect().height);
-
-        if (height === lastReportedHeight) {
-            return;
-        }
-
-        lastReportedHeight = height;
-
-        window.webkit.messageHandlers.headerHeight.postMessage({
-            height: height
-        });
+    if (height === lastReportedHeight) {
+      return;
     }
 
-    reportHeight();
+    lastReportedHeight = height;
 
-    var header = document.querySelector('#header:not(.header-guest)');
+    window.webkit.messageHandlers.headerHeight.postMessage({
+      height: height,
+    });
+  }
 
-    if (header) {
-        var observer = new ResizeObserver(function() {
-            reportHeight();
-        });
+  reportHeight();
 
-        observer.observe(header);
-    }
+  var header = document.querySelector("#header:not(.header-guest)");
+
+  if (header) {
+    var observer = new ResizeObserver(function () {
+      reportHeight();
+    });
+
+    observer.observe(header);
+  }
 })();

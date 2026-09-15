@@ -18,20 +18,24 @@
 // `stopImmediatePropagation()` then keeps it from reaching them at all, and
 // `preventDefault()` keeps the page from acting on it by default.
 
-(function() {
-    window.addEventListener('keydown', function(event) {
-        if (!event.key || event.key.toLowerCase() !== 's') {
-            return;
-        }
+(function () {
+  window.addEventListener(
+    "keydown",
+    function (event) {
+      if (!event.key || event.key.toLowerCase() !== "s") {
+        return;
+      }
 
-        // The native check in WebViewController.isSidebarToggleShortcut(_:) requires exactly Control and
-        // Command, so Option and Shift are excluded here as well, and the two agree on the keystroke.
-        if (!event.ctrlKey || !event.metaKey || event.altKey || event.shiftKey) {
-            return;
-        }
+      // The native check in WebViewController.isSidebarToggleShortcut(_:) requires exactly Control and
+      // Command, so Option and Shift are excluded here as well, and the two agree on the keystroke.
+      if (!event.ctrlKey || !event.metaKey || event.altKey || event.shiftKey) {
+        return;
+      }
 
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        window.webkit.messageHandlers.sidebarShortcut.postMessage({});
-    }, true);
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      window.webkit.messageHandlers.sidebarShortcut.postMessage({});
+    },
+    true,
+  );
 })();

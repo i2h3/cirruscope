@@ -21,22 +21,24 @@
 // already does through that same rule, and Cirruscope.css is what makes the panel
 // it opens actually visible.
 
-(function() {
-    var selector = document.documentElement.getAttribute('data-cirruscope-notifications-trigger');
+(function () {
+  var selector = document.documentElement.getAttribute(
+    "data-cirruscope-notifications-trigger",
+  );
 
-    if (!selector) {
-        return;
-    }
+  if (!selector) {
+    return;
+  }
 
-    var element = document.querySelector(selector);
+  var element = document.querySelector(selector);
 
-    if (!element) {
-        return;
-    }
+  if (!element) {
+    return;
+  }
 
-    if (element.getAttribute('aria-expanded') === 'true') {
-        return;
-    }
+  if (element.getAttribute("aria-expanded") === "true") {
+    return;
+  }
 
-    element.click();
+  element.click();
 })();
