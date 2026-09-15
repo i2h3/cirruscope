@@ -61,7 +61,7 @@ The project builds ad-hoc by default (see [Cirruscope.xcconfig](./Cirruscope.xcc
 ## Code Quality Checks
 
 - Run `swiftformat .` before committing; CI lints with `swiftformat --lint`.
-- Run `biome check --write .` before committing if you touched any JavaScript (install it with `brew install biome`); CI checks with `biome ci`.
+- Run `biome check --write --error-on-warnings .` before committing if you touched any JavaScript (install it with `brew install biome`); CI checks with `biome ci --error-on-warnings`. Keep the flag — some rules report at warning level, and leaving it off lets a diagnostic pass here that CI still rejects.
 - New files need SPDX copyright/license headers; run `reuse lint` to confirm compliance.
 - Run the unit tests before opening a pull request: **Product ▸ Test (⌘U)** with the `Cirruscope for macOS` scheme selected. The scheme is shared, so a fresh clone is already set up for it — nothing to configure. CI runs the same tests headlessly and then a Release build; see [AGENTS.md → Testing](./AGENTS.md#testing) for that command line if you want it outside Xcode.
 - Changing anything in `Core/` or `Cirruscope/` changes all three targets at once — those folders compile into the macOS app, the iOS app, and the widget extension alike — so compile-check the `Cirruscope for iOS` and `Widgets` schemes as well before opening a pull request. See [AGENTS.md → Platform Scope](./AGENTS.md#platform-scope) for why shared placement is the default and what each shared folder is allowed to depend on.
