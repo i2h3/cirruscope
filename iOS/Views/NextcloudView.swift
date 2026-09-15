@@ -76,9 +76,9 @@ struct NextcloudView: View {
     private static let logger = Logger(for: NextcloudView.self)
 
     ///
-    /// The function `iOSScript.safeAreaInsets` contributes to the page, which both the document-start seed and the live update call with a measurement.
+    /// The name of the function that the bundled `iOSScript.safeAreaInsets` script installs on the page.
     ///
-    /// Naming it once here is what keeps those two paths from disagreeing about it, since neither can be verified against the script by the compiler.
+    /// Two callers invoke it with a measurement: the document-start user script that seeds the first one, and the live update that pushes a new one whenever the geometry changes. Nothing checks the name against the script itself, so holding it in one place is what keeps those two from drifting apart.
     ///
     private static let safeAreaInsetsEntryPoint = "window.Cirruscope.applySafeAreaInsets"
 

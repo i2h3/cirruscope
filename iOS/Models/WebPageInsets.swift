@@ -5,7 +5,7 @@ import CoreGraphics
 import Foundation
 
 ///
-/// `WebPageInsets` is one measurement of how much of the web view the app's own interface covers, in the form the entry point `iOSScript.safeAreaInsets` contributes to the page expects to be invoked with.
+/// `WebPageInsets` is one measurement of how much of the web view the app's own interface covers, in the order `window.Cirruscope.applySafeAreaInsets` takes its four arguments.
 ///
 /// The web view ignores the safe area so the page can paint to the bezel, which leaves the device's own insets and the height of the navigation bar floating above it as margins the page has to keep its content clear of on its own. This carries those four margins from the measurement SwiftUI took to the JavaScript call that publishes them, and nothing else: it holds no state, reads no geometry, and decides nothing about when a measurement is taken.
 /// Being `Equatable` is what lets a caller push only when the geometry actually changed rather than on every layout pass.
