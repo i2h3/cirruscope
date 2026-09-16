@@ -10,6 +10,7 @@ import WebKit
 /// Which of those an address is, is decided by `NextcloudSessionRoute` and `WebViewDestination` rather than here, so this and the iOS web view cannot come to different conclusions — they did, and the answers macOS reached on its own were wrong in three ways: it compared hosts where it meant origins, so a differently-ported service on the same machine counted as the server; it matched the sign-in and sign-out routes by last path component, so a file a user named "logout" revoked their app password; and it resolved the `redirect_url` it re-requests without checking where it pointed.
 ///
 /// Any navigation that becomes a download is handed to `DownloadManager.shared`, which takes over as the transfer's delegate so it continues even if this web window closes.
+/// It is also where every new document picks up what the document-start seed script could not know: `didCommit` re-applies the appearance before the new document's first paint, and `didFinish` again once it has settled.
 /// Every method here logs its entry and each outcome at debug level so the navigation behaviour of a specific window — identified by the appended `logID` — can be reconstructed from a log capture when tracing misbehaviour.
 extension WebViewController: WKNavigationDelegate {
     /// These decision methods use the completion-handler form with an explicit `@objc(...)` selector rather than the
@@ -207,6 +208,15 @@ extension WebViewController: WKNavigationDelegate {
         logger.debug("Navigation response became a download; handing it to DownloadManager (WebViewController \(self.logID))")
         DownloadManager.shared.handle(download)
         closeWindowIfNeverRevealed()
+    }
+
+    /// `webView(_:didCommit:)` re-applies the appearance as a new document is created, before it is first painted.
+    ///
+    /// The document-start seed carries the values resolved when this controller loaded, and one of them it can never carry at all: there is no window at `viewDidLoad()`, so the window button clearance is seeded as absent and the stylesheet's fallback — an ordinary window's clearance — is what a fresh document starts on. For a window already in fullscreen that fallback is wrong, and `didFinish` would correct it only after the page had been laid out and painted with it. Committing is the last moment before that, so nothing wrong is ever displayed.
+    /// It is what makes a window AppKit restores directly into a fullscreen space correct from its first frame, no transition having been announced to anyone. `didFinish` still re-applies as well, because a page can change what the appearance is resolved against between the two.
+    func webView(_: WKWebView, didCommit _: WKNavigation!) {
+        logger.debug("Navigation committed; re-applying appearance before the new document paints (WebViewController \(self.logID))")
+        reapplyAppearance()
     }
 
     func webView(_: WKWebView, didFinish _: WKNavigation!) {

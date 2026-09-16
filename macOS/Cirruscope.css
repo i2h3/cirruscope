@@ -20,6 +20,13 @@
  * The accent color itself arrives alongside its attributes as the
  * --cirruscope-accent-color custom property, set inline on <html>, because CSS
  * cannot read a value out of an attribute.
+ *
+ * One more value arrives the same way and on a different cadence:
+ * --cirruscope-window-button-clearance is a fact about the host window rather
+ * than about the account or the system, so it is resolved per window and
+ * re-published on every leg of that window's fullscreen transition as well as
+ * on every setting change. Unlike the accent color it has a :root value here to
+ * fall back on, for the reason the Window Controls section below gives.
  */
 
 /*
@@ -35,11 +42,24 @@
 /*
  * - MARK: Window Controls
  *
- * Clear the macOS traffic-light window controls that overlap the header.
+ * Keep Nextcloud's header clear of the macOS traffic-light window controls that overlap it.
+ *
+ * How far in that is, is the window's to answer and not this stylesheet's. WebWindow lays the three buttons out itself from the leading edge, and WebWindow.windowButtonClearance(isFullScreen:buttonWidth:) derives the distance past the last of them from those same constants and the width of the button AppKit actually vends; WebViewController publishes the result as --cirruscope-window-button-clearance.
+ * It used to be a hand-tuned 90px here: the same arithmetic written out a second time, in a file with no way of noticing when the first one changed — nor of noticing native fullscreen, where macOS moves the buttons into the auto-revealing title bar and the header needs no clearance at all, which is the excess inset issue #95 arrived as.
+ * CSS cannot decide that state for itself. :fullscreen is the Fullscreen API's pseudo-class, about an element the page itself put in the top layer, and says nothing about the window the page is in — which is why the answer is pushed in from Swift rather than asked for here.
+ *
+ * The :root declaration below is the value in force until Swift has run against the document, and it is required rather than tidy: a var() reference to an unset custom property is invalid at computed-value time, which would drop the margin outright and put the traffic lights over the app menu instead of falling back to nothing. Every way the push can fail — the script resource missing, no window to ask yet, the first frame of a document — therefore degrades to exactly the behaviour that shipped before.
+ * It is also the one literal left, so WebWindowButtonClearanceTests measures a real AppKit window button and asserts the function still answers exactly this for an ordinary window; the two cannot drift apart without a test failing.
+ *
+ * Fullscreen sets the property to zero rather than withdrawing the declaration. Nextcloud declares no margin of its own on .header-start — core/css/header.scss gives it only display, align-items, flex, white-space, and min-width — so the two are identical today; should it ever declare one, this is the line that would have to stand aside instead.
  */
 
+:root {
+    --cirruscope-window-button-clearance: 90px;
+}
+
 #header .header-start {
-    margin-left: 90px;
+    margin-left: var(--cirruscope-window-button-clearance);
 }
 
 .header-start #nextcloud,
@@ -280,7 +300,7 @@ html[data-cirruscope-translucency="true"][data-cirruscope-accent="true"][data-ci
  * - MARK: Viewer Insets
  *
  * Nextcloud's Viewer hides the header for as long as a viewer is open — Viewer.vue declares `body:has(#viewer) #header { visibility: hidden }` globally — on the assumption that the browser chrome stays behind it.
- * Here the header bar *is* the chrome: it carries the margin that clears the traffic lights above, and `WindowDrag.js` starts a window drag only from a mousedown inside `#header`, so hiding it leaves the window undraggable.
+ * Here the header bar *is* the chrome: outside fullscreen it carries the clearance that keeps the traffic lights off Nextcloud's own controls, and `WindowDrag.js` starts a window drag only from a mousedown inside `#header`, so hiding it leaves the window undraggable.
  * The header is restored below and the viewer moved out from under it.
  * The restoring selector repeats Nextcloud's own rather than naming `#header` alone, so the two tie on specificity and `!important` is what decides the cascade.
  *
