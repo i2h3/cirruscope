@@ -37,7 +37,7 @@ struct ActivityTimelineProvider: TimelineProvider {
             return
         }
 
-        completion(ActivityEntry(date: .now, content: .feed(snapshot.rows), fetchedAt: snapshot.fetchedAt))
+        completion(ActivityEntry(date: .now, content: Self.content(for: snapshot.rows), fetchedAt: snapshot.fetchedAt))
     }
 
     /// `getTimeline(in:completion:)` fetches the newest activity and hands WidgetKit one entry plus when to come back.
@@ -47,6 +47,13 @@ struct ActivityTimelineProvider: TimelineProvider {
 
             completion(Timeline(entries: [entry], policy: .after(.now.addingTimeInterval(Self.refreshInterval))))
         }
+    }
+
+    /// `content(for:)` is what a set of rows means, which is not a feed at all when there are none.
+    ///
+    /// A server that answers with nothing and a snapshot saved from one are the same fact, and both have to reach the card as `empty` rather than as a feed of length zero — a feed of length zero draws a header over blank space, which reads as a widget that has failed rather than as a server with nothing to report. Every path that has rows goes through here so there is one answer to that rather than one per call site.
+    private static func content(for rows: [ActivityRow]) -> ActivityEntry.Content {
+        rows.isEmpty ? .empty : .feed(rows)
     }
 
     /// `entry()` turns one fetch into the entry that fetch means.
@@ -63,7 +70,7 @@ struct ActivityTimelineProvider: TimelineProvider {
 
                 return ActivityEntry(
                     date: .now,
-                    content: visible.isEmpty ? .empty : .feed(visible),
+                    content: content(for: visible),
                     fetchedAt: fetchedAt
                 )
 
@@ -83,7 +90,7 @@ struct ActivityTimelineProvider: TimelineProvider {
                     return ActivityEntry(date: .now, content: .redacted)
                 }
 
-                return ActivityEntry(date: .now, content: .feed(snapshot.rows), fetchedAt: snapshot.fetchedAt, isStale: true)
+                return ActivityEntry(date: .now, content: content(for: snapshot.rows), fetchedAt: snapshot.fetchedAt, isStale: true)
         }
     }
 

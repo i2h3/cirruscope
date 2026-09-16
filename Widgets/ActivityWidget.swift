@@ -34,6 +34,10 @@ struct ActivityWidget: Widget {
 // availability is `macOS 14.0` — but no macOS widget host exists for the canvas to run the extension in, which is the
 // reason the iOS app target exists at all; see `DECISIONS.md`. Do not reach for `WidgetPreviewContext` alongside these:
 // combining the two emits "previewContext is ignored in a #Preview macro" and the context is silently dropped.
+//
+// Each timeline carries a one-row feed as well as a full one. A card divides its height into a fixed number of slots
+// whether or not there are rows for all of them, and the single row is what shows that: it has to sit at the top,
+// where the first row of a full card sits, rather than in the middle of the space it has to itself.
 
 #Preview("Small", as: .systemSmall) {
     ActivityWidget()
@@ -41,6 +45,8 @@ struct ActivityWidget: Widget {
     ActivityEntry(date: .now, content: .empty, fetchedAt: .now)
     ActivityEntry(date: .now, content: .feed(ActivityRow.previewRows), fetchedAt: .now)
     ActivityEntry(date: .now, content: .feed(ActivityRow.previewRows), fetchedAt: .now.addingTimeInterval(-7200), isStale: true)
+    ActivityEntry(date: .now, content: .feed(Array(ActivityRow.previewRows.prefix(1))), fetchedAt: .now)
+    ActivityEntry(date: .now, content: .feed(Array(ActivityRow.previewRows.prefix(1))), fetchedAt: .now.addingTimeInterval(-7200), isStale: true)
     ActivityEntry(date: .now, content: .redacted)
     ActivityEntry(date: .now, content: .notSignedIn)
     ActivityEntry(date: .now, content: .unavailable)
@@ -52,6 +58,8 @@ struct ActivityWidget: Widget {
     ActivityEntry(date: .now, content: .empty, fetchedAt: .now)
     ActivityEntry(date: .now, content: .feed(ActivityRow.previewRows), fetchedAt: .now)
     ActivityEntry(date: .now, content: .feed(ActivityRow.previewRows), fetchedAt: .now.addingTimeInterval(-7200), isStale: true)
+    ActivityEntry(date: .now, content: .feed(Array(ActivityRow.previewRows.prefix(1))), fetchedAt: .now)
+    ActivityEntry(date: .now, content: .feed(Array(ActivityRow.previewRows.prefix(1))), fetchedAt: .now.addingTimeInterval(-7200), isStale: true)
     ActivityEntry(date: .now, content: .redacted)
     ActivityEntry(date: .now, content: .notSignedIn)
     ActivityEntry(date: .now, content: .unavailable)
@@ -63,6 +71,8 @@ struct ActivityWidget: Widget {
     ActivityEntry(date: .now, content: .empty, fetchedAt: .now)
     ActivityEntry(date: .now, content: .feed(ActivityRow.previewRows), fetchedAt: .now)
     ActivityEntry(date: .now, content: .feed(ActivityRow.previewRows), fetchedAt: .now.addingTimeInterval(-7200), isStale: true)
+    ActivityEntry(date: .now, content: .feed(Array(ActivityRow.previewRows.prefix(1))), fetchedAt: .now)
+    ActivityEntry(date: .now, content: .feed(Array(ActivityRow.previewRows.prefix(1))), fetchedAt: .now.addingTimeInterval(-7200), isStale: true)
     ActivityEntry(date: .now, content: .redacted)
     ActivityEntry(date: .now, content: .notSignedIn)
     ActivityEntry(date: .now, content: .unavailable)

@@ -6,8 +6,8 @@ import WidgetKit
 
 /// `ActivityWidgetView` is the whole widget: a header, and whatever the entry says belongs under it.
 ///
-/// It is the one place that knows how a family maps onto the design's cards — how many rows fit, which row treatment they use, and how much the card is padded. Everything below it draws what it is given without asking how big the widget is.
-/// The macOS medium card is the one genuine platform difference. It is wider than the iOS one at the same family, which is what buys the folder a column of its own, and that is a `#if os(macOS)` here rather than a second target: the sources are shared and the difference is one line of layout.
+/// It is the one place that knows how a family maps onto the design's cards — how many rows fit, which scale they are drawn at, and which of them trail the time. Everything below it draws what it is given without asking how big the widget is.
+/// The rows deliberately do not differ by platform. A Mac's medium card is wider than a phone's but no taller, so it holds the same three rows drawn the same way.
 struct ActivityWidgetView: View {
     /// `entry` is what to draw.
     let entry: ActivityEntry
@@ -32,7 +32,10 @@ struct ActivityWidgetView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
 
             if let footnote = footnote(style) {
+                // Bounded because the feed pays for every line of it. The sentence wraps to two on a small card in
+                // German, and a translation long enough to want a third would be taking it out of the rows.
                 footnote
+                    .lineLimit(2)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
@@ -45,8 +48,8 @@ struct ActivityWidgetView: View {
         switch entry.content {
             case let .feed(rows):
                 VStack(spacing: 0) {
-                    ForEach(rows.prefix(rowCount)) { row in
-                        ActivityRowView(row: row, layout: rowLayout, style: style)
+                    ForEach(0 ..< rowCount, id: \.self) { index in
+                        feedRow(rows, at: index, style: style)
                             .frame(maxHeight: .infinity)
                     }
                 }
@@ -81,6 +84,18 @@ struct ActivityWidgetView: View {
         }
     }
 
+    /// `feedRow(_:at:style:)` is the row belonging to one of the card's slots, or the empty space where a shorter feed has none.
+    ///
+    /// A card draws the full number of slots its size holds whether or not there are rows for all of them, and the slots divide the feed's height equally between them. Two rows on a card built for three therefore sit where the first two of a full card sit — at the top, the same distance apart as always — rather than sharing the whole height between them and drifting towards the middle as the feed shrinks. It is also the shape the redacted card draws, so nothing moves when real rows replace the bars.
+    @ViewBuilder
+    private func feedRow(_ rows: [ActivityRow], at index: Int, style: ActivityStyle) -> some View {
+        if index < rows.count {
+            ActivityRowView(row: rows[index], layout: rowLayout, showsTime: showsTime, style: style)
+        } else {
+            Color.clear
+        }
+    }
+
     /// `footnote(_:)` is the dim line at the foot of the card, which only two states have.
     ///
     /// A stale feed says when its rows were last true, because rows with no date on them would simply read as current. An empty one says when the last thing happened, which is what distinguishes a quiet server from one that has never been used.
@@ -99,32 +114,24 @@ struct ActivityWidgetView: View {
     }
 
     /// `rowCount` is how many rows this size holds, taken from the design's cards.
+    ///
+    /// The medium card holds what the small one does. It is wider, which buys the time a column of its own, but it is exactly as tall, and height is what a row costs.
     private var rowCount: Int {
-        switch family {
-            case .systemLarge: 10
-            case .systemMedium: 4
-            default: 3
-        }
+        family == .systemLarge ? 10 : 3
     }
 
-    /// `rowLayout` is which row treatment this size uses.
+    /// `rowLayout` is the scale this size draws its rows at.
     ///
-    /// The macOS medium card is wider than the iOS one, which is the whole reason the folder can have a column there and cannot here.
+    /// Only the large card has the height to spare for the larger setting. The other two are the same card at different widths and are drawn the same way.
     private var rowLayout: ActivityRowView.Layout {
-        switch family {
-            case .systemSmall:
-                .compact
+        family == .systemLarge ? .regular : .compact
+    }
 
-            case .systemMedium:
-                #if os(macOS)
-                    .columnar
-                #else
-                    .regular
-                #endif
-
-            default:
-                .regular
-        }
+    /// `showsTime` is whether a row trails how long ago it happened, which is a matter of width rather than of height.
+    ///
+    /// The small card is about half a line wide, and the time there would be taken out of the filename. Every larger card has the room.
+    private var showsTime: Bool {
+        family != .systemSmall
     }
 
     /// `headerSize` is the scale the header is drawn at, which the design grows with the card.

@@ -13,7 +13,7 @@ struct ActivityAvatarView: View {
     /// `row` is the activity this circle belongs to, which supplies both the actor and the verb.
     let row: ActivityRow
 
-    /// `diameter` is the circle's size, which the design varies per layout — 21 points on iOS small, 22 on medium, 23 on large.
+    /// `diameter` is the circle's size, which the design varies with the scale the row is drawn at — 21 points on the small and medium cards, 23 on the large one.
     let diameter: CGFloat
 
     /// `style` is the resolved appearance to draw in.
@@ -40,6 +40,17 @@ struct ActivityAvatarView: View {
             // Composing the circle and badge as one layer is what lets a punched-out symbol or ring cut through to the
             // glass behind rather than merely erasing back to the fill it sits on.
             .compositingGroup()
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(accessibilityDescription)
+    }
+
+    /// `accessibilityDescription` is who acted and what they did, which is the pair this circle states by drawing rather than in words.
+    ///
+    /// The row's design deliberately writes neither — `DECISIONS.md` records why — and a photograph and a glyph say nothing to a screen reader, so without this the two facts simply are not there. The monogram is hidden behind it rather than read, because "AK" is the drawing and not the fact.
+    private var accessibilityDescription: String {
+        let actor = row.actorName ?? String(localized: "You", comment: "Names the signed-in user as the person who acted, read aloud by VoiceOver in place of a name for your own activity. The server sends no name for it, and the design draws a figure in the circle rather than initials.")
+
+        return "\(actor), \(row.verb.accessibilityDescription)"
     }
 
     /// `isTemplated` is whether the system is tinting the widget to a single colour, which is every mode but full colour.
@@ -132,6 +143,25 @@ extension ActivityVerb {
             case .changed: "arrow.trianglehead.2.clockwise.rotate.90"
             case .deleted: "xmark"
             case .restored: "arrow.counterclockwise"
+        }
+    }
+}
+
+extension ActivityVerb {
+    /// `accessibilityDescription` is what happened, in a word, for the screen reader the badge's glyph says nothing to.
+    var accessibilityDescription: String {
+        switch self {
+            case .created:
+                String(localized: "Created", comment: "What happened to a file, read aloud by VoiceOver: it was created. The row draws this as a glyph on the avatar's badge and writes no word for it, so this is the only form a screen reader gets.")
+
+            case .changed:
+                String(localized: "Changed", comment: "What happened to a file, read aloud by VoiceOver: its contents were changed. The row draws this as a glyph on the avatar's badge and writes no word for it, so this is the only form a screen reader gets.")
+
+            case .deleted:
+                String(localized: "Deleted", comment: "What happened to a file, read aloud by VoiceOver: it was deleted. The row draws this as a glyph on the avatar's badge and writes no word for it, so this is the only form a screen reader gets.")
+
+            case .restored:
+                String(localized: "Restored", comment: "What happened to a file, read aloud by VoiceOver: it was restored from the trash. The row draws this as a glyph on the avatar's badge and writes no word for it, so this is the only form a screen reader gets.")
         }
     }
 }

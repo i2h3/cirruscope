@@ -6,13 +6,13 @@ import Rainmaker
 
 /// `ActivityRow` is one line of the activity widget, reduced to exactly what a layout draws and nothing else.
 ///
-/// A Nextcloud activity arrives as a rendered sentence plus the parts it was rendered from, and the widget needs the parts: the filename carries the weight in every size, the verb picks the badge, and the actor and folder fill the subtitle. Doing that once here rather than in each layout is what keeps the five of them — three families, and a macOS medium that moves the folder into its own column — from each deriving the same values slightly differently.
+/// A Nextcloud activity arrives as a rendered sentence plus the parts it was rendered from, and the widget needs the parts: the filename carries the weight in every size, the verb picks the badge, the actor draws the circle beside it, and the folder fills the line underneath. Doing that once here rather than in each layout is what keeps the three families from each deriving the same values slightly differently.
 /// The verb is taken from `ActivityItem.type` rather than from the server's sentence, so it can be localized into the language the device is set to. `subjectRich`'s template is localized into the language the *Nextcloud account* is set to, which is not necessarily the same one, and a widget whose empty state reads "Nichts Neues" should not describe its rows in English.
 struct ActivityRow: Identifiable, Hashable, Codable, Sendable {
     /// `id` is the server's own activity identifier, which is unique per instance and stable across refreshes, so SwiftUI keeps a row's identity when the feed shifts under it.
     let id: Int
 
-    /// `verb` is what happened, and picks both the badge glyph and the word the medium and large layouts put before the filename.
+    /// `verb` is what happened, and picks the glyph on the badge, which is the only place a row states it — `DECISIONS.md` records why no size writes the word out.
     let verb: ActivityVerb
 
     /// `fileName` is the last component of the affected path, which is the one thing every size shows and the small size shows alone.

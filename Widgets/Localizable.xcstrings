@@ -128,6 +128,75 @@
         }
       }
     },
+    "Changed" : {
+      "comment" : "What happened to a file, read aloud by VoiceOver: its contents were changed. The row draws this as a glyph on the avatar's badge and writes no word for it, so this is the only form a screen reader gets.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geändert"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modificado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifié"
+          }
+        }
+      }
+    },
+    "Created" : {
+      "comment" : "What happened to a file, read aloud by VoiceOver: it was created. The row draws this as a glyph on the avatar's badge and writes no word for it, so this is the only form a screen reader gets.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erstellt"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Créé"
+          }
+        }
+      }
+    },
+    "Deleted" : {
+      "comment" : "What happened to a file, read aloud by VoiceOver: it was deleted. The row draws this as a glyph on the avatar's badge and writes no word for it, so this is the only form a screen reader gets.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gelöscht"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimé"
+          }
+        }
+      }
+    },
     "No file changes to show." : {
       "comment" : "The sentence beneath the widget's “All quiet” headline.",
       "localizations" : {
@@ -239,6 +308,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Modifications récentes des fichiers de votre serveur Nextcloud."
+          }
+        }
+      }
+    },
+    "Restored" : {
+      "comment" : "What happened to a file, read aloud by VoiceOver: it was restored from the trash. The row draws this as a glyph on the avatar's badge and writes no word for it, so this is the only form a screen reader gets.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wiederhergestellt"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restaurado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restauré"
           }
         }
       }
@@ -423,6 +515,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "L’application Activité n’est pas activée sur ce serveur."
+          }
+        }
+      }
+    },
+    "You" : {
+      "comment" : "Names the signed-in user as the person who acted, read aloud by VoiceOver in place of a name for your own activity. The server sends no name for it, and the design draws a figure in the circle rather than initials.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sie"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tú"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous"
           }
         }
       }

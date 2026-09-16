@@ -72,7 +72,7 @@ Because there is nothing platform-specific to separate. A widget is WidgetKit an
 
 The alternative was two targets, and the argument against it is the one this project already learned the expensive way: two near-identical targets drift. Xcode writes its template's build settings into each target rather than into an xcconfig, so a second copy is a second set of settings to keep aligned, a second bundle identifier and App ID to register, a second asset catalog and String Catalog, and a second set of `REUSE.toml` annotations. The iOS app target had drifted on five settings within days of being created, one of which would have failed App Store validation.
 
-The trade-off accepted is that genuine platform differences now live inside one target instead of being separated by construction: `[sdk=…]`-qualified assignments in `Widgets/Widgets.xcconfig` for build settings, and `#if os(…)` in source for anything WidgetKit exposes on only one platform. That is a smaller cost than it looks, because those differences are rare — so far only the runpath search paths and the provisioning profile — and a qualified assignment states the difference in one place, where a duplicated target leaves it implicit in two.
+The trade-off accepted is that genuine platform differences now live inside one target instead of being separated by construction: `[sdk=…]`-qualified assignments in `Widgets/Widgets.xcconfig` for build settings, and `#if os(…)` in source for anything WidgetKit exposes on only one platform. That is a smaller cost than it looks, because those differences are rare — so far the runpath search paths, the provisioning profile, and one `#if os(macOS)` choosing the scale the widget's header is drawn at — and a qualified assignment states the difference in one place, where a duplicated target leaves it implicit in two.
 
 ## Why is there a `Core/` folder as well as `Cirruscope/`?
 
@@ -366,6 +366,18 @@ Because both were already on the row, drawn rather than written. The badge on th
 It did not read as redundant in a mockup, where a row is one line of a drawing with room around it. It read as redundant immediately on a real Home Screen, where the small card is about half a line wide: the text ran off the edge before reaching the end of itself, so what actually got cut was the folder — the one fact the row alone could state, and the one a person needs to tell `report.pdf` in `Finance/2026` from `report.pdf` in `Design/Archive`.
 
 So every size now shows the filename over the folder, and nothing else. The cost accepted is that the verb and the actor are legible only if their badge and their face are — which is a real cost in the accented and vibrant rendering modes, where colour is discarded and the badge is distinguished by its glyph alone. The alternative was to keep saying it twice and lose the folder, and the folder is worth more.
+
+The macOS medium card held out longest. It is wider than the phone's at the same family, and the room was spent moving the folder out from under the filename into a right-aligned column of its own — which read, on a real desktop, as the one card that had been laid out by somebody else. It is now the small card's row on a wider card, with the time trailing it, and the folder is back under the filename where every other size has it.
+
+## Why does a short feed leave the bottom of the card empty instead of spreading out?
+
+Because a widget is glanced at, and a glance is cheapest when nothing has moved since the last one. Each size divides its feed into a fixed number of slots — three on a small or medium card, ten on a large one — and a row occupies the slot its position in the feed gives it. A server with two recent changes fills the top two slots and leaves the rest empty, rather than sharing the whole height between two rows that then sit lower, and further apart, than the same two sat an hour ago.
+
+It is the same contract the redacted card already draws. The placeholder puts a full set of bars in those slots, so when real rows replace them the card changes what it says and not where it says it.
+
+The message states keep their own centring, and that is deliberate rather than an oversight. A feed is a list, and a list begins at the top; "All quiet" is a statement about the whole card, and centring is what makes it read as one rather than as a first row waiting for a second.
+
+The cost accepted is a card that looks under-filled when the server has been quiet, which is the honest thing for it to look like. The alternative makes the layout a second, silent report on how much activity there is — and the rows are already that report.
 
 ## Why does the widget use the system's colours rather than the design's own?
 
