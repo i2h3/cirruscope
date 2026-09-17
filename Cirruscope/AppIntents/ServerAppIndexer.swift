@@ -26,8 +26,21 @@ final class ServerAppIndexer: NSObject {
         super.init()
     }
 
+    /// `hasStarted` records that `start()` has already run, so a second call registers no second observer.
+    ///
+    /// macOS calls `start()` once, from `applicationDidFinishLaunching(_:)`. iOS has no such moment: the nearest thing is the app becoming active, which happens again on every return to the foreground. Making the second call a no-op here is what lets that caller stay a single line rather than carrying a flag of its own.
+    private var hasStarted = false
+
     /// `start()` registers the change observer and performs the initial index over the apps already persisted from a previous run.
+    ///
+    /// Calling it again does nothing.
     func start() {
+        guard hasStarted == false else {
+            logger.debug("The server app indexer is already started; ignoring this call")
+            return
+        }
+
+        hasStarted = true
         logger.notice("Starting server app indexer; registering for change notifications and performing the initial index")
         NotificationCenter.default.addObserver(self, selector: #selector(serverAppsDidChange), name: .serverAppsDidChange, object: nil)
         reindex(isInitial: true)

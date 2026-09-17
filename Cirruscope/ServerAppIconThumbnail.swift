@@ -1,10 +1,11 @@
 // SPDX-FileCopyrightText: 2026 Iva Horn
 // SPDX-License-Identifier: MIT
 
-import AppKit
 import CoreGraphics
 import Foundation
+import ImageIO
 import os
+import UniformTypeIdentifiers
 
 /// `ServerAppIconThumbnail` draws the picture of a Nextcloud app that Spotlight and the Shortcuts app are given: a small white window, three traffic lights in its top-left corner, and the app's own glyph centred in the body below them.
 ///
@@ -43,7 +44,8 @@ enum ServerAppIconThumbnail {
     ]
 
     /// `logger` records thumbnail drawing under the `ServerAppIconThumbnail` category.
-    private static let logger = Logger(for: ServerAppIconThumbnail.self)
+    /// It is `internal` rather than `private` because `glyphColor()` logs through it from this type's per-platform extension files.
+    static let logger = Logger(for: ServerAppIconThumbnail.self)
 
     /// `pngData(forAppID:serverAddress:)` is the windowed icon of one app as PNG bytes, or `nil` if no icon has been cached for it or it cannot be drawn.
     ///
@@ -111,24 +113,27 @@ enum ServerAppIconThumbnail {
             return nil
         }
 
-        return NSBitmapImageRep(cgImage: composed).representation(using: .png, properties: [:])
+        return pngData(of: composed)
     }
 
-    /// `glyphColor()` is the colour the app's glyph is filled with: the secondary label colour, resolved in the light appearance.
+    /// `pngData(of:)` encodes a rendered bitmap as PNG bytes.
     ///
-    /// The light one always, and deliberately. The plate is white whatever the system is set to, so the ink on it has to be the one meant for a light surface; resolving it in the current appearance would produce pale grey on white the moment the user switched to dark, which is the same class of bug this whole type exists to fix.
-    private static func glyphColor() -> CGColor? {
-        var resolved: CGColor?
+    /// Through ImageIO rather than `NSBitmapImageRep.representation(using:properties:)`, which is the call this used while the type was macOS-only and has no counterpart on iOS. `CGImageDestination` is the same encoder underneath and exists identically on both platforms, so one implementation serves both rather than the artwork being drawn twice — and the pixels a Mac donates to Spotlight are unchanged by the swap, which `ServerAppIconThumbnailTests` pins.
+    private static func pngData(of image: CGImage) -> Data? {
+        let data = NSMutableData()
 
-        NSAppearance(named: .aqua)?.performAsCurrentDrawingAppearance {
-            resolved = NSColor.secondaryLabelColor.usingColorSpace(.sRGB)?.cgColor
-        }
-
-        guard let resolved else {
-            logger.error("The secondary label colour could not be resolved; no thumbnail will be drawn")
+        guard let destination = CGImageDestinationCreateWithData(data, UTType.png.identifier as CFString, 1, nil) else {
+            logger.error("A PNG destination could not be created; no thumbnail will be drawn")
             return nil
         }
 
-        return resolved
+        CGImageDestinationAddImage(destination, image, nil)
+
+        guard CGImageDestinationFinalize(destination) else {
+            logger.error("The thumbnail could not be encoded as PNG")
+            return nil
+        }
+
+        return data as Data
     }
 }

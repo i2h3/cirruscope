@@ -8,7 +8,9 @@ import Testing
 
 /// `ConnectedAccountTests` covers the lifecycle of the single `Account` record: connecting to a server, recording its version, and deleting the account again.
 ///
-/// The two cases worth the suite are about the memoized `cachedAccount`, which every read in the store goes through: deleting the account has to clear it, or a later write lands on a deleted object, and the deletion has to cascade to the apps and their shortcuts rather than leaving orphans behind. `deleteAccount()` is exercised rather than `disconnect()` because `disconnect()`'s other two steps empty the real `AssetCache` and clear the real `Keychain`.
+/// The case worth the suite is about the memoized `cachedAccount`, which every read in the store goes through: deleting the account has to clear it, or a later write lands on a deleted object and the old app list comes back with it. `deleteAccount()` is exercised rather than `disconnect()` because `disconnect()`'s other steps empty the real `AssetCache` and clear the real `Keychain`.
+///
+/// That the deletion also cascades to a keyboard shortcut is asserted by `macOSTests/Account/AccountDeletionCascadeTests`, which could not move here: assigning a shortcut needs a fixture built out of AppKit's own modifier flags. This suite runs against both app modules, which is what makes it the one that would notice an iOS-side difference in how the store or its container behaves.
 @MainActor
 @Suite(.serialized)
 struct ConnectedAccountTests {
@@ -65,23 +67,6 @@ struct ConnectedAccountTests {
         harness.store.setServerVersion("31.0.2")
 
         #expect(harness.notificationCount == 0)
-    }
-
-    @Test
-    func `Deleting the account removes its apps and their shortcuts`() {
-        harness.store.connect(to: server)
-        harness.store.persist(serverApps: ServerAppFixture.all)
-        harness.store.setShortcut(ShortcutFixture.named("⌘1").shortcut, forAppID: "files")
-
-        harness.store.deleteAccount()
-
-        #expect(harness.store.serverAddress == nil)
-        #expect(harness.store.serverApps.isEmpty)
-
-        // Re-adding the app shows the cascade really removed the shortcut record, rather than it being unreachable
-        // only because its app was gone.
-        harness.store.persist(serverApps: [ServerAppFixture.files])
-        #expect(harness.store.shortcut(forAppID: "files") == nil)
     }
 
     @Test

@@ -55,6 +55,13 @@ struct iOSApp: App {
                 arm()
                 store.refreshUnreadNotifications()
 
+                // Donates the persisted apps to Spotlight and refreshes the values the Shortcuts app offers for the
+                // action's parameter. There is no once-per-launch hook on this platform the way macOS has
+                // `applicationDidFinishLaunching(_:)`, so it is called on every activation and is a no-op after the
+                // first — which also means the first donation happens from what was persisted, before the server
+                // has been asked anything.
+                ServerAppIndexer.shared.start()
+
                 Task {
                     await NotificationRefreshTask.logPendingRequests()
                 }

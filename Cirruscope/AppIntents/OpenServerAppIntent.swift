@@ -2,14 +2,13 @@
 // SPDX-License-Identifier: MIT
 
 import AppIntents
-import AppKit
 import os
 
 /// `OpenServerAppIntent` opens a chosen Nextcloud server app inside Cirruscope, backing the Shortcuts "Open Nextcloud App" action, the Siri phrases declared in `ServerAppShortcuts`, and activation of a `ServerAppEntity` Spotlight result.
 ///
 /// It conforms to `OpenIntent`, and that conformance is what makes the `target` parameter usable inside an App Shortcut phrase: it is the only thing that records the `com.apple.link.systemProtocol.OpenEntity` system protocol in the app's extracted App Intents metadata, and without that entry the system does not recognise `${target}` as a phrase token — it skips every phrase template mentioning the parameter ("Skipping phrase template with an unrecognized token"), donates nothing to Siri, and a spoken phrase then merely brings the app forward. Established by building Apple's "Adopting App Intents to support system experiences" sample and diffing its metadata against this app's: its `OpenLandmarkIntent` carries that system protocol while a plain `AppIntent` records an empty `systemProtocols`. The second half of the requirement lives on the entity — `ServerAppEntity.typeDisplayRepresentation` must supply a `numericFormat`.
 ///
-/// `OpenIntent` also supplies `openAppWhenRun`, so running the intent foregrounds Cirruscope, plus a default `perform()` that only opens the app. The override below is what actually navigates: it re-resolves the selected `ServerAppEntity` to a fresh `ServerAppTransferObject` through `AccountStore` — rather than trusting a possibly-stale donated entity — and hands it to `AppDelegate.openServerApp(_:)`, reusing the same focus-an-existing-window-or-open-a-new-one logic as the View and Dock menus. Apple's sample overrides `perform()` on macOS for the same reason. Every branch logs at `.notice` (misses at `.error`) with the app id in the clear, so a log capture shows exactly which app was requested and whether it opened; the logger is `static` because App Intents instantiates the intent as a plain value with a synthesized `init()`.
+/// `OpenIntent` also supplies `openAppWhenRun`, so running the intent foregrounds Cirruscope, plus a default `perform()` that only opens the app. The override below is what actually navigates: it re-resolves the selected `ServerAppEntity` to a fresh `ServerAppTransferObject` through `AccountStore` — rather than trusting a possibly-stale donated entity — and hands it to `EntityOpening`, which each app installs its own way of opening into — on macOS the focus-an-existing-window-or-open-a-new-one logic the View and Dock menus already use, on iOS a load into the one web view there is. That indirection is not optional: App Intents instantiates an intent as a plain value through a synthesized `init()`, so there is nowhere to hand it a way of opening anything. Apple's sample overrides `perform()` on macOS for the same reason. Every branch logs at `.notice` (misses at `.error`) with the app id in the clear, so a log capture shows exactly which app was requested and whether it opened; the logger is `static` because App Intents instantiates the intent as a plain value with a synthesized `init()`.
 struct OpenServerAppIntent: OpenIntent {
     /// `title` is the action's name in the Shortcuts app.
     static let title: LocalizedStringResource = "Open Nextcloud App"
@@ -36,13 +35,8 @@ struct OpenServerAppIntent: OpenIntent {
             throw $target.needsValueError()
         }
 
-        guard let appDelegate = NSApp.delegate as? AppDelegate else {
-            Self.logger.error("perform: no AppDelegate available; cannot open \"\(app.id, privacy: .public)\"")
-            return .result()
-        }
-
-        Self.logger.notice("perform: resolved \"\(app.name, privacy: .public)\" (\(app.id, privacy: .public)); handing to AppDelegate.openServerApp")
-        appDelegate.openServerApp(app)
+        Self.logger.notice("perform: resolved \"\(app.name, privacy: .public)\" (\(app.id, privacy: .public)); handing to EntityOpening")
+        EntityOpening.shared.open(app)
         Self.logger.notice("perform: finished opening \"\(app.id, privacy: .public)\"")
         return .result()
     }

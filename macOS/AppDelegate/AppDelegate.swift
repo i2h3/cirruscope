@@ -41,6 +41,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NotificationCenter.default.addObserver(self, selector: #selector(downloadDidStart), name: .downloadDidStart, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(serverCredentialsRejected), name: .serverCredentialsRejected, object: nil)
         rebuildServerAppsMenu()
+        // Tell the App Intents layer how this app opens a server app, before anything can ask it to. An intent run
+        // from Spotlight or Siri while Cirruscope was not running launches it and reaches `EntityOpening` on the
+        // way, which may be before this line; that request is latched rather than dropped, and installing here is
+        // what serves it.
+        EntityOpening.shared.install { [weak self] app in
+            self?.openServerApp(app)
+        }
         // Keep Spotlight and the Siri/Shortcuts app-parameter options in step with the server's app list.
         ServerAppIndexer.shared.start()
         // Watch the macOS accent color and appearance so open web views keep matching the app's own accent.

@@ -250,6 +250,16 @@ struct NextcloudView: View {
             page.load(account.authenticatedRequest(for: account.server))
             store.updateApps()
         }
+        .onAppear {
+            // Tell the App Intents layer how this screen opens a server app. It is installed here rather than at
+            // launch because this is the only thing that can do it: the web view is this screen's, and a request
+            // arriving while no screen is up has nowhere to go. `install(_:)` serves anything already waiting, so a
+            // Spotlight result picked while the app was not running — which launches it and reaches `EntityOpening`
+            // long before this appears — opens as soon as this screen does rather than being dropped.
+            EntityOpening.shared.install { app in
+                navigateToApp(app)
+            }
+        }
         .task {
             await republishInsetsOnNavigation()
         }
