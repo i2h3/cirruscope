@@ -6,9 +6,11 @@ import os
 import SwiftData
 import Synchronization
 
-/// `CirruscopeMigrationPlan` migrates Cirruscope's SwiftData store from `SchemaV1` (the shipped `1.0.0` schema) to `SchemaV2`, preserving the keyboard shortcuts users set up before the `AppShortcut` → `KeyboardShortcut` rename.
+/// `CirruscopeMigrationPlan` carries Cirruscope's SwiftData store forward across every schema it has ever had: `SchemaV1` (the shipped `1.0.0` schema), `SchemaV2` (the shipped `1.1.0` one), and `SchemaV3` (the current one), preserving the keyboard shortcuts users set up before the `AppShortcut` → `KeyboardShortcut` rename.
 ///
-/// The rename changes a store entity's name, which SwiftData cannot infer on its own — there is no entity-level `originalName`, so a lightweight migration would drop every `AppShortcut` row. This plan therefore carries a custom stage that copies each row across the rename by value. `AppDatabase` passes this plan when opening the container; the stage is a no-op for stores already at `SchemaV2` (fresh installs and relaunches).
+/// That rename changes a store entity's name, which SwiftData cannot infer on its own — there is no entity-level `originalName`, so a lightweight migration would drop every `AppShortcut` row. The first stage is therefore a custom one that copies each row across the rename by value; the second has no work to do at all. `AppDatabase` passes this plan when opening the container, and a stage whose source version the store is already past is skipped, so a fresh install and a relaunch both run nothing.
+///
+/// Every stage addresses the models of the version it operates on, never the app's live top-level types. That distinction is invisible while a frozen schema and the live models still agree and becomes silent data loss the moment they do not, which is exactly what freezing `SchemaV2` made possible: `didMigrate` below fetches `SchemaV2.ServerApp` and inserts a `SchemaV2.KeyboardShortcut`, because a `1.0.0` store arriving at the end of the first stage is a v2 store and nothing else.
 ///
 /// Every step logs at `.notice` (and failures at `.error`) with the counts and app ids in the clear, because this migration runs once on a user's real data and is exactly the kind of thing whose logs must survive into a release build's persisted store — so that when something goes wrong, a `log show`/`log stream` capture reconstructs precisely what happened.
 enum CirruscopeMigrationPlan: SchemaMigrationPlan {
@@ -17,12 +19,12 @@ enum CirruscopeMigrationPlan: SchemaMigrationPlan {
 
     /// `schemas` lists every versioned schema this plan spans, oldest first.
     static var schemas: [any VersionedSchema.Type] {
-        [SchemaV1.self, SchemaV2.self]
+        [SchemaV1.self, SchemaV2.self, SchemaV3.self]
     }
 
-    /// `stages` are the migration stages applied in order; there is a single stage from `SchemaV1` to `SchemaV2`.
+    /// `stages` are the migration stages applied in order: the custom `SchemaV1` to `SchemaV2` rename, then the empty `SchemaV2` to `SchemaV3` step.
     static var stages: [MigrationStage] {
-        [migrateV1toV2]
+        [migrateV1toV2, migrateV2toV3]
     }
 
     /// `CapturedShortcut` is a value snapshot of one v1 `AppShortcut` — its key equivalent, modifier flags, and the `appID` of the server app it belongs to — carried from `willMigrate` to `didMigrate` across the schema change.
@@ -93,10 +95,10 @@ enum CirruscopeMigrationPlan: SchemaMigrationPlan {
             }
 
             do {
-                let apps = try context.fetch(FetchDescriptor<ServerApp>())
+                let apps = try context.fetch(FetchDescriptor<SchemaV2.ServerApp>())
                 logger.notice("didMigrate: \(items.count, privacy: .public) shortcut(s) to recreate against \(apps.count, privacy: .public) server app(s)")
 
-                var appsByID: [String: ServerApp] = [:]
+                var appsByID: [String: SchemaV2.ServerApp] = [:]
                 for app in apps {
                     appsByID[app.appID] = app
                 }
@@ -108,7 +110,7 @@ enum CirruscopeMigrationPlan: SchemaMigrationPlan {
                         continue
                     }
 
-                    context.insert(KeyboardShortcut(keyEquivalent: item.keyEquivalent, modifierFlags: item.modifierFlags, app: app))
+                    context.insert(SchemaV2.KeyboardShortcut(keyEquivalent: item.keyEquivalent, modifierFlags: item.modifierFlags, app: app))
                     recreated += 1
                     logger.notice("didMigrate: recreated shortcut '\(item.keyEquivalent, privacy: .public)' (flags \(item.modifierFlags, privacy: .public)) for app '\(item.appID, privacy: .public)'")
                 }
@@ -121,4 +123,9 @@ enum CirruscopeMigrationPlan: SchemaMigrationPlan {
             }
         }
     )
+
+    /// `migrateV2toV3` carries a store from the schema `1.1.0` shipped to the current one, and has nothing to do.
+    ///
+    /// `SchemaV3` is shape-identical to `SchemaV2`: it exists so that freezing `SchemaV2` into nested model copies had a successor to hand the live types to, rather than because anything about the store changed. A lightweight stage is therefore both correct and a no-op, and it is declared rather than omitted because a plan whose `schemas` names a version its `stages` cannot reach is a plan with a hole in it.
+    static let migrateV2toV3 = MigrationStage.lightweight(fromVersion: SchemaV2.self, toVersion: SchemaV3.self)
 }
