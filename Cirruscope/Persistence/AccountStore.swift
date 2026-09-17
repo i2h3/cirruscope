@@ -8,18 +8,15 @@ import SwiftData
 
 /// `AccountStore` is the main-actor repository over a SwiftData container, owning every read and write of the connected account's data.
 ///
-/// It replaces the server-related values the app used to keep in `UserDefaults` via `Settings`. Consumers reach it as `AccountStore.shared`, mirroring the `AssetCache.shared` / `NotificationMonitor.shared` conventions, and it keeps posting `Notification.Name.serverAppsDidChange` so the existing AppKit menus and settings tab refresh exactly as before. As further domains arrive (files, notes, …) they gain methods here, or sibling main-actor stores sharing the same container.
+/// It replaces the server-related values the app used to keep in `UserDefaults` via `Settings`. Consumers reach it as `AccountStore.shared`, mirroring the `AssetCache.shared` / `NotificationMonitor.shared` conventions, and it posts `Notification.Name.serverAppsDidChange` so every surface listing the apps refreshes. As further domains arrive (collectives, conversations, notes) they gain sections here rather than sibling stores: every record hangs off the single `Account` this one memoizes, and a second store over the same container would memoize it again and go stale.
+///
+/// It is compiled into both apps. `shared` itself is not declared here but in a per-platform `AccountStore+Shared.swift`, because building the store means answering what counts as a reserved keyboard shortcut and only macOS has a menu bar to answer from; the reads that consult that answer are likewise in `macOS/Persistence/AccountStore+KeyboardShortcuts.swift`.
 ///
 /// Reads return value-type DTOs (`ServerAppTransferObject`, `KeyboardShortcutTransferObject`), never managed `@Model` objects, so AppKit table views and menus hold snapshots that stay valid across an upsert. Every access is confined to the main actor and only `Sendable` values ever cross the boundary to the nonisolated `ServerConnection`, which is what keeps the store race-free under Swift 6 complete concurrency. Autosave is disabled and each mutator saves explicitly, so every change commits atomically and is on disk by the time a future extension process reads it.
 ///
 /// The container, and the two things this store reaches outside itself for, arrive through `init(container:isReservedShortcut:notifyServerAppsDidChange:)` so its logic can be exercised against an in-memory store; `macOSTests/Account/` does exactly that. Production builds exactly one instance, `shared`.
 @MainActor
 final class AccountStore {
-    /// `shared` is the process-wide account store, over the app's on-disk container.
-    ///
-    /// It is the only instance production code builds, and the only one that must ever be built over `AppDatabase.container`: each instance memoizes the single `Account` separately (see `cachedAccount`), so two of them over one container would each believe a stale answer. Being a `static let` it is created lazily, which is what keeps the real store closed during a test run that never names it.
-    static let shared = AccountStore(container: AppDatabase.container)
-
     /// `logger` records store activity under the `AccountStore` category.
     private let logger = Logger(for: AccountStore.self)
 
@@ -30,8 +27,9 @@ final class AccountStore {
 
     /// `isReservedShortcut` reports whether a shortcut is already occupied by one of Cirruscope's own fixed menu items, which `shortcut(forAppID:)` consults to keep such a stored shortcut off the menus.
     ///
-    /// It wraps `AppDelegate.reservedShortcutName(for:)` rather than calling it directly because that lookup answers from the live `NSApp.mainMenu`, and the test bundle is hosted by the app: the real `Main.storyboard` menu bar is loaded for the whole test run, so a case using ⌘Z — which both "Undo" and "Redo" declare — would be measuring the storyboard instead of this store. A test hands in a closure naming exactly the combinations it means to reserve.
-    private let isReservedShortcut: @MainActor (KeyboardShortcutTransferObject) -> Bool
+    /// It is a closure rather than a direct call because the lookup behind it answers from the live `NSApp.mainMenu`, and the test bundle is hosted by the app: the real `Main.storyboard` menu bar is loaded for the whole test run, so a case using ⌘Z — which both "Undo" and "Redo" declare — would be measuring the storyboard instead of this store. A test hands in a closure naming exactly the combinations it means to reserve.
+    /// It is `internal` rather than `private` because `shortcut(forAppID:)` reads it and lives in this store's macOS half, Swift's `private` being file-scoped.
+    let isReservedShortcut: @MainActor (KeyboardShortcutTransferObject) -> Bool
 
     /// `notifyServerAppsDidChange` announces that the account's apps or their shortcuts changed, so the View and Dock menus and the Apps settings tab refresh.
     ///
@@ -48,10 +46,11 @@ final class AccountStore {
     /// `AccountStore` is the sole mutator on the main actor, so the cache stays consistent; `deleteAccount()` clears it after deleting the record.
     private var cachedAccount: Account?
 
-    /// `init(container:isReservedShortcut:notifyServerAppsDidChange:)` builds a store over `container`, defaulting the two dependencies it reaches outside itself for to their production behaviour.
+    /// `init(container:isReservedShortcut:notifyServerAppsDidChange:)` builds a store over `container`, defaulting the two dependencies it reaches outside itself for to behaviour every platform can supply.
     ///
     /// A `ModelContainer` rather than a `ModelContext` is the parameter so that "the container's main-actor context" stays an invariant this store enforces, rather than something a caller could subvert by handing in a background context.
-    init(container: ModelContainer, isReservedShortcut: @escaping @MainActor (KeyboardShortcutTransferObject) -> Bool = { AppDelegate.reservedShortcutName(for: $0) != nil }, notifyServerAppsDidChange: @escaping @MainActor () -> Void = { AccountStore.postServerAppsDidChange() }) {
+    /// `isReservedShortcut` defaults to reserving nothing, which is the truth on a platform with no menu bar and would be a silent bug on one with a menu bar that never installed the real lookup. That is why `shared` is built in a per-platform extension file rather than here: macOS passes the `AppDelegate` lookup as part of constructing the instance, so there is no window in which the store exists and answers "nothing is reserved".
+    init(container: ModelContainer, isReservedShortcut: @escaping @MainActor (KeyboardShortcutTransferObject) -> Bool = { _ in false }, notifyServerAppsDidChange: @escaping @MainActor () -> Void = { AccountStore.postServerAppsDidChange() }) {
         self.container = container
         self.isReservedShortcut = isReservedShortcut
         self.notifyServerAppsDidChange = notifyServerAppsDidChange
@@ -64,7 +63,9 @@ final class AccountStore {
     // MARK: - Current Account
 
     /// `currentAccount(createIfNeeded:)` returns the single `Account`, fetching it once and caching it, and optionally inserting a fresh one when none exists yet.
-    private func currentAccount(createIfNeeded: Bool) -> Account? {
+    ///
+    /// `internal` rather than `private` because this store's macOS half reads it, Swift's `private` being file-scoped.
+    func currentAccount(createIfNeeded: Bool) -> Account? {
         if let cachedAccount {
             return cachedAccount
         }
@@ -316,12 +317,18 @@ final class AccountStore {
         notifyServerAppsDidChange()
     }
 
-    // MARK: - App Shortcuts
+    // MARK: - Keyboard Shortcuts
+
+    // The reads that decide which app a keystroke actually reaches are not here. They compare through
+    // `ShortcutMatching`, which is a statement about how AppKit matches key equivalents and could not follow this
+    // store into a folder iOS also compiles, so they live in `macOS/Persistence/AccountStore+KeyboardShortcuts.swift`.
+    // What stays is the storage: reading the shortcuts out of the records, and writing one back.
 
     /// `storedShortcuts` are the shortcuts currently stored for the connected account's apps, each paired with the app it belongs to, in the order the menus list those apps.
     ///
+    /// `internal` rather than `private` because `appHolding(_:)` walks it and lives in this store's macOS half, Swift's `private` being file-scoped.
     /// It walks `serverApps` rather than sorting the records itself, so that order is the menus' own by construction — alphabetical by name, with the app identifier breaking a tie so that it is total. `appHolding(_:)` reads the first match from it to decide which single app a shared shortcut belongs to, and that answer has to be the same on every call rather than depend on an unstable sort. Collecting the shortcuts into a dictionary first is what keeps that walk from being a search of the relationship per app.
-    private var storedShortcuts: [(appID: String, name: String, shortcut: KeyboardShortcutTransferObject)] {
+    var storedShortcuts: [(appID: String, name: String, shortcut: KeyboardShortcutTransferObject)] {
         guard let account = currentAccount(createIfNeeded: false) else {
             return []
         }
@@ -343,47 +350,6 @@ final class AccountStore {
 
             return (app.id, app.name, shortcut)
         }
-    }
-
-    /// `appHolding(_:)` is the one app a keystroke matching `shortcut` actually reaches — the first entry in `storedShortcuts` carrying an equivalent shortcut — or `nil` when no app carries it at all.
-    ///
-    /// Answering both `shortcut(forAppID:)` and `nameOfApp(usingShortcut:otherThanAppID:)` from this same entry is what keeps the two from contradicting each other where a duplicate is stored: were the latter to consider every stored shortcut instead, an app whose duplicate the former suppresses would still be named as the occupant of a combination the settings tab shows as unassigned for it, and the app visibly holding that combination could not even re-record it.
-    private func appHolding(_ shortcut: KeyboardShortcutTransferObject) -> (appID: String, name: String, shortcut: KeyboardShortcutTransferObject)? {
-        storedShortcuts.first { ShortcutMatching.areEquivalent($0.shortcut, shortcut) }
-    }
-
-    /// `shortcut(forAppID:)` is the user's keyboard shortcut for the app with `appID`, or `nil` when none is assigned, the app is unknown, the stored shortcut collides with one of Cirruscope's own reserved shortcuts (see `AppDelegate.reservedShortcutName(for:)`), or another app already holds the same one (see `appHolding(_:)`).
-    ///
-    /// Both collisions can only come from data recorded before their respective checks existed, since `ShortcutRecorderView` now refuses to record either going forward; suppressing them here as well means such a shortcut is not applied to a menu item — and is shown as unassigned in the settings tab, so the user can see it is not in effect and record another — rather than being deleted behind the user's back.
-    func shortcut(forAppID appID: String) -> KeyboardShortcutTransferObject? {
-        guard let stored = currentAccount(createIfNeeded: false)?.apps.first(where: { $0.appID == appID })?.shortcut else {
-            return nil
-        }
-
-        let shortcut = KeyboardShortcutTransferObject(keyEquivalent: stored.keyEquivalent, modifierFlags: stored.modifierFlags)
-
-        guard isReservedShortcut(shortcut) == false else {
-            return nil
-        }
-
-        // Honour a shortcut two apps share for the first of them only, so one keystroke never reaches two equally
-        // enabled menu items, between which AppKit has no reliable, documented tie-break.
-        guard appHolding(shortcut)?.appID == appID else {
-            return nil
-        }
-
-        return shortcut
-    }
-
-    /// `nameOfApp(usingShortcut:otherThanAppID:)` is the name of the server app that the same keystroke as `shortcut` already reaches, or `nil` when that app is the one with `appID` itself or no app holds the combination.
-    ///
-    /// `ServerAppsViewController` hands it to each row's `ShortcutRecorderView` as its `conflictingAppName`, so a combination another app already uses is rejected while recording — naming that app — instead of leaving two menu items to share one key equivalent, exactly as `AppDelegate.reservedShortcutName(for:)` does for Cirruscope's own fixed items. Excluding the app being edited is what lets a row re-record the shortcut it already displays without being told it conflicts with itself.
-    func nameOfApp(usingShortcut shortcut: KeyboardShortcutTransferObject, otherThanAppID appID: String) -> String? {
-        guard let holder = appHolding(shortcut) else {
-            return nil
-        }
-
-        return holder.appID == appID ? nil : holder.name
     }
 
     /// `setShortcut(_:forAppID:)` assigns, replaces, or (when `shortcut` is `nil`) clears the keyboard shortcut of the app with `appID`, then notifies observers so the menus update.

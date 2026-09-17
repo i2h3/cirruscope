@@ -301,6 +301,13 @@ struct ServerAddressView: View {
                     try Keychain.store(credentials, for: result.server)
                     Self.logger.info("Stored credentials and connected to \(result.server)")
 
+                    // The Keychain stays the authority on the credential, and `ContentView` still decides which
+                    // screen to show from it alone, so nothing about launch depends on the store opening. What the
+                    // store is told here is the address, which is what everything it caches hangs off: without it
+                    // `AccountStore.serverAddress` stays `nil`, and a `ServerAppEntity` built for Spotlight or the
+                    // Shortcuts app takes its no-server-address early return and ships with no artwork at all.
+                    AccountStore.shared.connect(to: result.server)
+
                     store.account = ServerAccount(server: result.server, credentials: credentials)
 
                     // Asked here so the prompt arrives with a server actually connected, rather than in front of an

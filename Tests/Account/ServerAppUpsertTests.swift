@@ -140,31 +140,6 @@ struct ServerAppUpsertTests {
     }
 
     @Test
-    func `A shortcut survives an app-list refresh`() {
-        harness.store.persist(serverApps: [ServerAppFixture.files, ServerAppFixture.photos])
-        harness.store.setShortcut(ShortcutFixture.named("⌘1").shortcut, forAppID: "files")
-
-        // Refreshing with the *renamed* app proves the update path ran, rather than the list happening to be identical.
-        harness.store.persist(serverApps: [ServerAppFixture.renamedFiles, ServerAppFixture.photos])
-
-        #expect(harness.store.shortcut(forAppID: "files") == ShortcutFixture.named("⌘1").shortcut)
-    }
-
-    @Test
-    func `A shortcut is pruned with the app it belonged to`() {
-        harness.store.persist(serverApps: [ServerAppFixture.files, ServerAppFixture.photos])
-        harness.store.setShortcut(ShortcutFixture.named("⌘1").shortcut, forAppID: "files")
-        harness.store.persist(serverApps: [ServerAppFixture.photos])
-
-        // The combination is free again, which is what tells the shortcut apart from one merely unreachable because
-        // its app is gone: the cascade delete really removed the record.
-        #expect(harness.store.nameOfApp(usingShortcut: ShortcutFixture.named("⌘1").shortcut, otherThanAppID: "photos") == nil)
-
-        harness.store.persist(serverApps: [ServerAppFixture.files, ServerAppFixture.photos])
-        #expect(harness.store.shortcut(forAppID: "files") == nil)
-    }
-
-    @Test
     func `Every app-list write announces the change, and reading announces nothing`() {
         harness.store.persist(serverApps: ServerAppFixture.all)
         harness.store.persist(serverApps: [ServerAppFixture.files])

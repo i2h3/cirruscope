@@ -92,7 +92,7 @@ struct DuplicateShortcutSuppressionTests {
 
     @Test
     func `A stored shortcut Cirruscope's own menu already uses is not applied`() {
-        let reserving = AccountStoreHarness(reserving: [commandOne])
+        let reserving = AccountStoreHarness(isReservedShortcut: ReservedShortcuts.claiming([commandOne]))
         reserving.store.persist(serverApps: [ServerAppFixture.files])
         reserving.store.setShortcut(commandOne, forAppID: "files")
 

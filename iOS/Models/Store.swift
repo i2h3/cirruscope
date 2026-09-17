@@ -25,7 +25,8 @@ class Store {
     ///
     /// Nextcloud server apps.
     ///
-    /// Not persisted. Initially populated on launch by a server response. Occassionally refreshed.
+    /// A projection of what `AccountStore` has persisted, refreshed whenever the store announces that the list changed. It is held here rather than read through on every access because SwiftUI observes this object, not the store.
+    /// It used to be the only copy there was, fetched into memory on every launch and gone again when the app quit. Now the list survives a relaunch, which is what lets a menu be drawn before the server has answered — or at all, on a launch with no network.
     ///
     var apps: [ServerAppTransferObject]
 
@@ -80,6 +81,15 @@ class Store {
     private let logger = Logger(for: Store.self)
 
     ///
+    /// Keeps `apps` and `iconGeneration` in step with what `AccountStore` has persisted.
+    ///
+    /// The store announces a change rather than being polled, and it announces twice per refresh — once when the list itself lands and again when the icons do — which is what lets a menu be drawn immediately and then redrawn with artwork. Reading the store from here rather than awaiting the refresh is what preserves that: awaiting it would hold the list back until the icons had been fetched.
+    /// The closure is `@Sendable` by the parameter's own type, so it does not inherit this initializer's main-actor isolation and no dynamic isolation check is emitted at its entry point; the hop inside is therefore a real hop rather than the trap described in AGENTS.md → Concurrency. Nothing crosses it but the decision to re-read.
+    /// The token is kept for the life of this object and never removed, which is deliberate rather than an omission. A `deinit` is `nonisolated` and so cannot read a main-actor property, and the alternatives — an unsafe opt-out, or making this an `NSObject` for the selector-based registration that does clean itself up — both cost more than the thing they buy: the app builds exactly one `Store` and keeps it for as long as it runs, and the observer holds `self` weakly, so the one belonging to a preview's discarded store fires into nothing.
+    ///
+    private var serverAppsObserver: (any NSObjectProtocol)?
+
+    ///
     /// Build a store around an account that is already known, or around none.
     ///
     /// The app itself uses `restored()` instead; this initializer is what previews and tests use, so they cannot pick up whatever credentials happen to sit in the Keychain of the machine they run on.
@@ -90,52 +100,46 @@ class Store {
         unreadNotifications = notifications
 
         server = account.flatMap { ServerConnection.authenticated(address: $0.server) }
+
+        serverAppsObserver = NotificationCenter.default.addObserver(forName: .serverAppsDidChange, object: nil, queue: nil) { [weak self] _ in
+            Task { @MainActor in
+                self?.adoptPersistedApps()
+            }
+        }
+    }
+
+    ///
+    /// Re-read the persisted app list, and note that whatever draws it should draw it again.
+    ///
+    /// `iconGeneration` is bumped on every announcement rather than only on the one that follows an icon fetch. The apps themselves are value snapshots and carry no icon, so a view drawing one has nothing else to observe; bumping on both announcements costs one redraw of a menu that is not on screen and is what makes the icons appear when they land.
+    ///
+    private func adoptPersistedApps() {
+        apps = AccountStore.shared.serverApps
+        iconGeneration += 1
     }
 
     ///
     /// Build a store around the account this device already holds credentials for, if it holds any.
     ///
-    /// The account is read back out of the Keychain rather than from a store of its own: `Keychain.store(_:for:)` files every credential under the address it authenticates against, so one item already carries both halves of a `ServerAccount` and there is no second place for them to fall out of step. macOS keeps the address in `AccountStore` instead, because it already has a database there for the appearance settings and app shortcuts iOS does not have yet.
+    /// The account is still read back out of the Keychain rather than from `AccountStore`: `Keychain.store(_:for:)` files every credential under the address it authenticates against, so one item already carries both halves of a `ServerAccount`, and reading it from there is what keeps launch from depending on the store opening at all. The store is told the same address at sign-in and is the authority on everything derived from it, the app list included — which is why the apps come from there and arrive already populated on a relaunch.
     ///
     static func restored() -> Store {
-        Store(account: Keychain.accounts().first)
+        Store(account: Keychain.accounts().first, apps: AccountStore.shared.serverApps)
     }
 
     ///
     /// Update the list of available Nextcloud server apps, and the icons they are shown with.
     ///
-    /// The list is sorted through the shared `sortedByName()`, which is the same order macOS lists these in — alphabetically by localized name, not in the order the server sends them, for the reason recorded in `DECISIONS.md`.
-    /// The icons are fetched after the list is published rather than before, so the menu appears at once with placeholders instead of waiting on a round trip per app. `iconGeneration` is bumped when they land, which is what tells the menu to draw itself again — the apps themselves have not changed, and an icon is not something a value-type snapshot of one carries.
+    /// The fetch, the mapping out of `Rainmaker.NavigationItem`, the persistence and the icon download are all `ServerConnection.refreshNavigationApps(using:)`, shared with macOS. This used to be a second implementation of the same four steps, which is exactly the kind of pair that drifts: the order the two apps listed the same apps in was already a rule written down once and applied twice.
+    /// Nothing is read back here. The refresh announces itself when the list lands and again when the icons do, and `adoptPersistedApps()` picks both up — so the menu still appears before the icons rather than waiting on a round trip per app.
     ///
     func updateApps() {
         guard let server else {
             return
         }
 
-        guard let account else {
-            return
-        }
-
         Task {
-            let navigationItems = try await server.navigation()
-
-            let apps = navigationItems
-                .map { ServerAppTransferObject(id: $0.id, order: $0.order, href: $0.href, name: $0.name) }
-                .sortedByName()
-
-            await MainActor.run {
-                self.apps = apps
-            }
-
-            let didFetchIcons = await ServerAppIcons.shared.refresh(navigationItems, serverAddress: account.server, credentials: account.credentials)
-
-            guard didFetchIcons else {
-                return
-            }
-
-            await MainActor.run {
-                self.iconGeneration += 1
-            }
+            await ServerConnection.refreshNavigationApps(using: server)
         }
     }
 
@@ -241,6 +245,13 @@ class Store {
         }
 
         Keychain.clearAll()
+
+        // The persisted account goes with it, and this is `deleteAccount()` rather than `disconnect()` because the
+        // clears `disconnect()` would also perform — the Keychain, the caches, the icons, the avatars — are the
+        // lines around this one. What has to go is what the store itself holds: the server address, the app list,
+        // and everything later domains hang off the same `Account` record. None of it is a secret, and all of it
+        // describes a server this device is no longer signed in to, in a file that is not encrypted.
+        AccountStore.shared.deleteAccount()
 
         // The cached assets go too. Branding outliving a sign-out would only be untidy, but the avatar cache holds
         // photographs of the people on that server, and those must not survive the account that was allowed to see them.
