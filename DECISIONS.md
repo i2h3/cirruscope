@@ -88,6 +88,26 @@ The entire point of the project is being deeply native to Apple's platform techn
 
 Persistence uses SwiftData rather than Core Data or a third-party store, for a modern, first-party model with low ceremony and an explicitly versioned schema. Because the app builds with complete strict concurrency, `@Model` objects are never passed across actor boundaries: a single main-actor store is the sole gateway to the container and hands out `Sendable` value-type data transfer objects, so the rest of the app works with safe, inert value types rather than live managed objects. See the persistence layer for the store and schema.
 
+## Why is every shipped schema frozen into nested model copies?
+
+Because a versioned schema that points at the app's live models does not describe a store — it describes whatever the code happens to look like today, and the two stop agreeing the moment a model changes.
+
+`SchemaV1` was frozen from the start: its `Account`, `ServerApp` and `AppShortcut` are copies nested inside the enum, so `Schema.Version(1, 0, 0)` means exactly what `1.0.0` wrote and nothing else. `SchemaV2` was not. It named the live top-level types, which was correct only for as long as nobody edited them — an accident, not a property. The failure it invites is quiet and total: `CirruscopeMigrationPlan`'s `1.0.0` → `1.1.0` stage recreates each keyboard shortcut after the `AppShortcut` → `KeyboardShortcut` rename, and it did so by fetching the *live* `ServerApp` and inserting a *live* `KeyboardShortcut`. Add a property to either model and that stage would be reading a `1.0.0` store through a shape it has never had. Keyboard shortcuts are the only thing in this store a user authors by hand and the only thing that cannot be re-fetched from the server, so the cost of getting it wrong is the one cost that is not recoverable.
+
+So the rule is now uniform, and it has two halves. **A schema that has shipped is frozen** — its models become nested copies, its version identifier never moves again, and every migration stage addresses `SchemaV{n}.Model` rather than the bare name. **Exactly one schema is live at a time**, the newest, and it references the top-level models so that `AppDatabase.schema` registers the types every `FetchDescriptor` in the app actually names. That second half is why freezing and succeeding are one change rather than two: the moment `SchemaV2` stopped naming the live models, something had to, or the container would have registered models no fetch could reach.
+
+`SchemaV3` exists for exactly that reason and for no other. It is shape-identical to `SchemaV2`, its migration stage is lightweight and has no work to do, and it is where the next model or property goes — until a build carrying it ships, at which point it is frozen and `SchemaV4` is created in the same change.
+
+The version identifier of `SchemaV2` was deliberately *not* bumped when it was frozen. Stores in the field carry `2.0.0`, and the models nested into it are byte-for-byte the live models at the `1.1.0` tag, so the identity it claims is the identity those stores have. Freezing after the fact is only safe because that was checked rather than assumed; it would not have been safe a single model edit later, which is the whole argument for the rule.
+
+## Why does the store keep every failed copy instead of overwriting the last one?
+
+Because the run most worth recovering is the first one that failed, and overwriting destroyed exactly that.
+
+When `AppDatabase` cannot open the store it moves the files aside rather than deleting them, then rebuilds. That is the right shape: most of the store is reconstructible — apps, theming and the server version all come back from the server on the next launch — so recovering beats crash-looping, while the user's keyboard shortcuts stay on disk. But the quarantined copy used one fixed name, and the move removed anything already sitting there. A store that failed to open twice therefore ended with the second failure's copy, made *after* the first rebuild had already replaced the user's data with an empty store — so the rescue copy was of nothing, and the real one was gone.
+
+Later passes now land on `.quarantine-2`, `.quarantine-3`, and so on. The plain `.quarantine` is kept for the first pass because that is the case that essentially always happens. The search is bounded at ten: more quarantined copies of one store is not a state worth generating, and stopping there is what keeps this from becoming an unbounded loop on a directory the app cannot write to anyway.
+
 ## Why ad-hoc code signing by default?
 
 The checked-in build signs ad-hoc (`CODE_SIGN_IDENTITY = -`, no team, no provisioning profile) so that a fresh clone, a fork, or CI can build and link with no Apple Developer account installed at all. The project previously required the maintainer's own real credentials for every build, which is exactly why CI itself could not build. A real "Apple Development" identity, and the entitlement-backed capabilities that need it, are opted into locally through a gitignored `Local.xcconfig`. See [AGENTS.md → Building and Signing](./AGENTS.md#building-and-signing) for the mechanics.
