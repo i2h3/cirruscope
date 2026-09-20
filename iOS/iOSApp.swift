@@ -61,6 +61,7 @@ struct iOSApp: App {
                 // first — which also means the first donation happens from what was persisted, before the server
                 // has been asked anything.
                 ServerAppIndexer.shared.start()
+                ConversationIndexer.shared.start()
 
                 Task {
                     await NotificationRefreshTask.logPendingRequests()

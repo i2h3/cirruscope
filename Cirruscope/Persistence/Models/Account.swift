@@ -38,6 +38,12 @@ final class Account {
     @Relationship(deleteRule: .cascade, inverse: \ServerApp.account)
     var apps: [ServerApp] = []
 
+    /// `conversations` are the Nextcloud Talk conversations this account takes part in; deleting the account cascades to them.
+    ///
+    /// Cascading is what makes signing out a single step rather than a list of things to remember. A conversation's display name is the name of a person in a one-to-one conversation, so leaving these behind would mean an unencrypted file naming people the account is no longer allowed to see.
+    @Relationship(deleteRule: .cascade, inverse: \TalkConversation.account)
+    var conversations: [TalkConversation] = []
+
     init(
         serverAddress: URL? = nil,
         serverVersion: String? = nil,

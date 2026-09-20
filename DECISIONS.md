@@ -219,6 +219,32 @@ One rule serves every surface on both platforms. The comparison itself is [`sort
 
 The server's position is still recorded on every refresh rather than discarded, so offering it back — as a preference, say — needs no schema change.
 
+## Why are Talk conversations listed by activity when the server apps are listed alphabetically?
+
+Because the two lists answer different questions.
+
+A list of server apps is a menu of fixed things. Nobody scans it for the third item; they scan it for a name, which is why it is sorted the way Finder sorts names and why an order the server chose is ignored. A list of conversations is a record of what has been happening, and the question asked of it is "what is new" — so it is ordered most recently active first, which is also how Nextcloud's own Talk interface presents it and what the network library's documentation says the server expects of a client, the server not sorting them at all.
+
+The ordering is total rather than merely by timestamp, and that part is not cosmetic: the server stamps activity in whole seconds, so ties are ordinary rather than theoretical, and `sorted(by:)` promises no stability. Two conversations sharing a second would otherwise be free to swap places between one list and the next, which for a donated Spotlight item means the identifier behind a row changing under the user. Name settles a tie and the token settles that.
+
+## Why is a conversation's unread count not stored?
+
+Because it would be a number the app is confidently wrong about.
+
+The server reports how many messages are unread in each conversation and whether any of them mentions the account, and both are tempting: an unread count is exactly the sort of thing a Spotlight result could carry. But what reads this is an index refreshed when the *conversation list* changes — at launch, at sign-in, on a refresh — and not when a message arrives or is read. A stored count would therefore be correct at the moment it was written and drift from then on, with nothing on the result to say how old it is.
+
+A count that is only sometimes right is worse than no count at all, because the user cannot tell which time it is. The same reasoning is why a row in the activity widget names neither the verb nor the person: the app shows what it can stand behind.
+
+## Why is Talk's availability decided from a 404 rather than from the capability the server advertises?
+
+Because the capability is a prediction and the response is the answer, and this project has already made that call once.
+
+Talk does advertise a `spreed` capability, so gating on it is possible — but acting on it means either an extra request for the capabilities, or threading a `CapabilitySet` through every caller of the refresh. The two callers differ: one has just validated the server and holds them, and one has not. A server without the app answers `404` regardless, which the network library surfaces as a not-found error, so the response settles the question for both callers with no extra round trip and no parameter.
+
+The cost accepted is one wasted request per refresh against an instance that will never have Talk. That is the same bargain already recorded for how iOS decides its notifications app is missing, and it buys the same thing: one code path rather than two, and no second source of truth to fall out of step.
+
+Only a `404` clears what was stored. Every other failure leaves the previous list alone, because an unreachable server has told us nothing — emptying a Spotlight index because a laptop woke up on a captive portal would be reading silence as an answer.
+
 ## Why does Cirruscope assume HTTPS for a server address entered without one, and say so out loud?
 
 Because the alternative is guessing on the user's behalf and never telling them. An address needs a scheme before anything can be requested, and HTTPS is the only defensible default: it is what a public Nextcloud serves, and silently falling back to HTTP on failure would downgrade a connection the user believes is encrypted. So a bare `localhost` or `cloud.example.com` becomes `https://…`, and HTTP is reachable only by typing `http://` explicitly — never inferred, not even from a port that suggests it, because port 8080 is as common for plain HTTP as it is for TLS behind a proxy and a rule that is right half the time is worse than one the user controls.

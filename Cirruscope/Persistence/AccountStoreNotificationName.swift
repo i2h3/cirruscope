@@ -14,4 +14,9 @@ extension Notification.Name {
 
     /// `appearanceSettingsDidChange` is posted by `AccountStore` whenever the account's appearance settings (translucency, remove-gaps) change so every open web view re-applies them without a reload.
     static let appearanceSettingsDidChange = Notification.Name("AppearanceSettingsDidChange")
+
+    /// `conversationsDidChange` is posted by `AccountStore` whenever the account's Talk conversations change, so the Spotlight index is brought back into step with them.
+    ///
+    /// A name of its own rather than one announcement for every domain, because the surfaces are not the same: a change to the conversations has nothing to say to the View menu or the Apps settings tab, and waking every one of them for it would make each domain's refresh cost grow with the number of domains there are.
+    static let conversationsDidChange = Notification.Name("ConversationsDidChange")
 }

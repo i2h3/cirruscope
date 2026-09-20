@@ -256,8 +256,14 @@ struct NextcloudView: View {
             // arriving while no screen is up has nowhere to go. `install(_:)` serves anything already waiting, so a
             // Spotlight result picked while the app was not running — which launches it and reaches `EntityOpening`
             // long before this appears — opens as soon as this screen does rather than being dropped.
-            EntityOpening.shared.install { app in
-                navigateToApp(app)
+            EntityOpening.shared.install { request in
+                switch request {
+                    case let .serverApp(app):
+                        navigateToApp(app)
+
+                    case let .page(target):
+                        load(target)
+                }
             }
         }
         .task {
@@ -470,6 +476,19 @@ struct NextcloudView: View {
 
         guard let target = SameOriginURL(path: path, relativeTo: account.server) else {
             Self.logger.error("The path \(path) does not resolve on the connected server; refusing to open it")
+            return
+        }
+
+        load(target)
+    }
+
+    ///
+    /// Load one address on the connected server into the web view.
+    ///
+    /// The address has already been proven to stay on that server, which is what `SameOriginURL` being the parameter type says: `ServerAccount.authenticatedRequest(for:)` attaches the account's app password to whatever it is handed, so the proof has to have happened before this is called rather than inside it.
+    ///
+    private func load(_ target: SameOriginURL) {
+        guard let account = store.account else {
             return
         }
 

@@ -29,7 +29,7 @@ struct ContentView: View {
                 return
             }
 
-            EntityOpening.shared.open(app)
+            EntityOpening.shared.open(.serverApp(app))
         }
     }
 }

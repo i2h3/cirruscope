@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 @testable import Cirruscope
+import Foundation
 import SwiftData
 
 /// `AccountStoreHarness` is one `AccountStore` under test, over a private in-memory SwiftData container and with stand-ins for the two things the store reaches outside itself for.
@@ -21,13 +22,18 @@ final class AccountStoreHarness {
     /// `isReservedShortcut` is what this harness reports as already occupied by one of Cirruscope's own fixed menu items.
     private let isReservedShortcut: @MainActor (KeyboardShortcutTransferObject) -> Bool
 
-    /// `notificationCount` is how many times `store` has announced that the server apps or their shortcuts changed.
+    /// `notificationCount` is how many times `store` has announced that something changed, whatever it was.
+    ///
+    /// A total rather than a tally per name, because what the suites assert is that a mutator announced *at all* and that a read announced nothing. `announcements` is there for a case that needs to know which domain.
     private(set) var notificationCount = 0
+
+    /// `announcements` are the names `store` has announced, in order.
+    private(set) var announcements: [Notification.Name] = []
 
     /// `store` is the store under test, over `container` and this harness's two stand-ins.
     ///
     /// It is `lazy` because its closures capture the harness, which they cannot do before every stored property is initialized, and the capture is `unowned` because the harness owns the store that owns them.
-    private(set) lazy var store = AccountStore(container: container, isReservedShortcut: { [unowned self] shortcut in isReservedShortcut(shortcut) }, notifyServerAppsDidChange: { [unowned self] in countAnnouncement() })
+    private(set) lazy var store = AccountStore(container: container, isReservedShortcut: { [unowned self] shortcut in isReservedShortcut(shortcut) }, notifyChange: { [unowned self] name in countAnnouncement(name) })
 
     /// `init(isReservedShortcut:)` opens a fresh in-memory container over the app's current schema and answers `isReservedShortcut` when the store asks whether a combination is already spoken for.
     ///
@@ -38,8 +44,9 @@ final class AccountStoreHarness {
         self.isReservedShortcut = isReservedShortcut
     }
 
-    /// `countAnnouncement()` is what the store's `notifyServerAppsDidChange` seam does here, in place of posting a notification the host app would act on.
-    private func countAnnouncement() {
+    /// `countAnnouncement(_:)` is what the store's `notifyChange` seam does here, in place of posting a notification the host app would act on.
+    private func countAnnouncement(_ name: Notification.Name) {
         notificationCount += 1
+        announcements.append(name)
     }
 }
