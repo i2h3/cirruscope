@@ -7,7 +7,9 @@ import os
 
 /// `EntityOpening` is how an App Intent hands what the user picked to whichever app is running it.
 ///
-/// The intent itself cannot do the opening. macOS opens a server app by asking `AppDelegate` to reuse or create a web window; iOS has one web view and loads a request into it. Neither of those can be named from a folder the other app also compiles, and an intent has nowhere to be handed a dependency either: the system instantiates it as a plain value through a synthesized `init()`, so there is no initializer to inject into and no environment to read from. This is the seam that closes that gap, and it is a small piece of shared state rather than a protocol because the project has no dependency-injection layer and wants none — the same reasoning `AccountStore`'s closure seams rest on.
+/// The intent itself cannot do the opening. macOS opens a server app by asking `AppDelegate` to reuse or create a web window; iOS has one web view and loads a request into it.
+///
+/// There are two ways to open something and not one, because a server app and a page within one are different requests. Opening an app means "show me Talk", and on macOS the right answer is to bring the window already showing Talk forward rather than to open a second one. Opening a conversation means "show me *this* conversation", and reusing a window without loading anything into it would bring a window forward showing a different conversation — which looks like the app ignored what was asked for. So an app is opened by identity and a page by address. Neither of those can be named from a folder the other app also compiles, and an intent has nowhere to be handed a dependency either: the system instantiates it as a plain value through a synthesized `init()`, so there is no initializer to inject into and no environment to read from. This is the seam that closes that gap, and it is a small piece of shared state rather than a protocol because the project has no dependency-injection layer and wants none — the same reasoning `AccountStore`'s closure seams rest on.
 ///
 /// It carries a latch as well as a handler, and that is the part worth explaining. An intent run from Spotlight or Siri while the app is not running brings the app forward, which means `perform()` can reach this type before any window or view exists to open anything. A bare closure would then be `nil` and the request would be dropped — the user would watch the app launch and do nothing, which is exactly the failure that reads as "Spotlight is broken". So a request made before a handler is installed is remembered instead, and whatever installs the handler drains it.
 ///
@@ -22,55 +24,50 @@ final class EntityOpening {
     @ObservationIgnored
     private let logger = Logger(for: EntityOpening.self)
 
-    /// `pending` is a server app requested before anything could open it, held until something can.
-    ///
-    /// It is read and cleared by whatever installs a handler, and observed on iOS by the screen that owns the web view. It holds at most one: a second request before either is served replaces the first, which is what a user pressing Return twice in Spotlight means.
-    private(set) var pending: ServerAppTransferObject?
+    /// `Request` is one thing the user asked to open.
+    enum Request: Sendable {
+        /// `serverApp` is a whole Nextcloud app, opened by identity so a window already showing it can be reused.
+        case serverApp(ServerAppTransferObject)
 
-    /// `openServerApp` is what the running app does with a chosen server app, or `nil` while nothing is ready to do anything.
+        /// `page` is one address on the connected server, opened by loading it.
+        case page(SameOriginURL)
+    }
+
+    /// `pending` is a request made before anything could serve it, held until something can.
+    ///
+    /// It is read and cleared by whatever installs the handlers, and observed on iOS by the screen that owns the web view. It holds at most one: a second request before either is served replaces the first, which is what a user pressing Return twice in Spotlight means.
+    private(set) var pending: Request?
+
+    /// `handle` is what the running app does with a request, or `nil` while nothing is ready to do anything.
     @ObservationIgnored
-    private var openServerApp: (@MainActor (ServerAppTransferObject) -> Void)?
+    private var handle: (@MainActor (Request) -> Void)?
 
     private init() {}
 
-    /// `install(_:)` records how this app opens a server app, and immediately serves anything that was requested before now.
+    /// `install(_:)` records how this app serves a request, and immediately serves anything asked for before now.
     ///
     /// Draining here rather than leaving it to the caller is what keeps the cold-launch path from depending on every installer remembering to check.
-    func install(_ open: @escaping @MainActor (ServerAppTransferObject) -> Void) {
-        logger.notice("Installing the server-app opener")
-        openServerApp = open
+    func install(_ handle: @escaping @MainActor (Request) -> Void) {
+        logger.notice("Installing the entity opener")
+        self.handle = handle
 
-        guard let app = pending else {
+        guard let request = pending else {
             return
         }
 
         pending = nil
-        logger.notice("Serving the request for \(app.id, privacy: .public) that arrived before an opener was installed")
-        open(app)
+        logger.notice("Serving a request that arrived before an opener was installed")
+        handle(request)
     }
 
-    /// `open(_:)` opens `app` now if this app can, and remembers it to be opened as soon as it can otherwise.
-    func open(_ app: ServerAppTransferObject) {
-        guard let openServerApp else {
-            logger.notice("Nothing can open \(app.id, privacy: .public) yet; holding it until an opener is installed")
-            pending = app
+    /// `open(_:)` serves `request` now if this app can, and remembers it to be served as soon as it can otherwise.
+    func open(_ request: Request) {
+        guard let handle else {
+            logger.notice("Nothing can serve this request yet; holding it until an opener is installed")
+            pending = request
             return
         }
 
-        logger.notice("Opening \(app.id, privacy: .public)")
-        openServerApp(app)
-    }
-
-    /// `consumePending()` is the pending request, cleared, for a caller that watches `pending` rather than installing a handler.
-    ///
-    /// iOS uses this: the screen owning the web view can only load a request while it is on screen, so it observes the latch and takes what is there instead of registering a closure that would outlive it.
-    func consumePending() -> ServerAppTransferObject? {
-        guard let app = pending else {
-            return nil
-        }
-
-        pending = nil
-        logger.notice("A screen took the pending request for \(app.id, privacy: .public)")
-        return app
+        handle(request)
     }
 }

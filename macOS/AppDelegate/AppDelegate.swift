@@ -45,11 +45,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // from Spotlight or Siri while Cirruscope was not running launches it and reaches `EntityOpening` on the
         // way, which may be before this line; that request is latched rather than dropped, and installing here is
         // what serves it.
-        EntityOpening.shared.install { [weak self] app in
-            self?.openServerApp(app)
+        EntityOpening.shared.install { [weak self] request in
+            switch request {
+                case let .serverApp(app):
+                    self?.openServerApp(app)
+
+                case let .page(target):
+                    // A page rather than an app, so it opens in its own window rather than reusing one: the window
+                    // already showing Talk is showing a different conversation, and bringing it forward unchanged
+                    // would look like the app had ignored what was asked for.
+                    self?.presentWebViewWindow(targetURL: target.url)
+            }
         }
         // Keep Spotlight and the Siri/Shortcuts app-parameter options in step with the server's app list.
         ServerAppIndexer.shared.start()
+        ConversationIndexer.shared.start()
         // Watch the macOS accent color and appearance so open web views keep matching the app's own accent.
         AccentColorMonitor.shared.start()
         presentInitialWindow(forLaunch: true)
@@ -176,6 +186,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                         }
 
                         await ServerConnection.refreshNavigationApps(using: server)
+                        // After the apps and after the first window is already on screen, because this is the
+                        // slower of the two and nothing waits on it: what it feeds is Spotlight and the Shortcuts
+                        // app, neither of which is looking yet.
+                        await ServerConnection.refreshConversations(using: server)
                         // Begin (or restart) tracking unread notifications for the Dock badge and banners.
                         NotificationMonitor.shared.start(for: server, capabilities: capabilities)
 

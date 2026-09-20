@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MIT
 
 import AppIntents
-import CoreSpotlight
 import Foundation
 import os
 
@@ -19,12 +18,10 @@ final class ServerAppIndexer: NSObject {
     /// `logger` records indexing activity under the `ServerAppIndexer` category.
     private let logger = Logger(for: ServerAppIndexer.self)
 
-    /// `indexedIDs` is the set of app ids currently donated to Spotlight, retained so a shrinking app list can have its removed entries deleted from the index rather than left behind, and so a reindex can tell whether the app list actually changed.
-    private var indexedIDs: Set<String> = []
-
-    override private init() {
-        super.init()
-    }
+    /// `index` donates the apps and remembers what it has donated.
+    ///
+    /// The bookkeeping of which identifiers are in the index, and the deletion of the ones that have gone, moved into `SpotlightIndex` when a second domain needed exactly the same thing. What stays here is what is this domain's alone: which notification to listen to, and the App Shortcut parameter refresh below.
+    private let index = SpotlightIndex<ServerAppEntity>(label: "server apps")
 
     /// `hasStarted` records that `start()` has already run, so a second call registers no second observer.
     ///
@@ -57,42 +54,18 @@ final class ServerAppIndexer: NSObject {
 
     /// `reindex(isInitial:)` donates the current apps to Spotlight, deletes the ids the server no longer offers, and asks the App Intents system to refresh the App Shortcut parameter values.
     ///
-    /// `isInitial` distinguishes the one-shot index from `start()` from a later change, for the log only. The parameter refresh runs on **every** pass, including the initial one: `updateAppShortcutParameters()` is what makes the system pull the current values from `ServerAppEntityQuery`, and without it Siri never learns the app names and cannot bind a parameterized phrase such as "Open Notes in Cirruscope" — it silently falls back to merely launching the app. An earlier revision skipped the call unless the app id set had changed, which in practice meant never (the server's app list is stable across launches) and broke exactly that. The call is cheap and idempotent, so it is unconditional; if it fails because the app is not yet registered with the App Intents subsystem (`LNMetadataProviderErrorDomain` 9004, typical of a build run from a non-standard location), the system logs that itself.
+    /// `isInitial` distinguishes the one-shot index from `start()` from a later change, for the log only. The parameter refresh runs on **every** pass, including the initial one: `updateAppShortcutParameters()` is what makes the system pull the current values from the entity queries, and without it Siri never learns the names and cannot bind a parameterized phrase such as "Open Notes in Cirruscope" — it silently falls back to merely launching the app. An earlier revision skipped the call unless the app id set had changed, which in practice meant never (the server's app list is stable across launches) and broke exactly that. The call is cheap and idempotent, so it is unconditional; if it fails because the app is not yet registered with the App Intents subsystem (`LNMetadataProviderErrorDomain` 9004, typical of a build run from a non-standard location), the system logs that itself.
+    ///
+    /// It is made here and nowhere else. There is one `AppShortcutsProvider` in the app, so one refresh brings every parameter's values up to date, this entity's and every other domain's alike — which is why `ConversationIndexer` deliberately does not make the same call.
     private func reindex(isInitial: Bool) {
-        let apps = AccountStore.shared.serverApps
-        let entities = apps.map(ServerAppEntity.init)
-        let currentIDs = Set(apps.map(\.id))
-        let removedIDs = indexedIDs.subtracting(currentIDs)
-        indexedIDs = currentIDs
-
-        let currentList = currentIDs.sorted().joined(separator: ", ")
-        logger.notice("Reindexing Spotlight (\(isInitial ? "initial" : "on change", privacy: .public)): \(apps.count, privacy: .public) app(s) currently offered [\(currentList, privacy: .public)]")
-
-        if removedIDs.isEmpty == false {
-            logger.notice("Spotlight: removing \(removedIDs.count, privacy: .public) stale entr(y/ies) [\(removedIDs.sorted().joined(separator: ", "), privacy: .public)]")
-        }
+        let entities = AccountStore.shared.serverApps.map(ServerAppEntity.init)
+        logger.notice("Reindexing server apps (\(isInitial ? "initial" : "on change", privacy: .public))")
 
         Task {
-            // Use a named index, not CSSearchableIndex.default(): Apple documents the default index as being for
-            // prototyping and development only (it does not support batching). Creating it here as a fresh local
-            // value also keeps it out of the main actor's isolation region, so it can be passed to these nonisolated
-            // async calls without tripping Swift's sending diagnostic.
-            let index = CSSearchableIndex(name: "ServerAppIndex")
-
-            do {
-                if removedIDs.isEmpty == false {
-                    try await index.deleteAppEntities(identifiedBy: Array(removedIDs), ofType: ServerAppEntity.self)
-                    self.logger.notice("Spotlight: deleted \(removedIDs.count, privacy: .public) stale entr(y/ies)")
-                }
-
-                try await index.indexAppEntities(entities)
-                self.logger.notice("Spotlight: donated \(entities.count, privacy: .public) app(s) to the index")
-            } catch {
-                self.logger.error("Could not update the Spotlight index: \(error.localizedDescription, privacy: .public)")
-            }
+            await index.donate(entities)
 
             ServerAppShortcuts.updateAppShortcutParameters()
-            self.logger.notice("Requested an App Shortcut parameter refresh; the system now pulls the current values from ServerAppEntityQuery")
+            self.logger.notice("Requested an App Shortcut parameter refresh; the system now pulls the current values from every entity query")
         }
     }
 }

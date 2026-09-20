@@ -14,7 +14,7 @@ import SwiftData
 ///
 /// Reads return value-type DTOs (`ServerAppTransferObject`, `KeyboardShortcutTransferObject`), never managed `@Model` objects, so AppKit table views and menus hold snapshots that stay valid across an upsert. Every access is confined to the main actor and only `Sendable` values ever cross the boundary to the nonisolated `ServerConnection`, which is what keeps the store race-free under Swift 6 complete concurrency. Autosave is disabled and each mutator saves explicitly, so every change commits atomically and is on disk by the time a future extension process reads it.
 ///
-/// The container, and the two things this store reaches outside itself for, arrive through `init(container:isReservedShortcut:notifyServerAppsDidChange:)` so its logic can be exercised against an in-memory store; `macOSTests/Account/` does exactly that. Production builds exactly one instance, `shared`.
+/// The container, and the two things this store reaches outside itself for, arrive through `init(container:isReservedShortcut:notifyChange:)` so its logic can be exercised against an in-memory store; the suites in `Tests/Account/` do exactly that, against both app modules. Production builds exactly one instance, `shared`.
 @MainActor
 final class AccountStore {
     /// `logger` records store activity under the `AccountStore` category.
@@ -31,13 +31,18 @@ final class AccountStore {
     /// It is `internal` rather than `private` because `shortcut(forAppID:)` reads it and lives in this store's macOS half, Swift's `private` being file-scoped.
     let isReservedShortcut: @MainActor (KeyboardShortcutTransferObject) -> Bool
 
-    /// `notifyServerAppsDidChange` announces that the account's apps or their shortcuts changed, so the View and Dock menus and the Apps settings tab refresh.
+    /// `notifyChange` announces that one of the account's stored domains changed, so whatever draws it refreshes.
     ///
-    /// It is injected for the mirror image of `isReservedShortcut`'s reason: `AppDelegate` observes `Notification.Name.serverAppsDidChange` for the whole life of a hosted test run, so a test write posting it would have the real `AppDelegate.rebuildServerAppsMenu()` read `shared` — the developer's actual account — and rewrite the live menu bar, on a main-queue turn no test can wait for. A test hands in a closure that counts instead, which is also the only way to assert that a mutator announced at all, the production post being deliberately asynchronous. `postServerAppsDidChange()` is that production post.
-    private let notifyServerAppsDidChange: @MainActor () -> Void
+    /// It is injected for the mirror image of `isReservedShortcut`'s reason: `AppDelegate` observes `Notification.Name.serverAppsDidChange` for the whole life of a hosted test run, so a test write posting it would have the real `AppDelegate.rebuildServerAppsMenu()` read `shared` — the developer's actual account — and rewrite the live menu bar, on a main-queue turn no test can wait for. A test hands in a closure that counts instead, which is also the only way to assert that a mutator announced at all, the production post being deliberately asynchronous. `post(_:)` is that production post.
+    ///
+    /// It takes the name rather than being one closure per domain. There are four more domains coming, and a seam that grows a parameter for each would put the cost of adding one in the initializer, in every call site of it, and in the test harness — which is how a seam stops being used. One name-taking closure means a new domain adds a name and nothing else.
+    /// It is `internal` rather than `private` because the per-domain files that make up this store are files of their own, and Swift's `private` is file-scoped.
+    let notifyChange: @MainActor (Notification.Name) -> Void
 
     /// `context` is the container's main-actor context, the single context this store ever touches.
-    private var context: ModelContext {
+    ///
+    /// `internal` rather than `private` because this store is written as one type across several files, one per domain, and Swift's `private` is file-scoped. Nothing outside the store reaches it: every read hands back a value snapshot and every write takes one.
+    var context: ModelContext {
         container.mainContext
     }
 
@@ -46,14 +51,14 @@ final class AccountStore {
     /// `AccountStore` is the sole mutator on the main actor, so the cache stays consistent; `deleteAccount()` clears it after deleting the record.
     private var cachedAccount: Account?
 
-    /// `init(container:isReservedShortcut:notifyServerAppsDidChange:)` builds a store over `container`, defaulting the two dependencies it reaches outside itself for to behaviour every platform can supply.
+    /// `init(container:isReservedShortcut:notifyChange:)` builds a store over `container`, defaulting the two dependencies it reaches outside itself for to behaviour every platform can supply.
     ///
     /// A `ModelContainer` rather than a `ModelContext` is the parameter so that "the container's main-actor context" stays an invariant this store enforces, rather than something a caller could subvert by handing in a background context.
     /// `isReservedShortcut` defaults to reserving nothing, which is the truth on a platform with no menu bar and would be a silent bug on one with a menu bar that never installed the real lookup. That is why `shared` is built in a per-platform extension file rather than here: macOS passes the `AppDelegate` lookup as part of constructing the instance, so there is no window in which the store exists and answers "nothing is reserved".
-    init(container: ModelContainer, isReservedShortcut: @escaping @MainActor (KeyboardShortcutTransferObject) -> Bool = { _ in false }, notifyServerAppsDidChange: @escaping @MainActor () -> Void = { AccountStore.postServerAppsDidChange() }) {
+    init(container: ModelContainer, isReservedShortcut: @escaping @MainActor (KeyboardShortcutTransferObject) -> Bool = { _ in false }, notifyChange: @escaping @MainActor (Notification.Name) -> Void = { AccountStore.post($0) }) {
         self.container = container
         self.isReservedShortcut = isReservedShortcut
-        self.notifyServerAppsDidChange = notifyServerAppsDidChange
+        self.notifyChange = notifyChange
 
         // Commit explicitly rather than relying on deferred autosave, which is insufficient for the cross-process
         // read contract and could otherwise fire at an `await` suspension point in the middle of a mutation.
@@ -89,7 +94,9 @@ final class AccountStore {
     }
 
     /// `save()` commits pending changes, logging rather than throwing on failure to match the app's existing fire-and-forget persistence behavior.
-    private func save() {
+    ///
+    /// `internal` rather than `private` for the same reason `context` is: the per-domain files that make up this store are files of their own.
+    func save() {
         do {
             try context.save()
         } catch {
@@ -97,18 +104,18 @@ final class AccountStore {
         }
     }
 
-    /// `postServerAppsDidChange()` posts `Notification.Name.serverAppsDidChange` on the next main-thread turn, and is the production default for `notifyServerAppsDidChange`.
+    /// `post(_:)` posts `name` on the next main-thread turn, and is the production default for `notifyChange`.
     ///
     /// The async hop is deliberate: it keeps `AppDelegate.rebuildServerAppsMenu()` and `ServerAppsViewController.reload()` from running reentrantly inside the `ShortcutRecorderView.onChange` handler that triggered the write. It is `static` and not `private` so it can serve as that default argument, which may not reference a declaration less visible than the initializer itself — keeping this explanation next to the behaviour rather than inside a parameter list.
-    static func postServerAppsDidChange() {
+    static func post(_ name: Notification.Name) {
         DispatchQueue.main.async {
-            NotificationCenter.default.post(name: .serverAppsDidChange, object: nil)
+            NotificationCenter.default.post(name: name, object: nil)
         }
     }
 
     /// `postAppearanceSettingsDidChange()` posts `Notification.Name.appearanceSettingsDidChange` on the next main-thread turn so every open `WebViewController` re-applies the appearance without a reload.
     ///
-    /// The async hop mirrors `postServerAppsDidChange()`: it keeps the observers from running reentrantly inside the `NSSwitch` action handler in `AppearanceSettingsViewController` that triggered the write.
+    /// The async hop mirrors `post(_:)`: it keeps the observers from running reentrantly inside the `NSSwitch` action handler in `AppearanceSettingsViewController` that triggered the write.
     private func postAppearanceSettingsDidChange() {
         DispatchQueue.main.async {
             NotificationCenter.default.post(name: .appearanceSettingsDidChange, object: nil)
@@ -152,7 +159,7 @@ final class AccountStore {
 
         cachedAccount = nil
         save()
-        notifyServerAppsDidChange()
+        notifyChange(.serverAppsDidChange)
     }
 
     // MARK: - Theming
@@ -314,7 +321,7 @@ final class AccountStore {
         }
 
         save()
-        notifyServerAppsDidChange()
+        notifyChange(.serverAppsDidChange)
     }
 
     // MARK: - Keyboard Shortcuts
@@ -374,6 +381,6 @@ final class AccountStore {
         }
 
         save()
-        notifyServerAppsDidChange()
+        notifyChange(.serverAppsDidChange)
     }
 }

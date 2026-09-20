@@ -36,7 +36,7 @@ struct OpenServerAppIntent: OpenIntent {
         }
 
         Self.logger.notice("perform: resolved \"\(app.name, privacy: .public)\" (\(app.id, privacy: .public)); handing to EntityOpening")
-        EntityOpening.shared.open(app)
+        EntityOpening.shared.open(.serverApp(app))
         Self.logger.notice("perform: finished opening \"\(app.id, privacy: .public)\"")
         return .result()
     }

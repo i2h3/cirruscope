@@ -140,6 +140,11 @@ class Store {
 
         Task {
             await ServerConnection.refreshNavigationApps(using: server)
+
+            // After the apps, and awaited rather than run beside them, because both write to the same store on the
+            // same actor and there is nothing waiting on the second: what it feeds is Spotlight and the Shortcuts
+            // app rather than anything on screen.
+            await ServerConnection.refreshConversations(using: server)
         }
     }
 
