@@ -239,6 +239,26 @@ The server reports how many messages are unread in each conversation and whether
 
 A count that is only sometimes right is worse than no count at all, because the user cannot tell which time it is. The same reasoning is why a row in the activity widget names neither the verb nor the person: the app shows what it can stand behind.
 
+## Why does a collective page open its collective when the app is unsure where the page is?
+
+Because every other address this app builds was read out of the owning app's own routing, and this one could not be.
+
+Talk's conversation route came from the controller declaring it; the Notes route from that app's `routes.php`, checked in two versions. The Collectives app is installed on none of the Nextcloud instances available here, so its page address was derived instead — from a production URL captured in the wild, plus what the network library documents about the fields. What that showed was a path carrying the page's whole ancestor chain and a `fileId` query item.
+
+So the route is built to fail *visibly* rather than plausibly. The `fileId` is carried because it is the part the server can resolve a page from even when the path segments are not what it expects, which makes the likely failure "the page opens anyway" or "the collective opens" rather than "a different page opens". And when no address for the page can be built at all, the intent opens the **collective** containing it: that address is the better-supported of the two, it is certainly the right neighbourhood, and a person who asked for a page and was shown its collective can see both what happened and where to go next. Opening nothing would read as the app having failed; opening something arbitrary would be worse.
+
+What would settle it, against an instance with the Collectives app installed: whether the collective segment is the slug, the name, or the slug with the identifier appended; whether the page part is the full ancestor chain or a single segment; and whether a correct `fileId` with a wrong path still opens the right page. If the last is true, the first two stop mattering.
+
+## Why are collectives gated before they are asked for, when Talk and Notes are not?
+
+Because the gate saves a different number of requests.
+
+Talk and Notes each advertise a capability, and the app still decides from the response: acting on the capability would save one request, at the cost of either fetching the capabilities separately or threading them through callers that do not all have them. Collectives advertises no capability at all, and the server lists pages *per collective* — so a refresh is one request for the collectives plus one for every one of them. On an instance without the app, all of those are wasted rather than one.
+
+The gate is also free here in a way it is not elsewhere. The network library's own documentation points at the navigation entry with the identifier `collectives`, and that list is something this app already fetches and stores a moment earlier, so the check is a read of local data rather than a round trip.
+
+A `404` is still handled, because the gate is a prediction made from a list that can be one refresh out of date. The two mean different things and only one of them clears what was stored: the gate says "do not ask", while a `404` says the app is gone.
+
 ## Why is a note's text neither stored nor indexed?
 
 Because the store is an unencrypted file in a container shared with an app extension, and a person's notes are the most private thing this app has any reason to touch.

@@ -44,6 +44,12 @@ final class Account {
     @Relationship(deleteRule: .cascade, inverse: \TalkConversation.account)
     var conversations: [TalkConversation] = []
 
+    /// `collectives` are the collectives this account is a member of; deleting the account cascades to them, and through them to their pages.
+    ///
+    /// Two levels of cascade rather than one, because a page belongs to a collective rather than to the account: that is the shape of the address as well as of the data, a page being reachable only through the collective containing it.
+    @Relationship(deleteRule: .cascade, inverse: \ServerCollective.account)
+    var collectives: [ServerCollective] = []
+
     /// `notes` are the notes in this account's Nextcloud Notes app; deleting the account cascades to them.
     ///
     /// Only their titles and categories, never their text — see `ServerNote`. Cascading matters here for the same reason it does for the conversations: a note's title is something the user wrote, and it must not outlive the account that was allowed to read it.

@@ -1,0 +1,29 @@
+// SPDX-FileCopyrightText: 2026 Iva Horn
+// SPDX-License-Identifier: MIT
+
+import Foundation
+
+/// `CollectiveWebRoute` is where a collective lives in the web interface.
+///
+/// A collective sits under its app's own prefix, `/apps/collectives/<segment>`, so the path names its owner and `ServerAppTransferObject`'s resolution rule recognizes it without `ServerAppPath` needing an entry for it. It is appended to the server address rather than written from the root, for the reason every route the app builds itself is: an address the *server* named already carries the instance's web root, and one the app builds does not.
+///
+/// The segment is the collective's `slug` where it has one and its `name` otherwise. That is what the network library's own documentation says the field is for — "the url-safe form of `name` the server uses when addressing the collective in a link" — and the fallback exists because it also says the field is absent on a server whose Collectives app predates slugs, so a client building links has to be prepared for it.
+enum CollectiveWebRoute {
+    /// `url(forSlug:name:on:)` is the address of a collective on `serverAddress`, or `nil` when there is nothing to address it by.
+    ///
+    /// Both an absent slug and an empty name are refused rather than guessed at, because the guess would not fail visibly: `/apps/collectives/` with nothing after it is the collectives overview, a real page that loads, so a user asking for one collective would be shown the list of all of them with nothing to say the app had not understood.
+    static func url(forSlug slug: String?, name: String, on serverAddress: URL) -> SameOriginURL? {
+        let segment = slug?.isEmpty == false ? slug! : name
+
+        guard segment.isEmpty == false else {
+            return nil
+        }
+
+        let address = serverAddress
+            .appending(path: "apps")
+            .appending(path: "collectives")
+            .appending(path: segment)
+
+        return SameOriginURL(path: address.absoluteString, relativeTo: serverAddress)
+    }
+}

@@ -22,4 +22,9 @@ extension Notification.Name {
 
     /// `notesDidChange` is posted by `AccountStore` whenever the account's notes change, so the Spotlight index is brought back into step with them.
     static let notesDidChange = Notification.Name("NotesDidChange")
+
+    /// `collectivesDidChange` is posted by `AccountStore` whenever the account's collectives or their pages change, so the Spotlight index is brought back into step with them.
+    ///
+    /// One name for both, where every other domain has its own, because a page is only ever reached through its collective: nothing observes one without observing the other, and two names would mean two reindex passes for one refresh.
+    static let collectivesDidChange = Notification.Name("CollectivesDidChange")
 }

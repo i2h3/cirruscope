@@ -146,6 +146,7 @@ class Store {
             // app rather than anything on screen.
             await ServerConnection.refreshConversations(using: server)
             await ServerConnection.refreshNotes(using: server)
+            await ServerConnection.refreshCollectives(using: server)
         }
     }
 
