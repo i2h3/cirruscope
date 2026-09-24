@@ -87,6 +87,25 @@ struct CollectiveWebRouteTests {
     }
 
     @Test
+    func `A subdirectory install keeps its web root in front of a page's address too`() throws {
+        let subdirectory = try #require(URL(string: "https://example.com/nextcloud"))
+        let route = try #require(CollectivePageWebRoute.url(collectiveSlug: "cookbook", collectiveName: "Cookbook", page: CollectiveFixture.pancakes, on: subdirectory))
+
+        // The collective route has had this case since it was written; the page route did not, and it is the more
+        // restructured of the two — it builds the collective's segments and the page's together and appends the
+        // file identifier afterwards. On a host-root server that branch is indistinguishable from the broken one.
+        #expect(route.url.absoluteString == "https://example.com/nextcloud/apps/collectives/cookbook/Recipes/Pancakes?fileId=11")
+    }
+
+    @Test
+    func `The landing page of a collective on a subdirectory install opens that collective`() throws {
+        let subdirectory = try #require(URL(string: "https://example.com/nextcloud"))
+        let route = try #require(CollectivePageWebRoute.url(collectiveSlug: "cookbook", collectiveName: "Cookbook", page: CollectiveFixture.landingPage, on: subdirectory))
+
+        #expect(route.url.absoluteString == "https://example.com/nextcloud/apps/collectives/cookbook")
+    }
+
+    @Test
     func `A page of a collective with no slug is addressed under that collective's name`() throws {
         let route = try #require(CollectivePageWebRoute.url(collectiveSlug: nil, collectiveName: "Nextcloud Handbook", page: CollectiveFixture.pancakes, on: server))
 

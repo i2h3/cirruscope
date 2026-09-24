@@ -35,27 +35,24 @@ enum CollectivePageWebRoute {
     ///
     /// The page at the root of a collective is addressed by the collective itself, which is not a fallback but the correct answer: it is the page shown when the collective is opened, and there is no separate address for it.
     static func url(collectiveSlug: String?, collectiveName: String, page: CollectivePageTransferObject, on serverAddress: URL) -> SameOriginURL? {
-        guard let collective = CollectiveWebRoute.url(forSlug: collectiveSlug, name: collectiveName, on: serverAddress) else {
+        guard let collectiveComponents = CollectiveWebRoute.components(forSlug: collectiveSlug, name: collectiveName) else {
             return nil
         }
 
-        guard page.isLandingPage == false else {
-            return collective
+        let pageComponents = page.isLandingPage ? [] : pathComponents(forFileName: page.fileName, filePath: page.filePath)
+
+        guard pageComponents.isEmpty == false else {
+            return SameOriginURL(components: collectiveComponents, relativeTo: serverAddress)
         }
 
-        let components = pathComponents(forFileName: page.fileName, filePath: page.filePath)
-
-        guard components.isEmpty == false else {
-            return collective
+        guard let pageAddress = SameOriginURL(components: collectiveComponents + pageComponents, relativeTo: serverAddress) else {
+            return nil
         }
 
-        var address = collective.url
-
-        for component in components {
-            address = address.appending(path: component)
-        }
-
-        address = address.appending(queryItems: [URLQueryItem(name: "fileId", value: String(page.id))])
+        // The query item is added after the origin has been proven rather than before, because it is not part of
+        // the path and cannot move the address to another server: appending it to an address already known to be
+        // the account's leaves it the account's.
+        let address = pageAddress.url.appending(queryItems: [URLQueryItem(name: "fileId", value: String(page.id))])
 
         return SameOriginURL(path: address.absoluteString, relativeTo: serverAddress)
     }
