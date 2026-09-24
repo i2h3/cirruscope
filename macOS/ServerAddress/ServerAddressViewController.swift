@@ -124,6 +124,7 @@ class ServerAddressViewController: NSViewController {
                         if let authenticated = ServerConnection.authenticated(address: result.server) {
                             await ServerConnection.refreshNavigationApps(using: authenticated)
                             await ServerConnection.refreshConversations(using: authenticated)
+                            await ServerConnection.refreshNotes(using: authenticated)
                         }
                 }
             } catch CirruscopeError.loginCancelled {

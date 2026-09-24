@@ -227,6 +227,10 @@ A list of server apps is a menu of fixed things. Nobody scans it for the third i
 
 The ordering is total rather than merely by timestamp, and that part is not cosmetic: the server stamps activity in whole seconds, so ties are ordinary rather than theoretical, and `sorted(by:)` promises no stability. Two conversations sharing a second would otherwise be free to swap places between one list and the next, which for a donated Spotlight item means the identifier behind a row changing under the user. Name settles a tie and the token settles that.
 
+Notes follow the same reasoning to a third answer: favourites first, then most recently changed. A favourite is the only thing in that data which is the user saying "this one matters", so it is what a list offering a handful should offer first, and Nextcloud's own Notes interface orders them the same way — a list that disagrees with the app it mirrors reads as a bug rather than as a choice. Every one of these orderings is made total by falling through to a name and then to an identifier, for the reason above: an unstable order moves the identifier behind a donated Spotlight row under the user between one refresh and the next.
+
+So the rule is not "sort alphabetically" or "sort by recency" but: sort by what the list is *for*, decide it once at the single read every surface shares, and make it total.
+
 ## Why is a conversation's unread count not stored?
 
 Because it would be a number the app is confidently wrong about.
@@ -234,6 +238,18 @@ Because it would be a number the app is confidently wrong about.
 The server reports how many messages are unread in each conversation and whether any of them mentions the account, and both are tempting: an unread count is exactly the sort of thing a Spotlight result could carry. But what reads this is an index refreshed when the *conversation list* changes — at launch, at sign-in, on a refresh — and not when a message arrives or is read. A stored count would therefore be correct at the moment it was written and drift from then on, with nothing on the result to say how old it is.
 
 A count that is only sometimes right is worse than no count at all, because the user cannot tell which time it is. The same reasoning is why a row in the activity widget names neither the verb nor the person: the app shows what it can stand behind.
+
+## Why is a note's text neither stored nor indexed?
+
+Because the store is an unencrypted file in a container shared with an app extension, and a person's notes are the most private thing this app has any reason to touch.
+
+The server sends every note in full — the endpoint returns the whole collection with bodies unless a chunk size is requested, which the network library deliberately does not request — so the text arrives whether or not it is wanted. It is dropped in the same expression that maps the server's answer into this app's own value type, which is the strongest place to put that rule: `NoteTransferObject` has no field for a body, so nothing downstream can be made to carry one by accident, and a test asserts that shape rather than a behaviour precisely so it fails the day somebody adds one.
+
+The obvious middle ground is to leave the body out of the store but hand it to Spotlight as `textContent`, so a note could be found by a phrase inside it. **That is not a privacy win and is declined for saying so.** Spotlight's index is itself a file on disk, no more encrypted than the store, and putting the text there moves the exposure rather than removing it — while making it harder to see, since nothing in this app's own code would then contain the note. Full-text search over notes is a feature worth having, and if it is built it should be built deliberately, with its own entry here saying what it costs.
+
+What is kept is a title and a category, which is enough to find a note and open it. The body is fetched by the web view from the server at the moment the note is actually opened, over a connection that was going to carry it anyway.
+
+The cost accepted is that the fetch is still proportional to the size of the account's notes: every refresh decodes every body to discard it. That is a property of the endpoint rather than of this decision, and it is stated plainly rather than implied away — the incremental endpoint the app could use instead needs a cursor the network library does not currently surface.
 
 ## Why is Talk's availability decided from a 404 rather than from the capability the server advertises?
 

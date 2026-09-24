@@ -19,4 +19,7 @@ extension Notification.Name {
     ///
     /// A name of its own rather than one announcement for every domain, because the surfaces are not the same: a change to the conversations has nothing to say to the View menu or the Apps settings tab, and waking every one of them for it would make each domain's refresh cost grow with the number of domains there are.
     static let conversationsDidChange = Notification.Name("ConversationsDidChange")
+
+    /// `notesDidChange` is posted by `AccountStore` whenever the account's notes change, so the Spotlight index is brought back into step with them.
+    static let notesDidChange = Notification.Name("NotesDidChange")
 }

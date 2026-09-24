@@ -44,6 +44,12 @@ final class Account {
     @Relationship(deleteRule: .cascade, inverse: \TalkConversation.account)
     var conversations: [TalkConversation] = []
 
+    /// `notes` are the notes in this account's Nextcloud Notes app; deleting the account cascades to them.
+    ///
+    /// Only their titles and categories, never their text — see `ServerNote`. Cascading matters here for the same reason it does for the conversations: a note's title is something the user wrote, and it must not outlive the account that was allowed to read it.
+    @Relationship(deleteRule: .cascade, inverse: \ServerNote.account)
+    var notes: [ServerNote] = []
+
     init(
         serverAddress: URL? = nil,
         serverVersion: String? = nil,
