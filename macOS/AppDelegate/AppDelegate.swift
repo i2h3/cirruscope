@@ -61,6 +61,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         ServerAppIndexer.shared.start()
         ConversationIndexer.shared.start()
         NoteIndexer.shared.start()
+        CollectiveIndexer.shared.start()
         // Watch the macOS accent color and appearance so open web views keep matching the app's own accent.
         AccentColorMonitor.shared.start()
         presentInitialWindow(forLaunch: true)
@@ -192,6 +193,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                         // app, neither of which is looking yet.
                         await ServerConnection.refreshConversations(using: server)
                         await ServerConnection.refreshNotes(using: server)
+                        await ServerConnection.refreshCollectives(using: server)
                         // Begin (or restart) tracking unread notifications for the Dock badge and banners.
                         NotificationMonitor.shared.start(for: server, capabilities: capabilities)
 

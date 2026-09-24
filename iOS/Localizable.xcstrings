@@ -65,6 +65,124 @@
         }
       }
     },
+    "%lld Nextcloud collective pages" : {
+      "comment" : "Numeric form of the collective-page entity type, used when the Shortcuts app or Siri counts entities of this type.",
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Nextcloud-Kollektivseite"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Nextcloud-Kollektivseiten"
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld página de colectivo de Nextcloud"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld páginas de colectivo de Nextcloud"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld page de collectif Nextcloud"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld pages de collectif Nextcloud"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld Nextcloud collectives" : {
+      "comment" : "Numeric form of the Nextcloud-collective entity type, used when the Shortcuts app or Siri counts entities of this type.",
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Nextcloud-Kollektiv"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Nextcloud-Kollektive"
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld colectivo de Nextcloud"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld colectivos de Nextcloud"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld collectif Nextcloud"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld collectifs Nextcloud"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld Nextcloud notes" : {
       "comment" : "Numeric form of the Nextcloud-note entity type, used when the Shortcuts app or Siri counts entities of this type.",
       "localizations" : {
@@ -321,6 +439,33 @@
         }
       }
     },
+    "Collective" : {
+      "comment" : "Title of the Shortcuts action parameter that selects which collective to open.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kollektiv"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colectivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collectif"
+          }
+        }
+      }
+    },
+    "Collectives" : {
+      "comment" : "Spotlight keyword for a collective or one of its pages, so a search for the server app finds them. A product name, so it is not translated.",
+      "shouldTranslate" : false
+    },
     "Connect" : {
       "comment" : "Accessibility label of the icon-only button that starts signing in to the entered server address on the iOS sign-in screen.",
       "localizations" : {
@@ -487,6 +632,33 @@
       "comment" : "Subtitle of a Nextcloud-server-app entity in Spotlight results and the Shortcuts parameter picker, naming the server product the app comes from. A product name, so it is not translated.",
       "shouldTranslate" : false
     },
+    "Nextcloud Collectives" : {
+      "comment" : "Subtitle of a collective entity in Spotlight results and the Shortcuts parameter picker, naming the server app the collective belongs to. A product name, so it is not translated.",
+      "shouldTranslate" : false
+    },
+    "Nextcloud Collectives collective" : {
+      "comment" : "Synonym Siri accepts for the Nextcloud-collective entity type.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nextcloud-Collectives-Kollektiv"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "colectivo de Nextcloud Collectives"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "collectif Nextcloud Collectives"
+          }
+        }
+      }
+    },
     "Nextcloud Notes" : {
       "comment" : "Subtitle of a note entity in Spotlight results and the Shortcuts parameter picker, naming the server app the note belongs to. A product name, so it is not translated.",
       "shouldTranslate" : false
@@ -560,6 +732,52 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "app Nextcloud"
+          }
+        }
+      }
+    },
+    "Nextcloud collective" : {
+      "comment" : "Name of the Nextcloud-collective entity type, shown wherever the Shortcuts app names the kind of value.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nextcloud-Kollektiv"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "colectivo de Nextcloud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "collectif Nextcloud"
+          }
+        }
+      }
+    },
+    "Nextcloud collective page" : {
+      "comment" : "Name of the collective-page entity type, shown wherever the Shortcuts app names the kind of value.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nextcloud-Kollektivseite"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "página de colectivo de Nextcloud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "page de collectif Nextcloud"
           }
         }
       }
@@ -706,6 +924,52 @@
         }
       }
     },
+    "Open Nextcloud Collective" : {
+      "comment" : "Title of the Shortcuts action that opens a collective.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nextcloud-Kollektiv öffnen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir colectivo de Nextcloud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir un collectif Nextcloud"
+          }
+        }
+      }
+    },
+    "Open Nextcloud Collective Page" : {
+      "comment" : "Title of the Shortcuts action that opens one page of a collective.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nextcloud-Kollektivseite öffnen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir página de colectivo de Nextcloud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir une page de collectif Nextcloud"
+          }
+        }
+      }
+    },
     "Open Nextcloud Note" : {
       "comment" : "Title of the Shortcuts action that opens a note.",
       "localizations" : {
@@ -775,6 +1039,29 @@
         }
       }
     },
+    "Open a collective in Nextcloud Collectives." : {
+      "comment" : "Description of the Shortcuts action that opens a collective.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffnet ein Kollektiv in Nextcloud Collectives."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre un colectivo en Nextcloud Collectives."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre un collectif dans Nextcloud Collectives."
+          }
+        }
+      }
+    },
     "Open a conversation in Nextcloud Talk." : {
       "comment" : "Description of the Shortcuts action that opens a Nextcloud Talk conversation.",
       "localizations" : {
@@ -817,6 +1104,52 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ouvre une note dans Nextcloud Notes."
+          }
+        }
+      }
+    },
+    "Open a page of a collective in Nextcloud Collectives." : {
+      "comment" : "Description of the Shortcuts action that opens one page of a collective.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffnet eine Seite eines Kollektivs in Nextcloud Collectives."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre una página de un colectivo en Nextcloud Collectives."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre une page d'un collectif dans Nextcloud Collectives."
+          }
+        }
+      }
+    },
+    "Page" : {
+      "comment" : "Title of the Shortcuts action parameter that selects which page of a collective to open.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seite"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Página"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Page"
           }
         }
       }
@@ -1262,6 +1595,29 @@
         }
       }
     },
+    "Which collective?" : {
+      "comment" : "Prompt shown when the Shortcuts action needs to be told which collective to open.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welches Kollektiv?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué colectivo?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quel collectif ?"
+          }
+        }
+      }
+    },
     "Which conversation?" : {
       "comment" : "Prompt shown when the Shortcuts action needs to be told which Nextcloud Talk conversation to open.",
       "localizations" : {
@@ -1308,6 +1664,29 @@
         }
       }
     },
+    "Which page?" : {
+      "comment" : "Prompt shown when the Shortcuts action needs to be told which page of a collective to open.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welche Seite?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué página?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quelle page ?"
+          }
+        }
+      }
+    },
     "Your Nextcloud credentials are no longer valid, so Cirruscope signed you out. Sign in again to continue." : {
       "comment" : "Alert message shown when the app signs the user out because the server rejected the stored credentials.",
       "localizations" : {
@@ -1350,6 +1729,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Votre expérience Nextcloud, sublimée."
+          }
+        }
+      }
+    },
+    "collective page" : {
+      "comment" : "Synonym Siri accepts for the collective-page entity type.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kollektivseite"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "página de colectivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "page de collectif"
           }
         }
       }

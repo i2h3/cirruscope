@@ -63,6 +63,7 @@ struct iOSApp: App {
                 ServerAppIndexer.shared.start()
                 ConversationIndexer.shared.start()
                 NoteIndexer.shared.start()
+                CollectiveIndexer.shared.start()
 
                 Task {
                     await NotificationRefreshTask.logPendingRequests()
