@@ -145,6 +145,7 @@ class Store {
             // same actor and there is nothing waiting on the second: what it feeds is Spotlight and the Shortcuts
             // app rather than anything on screen.
             await ServerConnection.refreshConversations(using: server)
+            await ServerConnection.refreshNotes(using: server)
         }
     }
 

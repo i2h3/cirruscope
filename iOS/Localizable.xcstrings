@@ -65,6 +65,65 @@
         }
       }
     },
+    "%lld Nextcloud notes" : {
+      "comment" : "Numeric form of the Nextcloud-note entity type, used when the Shortcuts app or Siri counts entities of this type.",
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Nextcloud-Notiz"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Nextcloud-Notizen"
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld nota de Nextcloud"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld notas de Nextcloud"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld note Nextcloud"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld notes Nextcloud"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld Nextcloud server apps" : {
       "comment" : "Numeric form of the Nextcloud-server-app entity type, used when the Shortcuts app or Siri counts entities of this type.",
       "localizations" : {
@@ -428,6 +487,33 @@
       "comment" : "Subtitle of a Nextcloud-server-app entity in Spotlight results and the Shortcuts parameter picker, naming the server product the app comes from. A product name, so it is not translated.",
       "shouldTranslate" : false
     },
+    "Nextcloud Notes" : {
+      "comment" : "Subtitle of a note entity in Spotlight results and the Shortcuts parameter picker, naming the server app the note belongs to. A product name, so it is not translated.",
+      "shouldTranslate" : false
+    },
+    "Nextcloud Notes note" : {
+      "comment" : "Synonym Siri accepts for the Nextcloud-note entity type.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nextcloud-Notes-Notiz"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "nota de Nextcloud Notes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "note Nextcloud Notes"
+          }
+        }
+      }
+    },
     "Nextcloud Talk" : {
       "comment" : "Subtitle of a conversation entity in Spotlight results and the Shortcuts parameter picker, naming the server app the conversation belongs to. A product name, so it is not translated.",
       "shouldTranslate" : false
@@ -501,6 +587,29 @@
         }
       }
     },
+    "Nextcloud note" : {
+      "comment" : "Name of the Nextcloud-note entity type, shown wherever the Shortcuts app names the kind of value.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nextcloud-Notiz"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "nota de Nextcloud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "note Nextcloud"
+          }
+        }
+      }
+    },
     "Nextcloud server app" : {
       "comment" : "Display name of the Nextcloud-server-app entity type shown in Spotlight, Siri, and the Shortcuts app.",
       "localizations" : {
@@ -523,6 +632,33 @@
           }
         }
       }
+    },
+    "Note" : {
+      "comment" : "Title of the Shortcuts action parameter that selects which note to open.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notiz"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nota"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Note"
+          }
+        }
+      }
+    },
+    "Notes" : {
+      "comment" : "Spotlight keyword for a note entity, so a search for the server app finds notes whose own titles mention neither it nor Nextcloud. A product name, so it is not translated.",
+      "shouldTranslate" : false
     },
     "Notifications" : {
       "comment" : "A menu item in the account menu that opens the connected server's own notifications panel in the web view. Shown only while notifications are waiting.",
@@ -566,6 +702,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ouvrir une app Nextcloud"
+          }
+        }
+      }
+    },
+    "Open Nextcloud Note" : {
+      "comment" : "Title of the Shortcuts action that opens a note.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nextcloud-Notiz öffnen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir nota de Nextcloud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir une note Nextcloud"
           }
         }
       }
@@ -635,6 +794,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ouvre une conversation dans Nextcloud Talk."
+          }
+        }
+      }
+    },
+    "Open a note in Nextcloud Notes." : {
+      "comment" : "Description of the Shortcuts action that opens a note.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffnet eine Notiz in Nextcloud Notes."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre una nota en Nextcloud Notes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre une note dans Nextcloud Notes."
           }
         }
       }
@@ -1099,6 +1281,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quelle conversation ?"
+          }
+        }
+      }
+    },
+    "Which note?" : {
+      "comment" : "Prompt shown when the Shortcuts action needs to be told which note to open.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welche Notiz?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué nota?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quelle note ?"
           }
         }
       }

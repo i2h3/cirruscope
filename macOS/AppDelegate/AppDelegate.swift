@@ -60,6 +60,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Keep Spotlight and the Siri/Shortcuts app-parameter options in step with the server's app list.
         ServerAppIndexer.shared.start()
         ConversationIndexer.shared.start()
+        NoteIndexer.shared.start()
         // Watch the macOS accent color and appearance so open web views keep matching the app's own accent.
         AccentColorMonitor.shared.start()
         presentInitialWindow(forLaunch: true)
@@ -190,6 +191,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                         // slower of the two and nothing waits on it: what it feeds is Spotlight and the Shortcuts
                         // app, neither of which is looking yet.
                         await ServerConnection.refreshConversations(using: server)
+                        await ServerConnection.refreshNotes(using: server)
                         // Begin (or restart) tracking unread notifications for the Dock badge and banners.
                         NotificationMonitor.shared.start(for: server, capabilities: capabilities)
 

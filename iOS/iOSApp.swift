@@ -62,6 +62,7 @@ struct iOSApp: App {
                 // has been asked anything.
                 ServerAppIndexer.shared.start()
                 ConversationIndexer.shared.start()
+                NoteIndexer.shared.start()
 
                 Task {
                     await NotificationRefreshTask.logPendingRequests()
