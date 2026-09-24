@@ -375,6 +375,16 @@ Sign-out is the mirror image. Nextcloud's own "Log out" would end the browser se
 
 The interesting part is what happens when the retry fails. A retry that lands back on the sign-in form means the app password is genuinely rejected, and the account is signed out — but *exactly one* retry may be outstanding, and getting that bookkeeping wrong signs people out of working accounts. Both apps did, in different ways. The budget is therefore [one shared type](./Cirruscope/SilentRetryBudget.swift) keyed to the address being retried and released the moment the server answers it, with a one-minute window so a retry lost to a dropped connection cannot poison the next genuine expiry. Recognizing the routes is [shared too](./Cirruscope/NextcloudSessionRoute.swift), and anchored immediately below the instance's web root: matching on the last path component instead — which macOS did — means a file a user named `logout` revokes their app password.
 
+## Why do paths the app knows append to the server address instead of resolving from its root?
+
+Because the two kinds of path are not the same kind of thing, and treating them alike produces a link that works everywhere except where it matters.
+
+Nextcloud writes its own web root into every address it names. An instance installed in a subdirectory answers `"/nextcloud/apps/files/"` for where an app lives, so resolving that from the server root is what puts it back where the server meant. A path the *app* knows — Talk's `/call/<token>`, the Notes route, the account settings page — carries no such prefix, so resolving it the same way produces `https://example.com/settings/user` on an instance served from `https://example.com/nextcloud`: a live page, on the right server, with nothing to do with the account. The origin proof does not catch it, because the origin is right.
+
+That failure is the reason the rule is in the type rather than in a convention. `SameOriginURL` has two initializers: one resolves, for what the server named, and one appends components, for what the app knows. A caller holding a `"/settings/user"` literal has already made the decision the second initializer exists to take away, so it takes components — the broken form cannot be expressed. It shipped in the iOS account menu and was very nearly shipped in the Talk conversation route; a subdirectory-install test caught the second, and every route now has one.
+
+The appending form also refuses a `.` or `..` component, which is less obvious and was found by review rather than by design. Appending escapes a slash but passes a dot segment through, so two `..` in a row resolve to a path outside the instance's web root while remaining on its origin. The components reaching it are often the server's own values — a collective page's `filePath`, split on `/` — so without that refusal a server could name a path outside its own installation and be handed the account's app password for it.
+
 ## Why is anything off the server's origin handed to the system rather than shown in the web view?
 
 Because the web view carries the account's session, and because a page shown inside the app borrows the app's window and the trust that comes with it.

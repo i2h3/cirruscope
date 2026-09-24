@@ -17,12 +17,6 @@ enum NoteWebRoute {
             return nil
         }
 
-        let address = serverAddress
-            .appending(path: "apps")
-            .appending(path: "notes")
-            .appending(path: "note")
-            .appending(path: String(id))
-
-        return SameOriginURL(path: address.absoluteString, relativeTo: serverAddress)
+        return SameOriginURL(components: ["apps", "notes", "note", String(id)], relativeTo: serverAddress)
     }
 }

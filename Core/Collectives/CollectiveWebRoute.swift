@@ -11,19 +11,26 @@ import Foundation
 enum CollectiveWebRoute {
     /// `url(forSlug:name:on:)` is the address of a collective on `serverAddress`, or `nil` when there is nothing to address it by.
     ///
-    /// Both an absent slug and an empty name are refused rather than guessed at, because the guess would not fail visibly: `/apps/collectives/` with nothing after it is the collectives overview, a real page that loads, so a user asking for one collective would be shown the list of all of them with nothing to say the app had not understood.
+    /// It answers `nil` exactly when `components(forSlug:name:)` does, which is where the reason for refusing lives.
     static func url(forSlug slug: String?, name: String, on serverAddress: URL) -> SameOriginURL? {
+        guard let components = components(forSlug: slug, name: name) else {
+            return nil
+        }
+
+        return SameOriginURL(components: components, relativeTo: serverAddress)
+    }
+
+    /// `components(forSlug:name:)` are the path segments addressing a collective, or `nil` when there is nothing to address it by.
+    ///
+    /// Shared with the route that addresses a page, because a page's address begins with its collective's: stating the segments once is what keeps the two from disagreeing about which of the slug and the name is used.
+    /// Both an absent slug and an empty name are refused rather than guessed at, because the guess would not fail visibly: `/apps/collectives/` with nothing after it is the collectives overview, a real page that loads, so a user asking for one collective would be shown the list of all of them with nothing to say the app had not understood.
+    static func components(forSlug slug: String?, name: String) -> [String]? {
         let segment = slug?.isEmpty == false ? slug! : name
 
         guard segment.isEmpty == false else {
             return nil
         }
 
-        let address = serverAddress
-            .appending(path: "apps")
-            .appending(path: "collectives")
-            .appending(path: segment)
-
-        return SameOriginURL(path: address.absoluteString, relativeTo: serverAddress)
+        return ["apps", "collectives", segment]
     }
 }

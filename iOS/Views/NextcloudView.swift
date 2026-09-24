@@ -194,7 +194,7 @@ struct NextcloudView: View {
                         }
 
                         Button {
-                            navigate(to: "/settings/user")
+                            navigate(to: ["settings", "user"])
                         } label: {
                             Label("Settings", systemImage: "gear")
                         }
@@ -465,17 +465,18 @@ struct NextcloudView: View {
     }
 
     ///
-    /// Load one of the connected server's own pages into the web view, named by the path it lives at.
+    /// Load one of the connected server's own pages into the web view, named by the path components it lives at.
     ///
-    /// The path is one the app knows rather than one the server offered, and it is resolved through `SameOriginURL` all the same. `ServerAccount.authenticatedRequest(for:)` attaches the app password to whatever it is given, so the rule that nothing receives that credential without first being proven to stay on the connected server is worth keeping unconditional rather than reasoned about per call site. A literal path only fails to resolve where the server address itself cannot be resolved against, which is why the refusal is logged without naming a culprit.
+    /// Components rather than a path string, and that is the whole of what makes this correct on an instance installed in a subdirectory. A path the *server* named carries that instance's web root already; one the app knows does not, so resolving `"/settings/user"` from the server root against `https://example.com/nextcloud` opens `https://example.com/settings/user` — a live page on that host with nothing to do with the account, which is why this read as a working link for as long as it did. `SameOriginURL(components:relativeTo:)` appends instead, and taking components here means a caller cannot express the broken form to begin with.
+    /// The result is still proven to stay on the connected server before anything is loaded: `ServerAccount.authenticatedRequest(for:)` attaches the app password to whatever it is given, so that rule is kept unconditional rather than reasoned about per call site.
     ///
-    private func navigate(to path: String) {
+    private func navigate(to components: [String]) {
         guard let account = store.account else {
             return
         }
 
-        guard let target = SameOriginURL(path: path, relativeTo: account.server) else {
-            Self.logger.error("The path \(path) does not resolve on the connected server; refusing to open it")
+        guard let target = SameOriginURL(components: components, relativeTo: account.server) else {
+            Self.logger.error("The path \(components.joined(separator: "/")) does not resolve on the connected server; refusing to open it")
             return
         }
 
