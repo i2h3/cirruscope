@@ -98,11 +98,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 
-    /// `application(_:continue:restorationHandler:)` opens the Nextcloud server app a user selected from a Spotlight result.
+    /// `application(_:continue:restorationHandler:)` opens whatever a user selected from a Spotlight result.
     ///
-    /// macOS delivers the selection here as a `CSSearchableItemActionType` activity (Core Spotlight's AppKit contract). The handling lives in `openServerAppFromSpotlight(_:)` in the `AppDelegate+Spotlight` extension, so this file stays free of App Intents and Core Spotlight imports.
+    /// macOS delivers the selection here as a `CSSearchableItemActionType` activity (Core Spotlight's AppKit contract). The handling lives in `openSpotlightSelection(_:)` in the `AppDelegate+Spotlight` extension, so this file stays free of App Intents and Core Spotlight imports.
     func application(_: NSApplication, continue userActivity: NSUserActivity, restorationHandler _: @escaping ([any NSUserActivityRestoring]) -> Void) -> Bool {
-        openServerAppFromSpotlight(userActivity)
+        openSpotlightSelection(userActivity)
     }
 
     func applicationWillTerminate(_: Notification) {

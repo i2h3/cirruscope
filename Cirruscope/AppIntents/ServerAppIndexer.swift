@@ -58,14 +58,21 @@ final class ServerAppIndexer: NSObject {
     ///
     /// It is made here and nowhere else. There is one `AppShortcutsProvider` in the app, so one refresh brings every parameter's values up to date, this entity's and every other domain's alike — which is why `ConversationIndexer` deliberately does not make the same call.
     private func reindex(isInitial: Bool) {
-        let entities = AccountStore.shared.serverApps.map(ServerAppEntity.init)
         logger.notice("Reindexing server apps (\(isInitial ? "initial" : "on change", privacy: .public))")
 
         Task {
-            await index.donate(entities)
-
-            ServerAppShortcuts.updateAppShortcutParameters()
-            self.logger.notice("Requested an App Shortcut parameter refresh; the system now pulls the current values from every entity query")
+            await self.donateAll()
         }
+    }
+
+    /// `donateAll()` donates everything the account currently has, and waits for the donation to finish.
+    ///
+    /// Awaitable and not merely scheduled, because the system asks for this as well as the app doing it on its own: an `IndexedEntityQuery`'s reindex is a request Spotlight makes when it believes what it holds is stale, and answering it means having actually finished rather than having started.
+    func donateAll() async {
+        let entities = AccountStore.shared.serverApps.map(ServerAppEntity.init)
+        await index.donate(entities)
+
+        ServerAppShortcuts.updateAppShortcutParameters()
+        logger.notice("Requested an App Shortcut parameter refresh; the system now pulls the current values from every entity query")
     }
 }

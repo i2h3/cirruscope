@@ -21,28 +21,25 @@ struct OpenCollectiveIntent: OpenIntent {
     @Parameter(title: "Collective", requestValueDialog: "Which collective?")
     var target: CollectiveEntity
 
-    /// `perform()` resolves `target` to the current collective and opens it, or asks the user to pick another when the account is no longer a member of it.
+    /// `perform()` resolves `target` through `EntityActivation` and opens what it answers, or asks the user to pick another value when the account no longer has it.
+    ///
+    /// The resolution is shared with `SpotlightSelection` rather than written here, so that running this action and tapping the matching Spotlight result cannot come to different conclusions about the same entity.
     @MainActor
     func perform() async throws -> some IntentResult {
         Self.logger.notice("perform: requested to open collective \(target.id, privacy: .public)")
 
-        guard let collective = AccountStore.shared.collective(forID: target.id) else {
-            Self.logger.error("perform: the account is no longer a member of collective \(target.id, privacy: .public); requesting a different value")
-            throw $target.needsValueError()
-        }
+        switch EntityActivation.outcome(forCollectiveID: target.id) {
+            case let .open(request):
+                EntityOpening.shared.open(request)
+                return .result()
 
-        guard let serverAddress = AccountStore.shared.serverAddress else {
-            Self.logger.error("perform: no server is configured; nothing to open collective \(collective.id, privacy: .public) against")
-            return .result()
-        }
+            case .missing:
+                Self.logger.error("perform: the account no longer has this collective; requesting a different value")
+                throw $target.needsValueError()
 
-        guard let target = CollectiveWebRoute.url(forSlug: collective.slug, name: collective.name, on: serverAddress) else {
-            Self.logger.error("perform: no address could be built for collective \(collective.id, privacy: .public); refusing to open anything")
-            return .result()
+            case .notAddressable:
+                Self.logger.error("perform: nothing could be opened for this collective")
+                return .result()
         }
-
-        Self.logger.notice("perform: opening collective \(collective.id, privacy: .public)")
-        EntityOpening.shared.open(.page(target))
-        return .result()
     }
 }

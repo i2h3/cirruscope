@@ -56,13 +56,31 @@ final class CollectiveIndexer: NSObject {
     ///
     /// The pages are built through their own query rather than from the store directly, because a page entity needs the name of the collective containing it and that pairing is the query's job — restating it here would be a second place for the two to disagree about what a page is called.
     private func reindex() {
-        let collectives = AccountStore.shared.collectives.map(CollectiveEntity.init)
-
         Task {
-            await collectiveIndex.donate(collectives)
-
-            let pages = try? await CollectivePageEntity.defaultQuery.allEntities()
-            await pageIndex.donate(pages ?? [])
+            await self.donateAll()
         }
+    }
+
+    /// `donateAll()` donates everything the account currently has, and waits for the donation to finish.
+    ///
+    /// Awaitable and not merely scheduled, because the system asks for this as well as the app doing it on its own: an `IndexedEntityQuery`'s reindex is a request Spotlight makes when it believes what it holds is stale, and answering it means having actually finished rather than having started.
+    /// The collectives go first because the pages are read through their own query, which pairs each page with the name of the collective containing it: donating the pages against a list the store has not yet settled would be donating them under a name that is about to change.
+    func donateAll() async {
+        await donateCollectives()
+        await donatePages()
+    }
+
+    /// `donateCollectives()` donates the collectives the account currently has.
+    func donateCollectives() async {
+        let collectives = AccountStore.shared.collectives.map(CollectiveEntity.init)
+        await collectiveIndex.donate(collectives)
+    }
+
+    /// `donatePages()` donates the pages of every collective the account currently has.
+    ///
+    /// A query that cannot enumerate them donates none, which removes whatever is still in the index. That is the honest answer rather than the cautious one: leaving them would keep results that open pages this app can no longer describe.
+    func donatePages() async {
+        let pages = try? await CollectivePageEntity.defaultQuery.allEntities()
+        await pageIndex.donate(pages ?? [])
     }
 }

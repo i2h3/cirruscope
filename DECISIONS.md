@@ -393,6 +393,16 @@ The rule is [one shared decision](./Cirruscope/WebViewDestination.swift) on orig
 
 Deciding by origin also answers a question that was previously unanswered: what to do with an address that is not a page at all. A `tel:` or `mailto:` link is not the server's, so it goes to the system, which is how it reaches the app that can act on it — neither platform used to do anything with one. The exceptions are the schemes a document uses on itself — `about:`, `blob:`, `data:`, `javascript:`, `file:` — which mean nothing outside WebKit and stay there. Nothing guesses which schemes the machine can open: macOS asks Launch Services and iOS asks SwiftUI's `openURL` and reads its answer, and anything the system declines is handed back to the web view rather than silently swallowed.
 
+## Why does a Spotlight tap resolve what it opens by entity *type*, and refuse a selection that carries no type?
+
+Because an identifier is unique within a type and not across them, and reading one without its type is how four of the five kinds of result came to open nothing at all.
+
+Tapping a donated Spotlight result does not run the matching `Open…Intent`. The system foregrounds the app and hands it a `CSSearchableItemActionType` activity, and recovering what was picked is the app's job. The first version of that recovery read `EntityIdentifier.identifier` — a plain string — and looked it up as a server app. Every server app resolved; every conversation, note, collective and page resolved to nothing and returned silently, so the app came forward and sat there. It read as Spotlight being broken rather than as the app refusing something, which is exactly what an unlogged early return looks like from outside.
+
+The type was there the whole time: `EntityIdentifier` carries `entityType` beside `identifier`. Resolution now switches on it, and the numeric types are parsed back from the text the activity carries them as. What that leaves is the fallback for an activity whose App Intents annotation is absent — the raw Spotlight identifier — and that one is **refused rather than guessed**. Without a type, `42` is a note and also a collective and also a page, and the app would be picking one of three things the person did not ask for. A refusal at least says so in the log.
+
+The resolution itself lives in one place, [`EntityActivation`](./Cirruscope/AppIntents/EntityActivation.swift), which the intents use too. That is not tidiness: a collective page whose address cannot be built opens its collective instead, and a fallback that applied to the Shortcuts action but not to the Spotlight result would be one feature behaving two ways depending on where it was reached from.
+
 ## Why is a Nextcloud app's icon a little window in Spotlight, but a bare glyph in the menus?
 
 Because those two surfaces draw the same bytes in opposite ways, and only one of them will tint them.
