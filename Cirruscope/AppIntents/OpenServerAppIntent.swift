@@ -25,19 +25,25 @@ struct OpenServerAppIntent: OpenIntent {
     @Parameter(title: "App", requestValueDialog: "Which app?")
     var target: ServerAppEntity
 
-    /// `perform()` resolves `target` to the current app snapshot and opens it, or asks the user to pick another app when the server no longer offers it.
+    /// `perform()` resolves `target` through `EntityActivation` and opens what it answers, or asks the user to pick another value when the account no longer has it.
+    ///
+    /// The resolution is shared with `SpotlightSelection` rather than written here, so that running this action and tapping the matching Spotlight result cannot come to different conclusions about the same entity.
     @MainActor
     func perform() async throws -> some IntentResult {
-        Self.logger.notice("perform: requested to open server app with id \"\(target.id, privacy: .public)\"")
+        Self.logger.notice("perform: requested to open server app \"\(target.id, privacy: .public)\"")
 
-        guard let app = AccountStore.shared.serverApp(forID: target.id) else {
-            Self.logger.error("perform: no server app with id \"\(target.id, privacy: .public)\" is currently offered by the server; requesting a different value")
-            throw $target.needsValueError()
+        switch EntityActivation.outcome(forServerAppID: target.id) {
+            case let .open(request):
+                EntityOpening.shared.open(request)
+                return .result()
+
+            case .missing:
+                Self.logger.error("perform: the account no longer has this server app; requesting a different value")
+                throw $target.needsValueError()
+
+            case .notAddressable:
+                Self.logger.error("perform: nothing could be opened for this server app")
+                return .result()
         }
-
-        Self.logger.notice("perform: resolved \"\(app.name, privacy: .public)\" (\(app.id, privacy: .public)); handing to EntityOpening")
-        EntityOpening.shared.open(.serverApp(app))
-        Self.logger.notice("perform: finished opening \"\(app.id, privacy: .public)\"")
-        return .result()
     }
 }

@@ -42,7 +42,10 @@ final class EntityOpening {
     @ObservationIgnored
     private var handle: (@MainActor (Request) -> Void)?
 
-    private init() {}
+    /// `init()` builds an opener, which production does exactly once as `shared`.
+    ///
+    /// Internal rather than private so the latch can be exercised on an instance of its own. Testing it through `shared` would not be testing: the test bundle is hosted by the app, whose real opener is installed for the whole run, so a case installing its own would take the running app's away — the same hazard `AccountStore.shared` carries, answered the same way.
+    init() {}
 
     /// `install(_:)` records how this app serves a request, and immediately serves anything asked for before now.
     ///

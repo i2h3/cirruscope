@@ -27,28 +27,25 @@ struct OpenConversationIntent: OpenIntent {
     @Parameter(title: "Conversation", requestValueDialog: "Which conversation?")
     var target: ConversationEntity
 
-    /// `perform()` resolves `target` to the current conversation and opens it, or asks the user to pick another when the account no longer takes part in it.
+    /// `perform()` resolves `target` through `EntityActivation` and opens what it answers, or asks the user to pick another value when the account no longer has it.
+    ///
+    /// The resolution is shared with `SpotlightSelection` rather than written here, so that running this action and tapping the matching Spotlight result cannot come to different conclusions about the same entity.
     @MainActor
     func perform() async throws -> some IntentResult {
         Self.logger.notice("perform: requested to open conversation \"\(target.id, privacy: .public)\"")
 
-        guard let conversation = AccountStore.shared.conversation(forToken: target.id) else {
-            Self.logger.error("perform: the account no longer takes part in conversation \"\(target.id, privacy: .public)\"; requesting a different value")
-            throw $target.needsValueError()
-        }
+        switch EntityActivation.outcome(forConversationToken: target.id) {
+            case let .open(request):
+                EntityOpening.shared.open(request)
+                return .result()
 
-        guard let serverAddress = AccountStore.shared.serverAddress else {
-            Self.logger.error("perform: no server is configured; nothing to open \"\(conversation.id, privacy: .public)\" against")
-            return .result()
-        }
+            case .missing:
+                Self.logger.error("perform: the account no longer has this conversation; requesting a different value")
+                throw $target.needsValueError()
 
-        guard let target = ConversationWebRoute.url(forToken: conversation.id, on: serverAddress) else {
-            Self.logger.error("perform: no address could be built for conversation \"\(conversation.id, privacy: .public)\"; refusing to open anything")
-            return .result()
+            case .notAddressable:
+                Self.logger.error("perform: nothing could be opened for this conversation")
+                return .result()
         }
-
-        Self.logger.notice("perform: opening conversation \"\(conversation.id, privacy: .public)\"")
-        EntityOpening.shared.open(.page(target))
-        return .result()
     }
 }

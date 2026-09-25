@@ -51,10 +51,16 @@ final class NoteIndexer: NSObject {
 
     /// `reindex()` donates the notes the account currently has.
     private func reindex() {
-        let entities = AccountStore.shared.notes.map(NoteEntity.init)
-
         Task {
-            await index.donate(entities)
+            await self.donateAll()
         }
+    }
+
+    /// `donateAll()` donates everything the account currently has, and waits for the donation to finish.
+    ///
+    /// Awaitable and not merely scheduled, because the system asks for this as well as the app doing it on its own: an `IndexedEntityQuery`'s reindex is a request Spotlight makes when it believes what it holds is stale, and answering it means having actually finished rather than having started.
+    func donateAll() async {
+        let entities = AccountStore.shared.notes.map(NoteEntity.init)
+        await index.donate(entities)
     }
 }
