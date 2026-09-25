@@ -2,12 +2,18 @@
 // SPDX-License-Identifier: MIT
 
 import Foundation
+import os
 
 /// `SameOriginURL` is a location a Nextcloud server named, proven to be on that same server before anything is sent to it.
 ///
 /// The proof is the point of the type. A server describes its own resources by path — the navigation endpoint answers `"/apps/files/"` for where an app lives and `"/apps/files/img/app.svg"` for its icon — and both are requested with the user's app password in an `Authorization` header, so that they work on an instance restricting them. Each half of that is reasonable and the combination is not: the path is chosen by the server, so an app that is compromised or simply malicious could name `https://evil.example/x.svg` and be handed the credential by return of post.
 /// Resolving a path therefore produces this rather than a `URL`, and everything that attaches credentials takes only this. The unsafe case is then not merely avoided at each call site but unrepresentable, which is the difference between a rule and a habit.
 struct SameOriginURL: Sendable {
+    /// `logger` records every refusal under the `SameOriginURL` category.
+    ///
+    /// This type is a value rather than a facility, which normally means no logger at all. It has one because of what its failure means: a refusal here is the app declining to send the account's app password somewhere, and it is expressed as a `nil` that callers turn into "nothing opened". Without a line naming which rule fired, the one event most worth finding in a capture — a server having named an address off its own installation — is indistinguishable from a typo.
+    private static let logger = Logger(for: SameOriginURL.self)
+
     /// `url` is the absolute location to request, known to be on the same origin as the server that named it.
     let url: URL
 
@@ -18,10 +24,12 @@ struct SameOriginURL: Sendable {
     /// **This is for a path the *server* named**, which is the whole of when to reach for it rather than for `init?(components:relativeTo:)`. Such a path already carries the instance's web root — the navigation endpoint answers `"/nextcloud/apps/files/"` on an instance installed in a subdirectory — so resolving it from the root is what puts it back where the server meant. A path the *app* knows carries no such prefix, and resolving one here moves it to the host's own root instead: a live page on the right server with nothing to do with the account, which is why that mistake reads as a working link. Build those with the other initializer.
     init?(path: String, relativeTo serverAddress: URL) {
         guard let resolved = URL(string: path, relativeTo: serverAddress)?.absoluteURL else {
+            Self.logger.error("Refusing \"\(path, privacy: .public)\": it is not a location at all once resolved against the server address")
             return nil
         }
 
         guard Self.isSameOrigin(resolved, as: serverAddress) else {
+            Self.logger.error("Refusing \"\(path, privacy: .public)\": it resolves to another origin than the connected server's, so nothing will be sent to it")
             return nil
         }
 
@@ -38,14 +46,17 @@ struct SameOriginURL: Sendable {
     /// It stays on the same origin, so the type's own promise is not broken by it. It matters because the components reaching here are frequently the *server's* values — a page's `filePath` split on `/`, a collective's name — so without this a server could name a path outside its own installation and be handed the account's app password for it.
     init?(components: [String], relativeTo serverAddress: URL) {
         guard components.isEmpty == false else {
+            Self.logger.error("Refusing an empty list of path components, which would address the server's own root")
             return nil
         }
 
         guard components.contains(where: \.isEmpty) == false else {
+            Self.logger.error("Refusing path components containing an empty one, which would produce a doubled separator")
             return nil
         }
 
         guard components.contains(where: { $0 == "." || $0 == ".." }) == false else {
+            Self.logger.error("Refusing path components containing a dot segment, which would climb out of the instance's web root while staying on its origin")
             return nil
         }
 

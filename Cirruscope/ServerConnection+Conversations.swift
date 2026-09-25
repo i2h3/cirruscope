@@ -25,7 +25,7 @@ extension ServerConnection {
             logger.notice("The Talk conversations endpoint answered 404, so the app is absent or disabled; dropping anything stored for it")
             await AccountStore.shared.deleteConversations()
         } catch {
-            logger.notice("Could not refresh the Talk conversations; keeping the previous list: \(error.localizedDescription)")
+            logger.notice("Could not refresh the Talk conversations; keeping the previous list: \(error.localizedDescription, privacy: .public)")
         }
     }
 

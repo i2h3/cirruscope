@@ -32,6 +32,7 @@ final class ConversationIndexer: NSObject {
     /// Calling it again does nothing, for the reason `ServerAppIndexer.start()` is likewise idempotent: iOS has no once-per-launch hook and calls it on every activation.
     func start() {
         guard hasStarted == false else {
+            logger.debug("Already started; ignoring this call")
             return
         }
 
@@ -44,6 +45,7 @@ final class ConversationIndexer: NSObject {
     /// `conversationsDidChange()` reindexes when `AccountStore` reports the conversations changed, deferring to the next main-thread turn so it never runs reentrantly inside the mutation that posted the notification.
     @objc
     private func conversationsDidChange() {
+        logger.debug("Received conversationsDidChange; scheduling a reindex")
         DispatchQueue.main.async { [weak self] in
             self?.reindex()
         }
@@ -63,6 +65,7 @@ final class ConversationIndexer: NSObject {
     /// Awaitable and not merely scheduled, because the system asks for this as well as the app doing it on its own: an `IndexedEntityQuery`'s reindex is a request Spotlight makes when it believes what it holds is stale, and answering it means having actually finished rather than having started.
     func donateAll() async {
         let entities = AccountStore.shared.conversations.map(ConversationEntity.init)
+        logger.notice("Donating \(entities.count, privacy: .public) conversation(s)")
         await index.donate(entities)
     }
 }

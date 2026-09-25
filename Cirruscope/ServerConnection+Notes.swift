@@ -29,7 +29,7 @@ extension ServerConnection {
             logger.notice("The \(app, privacy: .public) app advertises API \(advertised, privacy: .public) but \(required, privacy: .public) is required; dropping anything stored for it")
             await AccountStore.shared.deleteNotes()
         } catch {
-            logger.notice("Could not refresh the notes; keeping the previous list: \(error.localizedDescription)")
+            logger.notice("Could not refresh the notes; keeping the previous list: \(error.localizedDescription, privacy: .public)")
         }
     }
 }

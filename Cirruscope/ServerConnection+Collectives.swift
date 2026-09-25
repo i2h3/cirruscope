@@ -33,7 +33,7 @@ extension ServerConnection {
             await AccountStore.shared.deleteCollectives()
             return
         } catch {
-            logger.notice("Could not refresh the collectives; keeping the previous list: \(error.localizedDescription)")
+            logger.notice("Could not refresh the collectives; keeping the previous list: \(error.localizedDescription, privacy: .public)")
             return
         }
 
@@ -52,7 +52,7 @@ extension ServerConnection {
             logger.notice("Fetched \(stored.count, privacy: .public) page(s) of collective \(collectiveID, privacy: .public)")
             await AccountStore.shared.persist(pages: stored, inCollective: collectiveID)
         } catch {
-            logger.notice("Could not refresh the pages of collective \(collectiveID, privacy: .public); keeping the previous ones: \(error.localizedDescription)")
+            logger.notice("Could not refresh the pages of collective \(collectiveID, privacy: .public); keeping the previous ones: \(error.localizedDescription, privacy: .public)")
         }
     }
 }

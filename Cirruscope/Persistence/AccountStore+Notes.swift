@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 import Foundation
+import os
 import SwiftData
 
 /// `AccountStore`'s notes: reading them back as value snapshots, and writing what a refresh found.
@@ -50,6 +51,9 @@ extension AccountStore {
         }
 
         var incomingIDs: Set<Int> = []
+        var inserted = 0
+        var updated = 0
+        var pruned = 0
 
         // An identifier already seen in this list is skipped rather than inserted twice, matching every other
         // domain: two rows sharing one identity would leave the read's ordering with a tie it cannot break.
@@ -62,15 +66,19 @@ extension AccountStore {
                 existing.isFavorite = note.isFavorite
                 existing.isReadOnly = note.isReadOnly
                 existing.modification = note.modification
+                updated += 1
             } else {
                 context.insert(ServerNote(noteID: note.id, title: note.title, category: note.category, isFavorite: note.isFavorite, isReadOnly: note.isReadOnly, modification: note.modification, account: account))
+                inserted += 1
             }
         }
 
         for note in existingNotes where incomingIDs.contains(note.noteID) == false {
             context.delete(note)
+            pruned += 1
         }
 
+        logger.notice("Persisting notes: \(inserted, privacy: .public) inserted, \(updated, privacy: .public) updated, \(pruned, privacy: .public) pruned, \(incomingIDs.count, privacy: .public) stored")
         save()
         notifyChange(.notesDidChange)
     }
@@ -86,6 +94,8 @@ extension AccountStore {
         guard account.notes.isEmpty == false else {
             return
         }
+
+        logger.notice("Dropping every stored note (\(account.notes.count, privacy: .public))")
 
         for note in account.notes {
             context.delete(note)

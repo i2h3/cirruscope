@@ -46,7 +46,7 @@ extension ServerConnection {
             await AccountStore.shared.persist(serverApps: apps)
             await refreshServerAppIcons(from: items, using: server)
         } catch {
-            logger.notice("Could not refresh navigation apps; keeping the previous list: \(error.localizedDescription)")
+            logger.notice("Could not refresh navigation apps; keeping the previous list: \(error.localizedDescription, privacy: .public)")
         }
     }
 

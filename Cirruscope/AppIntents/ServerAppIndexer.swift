@@ -70,6 +70,7 @@ final class ServerAppIndexer: NSObject {
     /// Awaitable and not merely scheduled, because the system asks for this as well as the app doing it on its own: an `IndexedEntityQuery`'s reindex is a request Spotlight makes when it believes what it holds is stale, and answering it means having actually finished rather than having started.
     func donateAll() async {
         let entities = AccountStore.shared.serverApps.map(ServerAppEntity.init)
+        logger.notice("Donating \(entities.count, privacy: .public) server app(s)")
         await index.donate(entities)
 
         ServerAppShortcuts.updateAppShortcutParameters()
