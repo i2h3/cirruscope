@@ -31,6 +31,23 @@ enum AppDatabase {
     /// Being a `static let`, it is opened only once something actually asks for it, which is what lets the account store's tests run entirely on their own in-memory container: nothing in them reaches `AccountStore.shared`, so this store is never opened on their behalf — and it must stay that way, since the recovery path above moves the developer's real store files aside.
     static let container: ModelContainer = {
         let schema = Self.schema
+
+        // Asked before a group-container `ModelConfiguration` is so much as constructed, because constructing one
+        // an app is not entitled to reach does not fail — it traps. SwiftData resolves the container inside the
+        // initializer and calls `fatalError` when the lookup is refused: "Unable to find App Group Container in
+        // Entitlements", from `SwiftData/DataUtilities.swift`, with `containermanager` logging "client is not
+        // entitled" immediately before it. There is no `try` to write and nothing to catch.
+        // That is fatal at launch rather than merely inconvenient. This is a `static let` reached from
+        // `Store.restored()` in `iOSApp.init()`, so an iOS build with no entitlements — every fresh clone, every
+        // fork, every CI run — died before its first screen. It was measured on a simulator by installing such a
+        // build and reading its log, after two earlier guesses at the trap's location proved wrong.
+        // `AppGroup.containerURL` asks the same question of the same subsystem and answers `nil` instead of
+        // trapping, which is the whole reason it exists.
+        guard AppGroup.containerURL != nil else {
+            logger.notice("This build has no App Group entitlement, so the shared container is unreachable; opening the store in the build's own container instead")
+            return ownContainer(for: schema)
+        }
+
         let sharedConfiguration = ModelConfiguration(
             storeName,
             schema: schema,
@@ -38,11 +55,6 @@ enum AppDatabase {
             cloudKitDatabase: .none
         )
 
-        // Deliberately without the configuration's own URL. Resolving it is the first thing that touches the App
-        // Group container, and it happens here — before the `do` below, where nothing could catch a failure — so a
-        // build with no entitlement to reach that container would fail at the one point in this function that has
-        // no recovery path at all. The path is logged on the way out instead, where the configuration has provably
-        // resolved, and the two facts a failure needs are already here.
         logger.notice("Opening SwiftData store \"\(storeName, privacy: .public)\" in App Group \(AppGroup.identifier, privacy: .public) with schema v\(SchemaV3.versionIdentifier.description, privacy: .public) and the migration plan")
 
         do {
@@ -63,7 +75,14 @@ enum AppDatabase {
             logger.error("Could not open the rebuilt SwiftData store in the App Group container; falling back to this build's own container: \(error.localizedDescription, privacy: .public)")
         }
 
-        let ownConfiguration = ModelConfiguration(
+        return ownContainer(for: schema)
+    }()
+
+    /// `ownContainer(for:)` opens the store in the container this build has to itself, which is where a build that cannot reach the App Group's keeps its data.
+    ///
+    /// Reached two ways, and they mean different things. A build with no App Group entitlement comes straight here, having never had a shared container to use; a build that has one comes here only after its shared store failed to open twice and was quarantined. Both end up with a store that works and is private to this build, which is what lets a fresh clone and a CI run launch at all — see "Building and Signing" in `AGENTS.md`.
+    private static func ownContainer(for schema: Schema) -> ModelContainer {
+        let configuration = ModelConfiguration(
             storeName,
             schema: schema,
             groupContainer: .none,
@@ -71,14 +90,14 @@ enum AppDatabase {
         )
 
         do {
-            let container = try ModelContainer(for: schema, migrationPlan: CirruscopeMigrationPlan.self, configurations: ownConfiguration)
-            logger.notice("Opened the SwiftData store in this build's own container at \(ownConfiguration.url.path, privacy: .public); this build has no App Group entitlement, so it is not reading the shared store")
+            let container = try ModelContainer(for: schema, migrationPlan: CirruscopeMigrationPlan.self, configurations: configuration)
+            logger.notice("Opened the SwiftData store in this build's own container at \(configuration.url.path, privacy: .public); it is not reading the shared store")
             return container
         } catch {
             logger.fault("Could not open the SwiftData store in the App Group container or in this build's own container: \(error.localizedDescription, privacy: .public)")
             preconditionFailure("Could not open the SwiftData store in the App Group container or in this build's own container: \(error.localizedDescription)")
         }
-    }()
+    }
 
     /// `storeFileSuffixes` are the store file itself and the three sidecars SQLite may have written beside it, which have to be set aside together for either the quarantined copy or what replaces it to be readable.
     private static let storeFileSuffixes = ["", "-wal", "-shm", "-journal"]
