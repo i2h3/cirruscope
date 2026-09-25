@@ -54,16 +54,22 @@ struct ServerAppEntity: IndexedEntity {
     /// It is deliberately *not* marked a template. `DisplayRepresentation.Image` offers an `isTemplate` flag and it would be the right answer for a bare glyph, but these bytes are a coloured plate: flattening one to a silhouette would throw away the very thing that makes it legible in both appearances.
     var displayRepresentation: DisplayRepresentation {
         guard let icon = iconData else {
-            return DisplayRepresentation(title: "\(name)", subtitle: "Nextcloud")
+            return DisplayRepresentation(title: "\(name)", subtitle: Self.subtitle)
         }
 
-        return DisplayRepresentation(title: "\(name)", subtitle: "Nextcloud", image: DisplayRepresentation.Image(data: icon))
+        return DisplayRepresentation(title: "\(name)", subtitle: Self.subtitle, image: DisplayRepresentation.Image(data: icon))
     }
+
+    /// `subtitle` is the one line of context an app carries besides its name, in the one place both surfaces that show it read from.
+    ///
+    /// Stated once because it reaches Spotlight twice by two different routes — as the display representation's subtitle and as the searchable item's `contentDescription` — and a result whose two descriptions disagreed would be this app contradicting itself.
+    private static let subtitle: LocalizedStringResource = "Nextcloud"
 
     /// `attributeSet` is the Spotlight metadata donated for this entity: it starts from `defaultAttributeSet` so it keeps the `displayRepresentation`'s title and subtitle, adds `keywords` so a search such as "Nextcloud Notes" matches even though the title is only the bare app name, and carries the app's icon as the result's thumbnail.
     /// `thumbnailData` is the only one of the three thumbnail members that Spotlight actually draws. Its siblings `thumbnailURL` and `darkThumbnailURL` are left unset because setting them does nothing at all — measured, not assumed; `DECISIONS.md` records the probe.
     var attributeSet: CSSearchableItemAttributeSet {
         let attributes = defaultAttributeSet
+        attributes.contentDescription = String(localized: Self.subtitle)
         attributes.keywords = ["Nextcloud", name]
         attributes.thumbnailData = iconData
         return attributes

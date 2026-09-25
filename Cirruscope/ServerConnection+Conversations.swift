@@ -20,11 +20,33 @@ extension ServerConnection {
             let stored = conversations.map { ConversationTransferObject(id: $0.token, name: $0.displayName, kind: kind(of: $0.type), lastActivity: $0.lastActivity, avatarVersion: $0.avatarVersion) }
             logger.notice("Fetched \(stored.count, privacy: .public) Talk conversation(s)")
             await AccountStore.shared.persist(conversations: stored)
+            await refreshConversationAvatars(for: stored, using: server)
         } catch RainmakerError.notFound {
             logger.notice("The Talk conversations endpoint answered 404, so the app is absent or disabled; dropping anything stored for it")
             await AccountStore.shared.deleteConversations()
         } catch {
             logger.notice("Could not refresh the Talk conversations; keeping the previous list: \(error.localizedDescription)")
+        }
+    }
+
+    /// `refreshConversationAvatars(for:using:)` fetches the picture of every conversation just listed, and announces the list again once they have landed.
+    ///
+    /// After the list rather than before it, and that ordering is the point: the conversations are what Spotlight needs first, so they are stored and announced immediately, and the pictures — one request each — arrive behind them. The second announcement is what puts those pictures into the index; it is sent only when something was actually fetched, so an unchanged account does not redonate everything to look exactly as it already does.
+    /// This is the arrangement `refreshServerAppIcons(from:using:)` already uses for the app icons, including the hop to the main actor before posting, which is not optional: `NotificationCenter` delivers synchronously on the posting thread and every observer of this name is main-actor-isolated.
+    private static func refreshConversationAvatars(for conversations: [ConversationTransferObject], using server: Server) async {
+        guard let credentials = Keychain.credentials(for: server.address) else {
+            return
+        }
+
+        let identified = conversations.map { (token: $0.id, avatarVersion: $0.avatarVersion) }
+        let didFetchAny = await ConversationAvatars.shared.refresh(conversations: identified, accountName: credentials.user, on: server)
+
+        guard didFetchAny else {
+            return
+        }
+
+        await MainActor.run {
+            NotificationCenter.default.post(name: .conversationsDidChange, object: nil)
         }
     }
 

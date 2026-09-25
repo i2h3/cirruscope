@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 import CoreGraphics
+import CoreText
 import Foundation
 import ImageIO
 import os
@@ -62,14 +63,126 @@ enum ServerAppIconThumbnail {
     ///
     /// That matters more here than it looks: the two ways this could silently go back to being unreadable — the plate losing its opacity, and the glyph losing its contrast against it — are both invisible to a test of the geometry and obvious to a test of the colours.
     static func pngData(drawing glyph: SVGGlyph) -> Data? {
+        guard let ink = glyphColor() else {
+            return nil
+        }
+
+        return pngData { context, box in
+            context.setFillColor(ink)
+
+            for shape in glyph.shapes(fittedIn: box) {
+                context.addPath(shape.path)
+                context.fillPath(using: shape.fillRule)
+            }
+        }
+    }
+
+    /// `pngData(forEmoji:orAppID:serverAddress:)` is the artwork for something the user gave an emoji, falling back to the icon of the app that owns it.
+    ///
+    /// Collectives and their pages are the things that have one, and an emoji is the better picture precisely where a shared app mark is the weaker one: a search that answers with six pages of one collective shows six identical marks, where the emoji is the thing the person chose to tell them apart by. The fallback is not a lesser answer but the same answer the other domains give, for the pages nobody has decorated.
+    static func pngData(forEmoji emoji: String?, orAppID appID: String, serverAddress: URL) -> Data? {
+        guard let emoji else {
+            return pngData(forAppID: appID, serverAddress: serverAddress)
+        }
+
+        guard emoji.isEmpty == false else {
+            return pngData(forAppID: appID, serverAddress: serverAddress)
+        }
+
+        guard let data = pngData(drawingEmoji: emoji) else {
+            logger.error("An emoji could not be drawn onto the plate; falling back to the icon of app \(appID, privacy: .public)")
+            return pngData(forAppID: appID, serverAddress: serverAddress)
+        }
+
+        return data
+    }
+
+    /// `pngData(drawingEmoji:)` is the artwork with `emoji` in the window's body instead of an app's glyph.
+    ///
+    /// `glyphColor()` deliberately does not apply here. A monochrome app glyph is filled with one ink because it is a silhouette; an emoji carries its own colours, and tinting one would throw away the whole of what makes it recognizable. It is drawn through Core Text rather than as an image because neither platform vends an emoji as a bitmap without going through a font, and Core Text is the layer both share.
+    static func pngData(drawingEmoji emoji: String) -> Data? {
+        pngData { context, box in
+            let font = CTFontCreateWithName("AppleColorEmoji" as CFString, box.height, nil)
+            let line = CTLineCreateWithAttributedString(NSAttributedString(string: emoji, attributes: [kCTFontAttributeName as NSAttributedString.Key: font]))
+            let bounds = CTLineGetBoundsWithOptions(line, .useGlyphPathBounds)
+
+            guard bounds.width > 0, bounds.height > 0 else {
+                return
+            }
+
+            // Fitted to whichever edge binds rather than to the height alone: an emoji is not reliably square,
+            // and one scaled by its height can still be wider than the body it is meant to sit inside.
+            let scale = min(box.width / bounds.width, box.height / bounds.height)
+
+            context.saveGState()
+            context.translateBy(x: box.midX, y: box.midY)
+            context.scaleBy(x: scale, y: scale)
+            context.translateBy(x: -bounds.midX, y: -bounds.midY)
+            context.textPosition = .zero
+            CTLineDraw(line, context)
+            context.restoreGState()
+        }
+    }
+
+    /// `pngData(compositing:)` is a picture the server drew, made into artwork this app can donate.
+    ///
+    /// It is not the window: a conversation's avatar is already a complete picture of something, and putting one inside a little window would say "this is an app" about a person. What it borrows instead is the one property that made the window necessary — **opacity**. The bitmap is laid on an opaque white plate of the same rounded shape and the same shadow, so a picture with an alpha channel, or one the server drew as a transparent monogram, is right in both appearances from a single donation, which is the whole of what `DECISIONS.md` records about `darkThumbnailURL` being inert.
+    /// It is filled rather than fitted, so a picture that is not square is cropped to the plate instead of leaving bars beside itself. Faces are centred in an avatar by convention, so the centre is what is kept.
+    static func pngData(compositing image: CGImage) -> Data? {
         let edge = size * 2
         let margin = edge * shadowMarginFraction
         let plate = CGRect(x: margin, y: margin, width: edge - margin * 2, height: edge - margin * 2)
         let radius = plate.width * cornerRadiusFraction
 
-        guard let ink = glyphColor() else {
+        guard let context = CGContext(data: nil, width: Int(edge), height: Int(edge), bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
             return nil
         }
+
+        context.setShouldAntialias(true)
+        context.interpolationQuality = .high
+
+        let shape = CGPath(roundedRect: plate, cornerWidth: radius, cornerHeight: radius, transform: nil)
+
+        context.saveGState()
+        context.setShadow(offset: CGSize(width: 0, height: -edge * 0.012), blur: edge * shadowBlurFraction, color: CGColor(gray: 0, alpha: 0.28))
+        context.addPath(shape)
+        context.setFillColor(CGColor(gray: 1, alpha: 1))
+        context.fillPath()
+        context.restoreGState()
+
+        context.saveGState()
+        context.addPath(shape)
+        context.clip()
+        context.draw(image, in: fill(CGSize(width: image.width, height: image.height), into: plate))
+        context.restoreGState()
+
+        guard let composed = context.makeImage() else {
+            return nil
+        }
+
+        return pngData(of: composed)
+    }
+
+    /// `fill(_:into:)` is where a picture of `size` goes to cover `box` entirely, centred, with whatever does not fit hanging off the edges.
+    private static func fill(_ size: CGSize, into box: CGRect) -> CGRect {
+        guard size.width > 0, size.height > 0 else {
+            return box
+        }
+
+        let scale = max(box.width / size.width, box.height / size.height)
+        let scaled = CGSize(width: size.width * scale, height: size.height * scale)
+
+        return CGRect(x: box.midX - scaled.width / 2, y: box.midY - scaled.height / 2, width: scaled.width, height: scaled.height)
+    }
+
+    /// `pngData(drawingBodyIn:)` draws the window and hands `body` the box its contents belong in, then encodes the result.
+    ///
+    /// The window is one drawing however it is filled, so it is written once: an app's glyph and a user's emoji differ only in what goes in the body, and two copies of the plate would be two places for the artwork to drift.
+    private static func pngData(drawingBodyIn body: (CGContext, CGRect) -> Void) -> Data? {
+        let edge = size * 2
+        let margin = edge * shadowMarginFraction
+        let plate = CGRect(x: margin, y: margin, width: edge - margin * 2, height: edge - margin * 2)
+        let radius = plate.width * cornerRadiusFraction
 
         guard let context = CGContext(data: nil, width: Int(edge), height: Int(edge), bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
             return nil
@@ -102,12 +215,7 @@ enum ServerAppIconThumbnail {
         let side = plate.width * glyphSideFraction
         let box = CGRect(x: plate.midX - side / 2, y: bodyCenterY - side / 2, width: side, height: side)
 
-        context.setFillColor(ink)
-
-        for shape in glyph.shapes(fittedIn: box) {
-            context.addPath(shape.path)
-            context.fillPath(using: shape.fillRule)
-        }
+        body(context, box)
 
         guard let composed = context.makeImage() else {
             return nil

@@ -403,6 +403,26 @@ The type was there the whole time: `EntityIdentifier` carries `entityType` besid
 
 The resolution itself lives in one place, [`EntityActivation`](./Cirruscope/AppIntents/EntityActivation.swift), which the intents use too. That is not tidiness: a collective page whose address cannot be built opens its collective instead, and a fallback that applied to the Shortcuts action but not to the Spotlight result would be one feature behaving two ways depending on where it was reached from.
 
+## Why do notes, collectives, pages and conversations wear the owning app's icon in Spotlight?
+
+Because a result's first job is to say what kind of thing it is, and the picture says that before the words do.
+
+These four entity types shipped without artwork, so Spotlight drew its own generic mark for each of them — which is what [`ServerAppEntity`](./Cirruscope/AppEntities/ServerAppEntity.swift) argues is better than an app inventing a second placeholder, and it is, right up until there is something real to draw. There is: the server publishes an icon per app, the app already caches and rasterizes it for the menus, and a Nextcloud serving Notes at `/apps/notes/` has told us the identifier that icon is filed under. So a note wears the Notes mark, a conversation Talk's, and a collective and its pages the Collectives mark, all on the same white plate a server app already wears — for the same reason it wears one, the plate being what makes a bitmap that leaves the process legible in both appearances.
+
+Every note looking alike is the intended result rather than a compromise. That is how a set of search results normally reads, and the alternative for a note is its title drawn as a picture, which is the title again.
+
+The two places where something better exists get it. A collective or a page that somebody gave an **emoji** wears the emoji instead, drawn into the same plate through Core Text — pages within one collective are precisely the results a shared mark fails to tell apart, and the emoji is the thing their author chose to tell them apart by. A **conversation** wears its own picture where Talk sends one as PNG or JPEG. Neither is tinted: the plate's glyph colour exists to make a monochrome silhouette legible, and applying it to an emoji or a photograph would throw away what makes either recognizable.
+
+## Why are Talk conversation avatars fetched after the conversations rather than with them?
+
+Because the list is worth having before the pictures are, and the pictures cost a request each.
+
+A conversation's avatar is not part of the conversation list: it is a separate endpoint, one call per conversation. Fetching them before persisting would hold the whole domain — and the Spotlight results that depend on it — behind as many round trips as the account has conversations. So the conversations are stored and announced immediately, the pictures arrive behind them, and the list is announced a second time only if something new was actually cached. That is the arrangement the server apps' icons have always used, and the second announcement is what puts the pictures into the index without waiting for the next launch.
+
+Only PNG and JPEG are kept. The server answers this endpoint with an SVG for every generated icon and every emoji avatar, and this app's SVG reader is deliberately only big enough for the monochrome app glyphs Nextcloud ships. An answer that cannot be decoded is remembered as such for the life of the process — otherwise every launch re-requests a picture for every conversation the server draws itself, which on an account of group conversations is most of them — and the Talk mark stays in place, which is a correct picture rather than a wrong one.
+
+The cache key carries the server, the account, the token, the avatar version and the appearance. Every part earns its place and the two that look redundant are the ones that do: the account, because a one-to-one conversation's picture is of *the other party* and so depends on who is signed in, and the version, because it is the only signal that a moderator changed a group's picture. Rainmaker states outright that the version alone is not enough — for a one-to-one conversation the server derives it from a generic icon's path, so it is identical everywhere and never moves.
+
 ## Why is a Nextcloud app's icon a little window in Spotlight, but a bare glyph in the menus?
 
 Because those two surfaces draw the same bytes in opposite ways, and only one of them will tint them.

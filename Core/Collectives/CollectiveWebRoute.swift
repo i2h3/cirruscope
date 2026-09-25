@@ -9,6 +9,11 @@ import Foundation
 ///
 /// The segment is the collective's `slug` where it has one and its `name` otherwise. That is what the network library's own documentation says the field is for — "the url-safe form of `name` the server uses when addressing the collective in a link" — and the fallback exists because it also says the field is absent on a server whose Collectives app predates slugs, so a client building links has to be prepared for it.
 enum CollectiveWebRoute {
+    /// `appID` is the identifier of the Nextcloud app that owns a collective and the pages within it, which is what its icon is cached under.
+    ///
+    /// Not a second fact but the same one written where it can be used: Nextcloud serves an app under `/apps/<app id>/`, so the `/apps/collectives/…` route this builds names it outright. It is stated here rather than at each surface that needs it, because a surface guessing at it would be guessing at something this file already knows.
+    static let appID = "collectives"
+
     /// `url(forSlug:name:on:)` is the address of a collective on `serverAddress`, or `nil` when there is nothing to address it by.
     ///
     /// It answers `nil` exactly when `components(forSlug:name:)` does, which is where the reason for refusing lives.

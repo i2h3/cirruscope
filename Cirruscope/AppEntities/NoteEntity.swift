@@ -42,25 +42,50 @@ struct NoteEntity: IndexedEntity {
         note.title
     }
 
+    /// `iconData` is the Nextcloud Notes app's own icon on the plated artwork, or `nil` if none has been rendered.
+    ///
+    /// Carried rather than looked up, for the reason `ServerAppEntity` carries its own: these representations are read from outside the main actor and travel out of the process, while the icon store is neither. Rendering it where the entity is built is both the only place the lookup is available and the only place it happens once per entity rather than once per read.
+    /// Every note wears the same picture, which is the intended result rather than a compromise: what a Spotlight row needs first is to say *what kind of thing* it is, and a set of results all wearing the Notes mark says that better than a set of identical generic ones.
+    var iconData: Data?
+
     /// `displayRepresentation` is how a single note appears in Spotlight results, the Shortcuts parameter picker, and Siri.
     ///
     /// The subtitle names the owning server app rather than only the server product, as a conversation's does. A result reading "Groceries" with the subtitle "Nextcloud" would say where it came from but not what it is, and whether this opens a note or a file is the one thing a person needs before tapping it.
     /// The category is deliberately not in the subtitle, though it is the obvious candidate: most notes are filed under none, so it would be present on some rows and absent on others, and a subtitle that comes and goes reads as missing data rather than as a property not every note has. It is a keyword instead, where it is searchable and never seen to be absent.
     var displayRepresentation: DisplayRepresentation {
-        DisplayRepresentation(title: "\(name)", subtitle: "Nextcloud Notes")
+        guard let icon = iconData else {
+            return DisplayRepresentation(title: "\(name)", subtitle: Self.subtitle)
+        }
+
+        return DisplayRepresentation(title: "\(name)", subtitle: Self.subtitle, image: DisplayRepresentation.Image(data: icon))
     }
+
+    /// `subtitle` is the one line of context a note carries besides its title, in the one place both surfaces that show it read from.
+    ///
+    /// Stated once because it reaches Spotlight twice by two different routes — as the display representation's subtitle and as the searchable item's `contentDescription` — and a result whose two descriptions disagreed would be this app contradicting itself.
+    private static let subtitle: LocalizedStringResource = "Nextcloud Notes"
 
     /// `attributeSet` is the Spotlight metadata donated for this entity: it starts from `defaultAttributeSet` so it keeps the title and subtitle, and adds keywords so the server product, the owning app and the note's own category all find it.
     ///
     /// The note's text is not among them. Spotlight's index is a file on disk and no more encrypted than the store this app deliberately keeps that text out of, so indexing the body would move the exposure rather than avoid it — see `DECISIONS.md`.
     var attributeSet: CSSearchableItemAttributeSet {
         let attributes = defaultAttributeSet
+        attributes.contentDescription = String(localized: Self.subtitle)
+        attributes.contentModificationDate = note.modification
         attributes.keywords = ["Nextcloud", "Notes", name] + (note.category.isEmpty ? [] : [note.category])
+        attributes.thumbnailData = iconData
         return attributes
     }
 
     /// `init(_:)` bridges a `NoteTransferObject` snapshot into an entity, keeping the value type itself free of any App Intents dependency.
+    @MainActor
     init(_ note: NoteTransferObject) {
         self.note = note
+
+        guard let serverAddress = AccountStore.shared.serverAddress else {
+            return
+        }
+
+        iconData = ServerAppIconThumbnail.pngData(forAppID: NoteWebRoute.appID, serverAddress: serverAddress)
     }
 }
