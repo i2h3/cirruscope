@@ -12,6 +12,11 @@ on:
     branches:
       - main
       - develop
+  # Lets this be run against a branch that has no pull request open yet. `pull_request` already covers
+  # every push to a branch that does — its default activity types include `synchronize` — so the gap is
+  # only the stretch before the pull request exists, which is exactly when a long-lived branch most wants
+  # to know whether it still builds on a clean machine.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -19,7 +24,7 @@ permissions:
 jobs:
   test:
     name: Test
-    runs-on: macos-26
+    runs-on: xcode-27
     steps:
       - name: Checkout
         uses: actions/checkout@v5

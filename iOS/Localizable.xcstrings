@@ -1,6 +1,467 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Collective in Nextcloud Collectives" : {
+      "comment" : "Spotlight subtitle for a collective, naming what the result is and the Nextcloud app it lives in.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kollektiv in Nextcloud Collectives"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colectivo en Nextcloud Collectives"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collectif dans Nextcloud Collectives"
+          }
+        }
+      }
+    },
+    "Conversation in Nextcloud Talk" : {
+      "comment" : "Spotlight subtitle for a Talk conversation, naming what the result is and the Nextcloud app it lives in.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unterhaltung in Nextcloud Talk"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conversación en Nextcloud Talk"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conversation dans Nextcloud Talk"
+          }
+        }
+      }
+    },
+    "Note in Nextcloud Notes" : {
+      "comment" : "Spotlight subtitle for a note, naming what the result is and the Nextcloud app it lives in.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notiz in Nextcloud Notes"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nota en Nextcloud Notes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Note dans Nextcloud Notes"
+          }
+        }
+      }
+    },
+    "Page in Nextcloud Collectives" : {
+      "comment" : "Spotlight subtitle for a page of a collective, naming what the result is and the Nextcloud app it lives in.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seite in Nextcloud Collectives"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Página en Nextcloud Collectives"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Page dans Nextcloud Collectives"
+          }
+        }
+      }
+    },
+    "“%@” is not a valid server name. Please check the address and try again." : {
+      "comment" : "Error shown when the server name in the entered address cannot name a server; the placeholder is that name.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” ist kein gültiger Servername. Bitte überprüfen Sie die Adresse und versuchen Sie es erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” no es un nombre de servidor válido. Comprueba la dirección y vuelve a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” n'est pas un nom de serveur valide. Veuillez vérifier l'adresse et réessayer."
+          }
+        }
+      }
+    },
+    "“%@” is not a valid URL. Please check the address and try again." : {
+      "comment" : "Alert message shown when the entered server address is not a valid URL; the placeholder is the address the user typed.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” ist keine gültige URL. Bitte überprüfen Sie die Adresse und versuchen Sie es erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” no es una URL válida. Comprueba la dirección y vuelve a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” n'est pas une URL valide. Veuillez vérifier l'adresse et réessayer."
+          }
+        }
+      }
+    },
+    "“%lld” is not a valid port number. Please enter a port between 1 and 65535." : {
+      "comment" : "Error shown when the port in the entered server address is out of range; the placeholder is that port.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%lld” ist keine gültige Portnummer. Bitte geben Sie einen Port zwischen 1 und 65535 ein."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%lld” no es un número de puerto válido. Introduce un puerto entre 1 y 65535."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%lld” n'est pas un numéro de port valide. Veuillez saisir un port compris entre 1 et 65535."
+          }
+        }
+      }
+    },
+    "%@" : {
+      "comment" : "The title of a Spotlight result for a Nextcloud server app. The argument is the app's name.",
+      "isCommentAutoGenerated" : true,
+      "shouldTranslate" : false
+    },
+    "%lld Nextcloud collective pages" : {
+      "comment" : "Numeric form of the collective-page entity type, used when the Shortcuts app or Siri counts entities of this type.",
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Nextcloud-Kollektivseite"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Nextcloud-Kollektivseiten"
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld página de colectivo de Nextcloud"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld páginas de colectivo de Nextcloud"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld page de collectif Nextcloud"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld pages de collectif Nextcloud"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld Nextcloud collectives" : {
+      "comment" : "Numeric form of the Nextcloud-collective entity type, used when the Shortcuts app or Siri counts entities of this type.",
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Nextcloud-Kollektiv"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Nextcloud-Kollektive"
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld colectivo de Nextcloud"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld colectivos de Nextcloud"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld collectif Nextcloud"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld collectifs Nextcloud"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld Nextcloud notes" : {
+      "comment" : "Numeric form of the Nextcloud-note entity type, used when the Shortcuts app or Siri counts entities of this type.",
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Nextcloud-Notiz"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Nextcloud-Notizen"
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld nota de Nextcloud"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld notas de Nextcloud"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld note Nextcloud"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld notes Nextcloud"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld Nextcloud server apps" : {
+      "comment" : "Numeric form of the Nextcloud-server-app entity type, used when the Shortcuts app or Siri counts entities of this type.",
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Nextcloud-Server-App"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Nextcloud-Server-Apps"
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld aplicación del servidor Nextcloud"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld aplicaciones del servidor Nextcloud"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld application du serveur Nextcloud"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld applications du serveur Nextcloud"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld Nextcloud Talk conversations" : {
+      "comment" : "Numeric form of the Nextcloud-Talk-conversation entity type, used when the Shortcuts app or Siri counts entities of this type.",
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Nextcloud-Talk-Unterhaltung"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Nextcloud-Talk-Unterhaltungen"
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld conversación de Nextcloud Talk"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld conversaciones de Nextcloud Talk"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld conversation Nextcloud Talk"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld conversations Nextcloud Talk"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Account" : {
       "comment" : "Label of the toolbar control that opens the account menu.",
       "localizations" : {
@@ -20,6 +481,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Compte"
+          }
+        }
+      }
+    },
+    "App" : {
+      "comment" : "Title of the App Shortcuts parameter that selects which Nextcloud server app to open.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aplicación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Application"
           }
         }
       }
@@ -116,6 +600,52 @@
         }
       }
     },
+    "Collective" : {
+      "comment" : "Title of the Shortcuts action parameter that selects which collective to open.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kollektiv"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colectivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collectif"
+          }
+        }
+      }
+    },
+    "collective page" : {
+      "comment" : "Synonym Siri accepts for the collective-page entity type.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kollektivseite"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "página de colectivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "page de collectif"
+          }
+        }
+      }
+    },
     "Connect" : {
       "comment" : "Accessibility label of the icon-only button that starts signing in to the entered server address on the iOS sign-in screen.",
       "localizations" : {
@@ -135,6 +665,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Se connecter"
+          }
+        }
+      }
+    },
+    "Conversation" : {
+      "comment" : "Title of the Shortcuts action parameter that selects which Nextcloud Talk conversation to open.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unterhaltung"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conversación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conversation"
           }
         }
       }
@@ -232,6 +785,263 @@
         }
       }
     },
+    "Name" : {
+      "comment" : "Title of the Nextcloud-server-app entity's name property, shown by the Shortcuts app when it lists the entity's properties.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nombre"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nom"
+          }
+        }
+      }
+    },
+    "Nextcloud" : {
+      "comment" : "Subtitle of a Nextcloud-server-app entity in Spotlight results and the Shortcuts parameter picker, naming the server product the app comes from. A product name, so it is not translated.",
+      "shouldTranslate" : false
+    },
+    "Nextcloud app" : {
+      "comment" : "Synonym Siri accepts for the Nextcloud-server-app entity type.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nextcloud-App"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "app de Nextcloud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "app Nextcloud"
+          }
+        }
+      }
+    },
+    "Nextcloud collective" : {
+      "comment" : "Name of the Nextcloud-collective entity type, shown wherever the Shortcuts app names the kind of value.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nextcloud-Kollektiv"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "colectivo de Nextcloud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "collectif Nextcloud"
+          }
+        }
+      }
+    },
+    "Nextcloud collective page" : {
+      "comment" : "Name of the collective-page entity type, shown wherever the Shortcuts app names the kind of value.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nextcloud-Kollektivseite"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "página de colectivo de Nextcloud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "page de collectif Nextcloud"
+          }
+        }
+      }
+    },
+    "Nextcloud Collectives collective" : {
+      "comment" : "Synonym Siri accepts for the Nextcloud-collective entity type.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nextcloud-Collectives-Kollektiv"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "colectivo de Nextcloud Collectives"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "collectif Nextcloud Collectives"
+          }
+        }
+      }
+    },
+    "Nextcloud conversation" : {
+      "comment" : "Synonym Siri accepts for the Nextcloud-Talk-conversation entity type.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nextcloud-Unterhaltung"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "conversación de Nextcloud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "conversation Nextcloud"
+          }
+        }
+      }
+    },
+    "Nextcloud note" : {
+      "comment" : "Name of the Nextcloud-note entity type, shown wherever the Shortcuts app names the kind of value.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nextcloud-Notiz"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "nota de Nextcloud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "note Nextcloud"
+          }
+        }
+      }
+    },
+    "Nextcloud Notes note" : {
+      "comment" : "Synonym Siri accepts for the Nextcloud-note entity type.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nextcloud-Notes-Notiz"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "nota de Nextcloud Notes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "note Nextcloud Notes"
+          }
+        }
+      }
+    },
+    "Nextcloud server app" : {
+      "comment" : "Display name of the Nextcloud-server-app entity type shown in Spotlight, Siri, and the Shortcuts app.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nextcloud-Server-App"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aplicación del servidor Nextcloud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Application du serveur Nextcloud"
+          }
+        }
+      }
+    },
+    "Nextcloud Talk conversation" : {
+      "comment" : "Name of the Nextcloud-Talk-conversation entity type, shown wherever the Shortcuts app names the kind of value.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nextcloud-Talk-Unterhaltung"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "conversación de Nextcloud Talk"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "conversation Nextcloud Talk"
+          }
+        }
+      }
+    },
+    "Note" : {
+      "comment" : "Title of the Shortcuts action parameter that selects which note to open.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notiz"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nota"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Note"
+          }
+        }
+      }
+    },
     "Notifications" : {
       "comment" : "A menu item in the account menu that opens the connected server's own notifications panel in the web view. Shown only while notifications are waiting.",
       "localizations" : {
@@ -251,6 +1061,259 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Notifications"
+          }
+        }
+      }
+    },
+    "Open a collective in Nextcloud Collectives." : {
+      "comment" : "Description of the Shortcuts action that opens a collective.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffnet ein Kollektiv in Nextcloud Collectives."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre un colectivo en Nextcloud Collectives."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre un collectif dans Nextcloud Collectives."
+          }
+        }
+      }
+    },
+    "Open a conversation in Nextcloud Talk." : {
+      "comment" : "Description of the Shortcuts action that opens a Nextcloud Talk conversation.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffnet eine Unterhaltung in Nextcloud Talk."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre una conversación en Nextcloud Talk."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre une conversation dans Nextcloud Talk."
+          }
+        }
+      }
+    },
+    "Open a Nextcloud server app." : {
+      "comment" : "Description of the Shortcuts action that opens a Nextcloud server app.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine Nextcloud-Server-App öffnen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre una aplicación del servidor Nextcloud."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir une application du serveur Nextcloud."
+          }
+        }
+      }
+    },
+    "Open a note in Nextcloud Notes." : {
+      "comment" : "Description of the Shortcuts action that opens a note.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffnet eine Notiz in Nextcloud Notes."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre una nota en Nextcloud Notes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre une note dans Nextcloud Notes."
+          }
+        }
+      }
+    },
+    "Open a page of a collective in Nextcloud Collectives." : {
+      "comment" : "Description of the Shortcuts action that opens one page of a collective.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffnet eine Seite eines Kollektivs in Nextcloud Collectives."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre una página de un colectivo en Nextcloud Collectives."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre une page d'un collectif dans Nextcloud Collectives."
+          }
+        }
+      }
+    },
+    "Open Nextcloud App" : {
+      "comment" : "Title of the Shortcuts action and Siri App Shortcut that opens a Nextcloud server app in Cirruscope.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nextcloud-App öffnen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir app de Nextcloud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir une app Nextcloud"
+          }
+        }
+      }
+    },
+    "Open Nextcloud Collective" : {
+      "comment" : "Title of the Shortcuts action that opens a collective.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nextcloud-Kollektiv öffnen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir colectivo de Nextcloud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir un collectif Nextcloud"
+          }
+        }
+      }
+    },
+    "Open Nextcloud Collective Page" : {
+      "comment" : "Title of the Shortcuts action that opens one page of a collective.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nextcloud-Kollektivseite öffnen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir página de colectivo de Nextcloud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir une page de collectif Nextcloud"
+          }
+        }
+      }
+    },
+    "Open Nextcloud Note" : {
+      "comment" : "Title of the Shortcuts action that opens a note.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nextcloud-Notiz öffnen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir nota de Nextcloud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir une note Nextcloud"
+          }
+        }
+      }
+    },
+    "Open Nextcloud Talk Conversation" : {
+      "comment" : "Title of the Shortcuts action that opens a Nextcloud Talk conversation.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nextcloud-Talk-Unterhaltung öffnen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir conversación de Nextcloud Talk"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir une conversation Nextcloud Talk"
+          }
+        }
+      }
+    },
+    "Page" : {
+      "comment" : "Title of the Shortcuts action parameter that selects which page of a collective to open.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seite"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Página"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Page"
           }
         }
       }
@@ -347,6 +1410,29 @@
         }
       }
     },
+    "server app" : {
+      "comment" : "Synonym Siri accepts for the Nextcloud-server-app entity type.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server-App"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "app del servidor"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "application du serveur"
+          }
+        }
+      }
+    },
     "Settings" : {
       "comment" : "A menu item in the account menu that opens the connected server's personal settings page in the web view.",
       "localizations" : {
@@ -412,6 +1498,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Assistance"
+          }
+        }
+      }
+    },
+    "Talk conversation" : {
+      "comment" : "Synonym Siri accepts for the Nextcloud-Talk-conversation entity type.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Talk-Unterhaltung"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "conversación de Talk"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "conversation Talk"
           }
         }
       }
@@ -646,6 +1755,121 @@
         }
       }
     },
+    "Which app?" : {
+      "comment" : "Prompt asking which Nextcloud server app to open when the Shortcuts or Siri parameter has no value.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welche App?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué aplicación?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quelle application ?"
+          }
+        }
+      }
+    },
+    "Which collective?" : {
+      "comment" : "Prompt shown when the Shortcuts action needs to be told which collective to open.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welches Kollektiv?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué colectivo?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quel collectif ?"
+          }
+        }
+      }
+    },
+    "Which conversation?" : {
+      "comment" : "Prompt shown when the Shortcuts action needs to be told which Nextcloud Talk conversation to open.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welche Unterhaltung?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué conversación?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quelle conversation ?"
+          }
+        }
+      }
+    },
+    "Which note?" : {
+      "comment" : "Prompt shown when the Shortcuts action needs to be told which note to open.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welche Notiz?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué nota?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quelle note ?"
+          }
+        }
+      }
+    },
+    "Which page?" : {
+      "comment" : "Prompt shown when the Shortcuts action needs to be told which page of a collective to open.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welche Seite?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué página?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quelle page ?"
+          }
+        }
+      }
+    },
     "Your Nextcloud credentials are no longer valid, so Cirruscope signed you out. Sign in again to continue." : {
       "comment" : "Alert message shown when the app signs the user out because the server rejected the stored credentials.",
       "localizations" : {
@@ -688,75 +1912,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Votre expérience Nextcloud, sublimée."
-          }
-        }
-      }
-    },
-    "“%@” is not a valid server name. Please check the address and try again." : {
-      "comment" : "Error shown when the server name in the entered address cannot name a server; the placeholder is that name.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "“%@” ist kein gültiger Servername. Bitte überprüfen Sie die Adresse und versuchen Sie es erneut."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "“%@” no es un nombre de servidor válido. Comprueba la dirección y vuelve a intentarlo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "“%@” n'est pas un nom de serveur valide. Veuillez vérifier l'adresse et réessayer."
-          }
-        }
-      }
-    },
-    "“%@” is not a valid URL. Please check the address and try again." : {
-      "comment" : "Alert message shown when the entered server address is not a valid URL; the placeholder is the address the user typed.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "“%@” ist keine gültige URL. Bitte überprüfen Sie die Adresse und versuchen Sie es erneut."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "“%@” no es una URL válida. Comprueba la dirección y vuelve a intentarlo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "“%@” n'est pas une URL valide. Veuillez vérifier l'adresse et réessayer."
-          }
-        }
-      }
-    },
-    "“%lld” is not a valid port number. Please enter a port between 1 and 65535." : {
-      "comment" : "Error shown when the port in the entered server address is out of range; the placeholder is that port.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "“%lld” ist keine gültige Portnummer. Bitte geben Sie einen Port zwischen 1 und 65535 ein."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "“%lld” no es un número de puerto válido. Introduce un puerto entre 1 y 65535."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "“%lld” n'est pas un numéro de port valide. Veuillez saisir un port compris entre 1 et 65535."
           }
         }
       }

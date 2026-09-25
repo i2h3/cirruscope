@@ -41,8 +41,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NotificationCenter.default.addObserver(self, selector: #selector(downloadDidStart), name: .downloadDidStart, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(serverCredentialsRejected), name: .serverCredentialsRejected, object: nil)
         rebuildServerAppsMenu()
+        // Tell the App Intents layer how this app opens a server app, before anything can ask it to. An intent run
+        // from Spotlight or Siri while Cirruscope was not running launches it and reaches `EntityOpening` on the
+        // way, which may be before this line; that request is latched rather than dropped, and installing here is
+        // what serves it.
+        EntityOpening.shared.install { [weak self] request in
+            switch request {
+                case let .serverApp(app):
+                    self?.openServerApp(app)
+
+                case let .page(target):
+                    // A page rather than an app, so it opens in its own window rather than reusing one: the window
+                    // already showing Talk is showing a different conversation, and bringing it forward unchanged
+                    // would look like the app had ignored what was asked for.
+                    self?.presentWebViewWindow(targetURL: target.url)
+            }
+        }
         // Keep Spotlight and the Siri/Shortcuts app-parameter options in step with the server's app list.
         ServerAppIndexer.shared.start()
+        ConversationIndexer.shared.start()
+        NoteIndexer.shared.start()
+        CollectiveIndexer.shared.start()
         // Watch the macOS accent color and appearance so open web views keep matching the app's own accent.
         AccentColorMonitor.shared.start()
         presentInitialWindow(forLaunch: true)
@@ -79,11 +98,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 
-    /// `application(_:continue:restorationHandler:)` opens the Nextcloud server app a user selected from a Spotlight result.
+    /// `application(_:continue:restorationHandler:)` opens whatever a user selected from a Spotlight result.
     ///
-    /// macOS delivers the selection here as a `CSSearchableItemActionType` activity (Core Spotlight's AppKit contract). The handling lives in `openServerAppFromSpotlight(_:)` in the `AppDelegate+Spotlight` extension, so this file stays free of App Intents and Core Spotlight imports.
+    /// macOS delivers the selection here as a `CSSearchableItemActionType` activity (Core Spotlight's AppKit contract). The handling lives in `openSpotlightSelection(_:)` in the `AppDelegate+Spotlight` extension, so this file stays free of App Intents and Core Spotlight imports.
     func application(_: NSApplication, continue userActivity: NSUserActivity, restorationHandler _: @escaping ([any NSUserActivityRestoring]) -> Void) -> Bool {
-        openServerAppFromSpotlight(userActivity)
+        openSpotlightSelection(userActivity)
     }
 
     func applicationWillTerminate(_: Notification) {
@@ -169,6 +188,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                         }
 
                         await ServerConnection.refreshNavigationApps(using: server)
+                        // After the apps and after the first window is already on screen, because this is the
+                        // slower of the two and nothing waits on it: what it feeds is Spotlight and the Shortcuts
+                        // app, neither of which is looking yet.
+                        await ServerConnection.refreshConversations(using: server)
+                        await ServerConnection.refreshNotes(using: server)
+                        await ServerConnection.refreshCollectives(using: server)
                         // Begin (or restart) tracking unread notifications for the Dock badge and banners.
                         NotificationMonitor.shared.start(for: server, capabilities: capabilities)
 

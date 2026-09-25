@@ -68,7 +68,7 @@ struct AppShortcutAssignmentTests {
 
     @Test
     func `A shortcut Cirruscope's own menu already uses is still stored`() {
-        let reserving = AccountStoreHarness(reserving: [commandOne])
+        let reserving = AccountStoreHarness(isReservedShortcut: ReservedShortcuts.claiming([commandOne]))
         reserving.store.persist(serverApps: [ServerAppFixture.files, ServerAppFixture.photos])
         reserving.store.setShortcut(commandOne, forAppID: "files")
 

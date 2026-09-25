@@ -1,0 +1,49 @@
+// SPDX-FileCopyrightText: 2026 Iva Horn
+// SPDX-License-Identifier: MIT
+
+import AppIntents
+import os
+
+/// `OpenServerAppIntent` opens a chosen Nextcloud server app inside Cirruscope, backing the Shortcuts "Open Nextcloud App" action, the Siri phrases declared in `ServerAppShortcuts`, and activation of a `ServerAppEntity` Spotlight result.
+///
+/// It conforms to `OpenIntent`, and that conformance is what makes the `target` parameter usable inside an App Shortcut phrase: it is the only thing that records the `com.apple.link.systemProtocol.OpenEntity` system protocol in the app's extracted App Intents metadata, and without that entry the system does not recognise `${target}` as a phrase token — it skips every phrase template mentioning the parameter ("Skipping phrase template with an unrecognized token"), donates nothing to Siri, and a spoken phrase then merely brings the app forward. Established by building Apple's "Adopting App Intents to support system experiences" sample and diffing its metadata against this app's: its `OpenLandmarkIntent` carries that system protocol while a plain `AppIntent` records an empty `systemProtocols`. The second half of the requirement lives on the entity — `ServerAppEntity.typeDisplayRepresentation` must supply a `numericFormat`.
+///
+/// `OpenIntent` also supplies `openAppWhenRun`, so running the intent foregrounds Cirruscope, plus a default `perform()` that only opens the app. The override below is what actually navigates: it re-resolves the selected `ServerAppEntity` to a fresh `ServerAppTransferObject` through `AccountStore` — rather than trusting a possibly-stale donated entity — and hands it to `EntityOpening`, which each app installs its own way of opening into — on macOS the focus-an-existing-window-or-open-a-new-one logic the View and Dock menus already use, on iOS a load into the one web view there is. That indirection is not optional: App Intents instantiates an intent as a plain value through a synthesized `init()`, so there is nowhere to hand it a way of opening anything. Apple's sample overrides `perform()` on macOS for the same reason. Every branch logs at `.notice` (misses at `.error`) with the app id in the clear, so a log capture shows exactly which app was requested and whether it opened; the logger is `static` because App Intents instantiates the intent as a plain value with a synthesized `init()`.
+struct OpenServerAppIntent: OpenIntent {
+    /// `title` is the action's name in the Shortcuts app.
+    static let title: LocalizedStringResource = "Open Nextcloud App"
+
+    /// `description` explains the action in the Shortcuts app. It names no app because App Intents metadata is extracted statically at build time — a runtime value such as `Bundle.main.name` cannot be embedded — and the Shortcuts app already labels every action with the owning app's name and icon.
+    static let description = IntentDescription("Open a Nextcloud server app.")
+
+    /// `logger` records intent activity under the `OpenServerAppIntent` category.
+    private static let logger = Logger(for: OpenServerAppIntent.self)
+
+    /// `target` is the server app to open, chosen from `ServerAppEntity.defaultQuery`.
+    ///
+    /// `OpenIntent` requires exactly this name, and the App Shortcut phrases interpolate it as `${target}`, so renaming it would both break the conformance and invalidate every localized phrase.
+    @Parameter(title: "App", requestValueDialog: "Which app?")
+    var target: ServerAppEntity
+
+    /// `perform()` resolves `target` through `EntityActivation` and opens what it answers, or asks the user to pick another value when the account no longer has it.
+    ///
+    /// The resolution is shared with `SpotlightSelection` rather than written here, so that running this action and tapping the matching Spotlight result cannot come to different conclusions about the same entity.
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        Self.logger.notice("perform: requested to open server app \"\(target.id, privacy: .public)\"")
+
+        switch EntityActivation.outcome(forServerAppID: target.id) {
+            case let .open(request):
+                EntityOpening.shared.open(request)
+                return .result()
+
+            case .missing:
+                Self.logger.error("perform: the account no longer has this server app; requesting a different value")
+                throw $target.needsValueError()
+
+            case .notAddressable:
+                Self.logger.error("perform: nothing could be opened for this server app")
+                return .result()
+        }
+    }
+}
