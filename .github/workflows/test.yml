@@ -24,7 +24,13 @@ permissions:
 jobs:
   test:
     name: Test
-    runs-on: macos-26
+    # `xcode-27` rather than `macos-26`, and this is a hard requirement rather than a preference for something
+    # newer: the App Intents `IndexedEntityQuery` conformances need `CSSearchableIndexDescription`, which does not
+    # exist in the SDK Xcode 26.6 ships. `@available` governs when a symbol may be used at run time and cannot
+    # conjure one the SDK has never heard of, so an older image fails with "Cannot find type … in scope" before
+    # availability is consulted. The image is in public preview and arm64-only; `macos-26` is what to fall back to
+    # if it is withdrawn, which would mean dropping those conformances until a GA image carries the SDK.
+    runs-on: xcode-27
     steps:
       - name: Checkout
         uses: actions/checkout@v5
