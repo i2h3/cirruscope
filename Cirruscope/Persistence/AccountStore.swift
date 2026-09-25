@@ -18,7 +18,9 @@ import SwiftData
 @MainActor
 final class AccountStore {
     /// `logger` records store activity under the `AccountStore` category.
-    private let logger = Logger(for: AccountStore.self)
+    ///
+    /// `internal` rather than `private` for the reason `ServerConnection.logger` is: this store is one type spread over a file per domain, and each of those files logs what it wrote. Under one category the whole of a refresh — fetched, persisted, announced, donated — reads as one story in a capture instead of as three unrelated ones.
+    let logger = Logger(for: AccountStore.self)
 
     /// `container` is the SwiftData container this store owns every read and write of.
     ///
@@ -100,7 +102,7 @@ final class AccountStore {
         do {
             try context.save()
         } catch {
-            logger.error("Could not save the account store: \(error.localizedDescription)")
+            logger.error("Could not save the account store: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -133,6 +135,7 @@ final class AccountStore {
     ///
     /// `ServerAddressViewController` calls it after a successful Login Flow v2 sign-in.
     func connect(to address: URL) {
+        logger.notice("Recording the connected server address")
         currentAccount(createIfNeeded: true)?.serverAddress = address
         save()
     }
@@ -154,7 +157,10 @@ final class AccountStore {
     /// It is the storage half of `disconnect()`, separated so it can be exercised on its own: `disconnect()`'s remaining two steps empty `AssetCache` and clear the `Keychain`, neither of which a test can run without destroying the developer's real cached assets and stored credentials. Clearing `cachedAccount` is what keeps a later write from landing on the deleted object instead of a fresh account.
     func deleteAccount() {
         if let account = currentAccount(createIfNeeded: false) {
+            logger.notice("Deleting the connected account and everything cascading from it")
             context.delete(account)
+        } else {
+            logger.notice("Asked to delete the connected account, of which there is none")
         }
 
         cachedAccount = nil
@@ -300,6 +306,9 @@ final class AccountStore {
         }
 
         var incomingIDs: Set<String> = []
+        var inserted = 0
+        var updated = 0
+        var pruned = 0
 
         // Skip an id already seen in this list rather than inserting a second row for it: two rows sharing one id
         // would leave `serverApps`' name-then-identifier ordering with a tie it cannot break, so which of them a
@@ -311,15 +320,19 @@ final class AccountStore {
                 existing.order = item.order
                 existing.href = item.href
                 existing.name = item.name
+                updated += 1
             } else {
                 context.insert(ServerApp(appID: item.id, order: item.order, href: item.href, name: item.name, account: account))
+                inserted += 1
             }
         }
 
         for app in existingApps where incomingIDs.contains(app.appID) == false {
             context.delete(app)
+            pruned += 1
         }
 
+        logger.notice("Persisting server apps: \(inserted, privacy: .public) inserted, \(updated, privacy: .public) updated, \(pruned, privacy: .public) pruned, \(incomingIDs.count, privacy: .public) stored")
         save()
         notifyChange(.serverAppsDidChange)
     }

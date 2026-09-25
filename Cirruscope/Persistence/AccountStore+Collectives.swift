@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 import Foundation
+import os
 import SwiftData
 
 /// `AccountStore`'s collectives and the pages within them: reading them back as value snapshots, and writing what a refresh found.
@@ -79,6 +80,9 @@ extension AccountStore {
         }
 
         var incomingIDs: Set<Int> = []
+        var inserted = 0
+        var updated = 0
+        var pruned = 0
 
         for collective in collectives where incomingIDs.contains(collective.id) == false {
             incomingIDs.insert(collective.id)
@@ -87,15 +91,19 @@ extension AccountStore {
                 existing.name = collective.name
                 existing.slug = collective.slug
                 existing.emoji = collective.emoji
+                updated += 1
             } else {
                 context.insert(ServerCollective(collectiveID: collective.id, name: collective.name, slug: collective.slug, emoji: collective.emoji, account: account))
+                inserted += 1
             }
         }
 
         for collective in existingCollectives where incomingIDs.contains(collective.collectiveID) == false {
             context.delete(collective)
+            pruned += 1
         }
 
+        logger.notice("Persisting collectives: \(inserted, privacy: .public) inserted, \(updated, privacy: .public) updated, \(pruned, privacy: .public) pruned, \(incomingIDs.count, privacy: .public) stored")
         save()
         notifyChange(.collectivesDidChange)
     }
@@ -115,6 +123,9 @@ extension AccountStore {
         }
 
         var incomingIDs: Set<Int> = []
+        var inserted = 0
+        var updated = 0
+        var pruned = 0
 
         for page in pages where incomingIDs.contains(page.id) == false {
             incomingIDs.insert(page.id)
@@ -127,15 +138,19 @@ extension AccountStore {
                 existing.filePath = page.filePath
                 existing.isLandingPage = page.isLandingPage
                 existing.modification = page.modification
+                updated += 1
             } else {
                 context.insert(ServerCollectivePage(pageID: page.id, title: page.title, slug: page.slug, emoji: page.emoji, fileName: page.fileName, filePath: page.filePath, isLandingPage: page.isLandingPage, modification: page.modification, collective: collective))
+                inserted += 1
             }
         }
 
         for page in existingPages where incomingIDs.contains(page.pageID) == false {
             context.delete(page)
+            pruned += 1
         }
 
+        logger.notice("Persisting the pages of collective \(collectiveID, privacy: .public): \(inserted, privacy: .public) inserted, \(updated, privacy: .public) updated, \(pruned, privacy: .public) pruned, \(incomingIDs.count, privacy: .public) stored")
         save()
         notifyChange(.collectivesDidChange)
     }
@@ -151,6 +166,8 @@ extension AccountStore {
         guard account.collectives.isEmpty == false else {
             return
         }
+
+        logger.notice("Dropping every stored collective (\(account.collectives.count, privacy: .public)) and the pages within them")
 
         for collective in account.collectives {
             context.delete(collective)

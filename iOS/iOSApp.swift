@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Iva Horn
 // SPDX-License-Identifier: MIT
 
+import os
 import SwiftUI
 
 ///
@@ -8,6 +9,13 @@ import SwiftUI
 ///
 @main
 struct iOSApp: App {
+    ///
+    /// Records what each scene phase set in motion, under the `iOSApp` category.
+    ///
+    /// Static because an `App` is a value type SwiftUI rebuilds, and because what is logged here belongs to the process rather than to any one instance of it.
+    ///
+    private static let logger = Logger(for: iOSApp.self)
+
     ///
     /// Global app state, built from whatever credentials this device already holds and handed to every screen.
     ///
@@ -52,6 +60,7 @@ struct iOSApp: App {
     private func handle(_ phase: ScenePhase) {
         switch phase {
             case .active:
+                Self.logger.notice("The app became active\(self.store.account == nil ? " with no account configured" : "", privacy: .public)")
                 arm()
                 store.refreshUnreadNotifications()
 
@@ -60,6 +69,7 @@ struct iOSApp: App {
                 // `applicationDidFinishLaunching(_:)`, so it is called on every activation and is a no-op after the
                 // first — which also means the first donation happens from what was persisted, before the server
                 // has been asked anything.
+                Self.logger.notice("Starting the Spotlight indexers; each is a no-op after the first activation")
                 ServerAppIndexer.shared.start()
                 ConversationIndexer.shared.start()
                 NoteIndexer.shared.start()
@@ -70,6 +80,7 @@ struct iOSApp: App {
                 }
 
             case .background:
+                Self.logger.notice("The app went to the background")
                 arm()
 
             default:

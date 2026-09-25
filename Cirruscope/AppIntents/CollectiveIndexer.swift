@@ -35,6 +35,7 @@ final class CollectiveIndexer: NSObject {
     /// `start()` registers the change observer and performs the initial index over what was already persisted from a previous run.
     func start() {
         guard hasStarted == false else {
+            logger.debug("Already started; ignoring this call")
             return
         }
 
@@ -47,6 +48,7 @@ final class CollectiveIndexer: NSObject {
     /// `collectivesDidChange()` reindexes when `AccountStore` reports the collectives or their pages changed, deferring to the next main-thread turn so it never runs reentrantly inside the mutation that posted the notification.
     @objc
     private func collectivesDidChange() {
+        logger.debug("Received collectivesDidChange; scheduling a reindex")
         DispatchQueue.main.async { [weak self] in
             self?.reindex()
         }
@@ -73,6 +75,7 @@ final class CollectiveIndexer: NSObject {
     /// `donateCollectives()` donates the collectives the account currently has.
     func donateCollectives() async {
         let collectives = AccountStore.shared.collectives.map(CollectiveEntity.init)
+        logger.notice("Donating \(collectives.count, privacy: .public) collective(s)")
         await collectiveIndex.donate(collectives)
     }
 
@@ -80,7 +83,13 @@ final class CollectiveIndexer: NSObject {
     ///
     /// A query that cannot enumerate them donates none, which removes whatever is still in the index. That is the honest answer rather than the cautious one: leaving them would keep results that open pages this app can no longer describe.
     func donatePages() async {
-        let pages = try? await CollectivePageEntity.defaultQuery.allEntities()
-        await pageIndex.donate(pages ?? [])
+        guard let pages = try? await CollectivePageEntity.defaultQuery.allEntities() else {
+            logger.error("The collective page query could not enumerate the pages; donating none, which removes any still in the index")
+            await pageIndex.donate([])
+            return
+        }
+
+        logger.notice("Donating \(pages.count, privacy: .public) collective page(s)")
+        await pageIndex.donate(pages)
     }
 }

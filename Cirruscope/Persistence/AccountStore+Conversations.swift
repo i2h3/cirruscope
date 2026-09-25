@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 import Foundation
+import os
 import SwiftData
 
 /// `AccountStore`'s Talk conversations: reading them back as value snapshots, and writing what a refresh found.
@@ -50,6 +51,9 @@ extension AccountStore {
         }
 
         var incomingTokens: Set<String> = []
+        var inserted = 0
+        var updated = 0
+        var pruned = 0
 
         // A token already seen in this list is skipped rather than inserted twice, matching `persist(serverApps:)`:
         // two rows sharing one identity would leave the read's ordering with a tie it cannot break. No real server
@@ -62,15 +66,19 @@ extension AccountStore {
                 existing.kind = conversation.kind.rawValue
                 existing.lastActivity = conversation.lastActivity
                 existing.avatarVersion = conversation.avatarVersion
+                updated += 1
             } else {
                 context.insert(TalkConversation(token: conversation.id, name: conversation.name, kind: conversation.kind.rawValue, lastActivity: conversation.lastActivity, avatarVersion: conversation.avatarVersion, account: account))
+                inserted += 1
             }
         }
 
         for conversation in existingConversations where incomingTokens.contains(conversation.token) == false {
             context.delete(conversation)
+            pruned += 1
         }
 
+        logger.notice("Persisting conversations: \(inserted, privacy: .public) inserted, \(updated, privacy: .public) updated, \(pruned, privacy: .public) pruned, \(incomingTokens.count, privacy: .public) stored")
         save()
         notifyChange(.conversationsDidChange)
     }
@@ -86,6 +94,8 @@ extension AccountStore {
         guard account.conversations.isEmpty == false else {
             return
         }
+
+        logger.notice("Dropping every stored conversation (\(account.conversations.count, privacy: .public))")
 
         for conversation in account.conversations {
             context.delete(conversation)
