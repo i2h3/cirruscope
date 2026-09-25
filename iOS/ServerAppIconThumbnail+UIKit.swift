@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MIT
 
 import CoreGraphics
-import os
 import UIKit
 
 /// This extension resolves the colour iOS fills a donated app glyph with.

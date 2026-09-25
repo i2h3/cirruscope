@@ -9,7 +9,7 @@ import Foundation
 ///
 /// It is the only entity here whose subtitle is not a product name, and that is deliberate. A note's category is absent on most notes, so it would be a subtitle that comes and goes; a page always belongs to exactly one collective, and which collective a page is in is the thing a person needs to tell two pages called "Notes" apart. The product name moves into the keywords, where it still finds the page.
 ///
-/// It donates no image, for the reason a collective donates none: what decorates a page is an emoji, and that is already in the title.
+/// Its image is that emoji where it has one, drawn onto the same plate a server app's icon is drawn onto, and the Collectives app's own mark where it has none. The emoji is in the title as well, and carrying it in both places is the point rather than a duplication: a Spotlight row is read as a picture first and a line of text second, and pages within one collective are exactly the results a shared app mark would fail to tell apart.
 struct CollectivePageEntity: IndexedEntity {
     /// `defaultQuery` is the query the App Intents system uses to enumerate, resolve, and suggest these entities.
     static let defaultQuery = CollectivePageEntityQuery()
@@ -48,21 +48,40 @@ struct CollectivePageEntity: IndexedEntity {
         return "\(emoji) \(page.title)"
     }
 
+    /// `iconData` is the page's own emoji on the plated artwork, or the Collectives app's icon where it has none.
+    ///
+    /// Carried rather than looked up, for the reason `collectiveName` is: `displayRepresentation` is reached from outside the main actor and neither the store nor the icons are.
+    var iconData: Data?
+
     /// `displayRepresentation` is how a single page appears in Spotlight results, the Shortcuts parameter picker, and Siri.
     var displayRepresentation: DisplayRepresentation {
-        DisplayRepresentation(title: "\(name)", subtitle: "\(collectiveName)")
+        guard let icon = iconData else {
+            return DisplayRepresentation(title: "\(name)", subtitle: "\(collectiveName)")
+        }
+
+        return DisplayRepresentation(title: "\(name)", subtitle: "\(collectiveName)", image: DisplayRepresentation.Image(data: icon))
     }
 
     /// `attributeSet` is the Spotlight metadata donated for this entity, keyworded with the server product, the owning app and the collective so a page is found by any of the three.
     var attributeSet: CSSearchableItemAttributeSet {
         let attributes = defaultAttributeSet
+        attributes.contentDescription = collectiveName
+        attributes.contentModificationDate = page.modification
         attributes.keywords = ["Nextcloud", "Collectives", collectiveName, page.title]
+        attributes.thumbnailData = iconData
         return attributes
     }
 
     /// `init(_:inCollective:)` bridges a `CollectivePageTransferObject` snapshot into an entity, taking the name of the collective it belongs to alongside it.
+    @MainActor
     init(_ page: CollectivePageTransferObject, inCollective collectiveName: String) {
         self.page = page
         self.collectiveName = collectiveName
+
+        guard let serverAddress = AccountStore.shared.serverAddress else {
+            return
+        }
+
+        iconData = ServerAppIconThumbnail.pngData(forEmoji: page.emoji, orAppID: CollectiveWebRoute.appID, serverAddress: serverAddress)
     }
 }

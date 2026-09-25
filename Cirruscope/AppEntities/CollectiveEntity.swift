@@ -45,20 +45,43 @@ struct CollectiveEntity: IndexedEntity {
         return "\(emoji) \(collective.name)"
     }
 
+    /// `iconData` is the collective's own emoji on the plated artwork, or the Collectives app's icon where it has none.
+    ///
+    /// Carried rather than looked up, for the reason `ServerAppEntity` carries its own: these representations are read from outside the main actor and travel out of the process, while the icon store is neither.
+    var iconData: Data?
+
     /// `displayRepresentation` is how a single collective appears in Spotlight results, the Shortcuts parameter picker, and Siri.
     var displayRepresentation: DisplayRepresentation {
-        DisplayRepresentation(title: "\(name)", subtitle: "Nextcloud Collectives")
+        guard let icon = iconData else {
+            return DisplayRepresentation(title: "\(name)", subtitle: Self.subtitle)
+        }
+
+        return DisplayRepresentation(title: "\(name)", subtitle: Self.subtitle, image: DisplayRepresentation.Image(data: icon))
     }
+
+    /// `subtitle` is the one line of context a collective carries besides its name, in the one place both surfaces that show it read from.
+    ///
+    /// Stated once because it reaches Spotlight twice by two different routes — as the display representation's subtitle and as the searchable item's `contentDescription` — and a result whose two descriptions disagreed would be this app contradicting itself.
+    private static let subtitle: LocalizedStringResource = "Nextcloud Collectives"
 
     /// `attributeSet` is the Spotlight metadata donated for this entity, adding keywords so the server product and the owning app both find a collective whose own name mentions neither.
     var attributeSet: CSSearchableItemAttributeSet {
         let attributes = defaultAttributeSet
+        attributes.contentDescription = String(localized: Self.subtitle)
         attributes.keywords = ["Nextcloud", "Collectives", collective.name]
+        attributes.thumbnailData = iconData
         return attributes
     }
 
     /// `init(_:)` bridges a `CollectiveTransferObject` snapshot into an entity, keeping the value type itself free of any App Intents dependency.
+    @MainActor
     init(_ collective: CollectiveTransferObject) {
         self.collective = collective
+
+        guard let serverAddress = AccountStore.shared.serverAddress else {
+            return
+        }
+
+        iconData = ServerAppIconThumbnail.pngData(forEmoji: collective.emoji, orAppID: CollectiveWebRoute.appID, serverAddress: serverAddress)
     }
 }
