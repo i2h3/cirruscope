@@ -3,7 +3,7 @@
 
 import Foundation
 
-/// This extension declares the in-process notifications `AccountStore` posts, which are shared because the store is.
+/// This extension declares the in-process notifications the shared layer posts, which are shared because the store is. All but one are `AccountStore`'s; `donatedArtworkDidChange` is posted by both it and `ServerConnection`, and is here because a name belongs in one place rather than beside whichever type happens to post it.
 ///
 /// They sit here rather than beside the rest of the app's notification names in `macOS/Settings/NotificationName.swift` for one reason: a name has to be visible where it is posted, and the store is compiled into both apps. What observes them is still platform code — the View and Dock menus and the Apps settings tab on macOS, the title menu on iOS — but what announces them is not, and a second declaration per platform would let the two drift on the string.
 ///
@@ -27,4 +27,10 @@ extension Notification.Name {
     ///
     /// One name for both, where every other domain has its own, because a page is only ever reached through its collective: nothing observes one without observing the other, and two names would mean two reindex passes for one refresh.
     static let collectivesDidChange = Notification.Name("CollectivesDidChange")
+
+    /// `donatedArtworkDidChange` is posted whenever something the Spotlight artwork is drawn from lands, so every index that draws one is donated again with the picture in it.
+    ///
+    /// It exists because the artwork arrives later than the data it belongs to, by two separate routes. An entity's picture needs the owning app's icon, which the app-list refresh downloads, *and* the account's server address, which is what the icons are looked up against — and an entity built before either is in place carries no picture at all and is never redrawn. Both routes have been seen in the field: a fresh install donates before any icon is on disk, and a store whose address was never recorded donates without one indefinitely.
+    /// `ServerAppIndexer` deliberately does not observe it. Everything that posts this also posts `serverAppsDidChange`, which it already hears, so observing both would donate the whole app list twice for one event.
+    static let donatedArtworkDidChange = Notification.Name("DonatedArtworkDidChange")
 }

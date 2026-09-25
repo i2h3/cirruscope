@@ -40,6 +40,11 @@ extension ServerConnection {
     ///
     /// Mapping `Rainmaker.NavigationItem` to `ServerAppTransferObject` happens here, at the boundary where the network library is already in scope, rather than inside the store or on the transfer object itself — the store then depends on nothing but the app's own value types, and the transfer object stays free of logic.
     static func refreshNavigationApps(using server: Server) async {
+        // Before the fetch rather than after it, and unconditionally: this is the one path that runs on every
+        // activation while holding a server the account is actually signed in to, so it is where a store that
+        // never learned its own address gets one. It writes only when the stored value differs.
+        await AccountStore.shared.adopt(serverAddress: server.address)
+
         do {
             let items = try await server.navigation()
             let apps = items.map { ServerAppTransferObject(id: $0.id, order: $0.order, href: $0.href, name: $0.name) }
@@ -53,7 +58,7 @@ extension ServerConnection {
     /// `refreshServerAppIcons(from:using:)` downloads the icon of every app the server just listed, and announces the app list again once they have landed.
     ///
     /// This is the only moment the app learns where an icon lives: the path is part of a navigation response and is deliberately not persisted, since a menu finds an icon again by the app's identifier rather than by where it came from. Fetching here rather than where the menus are built is what keeps the Dock menu — which AppKit asks for and draws in the same breath — free of anything it would have to wait for.
-    /// The second announcement is what redraws the menus with the icons in them; `persist(serverApps:)` has already made the first. It is sent only when something was actually fetched, so an unchanged app list does not rebuild every menu to look exactly as it already did.
+    /// The second announcement is what redraws the menus with the icons in them; `persist(serverApps:)` has already made the first. It is sent only when something was actually fetched, so an unchanged app list does not rebuild every menu to look exactly as it already did. A third name goes out beside it for the domains that draw these icons without owning them — see `Notification.Name.donatedArtworkDidChange`.
     private static func refreshServerAppIcons(from items: [NavigationItem], using server: Server) async {
         guard let credentials = Keychain.credentials(for: server.address) else {
             return
@@ -72,6 +77,11 @@ extension ServerConnection {
         // `postServerAppsDidChange()` hops to the main thread for exactly this reason.
         await MainActor.run {
             NotificationCenter.default.post(name: .serverAppsDidChange, object: nil)
+
+            // The other domains wear these icons too — a note is drawn with the Notes mark, a conversation with
+            // Talk's — and none of them observes the app list. Without this second name they stay pictureless
+            // until their own data next changes, which on a first launch is not until the next refresh.
+            NotificationCenter.default.post(name: .donatedArtworkDidChange, object: nil)
         }
     }
 }

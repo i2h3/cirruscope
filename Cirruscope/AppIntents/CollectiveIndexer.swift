@@ -42,6 +42,10 @@ final class CollectiveIndexer: NSObject {
         hasStarted = true
         logger.notice("Starting the collective indexer")
         NotificationCenter.default.addObserver(self, selector: #selector(collectivesDidChange), name: .collectivesDidChange, object: nil)
+
+        // The artwork arrives separately from the data and later than it, so a donation made before the app
+        // icons were on disk carries no picture. This is what donates again once they are.
+        NotificationCenter.default.addObserver(self, selector: #selector(donatedArtworkDidChange), name: .donatedArtworkDidChange, object: nil)
         reindex()
     }
 
@@ -49,6 +53,15 @@ final class CollectiveIndexer: NSObject {
     @objc
     private func collectivesDidChange() {
         logger.debug("Received collectivesDidChange; scheduling a reindex")
+        DispatchQueue.main.async { [weak self] in
+            self?.reindex()
+        }
+    }
+
+    /// `donatedArtworkDidChange()` donates again once whatever this domain's artwork is drawn from has landed.
+    @objc
+    private func donatedArtworkDidChange() {
+        logger.debug("Received donatedArtworkDidChange; scheduling a reindex so the artwork lands in the index")
         DispatchQueue.main.async { [weak self] in
             self?.reindex()
         }

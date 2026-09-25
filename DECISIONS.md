@@ -212,7 +212,13 @@ So the integration ships, but unannounced: the website's macOS-integration featu
 
 Because the two product names are easy to confuse, and each surface differs in how much context it already gives. What the user opens is a *Nextcloud* app — Files, Notes, Talk — presented *by* Cirruscope, so neither name alone is right everywhere. The rule the strings follow: name the server product only where nothing else identifies what the entry is, and never call these "Cirruscope apps", which would be plainly wrong since the apps belong to the server.
 
-Named, because the surface has no other context: the entity's type name and its numeric form (`Nextcloud server app`, the kind of value the Shortcuts app shows for the parameter), the Spotlight subtitle (`Nextcloud` — a result reading only "Notes" says nothing, and the title is already an app name, so the subtitle need not repeat the word "app"), the Spotlight keywords, and the action's title and description, which are also how someone searching the Shortcuts action list for "Nextcloud" finds it at all.
+Named, because the surface has no other context: the entity's type name and its numeric form (`Nextcloud server app`, the kind of value the Shortcuts app shows for the parameter), the Spotlight subtitle, the Spotlight keywords, and the action's title and description, which are also how someone searching the Shortcuts action list for "Nextcloud" finds it at all.
+
+The subtitles follow one pattern, *`<what it is>` in Nextcloud `<the app it lives in>`* — "Note in Nextcloud Notes", "Conversation in Nextcloud Talk", "Collective in Nextcloud Collectives", "Page in Nextcloud Collectives". Naming the app alone was tried first and read badly on a live account: a row titled with a colleague's name under "Nextcloud Talk" says where the thing came from and leaves what it is to be guessed, Talk holding calls and messages as well as conversations. Both halves are therefore said outright, and said the same way everywhere, so a column of mixed results reads as one list rather than four.
+
+A page pays for that pattern, and knowingly. Its subtitle used to be the name of the collective it belongs to, which is the better answer to "which of my two pages called Notes is this" — but it is also the rarer question, and one row reading "Nextcloud Handbook" among three reading "… in Nextcloud …" reads as a different kind of entry altogether. Which collective a page is in is still carried, by the artwork — that collective's own emoji — and by the keywords.
+
+The server app is the one entity outside the pattern, because it has no app to be *in*: its subtitle stays `Nextcloud`, the title already being an app's name.
 
 Left out, because the context carries it: the intent's parameter is simply `App` with "Which app?" as its prompt, and the parameter-free Siri phrase says "Open an app in Cirruscope". Every phrase must interpolate the application name, so naming the server product there too would put both products in one spoken sentence and imply they are the same thing. A bare "app" is likewise not among the entity type's `synonyms`: too generic to match on without pulling in unrelated utterances. See [`ServerAppEntity`](./Cirruscope/AppEntities/ServerAppEntity.swift) and [`ServerAppShortcuts`](./Cirruscope/AppIntents/ServerAppShortcuts.swift).
 ## Why are the server apps listed alphabetically instead of in the server's own order?
@@ -243,15 +249,28 @@ The server reports how many messages are unread in each conversation and whether
 
 A count that is only sometimes right is worse than no count at all, because the user cannot tell which time it is. The same reasoning is why a row in the activity widget names neither the verb nor the person: the app shows what it can stand behind.
 
-## Why does a collective page open its collective when the app is unsure where the page is?
+## Why is a collective addressed by `<slug>-<id>` rather than by its name?
 
-Because every other address this app builds was read out of the owning app's own routing, and this one could not be.
+Because that is what the app that owns the route matches first, and building the other form is what made both collectives and their pages open the wrong thing on a real server.
 
-Talk's conversation route came from the controller declaring it; the Notes route from that app's `routes.php`, checked in two versions. The Collectives app is installed on none of the Nextcloud instances available here, so its page address was derived instead — from a production URL captured in the wild, plus what the network library documents about the fields. What that showed was a path carrying the page's whole ancestor chain and a `fileId` query item.
+This was for a long time the one address in the app not read out of the owning app's own routing. Talk's conversation route came from the controller declaring it and the Notes route from that app's `routes.php`; the Collectives app is installed on none of the instances available here, so its addresses were derived from a production URL captured in the wild plus what the network library documents about the fields. That produced a bare slug for the collective and, for the page, the whole ancestor chain of titles with a `fileId` query item as a hedge.
 
-So the route is built to fail *visibly* rather than plausibly. The `fileId` is carried because it is the part the server can resolve a page from even when the path segments are not what it expects, which makes the likely failure "the page opens anyway" or "the collective opens" rather than "a different page opens". And when no address for the page can be built at all, the intent opens the **collective** containing it: that address is the better-supported of the two, it is certainly the right neighbourhood, and a person who asked for a page and was shown its collective can see both what happened and where to go next. Opening nothing would read as the app having failed; opening something arbitrary would be worse.
+Both were wrong, and they failed in the way an unverified route does: on a live account every selection resolved, every window opened, and none of them showed what had been asked for — which is indistinguishable from the feature working until somebody looks at the window.
 
-What would settle it, against an instance with the Collectives app installed: whether the collective segment is the slug, the name, or the slug with the identifier appended; whether the page part is the full ancestor chain or a single segment; and whether a correct `fileId` with a wrong path still opens the right page. If the last is true, the first two stop mattering.
+The routing was there to be read the whole time; it is simply not where the other apps keep theirs. Collectives declares a catch-all on the server (`/{path}` → `start#indexPath`) and decides everything in its Vue router, and `src/router.js` declares, in order:
+
+    { path: '/:collectiveSlug-:collectiveId(\\d+)', children: [
+        { path: ':pageSlug-:pageId(\\d+)' },
+        { path: ':page(.*)' } ] },
+    { path: '/:collective', children: [ …the same two… ] },
+
+So each half has a canonical form and a fallback, and the app now builds the canonical one wherever it can: `<slug>-<id>` for the collective and for the page. Both halves come from the server, neither can be ambiguous, and it is the form the app's own links carry.
+
+The fallbacks are kept because they are the documented reality of an older server, not a guess: the library states that a collective's `slug` is `nil` on an instance whose Collectives app predates slugs. Such a collective is addressed by its name, and such a page by its ancestor path — which is the one branch that can still be wrong, and the only one that still carries `fileId`, that being the part the server can resolve a page from when the path is not what it expects.
+
+When no address for a page can be built at all, the intent opens the **collective** containing it. That is certainly the right neighbourhood, and a person who asked for a page and was shown its collective can see both what happened and where to go next; opening nothing would read as the app having failed, and opening something arbitrary would be worse.
+
+The lesson worth keeping is not about collectives. A route nobody could verify was documented as unverified, hedged, and shipped — and the hedge did not save it, because "opens a window on the right server" looks exactly like success. What settled it was reading the owning app's routing, which was public the whole time.
 
 ## Why are collectives gated before they are asked for, when Talk and Notes are not?
 
@@ -402,6 +421,28 @@ Tapping a donated Spotlight result does not run the matching `Open…Intent`. Th
 The type was there the whole time: `EntityIdentifier` carries `entityType` beside `identifier`. Resolution now switches on it, and the numeric types are parsed back from the text the activity carries them as. What that leaves is the fallback for an activity whose App Intents annotation is absent — the raw Spotlight identifier — and that one is **refused rather than guessed**. Without a type, `42` is a note and also a collective and also a page, and the app would be picking one of three things the person did not ask for. A refusal at least says so in the log.
 
 The resolution itself lives in one place, [`EntityActivation`](./Cirruscope/AppIntents/EntityActivation.swift), which the intents use too. That is not tidiness: a collective page whose address cannot be built opens its collective instead, and a fallback that applied to the Shortcuts action but not to the Spotlight result would be one feature behaving two ways depending on where it was reached from.
+
+## Why does the app read a Spotlight selection's identifier itself instead of asking App Intents to?
+
+Because `EntityIdentifier(activityIdentifier:)` is not a parser, and what it actually consults can be an app from two months ago.
+
+Spotlight hands over one string, `<EntityTypeName>/<identifier>` — a real one seen in the field is `CollectivePageEntity/4012700`. The SDK appears to offer exactly the right tool for reading it, and using that tool meant every selection but a server app's was refused with `CollectivePageEntity is not a registered AppEntity identifier`, while the running app's own extracted metadata listed all five entity types.
+
+The initializer turns out to be a synchronous round trip into `linkd`'s App Intents index, which answers from whichever bundle Launch Services calls canonical for the bundle identifier. On this machine that was one of nine registrations of `de.i2h3.cirruscope` — an archive from July whose metadata registers a single entity — and `linkd` logs `Found existing canonical bundle with matching hash, skipping` rather than re-reading anything, so rebuilding does not help. Reproduced from scratch in a throwaway app with two invented entities, where both were refused and the log carried the identical message, so this is the mechanism rather than anything about this project.
+
+Reading the string directly is not a shortcut around a check. The type names it is matched against are this app's own metatypes, and the five it knows are the five it donates; anything else is refused with a line saying so. The difference is which registry is consulted — one that certainly describes the app that is running, rather than one that describes whichever copy a developer's machine happens to prefer.
+
+`NSUserActivity.appEntityIdentifier` is not consulted either, for a plainer reason: it cannot answer. Assigning one leaves `userInfo` empty, because it is held out of band and does not survive the crossing, and an activity carrying only `CSSearchableItemActivityIdentifier` — exactly what Spotlight delivers — answers `nil`. Reading it would also make the same failing call.
+
+## Why is a conversation picture the app cannot draw remembered on disk?
+
+Because the alternative was asking the server about most of an account's conversations on every single launch.
+
+Talk answers its avatar endpoint with an SVG for every generated icon and every emoji avatar, and this app reads SVG only far enough for the monochrome app glyphs Nextcloud ships. Those answers are refused, and the refusal used to be remembered only in memory — deliberately, with the reasoning written down: a moderator uploading a photograph should see it appear, and a process ending bounds how long the app can be wrong about it. That reasoning was sound and the cost was not counted. On an account whose conversations are mostly groups, it meant re-requesting nearly every avatar at every launch, which is most of what made the first refresh slow enough to notice.
+
+The verdict is now a zero-length file under the same cache key. The key already carries the conversation's avatar version, so a moderator's new picture is a different key and the old verdict simply does not apply to it.
+
+That is not sufficient on its own, and the insufficiency is the interesting part. For a one-to-one conversation the server derives the avatar version from the path of a *generic icon*, so it is identical for every such conversation and never moves — which is precisely the case where the picture is a person's photograph and most likely to change. Persisting the verdict without a bound would make a colleague's newly uploaded photograph invisible forever. So every answer, bitmap or refusal alike, is trusted for a week and then asked again. The marker must not ship without that bound.
 
 ## Why do notes, collectives, pages and conversations wear the owning app's icon in Spotlight?
 

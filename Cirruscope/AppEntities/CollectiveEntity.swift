@@ -62,7 +62,8 @@ struct CollectiveEntity: IndexedEntity {
     /// `subtitle` is the one line of context a collective carries besides its name, in the one place both surfaces that show it read from.
     ///
     /// Stated once because it reaches Spotlight twice by two different routes — as the display representation's subtitle and as the searchable item's `contentDescription` — and a result whose two descriptions disagreed would be this app contradicting itself.
-    private static let subtitle: LocalizedStringResource = "Nextcloud Collectives"
+    /// It follows the one pattern every entity's subtitle follows — *`<what it is>` in Nextcloud `<the app it lives in>`* — so that a column of mixed results reads as one list rather than four. The first half is the plain noun somebody would use for the thing, the second names the server app it belongs to, and neither is left to be inferred from the title: a Spotlight row is often the only context there is.
+    private static let subtitle: LocalizedStringResource = "Collective in Nextcloud Collectives"
 
     /// `attributeSet` is the Spotlight metadata donated for this entity, adding keywords so the server product and the owning app both find a collective whose own name mentions neither.
     var attributeSet: CSSearchableItemAttributeSet {

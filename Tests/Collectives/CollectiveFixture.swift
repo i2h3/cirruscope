@@ -26,6 +26,9 @@ enum CollectiveFixture {
     /// `desserts` is a page with subpages, so the server stores it as the index file of a folder named after it.
     static let desserts = CollectivePageTransferObject(id: 12, collectiveID: 1, title: "Desserts", slug: "desserts", emoji: nil, fileName: "Readme.md", filePath: "Desserts", isLandingPage: false, modification: Date(timeIntervalSince1970: 1_700_000_200))
 
+    /// `unsluggedPage` is a page on an instance whose Collectives app predates slugs, which is the only case still addressed by its path.
+    static let unsluggedPage = CollectivePageTransferObject(id: 13, collectiveID: 1, title: "Waffles", slug: nil, emoji: nil, fileName: "Waffles.md", filePath: "Recipes", isLandingPage: false, modification: Date(timeIntervalSince1970: 1_700_000_400))
+
     /// `pages` is every page of `cookbook`, in no meaningful order.
     static let pages = [desserts, landingPage, pancakes]
 }

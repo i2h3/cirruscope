@@ -7,9 +7,9 @@ import Foundation
 
 /// `CollectivePageEntity` is the App Intents projection of one page within a collective.
 ///
-/// It is the only entity here whose subtitle is not a product name, and that is deliberate. A note's category is absent on most notes, so it would be a subtitle that comes and goes; a page always belongs to exactly one collective, and which collective a page is in is the thing a person needs to tell two pages called "Notes" apart. The product name moves into the keywords, where it still finds the page.
+/// Its subtitle follows the same pattern as every other entity's rather than naming the collective the page is in, which it used to. That is a trade made knowingly: the collective's name is the better answer to "which of my two pages called Notes is this", and a column of mixed Spotlight results is the more common thing to be looking at, where one row reading "Nextcloud Handbook" among three reading "… in Nextcloud …" reads as a different kind of entry. Which collective a page belongs to is still carried — by the artwork, which is that collective's own emoji, and by the keywords, which find the page by its collective's name.
 ///
-/// Its image is that emoji where it has one, drawn onto the same plate a server app's icon is drawn onto, and the Collectives app's own mark where it has none. The emoji is in the title as well, and carrying it in both places is the point rather than a duplication: a Spotlight row is read as a picture first and a line of text second, and pages within one collective are exactly the results a shared app mark would fail to tell apart.
+/// Its image is the **collective's** emoji, not the page's own, drawn onto the same plate a server app's icon is drawn onto, and the Collectives app's mark where the collective has none. That is the opposite of the obvious choice and is what a live instance settled: a page's own emoji is already the first thing in its title, so drawing it again says nothing a reader did not have, while the collective's emoji says which of several collectives the page came from — which the subtitle also says, and which is the thing a row of search results is actually being told apart by.
 struct CollectivePageEntity: IndexedEntity {
     /// `defaultQuery` is the query the App Intents system uses to enumerate, resolve, and suggest these entities.
     static let defaultQuery = CollectivePageEntityQuery()
@@ -28,9 +28,9 @@ struct CollectivePageEntity: IndexedEntity {
     /// `page` is the value snapshot this entity projects; `id` and `name` are derived from it.
     var page: CollectivePageTransferObject
 
-    /// `collectiveName` is the name of the collective the page belongs to, which is what the result is subtitled with.
+    /// `collectiveName` is the name of the collective the page belongs to, which is what a search for that collective finds the page by.
     ///
-    /// Carried on the entity rather than looked up when the subtitle is read, because `displayRepresentation` is reached from outside the main actor and the store is not: resolving it once where the entity is built is both the only place the lookup is available and the only place it happens per entity rather than per read.
+    /// Carried on the entity rather than looked up when the keywords are read, because `attributeSet` is reached from outside the main actor and the store is not: resolving it once where the entity is built is both the only place the lookup is available and the only place it happens per entity rather than per read.
     var collectiveName: String
 
     /// `id` is the page's server-assigned identifier, which is the identifier of its file and unique on the server.
@@ -48,7 +48,7 @@ struct CollectivePageEntity: IndexedEntity {
         return "\(emoji) \(page.title)"
     }
 
-    /// `iconData` is the page's own emoji on the plated artwork, or the Collectives app's icon where it has none.
+    /// `iconData` is the owning collective's emoji on the plated artwork, or the Collectives app's icon where the collective has none.
     ///
     /// Carried rather than looked up, for the reason `collectiveName` is: `displayRepresentation` is reached from outside the main actor and neither the store nor the icons are.
     var iconData: Data?
@@ -56,32 +56,40 @@ struct CollectivePageEntity: IndexedEntity {
     /// `displayRepresentation` is how a single page appears in Spotlight results, the Shortcuts parameter picker, and Siri.
     var displayRepresentation: DisplayRepresentation {
         guard let icon = iconData else {
-            return DisplayRepresentation(title: "\(name)", subtitle: "\(collectiveName)")
+            return DisplayRepresentation(title: "\(name)", subtitle: Self.subtitle)
         }
 
-        return DisplayRepresentation(title: "\(name)", subtitle: "\(collectiveName)", image: DisplayRepresentation.Image(data: icon))
+        return DisplayRepresentation(title: "\(name)", subtitle: Self.subtitle, image: DisplayRepresentation.Image(data: icon))
     }
+
+    /// `subtitle` is the one line of context a page carries besides its title, in the one place both surfaces that show it read from.
+    ///
+    /// Stated once because it reaches Spotlight twice by two different routes — as the display representation's subtitle and as the searchable item's `contentDescription` — and a result whose two descriptions disagreed would be this app contradicting itself.
+    /// It follows the one pattern every entity's subtitle follows — *`<what it is>` in Nextcloud `<the app it lives in>`* — so that a column of mixed results reads as one list rather than four. The first half is the plain noun somebody would use for the thing, the second names the server app it belongs to, and neither is left to be inferred from the title: a Spotlight row is often the only context there is.
+    private static let subtitle: LocalizedStringResource = "Page in Nextcloud Collectives"
 
     /// `attributeSet` is the Spotlight metadata donated for this entity, keyworded with the server product, the owning app and the collective so a page is found by any of the three.
     var attributeSet: CSSearchableItemAttributeSet {
         let attributes = defaultAttributeSet
-        attributes.contentDescription = collectiveName
+        attributes.contentDescription = String(localized: Self.subtitle)
         attributes.contentModificationDate = page.modification
         attributes.keywords = ["Nextcloud", "Collectives", collectiveName, page.title]
         attributes.thumbnailData = iconData
         return attributes
     }
 
-    /// `init(_:inCollective:)` bridges a `CollectivePageTransferObject` snapshot into an entity, taking the name of the collective it belongs to alongside it.
+    /// `init(_:in:)` bridges a `CollectivePageTransferObject` snapshot into an entity, taking the collective it belongs to alongside it.
+    ///
+    /// The whole collective rather than only its name, because both of the things a page borrows from its collective are needed here and taking one of them would mean coming back for the other.
     @MainActor
-    init(_ page: CollectivePageTransferObject, inCollective collectiveName: String) {
+    init(_ page: CollectivePageTransferObject, in collective: CollectiveTransferObject) {
         self.page = page
-        self.collectiveName = collectiveName
+        collectiveName = collective.name
 
         guard let serverAddress = AccountStore.shared.serverAddress else {
             return
         }
 
-        iconData = ServerAppIconThumbnail.pngData(forEmoji: page.emoji, orAppID: CollectiveWebRoute.appID, serverAddress: serverAddress)
+        iconData = ServerAppIconThumbnail.pngData(forEmoji: collective.emoji, orAppID: CollectiveWebRoute.appID, serverAddress: serverAddress)
     }
 }
