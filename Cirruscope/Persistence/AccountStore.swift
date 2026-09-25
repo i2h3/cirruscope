@@ -140,6 +140,38 @@ final class AccountStore {
         save()
     }
 
+    /// `adopt(serverAddress:)` records `address` as the connected server if the account does not already say so, and announces it when it writes.
+    ///
+    /// It exists because `connect(to:)` is reached only from an interactive sign-in, while six other writers create the account record without it — `persist(serverApps:)`, `persist(theming:)`, `setServerVersion(_:)` and the three domain upserts all call `currentAccount(createIfNeeded: true)` and none of them records the address of the server they were just talking to. A fully populated account with no address is therefore a reachable state, and until now a permanent one.
+    /// iOS is where it was actually reached, because the two platforms disagree about who is authoritative for "am I signed in". macOS gates on this store, so an account with no address forces a fresh sign-in, which writes one. iOS gates on the Keychain, so a device whose credential predates the store keeps launching signed in, fills the store with apps and conversations and notes through those other writers, and never learns the address. The visible result is everything that reads it coming back empty: no artwork on any Spotlight result, and every intent refusing to open anything because there is nothing to resolve a route against.
+    /// Called from the app-list refresh, which is the one path that runs on every activation, already holds a credentialed server and already creates the account record downstream — so an install in that state repairs itself on its next launch with nothing asked of the user.
+    func adopt(serverAddress address: URL) {
+        guard let account = currentAccount(createIfNeeded: true) else {
+            return
+        }
+
+        guard account.serverAddress != address else {
+            logger.debug("The recorded server address is already the one just used")
+            return
+        }
+
+        if account.serverAddress == nil {
+            logger.notice("The account record carried no server address; recording the one just used, which repairs a store written before the address was persisted")
+        } else {
+            logger.notice("The recorded server address is not the one just used; correcting it")
+        }
+
+        account.serverAddress = address
+        save()
+
+        // Two names, because two different things were wrong until this moment. Everything listing the apps
+        // reads the store and is unaffected, but everything *drawing* an entity resolves its picture against
+        // this address and has been answering nil — so the indexes hold entries with no artwork, and only a
+        // donation redraws them.
+        notifyChange(.serverAppsDidChange)
+        notifyChange(.donatedArtworkDidChange)
+    }
+
     /// `disconnect()` deletes the account — cascading to its apps and their shortcuts — then empties `AssetCache` and the app icons and user avatars already drawn from it, and clears the stored Login Flow v2 credentials, so nothing describing the old server — or the people on it — remains.
     ///
     /// `AppDelegate.logOut()` calls it; this reproduces the old `Settings.serverAddress = nil` cascade in one place. The announcement now happens in `deleteAccount()`, ahead of the two clears rather than after them, which is unobservable: the post is delivered on the next main-thread turn, while both clears are synchronous and finish inside the current one.

@@ -63,7 +63,8 @@ struct NoteEntity: IndexedEntity {
     /// `subtitle` is the one line of context a note carries besides its title, in the one place both surfaces that show it read from.
     ///
     /// Stated once because it reaches Spotlight twice by two different routes — as the display representation's subtitle and as the searchable item's `contentDescription` — and a result whose two descriptions disagreed would be this app contradicting itself.
-    private static let subtitle: LocalizedStringResource = "Nextcloud Notes"
+    /// It follows the one pattern every entity's subtitle follows — *`<what it is>` in Nextcloud `<the app it lives in>`* — so that a column of mixed results reads as one list rather than four. The first half is the plain noun somebody would use for the thing, the second names the server app it belongs to, and neither is left to be inferred from the title: a Spotlight row is often the only context there is.
+    private static let subtitle: LocalizedStringResource = "Note in Nextcloud Notes"
 
     /// `attributeSet` is the Spotlight metadata donated for this entity: it starts from `defaultAttributeSet` so it keeps the title and subtitle, and adds keywords so the server product, the owning app and the note's own category all find it.
     ///

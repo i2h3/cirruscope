@@ -11,7 +11,7 @@ import Testing
 ///
 /// It exists because this is where the feature was broken: the selection was resolved by identifier alone, so only a server app ever came back and every note, conversation, collective and page the app had donated activated nothing. A person searching for a page of their collective watched Cirruscope come forward and sit there.
 ///
-/// The activities are built here rather than captured from the system, which bounds what this can claim: `NSUserActivity.appEntityIdentifier` is the documented path and the one these cases drive. The other path — parsing a raw Spotlight identifier — takes a string no public API produces, and is covered on a device instead; `EntityIdentifierRoundTripTests` records that measurement.
+/// The activities are built the way Spotlight delivers one: a `CSSearchableItemActionType` whose `userInfo` carries `CSSearchableItemActivityIdentifier` as `<EntityTypeName>/<identifier>`. That shape is not invented here — it is what a result carried in the field, and what a probe confirmed is the only thing that arrives. `NSUserActivity.appEntityIdentifier` is deliberately not used by these cases or by the code they cover: it is held out of band, so assigning it leaves `userInfo` empty and it answers `nil` for an activity that crossed from Spotlight.
 @MainActor
 struct SpotlightSelectionTests {
     /// `harness` is this case's own store.
@@ -35,10 +35,10 @@ struct SpotlightSelectionTests {
         return store
     }
 
-    /// `selection(of:)` is the activity the system delivers when somebody taps a donated result naming `identifier`.
-    private func selection(of identifier: EntityIdentifier) -> NSUserActivity {
+    /// `selection(of:_:)` is the activity the system delivers when somebody taps a donated result of `entityType` named `identifier`.
+    private func selection(of entityType: any AppEntity.Type, _ identifier: String) -> NSUserActivity {
         let activity = NSUserActivity(activityType: CSSearchableItemActionType)
-        activity.appEntityIdentifier = identifier
+        activity.userInfo = [CSSearchableItemActivityIdentifier: "\(String(describing: entityType))/\(identifier)"]
 
         return activity
     }
@@ -55,7 +55,7 @@ struct SpotlightSelectionTests {
     @Test
     func `A selected note resolves to the address that opens it`() throws {
         let store = try seededStore()
-        let activity = selection(of: EntityIdentifier(for: NoteEntity.self, identifier: NoteFixture.groceries.id))
+        let activity = selection(of: NoteEntity.self, String(NoteFixture.groceries.id))
 
         #expect(openedAddress(SpotlightSelection.request(from: activity, in: store)) == "https://cloud.example.com/apps/notes/note/1")
     }
@@ -63,7 +63,7 @@ struct SpotlightSelectionTests {
     @Test
     func `A selected conversation resolves to the address that opens it`() throws {
         let store = try seededStore()
-        let activity = selection(of: EntityIdentifier(for: ConversationEntity.self, identifier: ConversationFixture.alice.id))
+        let activity = selection(of: ConversationEntity.self, ConversationFixture.alice.id)
 
         #expect(openedAddress(SpotlightSelection.request(from: activity, in: store)) == "https://cloud.example.com/call/al1ce000")
     }
@@ -71,25 +71,25 @@ struct SpotlightSelectionTests {
     @Test
     func `A selected collective resolves to the address that opens it`() throws {
         let store = try seededStore()
-        let activity = selection(of: EntityIdentifier(for: CollectiveEntity.self, identifier: CollectiveFixture.cookbook.id))
+        let activity = selection(of: CollectiveEntity.self, String(CollectiveFixture.cookbook.id))
 
-        #expect(openedAddress(SpotlightSelection.request(from: activity, in: store)) == "https://cloud.example.com/apps/collectives/cookbook")
+        #expect(openedAddress(SpotlightSelection.request(from: activity, in: store)) == "https://cloud.example.com/apps/collectives/cookbook-1")
     }
 
     /// The one from the report: a page of a collective, found by searching for its title, tapped, and opening nothing.
     @Test
     func `A selected collective page resolves to the address that opens it`() throws {
         let store = try seededStore()
-        let activity = selection(of: EntityIdentifier(for: CollectivePageEntity.self, identifier: CollectiveFixture.pancakes.id))
+        let activity = selection(of: CollectivePageEntity.self, String(CollectiveFixture.pancakes.id))
 
-        #expect(openedAddress(SpotlightSelection.request(from: activity, in: store)) == "https://cloud.example.com/apps/collectives/cookbook/Recipes/Pancakes?fileId=11")
+        #expect(openedAddress(SpotlightSelection.request(from: activity, in: store)) == "https://cloud.example.com/apps/collectives/cookbook-1/pancakes-11")
     }
 
     /// A server app is the one selection that opens by identity, so a window already showing it is reused rather than a second one opened.
     @Test
     func `A selected server app resolves to the app itself rather than to an address`() throws {
         let store = try seededStore()
-        let activity = selection(of: EntityIdentifier(for: ServerAppEntity.self, identifier: "files"))
+        let activity = selection(of: ServerAppEntity.self, "files")
 
         guard case let .serverApp(app) = SpotlightSelection.request(from: activity, in: store) else {
             Issue.record("A selected server app must resolve to the app, not to a page.")
@@ -104,7 +104,7 @@ struct SpotlightSelectionTests {
     func `An activity of another type is not treated as a selection`() throws {
         let store = try seededStore()
         let activity = NSUserActivity(activityType: "de.i2h3.cirruscope.something-else")
-        activity.appEntityIdentifier = EntityIdentifier(for: NoteEntity.self, identifier: NoteFixture.groceries.id)
+        activity.userInfo = [CSSearchableItemActivityIdentifier: "NoteEntity/\(NoteFixture.groceries.id)"]
 
         #expect(SpotlightSelection.request(from: activity, in: store) == nil)
     }
@@ -121,7 +121,7 @@ struct SpotlightSelectionTests {
     @Test
     func `A selection naming something the account no longer has opens nothing`() throws {
         let store = try seededStore()
-        let activity = selection(of: EntityIdentifier(for: NoteEntity.self, identifier: 9999))
+        let activity = selection(of: NoteEntity.self, "9999")
 
         #expect(SpotlightSelection.request(from: activity, in: store) == nil)
     }

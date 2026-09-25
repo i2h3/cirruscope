@@ -85,7 +85,7 @@ struct EntityActivationTests {
         let store = try seededStore()
         let outcome = EntityActivation.outcome(forCollectiveID: CollectiveFixture.cookbook.id, in: store)
 
-        #expect(openedAddress(outcome) == "https://cloud.example.com/apps/collectives/cookbook")
+        #expect(openedAddress(outcome) == "https://cloud.example.com/apps/collectives/cookbook-1")
     }
 
     @Test
@@ -93,7 +93,7 @@ struct EntityActivationTests {
         let store = try seededStore()
         let outcome = EntityActivation.outcome(forCollectivePageID: CollectiveFixture.pancakes.id, in: store)
 
-        #expect(openedAddress(outcome) == "https://cloud.example.com/apps/collectives/cookbook/Recipes/Pancakes?fileId=11")
+        #expect(openedAddress(outcome) == "https://cloud.example.com/apps/collectives/cookbook-1/pancakes-11")
     }
 
     /// The page at the root of a collective has no address of its own, and its collective's is the right answer rather than a fallback.
@@ -102,7 +102,7 @@ struct EntityActivationTests {
         let store = try seededStore()
         let outcome = EntityActivation.outcome(forCollectivePageID: CollectiveFixture.landingPage.id, in: store)
 
-        #expect(openedAddress(outcome) == "https://cloud.example.com/apps/collectives/cookbook")
+        #expect(openedAddress(outcome) == "https://cloud.example.com/apps/collectives/cookbook-1")
     }
 
     /// A donated item outlives the list it came from, so every type has to survive being asked for something the account no longer has.

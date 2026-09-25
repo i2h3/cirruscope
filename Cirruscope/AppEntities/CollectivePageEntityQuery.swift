@@ -17,21 +17,21 @@ struct CollectivePageEntityQuery: EntityQuery, EntityStringQuery, EnumerableEnti
     /// Bounded where the collectives are not, because nothing bounds how many pages a collective holds. The store returns them most recently changed first, so the ones kept are the ones somebody was working on.
     private static let suggestionLimit = 10
 
-    /// `entities(_:)` pairs each page with the name of its collective, which is what the entity's subtitle is.
+    /// `entities(_:)` pairs each page with the collective it belongs to, which is what the entity's subtitle and its artwork both come from.
     ///
     /// A page whose collective is not in the store is dropped rather than shown with an empty subtitle: it is a page nothing could address either, the collective's own segment being the front of a page's address.
     private func entities(_ pages: [CollectivePageTransferObject]) -> [CollectivePageEntity] {
-        var namesByID: [Int: String] = [:]
+        var collectivesByID: [Int: CollectiveTransferObject] = [:]
         for collective in AccountStore.shared.collectives {
-            namesByID[collective.id] = collective.name
+            collectivesByID[collective.id] = collective
         }
 
         return pages.compactMap { page in
-            guard let name = namesByID[page.collectiveID] else {
+            guard let collective = collectivesByID[page.collectiveID] else {
                 return nil
             }
 
-            return CollectivePageEntity(page, inCollective: name)
+            return CollectivePageEntity(page, in: collective)
         }
     }
 

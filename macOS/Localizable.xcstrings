@@ -1,6 +1,98 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Collective in Nextcloud Collectives" : {
+      "comment" : "Spotlight subtitle for a collective, naming what the result is and the Nextcloud app it lives in.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kollektiv in Nextcloud Collectives"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colectivo en Nextcloud Collectives"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collectif dans Nextcloud Collectives"
+          }
+        }
+      }
+    },
+    "Conversation in Nextcloud Talk" : {
+      "comment" : "Spotlight subtitle for a Talk conversation, naming what the result is and the Nextcloud app it lives in.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unterhaltung in Nextcloud Talk"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conversación en Nextcloud Talk"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conversation dans Nextcloud Talk"
+          }
+        }
+      }
+    },
+    "Note in Nextcloud Notes" : {
+      "comment" : "Spotlight subtitle for a note, naming what the result is and the Nextcloud app it lives in.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notiz in Nextcloud Notes"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nota en Nextcloud Notes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Note dans Nextcloud Notes"
+          }
+        }
+      }
+    },
+    "Page in Nextcloud Collectives" : {
+      "comment" : "Spotlight subtitle for a page of a collective, naming what the result is and the Nextcloud app it lives in.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seite in Nextcloud Collectives"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Página en Nextcloud Collectives"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Page dans Nextcloud Collectives"
+          }
+        }
+      }
+    },
     "“%@” already uses this shortcut." : {
       "comment" : "Tooltip on the shortcut recorder explaining what the just-rejected shortcut is already used by: one of Cirruscope's own menu items, or another Nextcloud server app.",
       "localizations" : {
@@ -857,10 +949,6 @@
         }
       }
     },
-    "Nextcloud Collectives" : {
-      "comment" : "Subtitle of a collective entity in Spotlight results and the Shortcuts parameter picker, naming the server app the collective belongs to. A product name, so it is not translated.",
-      "shouldTranslate" : false
-    },
     "Nextcloud Collectives collective" : {
       "comment" : "Synonym Siri accepts for the Nextcloud-collective entity type.",
       "localizations" : {
@@ -930,10 +1018,6 @@
         }
       }
     },
-    "Nextcloud Notes" : {
-      "comment" : "Subtitle of a note entity in Spotlight results and the Shortcuts parameter picker, naming the server app the note belongs to. A product name, so it is not translated.",
-      "shouldTranslate" : false
-    },
     "Nextcloud Notes note" : {
       "comment" : "Synonym Siri accepts for the Nextcloud-note entity type.",
       "localizations" : {
@@ -979,10 +1063,6 @@
           }
         }
       }
-    },
-    "Nextcloud Talk" : {
-      "comment" : "Subtitle of a conversation entity in Spotlight results and the Shortcuts parameter picker, naming the server app the conversation belongs to. A product name, so it is not translated.",
-      "shouldTranslate" : false
     },
     "Nextcloud Talk conversation" : {
       "comment" : "Name of the Nextcloud-Talk-conversation entity type, shown wherever the Shortcuts app names the kind of value.",

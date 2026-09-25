@@ -5,115 +5,94 @@
 import Foundation
 import Testing
 
-/// `CollectiveWebRouteTests` pins the address that opens a collective and the one that opens a page within it.
+/// `CollectiveWebRouteTests` pins where a collective and a page within it are opened.
 ///
-/// These are the app's least certain routes: the Collectives app is installed on no instance available here, so unlike Talk's and Notes' they were derived rather than read out of the app's own routing. What the suite can still do is pin the parts that do not depend on that — that the web root of a subdirectory install is kept, that a collective without a slug falls back to its name rather than producing a path with a hole in it, and that the page-path rule handles the three file shapes the server actually produces. If the shape turns out to be wrong, these are the cases that will need changing, and they are deliberately written so that is a small edit rather than a rewrite.
+/// These two were the only addresses in the app not read out of the owning app's own routing, and the cost of that showed up on a live server: both resolved, both opened a window, and neither showed what was asked for. The Collectives app declares a catch-all on the server and decides the rest in its Vue router, so what the suite is written against is that router — `'/:collectiveSlug-:collectiveId(\\d+)'` before `'/:collective'`, each with the children `':pageSlug-:pageId(\\d+)'` before `':page(.*)'`.
+///
+/// So the cases come in pairs: the slugged form, which is what a current server gives and what the app's own links carry, and the unslugged one, which the network library documents as what an instance whose Collectives app predates slugs answers with.
 struct CollectiveWebRouteTests {
-    private let server = URL(string: "https://cloud.example.com")!
-
     @Test
-    func `A collective is addressed by its slug`() throws {
-        let route = try #require(CollectiveWebRoute.url(forSlug: "cookbook", name: "Cookbook", on: server))
+    func `A collective is addressed by its slug and identifier together`() throws {
+        let server = try #require(URL(string: "https://cloud.example.com"))
+        let route = try #require(CollectiveWebRoute.url(for: CollectiveFixture.cookbook, on: server))
 
-        #expect(route.url.absoluteString == "https://cloud.example.com/apps/collectives/cookbook")
+        #expect(route.url.absoluteString == "https://cloud.example.com/apps/collectives/cookbook-1")
     }
 
+    /// The slug is `nil` on an instance whose Collectives app predates them, and the router's second pattern is what takes the name.
     @Test
-    func `A collective on a server without slugs is addressed by its name, percent-encoded`() throws {
-        let route = try #require(CollectiveWebRoute.url(forSlug: nil, name: "Nextcloud Handbook", on: server))
+    func `A collective with no slug is addressed by its name`() throws {
+        let server = try #require(URL(string: "https://cloud.example.com"))
+        let route = try #require(CollectiveWebRoute.url(for: CollectiveFixture.handbook, on: server))
 
         #expect(route.url.absoluteString == "https://cloud.example.com/apps/collectives/Nextcloud%20Handbook")
     }
 
     @Test
-    func `A subdirectory install keeps its web root in front of the collective route`() throws {
-        let subdirectory = try #require(URL(string: "https://example.com/nextcloud"))
-        let route = try #require(CollectiveWebRoute.url(forSlug: "cookbook", name: "Cookbook", on: subdirectory))
+    func `A subdirectory install keeps its web root in front of a collective`() throws {
+        let server = try #require(URL(string: "https://example.com/nextcloud"))
+        let route = try #require(CollectiveWebRoute.url(for: CollectiveFixture.cookbook, on: server))
 
-        #expect(route.url.absoluteString == "https://example.com/nextcloud/apps/collectives/cookbook")
+        #expect(route.url.absoluteString == "https://example.com/nextcloud/apps/collectives/cookbook-1")
     }
 
     @Test
-    func `A collective with neither a slug nor a name is refused rather than opening the list of every collective`() {
-        #expect(CollectiveWebRoute.url(forSlug: nil, name: "", on: server) == nil)
-        #expect(CollectiveWebRoute.url(forSlug: "", name: "", on: server) == nil)
+    func `A collective with neither slug nor name is refused rather than opening the overview`() throws {
+        let server = try #require(URL(string: "https://cloud.example.com"))
+        let nameless = CollectiveTransferObject(id: 9, name: "", slug: nil, emoji: nil)
+
+        #expect(CollectiveWebRoute.url(for: nameless, on: server) == nil)
     }
 
     @Test
-    func `A collective route resolves back to Collectives, so a window showing one knows which app it is in`() throws {
-        let route = try #require(CollectiveWebRoute.url(forSlug: "cookbook", name: "Cookbook", on: server))
+    func `A page is addressed by its slug and identifier within its collective`() throws {
+        let server = try #require(URL(string: "https://cloud.example.com"))
+        let route = try #require(CollectivePageWebRoute.url(for: CollectiveFixture.pancakes, in: CollectiveFixture.cookbook, on: server))
 
-        #expect(ServerAppPath.appID(of: route.url, on: server) == "collectives")
+        #expect(route.url.absoluteString == "https://cloud.example.com/apps/collectives/cookbook-1/pancakes-11")
+    }
+
+    /// A page with subpages is stored as a folder's `Readme.md`, which changes its *path* and nothing about its slug — so the slugged form is unaffected by the distinction the path form has to make.
+    @Test
+    func `A page that has subpages is addressed no differently`() throws {
+        let server = try #require(URL(string: "https://cloud.example.com"))
+        let route = try #require(CollectivePageWebRoute.url(for: CollectiveFixture.desserts, in: CollectiveFixture.cookbook, on: server))
+
+        #expect(route.url.absoluteString == "https://cloud.example.com/apps/collectives/cookbook-1/desserts-12")
+    }
+
+    /// The page at the root of a collective is what opening the collective shows, and has no address of its own.
+    @Test
+    func `A collective's landing page is addressed by the collective itself`() throws {
+        let server = try #require(URL(string: "https://cloud.example.com"))
+        let route = try #require(CollectivePageWebRoute.url(for: CollectiveFixture.landingPage, in: CollectiveFixture.cookbook, on: server))
+
+        #expect(route.url.absoluteString == "https://cloud.example.com/apps/collectives/cookbook-1")
+    }
+
+    /// The fallback branch, and the only one that still builds a path out of titles. It carries the file identifier because a path built from titles is the part that can be wrong.
+    @Test
+    func `A page with no slug is addressed by its path and carries its file identifier`() throws {
+        let server = try #require(URL(string: "https://cloud.example.com"))
+        let route = try #require(CollectivePageWebRoute.url(for: CollectiveFixture.unsluggedPage, in: CollectiveFixture.cookbook, on: server))
+
+        #expect(route.url.absoluteString == "https://cloud.example.com/apps/collectives/cookbook-1/Recipes/Waffles?fileId=13")
     }
 
     @Test
-    func `A page sitting directly in a collective is addressed by its file name without the extension`() {
-        #expect(CollectivePageWebRoute.pathComponents(forFileName: "Pancakes.md", filePath: "") == ["Pancakes"])
+    func `A subdirectory install keeps its web root in front of a page`() throws {
+        let server = try #require(URL(string: "https://example.com/nextcloud"))
+        let route = try #require(CollectivePageWebRoute.url(for: CollectiveFixture.pancakes, in: CollectiveFixture.cookbook, on: server))
+
+        #expect(route.url.absoluteString == "https://example.com/nextcloud/apps/collectives/cookbook-1/pancakes-11")
     }
 
+    /// A page in a collective that cannot be named cannot be addressed either, the collective's own segment being the front of every page's address.
     @Test
-    func `A page inside a folder is addressed by the folder and then the file`() {
-        #expect(CollectivePageWebRoute.pathComponents(forFileName: "Pancakes.md", filePath: "Recipes") == ["Recipes", "Pancakes"])
-    }
+    func `A page in a nameless collective is refused`() throws {
+        let server = try #require(URL(string: "https://cloud.example.com"))
+        let nameless = CollectiveTransferObject(id: 9, name: "", slug: nil, emoji: nil)
 
-    @Test
-    func `A page with subpages is addressed by its folder alone, its file being that folder's index`() {
-        // The server stores such a page as `Readme.md` inside a folder named after the page, so appending the file
-        // name would repeat the page's own title in the path.
-        #expect(CollectivePageWebRoute.pathComponents(forFileName: "Readme.md", filePath: "Desserts") == ["Desserts"])
-    }
-
-    @Test
-    func `A nested page keeps its whole ancestor chain`() {
-        #expect(CollectivePageWebRoute.pathComponents(forFileName: "Portal.md", filePath: "Support/How to") == ["Support", "How to", "Portal"])
-    }
-
-    @Test
-    func `The page at the root of a collective is opened by the collective's own address`() throws {
-        let route = try #require(CollectivePageWebRoute.url(collectiveSlug: "cookbook", collectiveName: "Cookbook", page: CollectiveFixture.landingPage, on: server))
-
-        // Not a fallback: there is no separate address for the page a collective shows when it is opened.
-        #expect(route.url.absoluteString == "https://cloud.example.com/apps/collectives/cookbook")
-    }
-
-    @Test
-    func `An ordinary page carries its path and its file identifier`() throws {
-        let route = try #require(CollectivePageWebRoute.url(collectiveSlug: "cookbook", collectiveName: "Cookbook", page: CollectiveFixture.pancakes, on: server))
-
-        // The identifier is what the server can resolve the page from even where the path segments are not what it
-        // expects, which is the hedge against this route's shape being the one thing here not read from the app's
-        // own routing.
-        #expect(route.url.absoluteString == "https://cloud.example.com/apps/collectives/cookbook/Recipes/Pancakes?fileId=11")
-    }
-
-    @Test
-    func `A subdirectory install keeps its web root in front of a page's address too`() throws {
-        let subdirectory = try #require(URL(string: "https://example.com/nextcloud"))
-        let route = try #require(CollectivePageWebRoute.url(collectiveSlug: "cookbook", collectiveName: "Cookbook", page: CollectiveFixture.pancakes, on: subdirectory))
-
-        // The collective route has had this case since it was written; the page route did not, and it is the more
-        // restructured of the two — it builds the collective's segments and the page's together and appends the
-        // file identifier afterwards. On a host-root server that branch is indistinguishable from the broken one.
-        #expect(route.url.absoluteString == "https://example.com/nextcloud/apps/collectives/cookbook/Recipes/Pancakes?fileId=11")
-    }
-
-    @Test
-    func `The landing page of a collective on a subdirectory install opens that collective`() throws {
-        let subdirectory = try #require(URL(string: "https://example.com/nextcloud"))
-        let route = try #require(CollectivePageWebRoute.url(collectiveSlug: "cookbook", collectiveName: "Cookbook", page: CollectiveFixture.landingPage, on: subdirectory))
-
-        #expect(route.url.absoluteString == "https://example.com/nextcloud/apps/collectives/cookbook")
-    }
-
-    @Test
-    func `A page of a collective with no slug is addressed under that collective's name`() throws {
-        let route = try #require(CollectivePageWebRoute.url(collectiveSlug: nil, collectiveName: "Nextcloud Handbook", page: CollectiveFixture.pancakes, on: server))
-
-        #expect(route.url.absoluteString == "https://cloud.example.com/apps/collectives/Nextcloud%20Handbook/Recipes/Pancakes?fileId=11")
-    }
-
-    @Test
-    func `A page whose collective cannot be addressed is refused rather than opened somewhere arbitrary`() {
-        #expect(CollectivePageWebRoute.url(collectiveSlug: nil, collectiveName: "", page: CollectiveFixture.pancakes, on: server) == nil)
+        #expect(CollectivePageWebRoute.url(for: CollectiveFixture.pancakes, in: nameless, on: server) == nil)
     }
 }

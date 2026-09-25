@@ -26,9 +26,10 @@ final class ConversationAvatars: Sendable {
     /// A `Mutex` rather than an actor for the reason the sibling stores use one: the readers cannot `await`, being on the path that builds an entity the moment it is asked for.
     private let decoded = Mutex<[String: CGImage]>([:])
 
-    /// `undrawable` remembers which pictures the server answered with something this cannot decode, so the same answer is not fetched again for the life of the process.
+    /// `undrawable` remembers which pictures the server answered with something this cannot decode, so the same answer is not asked for again.
     ///
-    /// Without it, every refresh would re-request a picture for every conversation the server draws itself, which on an account whose conversations are mostly groups is most of them. It is deliberately not persisted: a moderator uploading a photograph should see it appear, and a process ending is the bound on how long this can be wrong.
+    /// Without it, every refresh would re-request a picture for every conversation the server draws itself, which on an account whose conversations are mostly groups is most of them. This is the in-process half; the durable half is a zero-length file under the same cache key, which is what carries the verdict across a launch — without it the whole account was re-asked on every launch, which is most of what made the first refresh slow.
+    /// Neither is permanent, and that matters more than it sounds: the key holds the conversation's avatar version, so a moderator's new picture is a different key and the old verdict simply does not apply, and `freshness` bounds the case a version cannot describe.
     private let undrawable = Mutex<Set<String>>([])
 
     /// `logger` records fetching and decoding under the `ConversationAvatars` category.
@@ -38,6 +39,16 @@ final class ConversationAvatars: Sendable {
     ///
     /// An allow list rather than a list of what to reject, so a type nobody has seen yet is skipped rather than handed to a decoder that will answer `nil` anyway — and so the log says which type it was.
     private static let drawableContentTypes: Set<String> = ["image/png", "image/jpeg"]
+
+    /// `concurrentFetches` is how many of these requests are in flight at once.
+    ///
+    /// Six, which is what the transport would allow anyway: Rainmaker gives each server an ephemeral `URLSession`, whose `httpMaximumConnectionsPerHost` is six on macOS and four on iOS, so a wider window would only queue inside the session while making the app look greedier in the instance's access log than it is. It is also a number a Nextcloud serves without noticing, each of these being a few kilobytes — where a window the width of the conversation list would be a burst of dozens against a worker pool shared with everything else the user has open.
+    private static let concurrentFetches = 6
+
+    /// `freshness` is how long the server's last answer about a conversation is trusted before it is asked again.
+    ///
+    /// A bound is needed because the key cannot carry one for every kind of conversation. A group's avatar version moves the moment a moderator changes the picture, so the key invalidates itself; a one-to-one conversation's version is derived by the server from the path of a generic icon and never moves at all, so without a bound the other person's new photograph would never be asked for again. A week is long enough that a launch costs nothing and short enough that nobody's new picture is invisible for long.
+    private static let freshness: TimeInterval = 7 * 24 * 60 * 60
 
     /// `init(cache:)` creates a store over `cache`, which defaults to the process-wide one.
     init(cache: AssetCache = .shared) {
@@ -55,6 +66,14 @@ final class ConversationAvatars: Sendable {
         }
 
         guard let data = cache.data(forKey: key) else {
+            return nil
+        }
+
+        // Zero bytes is the recorded refusal rather than a broken file, and it has to be read as one here:
+        // `CGImageSourceCreateWithData` answers an empty source rather than `nil` for it, so without this every
+        // entity built for such a conversation would take the decode path and log a failure that is not one.
+        guard data.isEmpty == false else {
+            undrawable.withLock { _ = $0.insert(key) }
             return nil
         }
 
@@ -76,49 +95,113 @@ final class ConversationAvatars: Sendable {
     /// `refresh(conversations:accountName:on:)` fetches the picture of each conversation that has not already been answered for, and reports whether anything new landed.
     ///
     /// The caller announces the conversations again when this answers `true`, which is what puts the pictures into Spotlight without waiting for the next launch — the same arrangement the server apps' icons already use, and for the same reason: the list is worth having before the pictures are, so it is persisted first.
-    /// Fetches run one after another rather than concurrently, matching `ServerAvatars`: this is background work feeding a search index, and opening a socket per conversation would be the app taking more than it is owed for it.
+    /// Fetches run concurrently, a bounded number at a time, which `ServerAppIcons` already does for the icons and for the same reason: each of these is a few kilobytes, they are independent, and an account of forty conversations was otherwise paying forty round trips in a row for pictures nothing was waiting on in order — with the notes and the collectives queued behind all of them.
+    /// `ServerAvatars` stays serial and is deliberately *not* the precedent here, though an earlier version of this file claimed it was. Its reason is written down and does not transfer: it runs in the widget extension, where opening a dozen sockets at once is not on, and its count is bounded by the rows a layout draws. This runs in the app, its count is the whole Talk list, and somebody is watching the results it feeds.
     /// Nothing is thrown. A picture that cannot be fetched leaves the cache as it was, and the caller draws the Talk mark, which is the same outcome as a conversation the server has no bitmap for.
     @discardableResult
     func refresh(conversations: [(token: String, avatarVersion: String)], accountName: String, on server: Server) async -> Bool {
         let serverAddress = server.address
-        var didFetchAny = false
 
-        for conversation in conversations {
+        // Decided before anything starts, and on this task rather than inside the group: both of these read
+        // shared state, and settling them here keeps every task that is started a request and nothing else.
+        let pending: [(token: String, key: String)] = conversations.compactMap { conversation in
             let key = Self.cacheKey(token: conversation.token, avatarVersion: conversation.avatarVersion, accountName: accountName, serverAddress: serverAddress)
 
             if undrawable.withLock({ $0.contains(key) }) {
-                continue
+                return nil
             }
 
-            if cache.data(forKey: key) != nil {
-                continue
+            if hasFreshAnswer(forKey: key) {
+                return nil
             }
 
-            do {
-                // The light variant only. The artwork donated to Spotlight is opaque precisely so that one
-                // bitmap is right in both appearances, so a second fetch for the dark one would be a request
-                // per conversation for a picture nothing would ever draw.
-                let avatar = try await server.conversationAvatar(conversation.token, darkTheme: false)
+            return (token: conversation.token, key: key)
+        }
 
-                guard Self.drawableContentTypes.contains(avatar.contentType.lowercased()) else {
-                    logger.notice("A conversation's picture arrived as \(avatar.contentType, privacy: .public), which this does not decode; leaving the Talk mark in place for it")
-                    undrawable.withLock { _ = $0.insert(key) }
+        guard pending.isEmpty == false else {
+            logger.notice("All \(conversations.count, privacy: .public) conversation(s) already had a fresh answer; nothing was fetched")
+            return false
+        }
+
+        let didFetchAny = await withTaskGroup(of: Bool.self) { group in
+            var next = 0
+            var didFetchAny = false
+
+            while next < min(Self.concurrentFetches, pending.count) {
+                let conversation = pending[next]
+                group.addTask { await self.fetch(token: conversation.token, storingUnder: conversation.key, on: server) }
+                next += 1
+            }
+
+            // One finishes, one starts, so the window stays the same width for the whole run rather than
+            // draining to nothing and refilling. The reduction happens here, on the group's own task, which is
+            // why nothing shared is being written by anything that could be writing it at the same moment.
+            while let didCache = await group.next() {
+                didFetchAny = didFetchAny || didCache
+
+                guard next < pending.count else {
                     continue
                 }
 
-                cache.store(avatar.data, forKey: key)
-                decoded.withLock { $0[key] = nil }
-                didFetchAny = true
-
-                logger.debug("Cached a conversation's picture as \(avatar.contentType, privacy: .public)")
-            } catch {
-                logger.notice("Could not fetch a conversation's picture: \(error.localizedDescription, privacy: .public)")
+                let conversation = pending[next]
+                group.addTask { await self.fetch(token: conversation.token, storingUnder: conversation.key, on: server) }
+                next += 1
             }
+
+            return didFetchAny
         }
 
-        logger.notice("Refreshed the pictures of \(conversations.count, privacy: .public) conversation(s); \(didFetchAny ? "something new was cached" : "nothing new was cached", privacy: .public)")
+        logger.notice("Asked after \(pending.count, privacy: .public) of \(conversations.count, privacy: .public) conversation(s), \(Self.concurrentFetches, privacy: .public) at a time; \(didFetchAny ? "something new was cached" : "nothing new was cached", privacy: .public)")
 
         return didFetchAny
+    }
+
+    /// `fetch(token:storingUnder:on:)` is one conversation's request, and reports whether it left something new behind.
+    ///
+    /// A method rather than a closure written into the group, so what each task captures is spelled out: a token, a key, and the two `Sendable` things this type is made of.
+    /// An answer this cannot decode is recorded as a zero-length file under the same key, which is what stops it being asked again on the next launch as well as on the next refresh.
+    /// It answers `false` for bytes identical to the ones already cached, so that revalidating a picture a week later does not announce a change nothing can see — the caller turns a `true` into a Spotlight re-donation of the whole domain.
+    private func fetch(token: String, storingUnder key: String, on server: Server) async -> Bool {
+        do {
+            // The light variant only. The artwork donated to Spotlight is opaque precisely so that one bitmap is
+            // right in both appearances, so a second fetch for the dark one would be a request per conversation
+            // for a picture nothing would ever draw.
+            let avatar = try await server.conversationAvatar(token, darkTheme: false)
+
+            guard Self.drawableContentTypes.contains(avatar.contentType.lowercased()) else {
+                logger.notice("A conversation's picture arrived as \(avatar.contentType, privacy: .public), which this does not decode; recording that so it is not asked for again, and leaving the Talk mark in place for it")
+                undrawable.withLock { _ = $0.insert(key) }
+                cache.store(Data(), forKey: key)
+                return false
+            }
+
+            let wasUnchanged = cache.data(forKey: key) == avatar.data
+            cache.store(avatar.data, forKey: key)
+            decoded.withLock { $0[key] = nil }
+
+            logger.debug("Cached a conversation's picture as \(avatar.contentType, privacy: .public)")
+
+            return wasUnchanged == false
+        } catch {
+            logger.notice("Could not fetch a conversation's picture: \(error.localizedDescription, privacy: .public)")
+            return false
+        }
+    }
+
+    /// `hasFreshAnswer(forKey:)` reports whether the server's last answer about `key` is recent enough to stand.
+    ///
+    /// An answer is a bitmap or the zero-length file recording one this cannot decode, and both age the same way. Asked by file date rather than by reading the bytes, so a refresh no longer reads every cached picture off disk only to learn it exists.
+    /// A file whose date cannot be read counts as fresh rather than stale: the cost of being wrong that way is a picture a week out of date, and the cost of being wrong the other way is a request per conversation on every single refresh.
+    private func hasFreshAnswer(forKey key: String) -> Bool {
+        guard let fileURL = cache.localURL(forKey: key) else {
+            return false
+        }
+
+        guard let modified = try? fileURL.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate else {
+            return true
+        }
+
+        return Date.now.timeIntervalSince(modified) < Self.freshness
     }
 
     /// `clear()` drops every decoded bitmap and every remembered refusal, for a sign-out.
