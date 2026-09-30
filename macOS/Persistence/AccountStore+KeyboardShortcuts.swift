@@ -7,7 +7,7 @@ import Foundation
 ///
 /// They are here rather than with the rest of the store because each of them compares two shortcuts through `ShortcutMatching`, and that comparison is a measured statement about how AppKit matches key equivalents against a real `NSMenu` — AppKit, and so unusable from a folder the iOS app also compiles. The storage half of the same domain stayed behind: reading a stored shortcut out of a record and writing one back needs nothing but the record.
 ///
-/// This is the split `Core/ServerConnection.swift` and `ServerConnection+AccountStore` already make, applied within one type rather than across two: what can be shared is, and what names a platform framework sits beside the platform that has it. iOS has no menu bar, so nothing there asks which app a keystroke reaches, and `isReservedShortcut` correspondingly answers that nothing is.
+/// This is the split `Core/ServerConnection.swift` and `ServerConnection+AccountStore` already make, applied within one type rather than across two: what can be shared is, and what names a platform framework sits beside the platform that has it. iOS assigns no server-app shortcuts, the iPad's View menu included, so nothing there asks which app a keystroke reaches, and `isReservedShortcut` correspondingly answers that nothing is.
 extension AccountStore {
     /// `appHolding(_:)` is the one app a keystroke matching `shortcut` actually reaches — the first entry in `storedShortcuts` carrying an equivalent shortcut — or `nil` when no app carries it at all.
     ///

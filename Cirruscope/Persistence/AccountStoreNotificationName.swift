@@ -5,7 +5,7 @@ import Foundation
 
 /// This extension declares the in-process notifications the shared layer posts, which are shared because the store is. All but one are `AccountStore`'s; `donatedArtworkDidChange` is posted by both it and `ServerConnection`, and is here because a name belongs in one place rather than beside whichever type happens to post it.
 ///
-/// They sit here rather than beside the rest of the app's notification names in `macOS/Settings/NotificationName.swift` for one reason: a name has to be visible where it is posted, and the store is compiled into both apps. What observes them is still platform code — the View and Dock menus and the Apps settings tab on macOS, the title menu on iOS — but what announces them is not, and a second declaration per platform would let the two drift on the string.
+/// They sit here rather than beside the rest of the app's notification names in `macOS/Settings/NotificationName.swift` for one reason: a name has to be visible where it is posted, and the store is compiled into both apps. What observes them is still platform code — the View and Dock menus and the Apps settings tab on macOS, the title menu and the iPad's View menu on iOS — but what announces them is not, and a second declaration per platform would let the two drift on the string.
 ///
 /// The file is named for the store rather than for the type it extends, which is not a stylistic choice: two files called `NotificationName.swift` in one target collide on the `.stringsdata` output Xcode derives from the base name, and the build fails with "Multiple commands produce". A synchronized folder makes that easy to walk into, since nothing about adding a file warns that another target already compiles one by that name.
 extension Notification.Name {
