@@ -7,7 +7,7 @@ import os
 
 /// `EntityOpening` is how an App Intent hands what the user picked to whichever app is running it.
 ///
-/// The intent itself cannot do the opening. macOS opens a server app by asking `AppDelegate` to reuse or create a web window; iOS has one web view and loads a request into it.
+/// The intent itself cannot do the opening. macOS opens a server app by asking `AppDelegate` to reuse or create a web window; iOS loads a request into the web view of the screen that installed the handler last, which on an iPad with several windows is whichever appeared most recently.
 ///
 /// There are two ways to open something and not one, because a server app and a page within one are different requests. Opening an app means "show me Talk", and on macOS the right answer is to bring the window already showing Talk forward rather than to open a second one. Opening a conversation means "show me *this* conversation", and reusing a window without loading anything into it would bring a window forward showing a different conversation — which looks like the app ignored what was asked for. So an app is opened by identity and a page by address. Neither of those can be named from a folder the other app also compiles, and an intent has nowhere to be handed a dependency either: the system instantiates it as a plain value through a synthesized `init()`, so there is no initializer to inject into and no environment to read from. This is the seam that closes that gap, and it is a small piece of shared state rather than a protocol because the project has no dependency-injection layer and wants none — the same reasoning `AccountStore`'s closure seams rest on.
 ///

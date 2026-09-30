@@ -16,7 +16,7 @@ struct NextcloudView: View {
     private var layoutDirection
 
     ///
-    /// How many pixels this screen draws to the point, which is the resolution an icon has to be rendered at to look sharp on it.
+    /// How many pixels this window's screen draws to the point, which the iPad's View menu is told so its icons are rendered sharp.
     ///
     @Environment(\.displayScale)
     private var displayScale
@@ -168,16 +168,8 @@ struct NextcloudView: View {
                 }
 
                 ToolbarTitleMenu {
-                    ForEach(store.apps) { app in
-                        Button {
-                            navigateToApp(app)
-                        } label: {
-                            Label {
-                                Text(app.name)
-                            } icon: {
-                                icon(for: app)
-                            }
-                        }
+                    ServerAppMenuItems { app in
+                        navigateToApp(app)
                     }
                 }
 
@@ -269,6 +261,15 @@ struct NextcloudView: View {
         .task {
             await republishInsetsOnNavigation()
         }
+        // Tells the View menu of an iPad's menu bar which page to load a server app into while this window is in
+        // front. Withheld until the first measurement for the reason the first load is — nothing may load before the
+        // first document can inset itself — and for one of its own: a load before then would leave `page.url` set,
+        // so the `page.url == nil` guard in `.task(id: insets)` would skip the first load and the app-list refresh.
+        .focusedSceneValue(insets == nil ? nil : page)
+        // Tells the same menu the scale this window's screen draws at. Its content is in no window and would
+        // otherwise render the icons at a scale of one, which a 2x or 3x screen then draws blurred. Not withheld with
+        // the page: the scale is true from the first layout, and nothing is loaded by it.
+        .focusedSceneValue(\.displayScale, displayScale)
     }
 
     ///
@@ -276,7 +277,7 @@ struct NextcloudView: View {
     ///
     /// The app's name is the shorter of the two by some way — "Files" against "Files - Nextcloud" — and this title is also the button that opens the app menu, so the space it does not take is space the app-navigation toggle and the account menu get to keep.
     /// Reading `page.url` here is what subscribes this view to it, `WebPage` being observable, exactly as reading `page.title` subscribes it to that. Nothing else in the app reads the URL from a view body, so it is worth naming the mechanism.
-    /// The fallback is reached by more than a failure, so it has to read as a title in its own right rather than as an error, which is what `PageTitle.withoutSiteName(_:)` makes it. It covers the moment after launch before the app list has arrived, and the pages that genuinely belong to no app the server lists — its settings and a user's profile among them. A page that merely leaves its app's own path does not land here: a Talk conversation at `/call/<token>` resolves to Talk, the rule knowing the routes an app registers at the server's root.
+    /// The fallback is reached by more than a failure, so it has to read as a title in its own right rather than as an error, which is what `PageTitle.withoutSiteName(_:)` makes it. It covers the moment after a first sign-in before the app list has arrived — a relaunch starts from the persisted list — and the pages that genuinely belong to no app the server lists — its settings and a user's profile among them. A page that merely leaves its app's own path does not land here: a Talk conversation at `/call/<token>` resolves to Talk, the rule knowing the routes an app registers at the server's root.
     ///
     private var navigationTitle: String {
         guard let url = page.url else {
@@ -431,37 +432,16 @@ struct NextcloudView: View {
     }
 
     ///
-    /// The image one server app is listed with: its own, when one has been downloaded, and a generic placeholder when it has not.
-    ///
-    /// Reading `store.iconGeneration` is what subscribes this menu to icons arriving: they live in files shared with the Mac rather than on the apps themselves, so nothing about `store.apps` changes when one lands and observation would otherwise never notice.
-    ///
-    @ViewBuilder
-    private func icon(for app: ServerAppTransferObject) -> some View {
-        let _ = store.iconGeneration
-
-        if let account = store.account, let icon = UIImage.serverAppIcon(forAppID: app.id, serverAddress: account.server, scale: displayScale) {
-            Image(uiImage: icon)
-        } else {
-            Image(systemName: "app.grid")
-        }
-    }
-
-    ///
     /// Load one server app into the web view.
     ///
-    /// The path comes from the server, and `ServerAccount.authenticatedRequest(for:)` attaches the app password to whatever it is handed, so it is proven to stay on the connected server first. macOS resolves the same value the same way, through the same type.
+    /// Which request may open it, signed in with the app password, is `Store.request(opening:)`'s to decide, since the iPad's View menu opens apps into this same page too.
     ///
     func navigateToApp(_ app: ServerAppTransferObject) {
-        guard let account = store.account else {
+        guard let request = store.request(opening: app) else {
             return
         }
 
-        guard let target = SameOriginURL(path: app.href, relativeTo: account.server) else {
-            Self.logger.error("The path offered for server app \(app.id) does not stay on the connected server; refusing to open it")
-            return
-        }
-
-        page.load(account.authenticatedRequest(for: target.url))
+        page.load(request)
     }
 
     ///
@@ -497,10 +477,9 @@ struct NextcloudView: View {
     }
 }
 
+// No account, deliberately: with one, the first measurement would load the page from its server and refresh the app
+// list into the real store. The title menu's items are previewed on their own in `ServerAppMenuItems.swift` instead.
 #Preview {
     NextcloudView()
-        .environment(Store(apps: [
-            ServerAppTransferObject(id: "files", order: 0, href: "/apps/files/", name: "Files"),
-            ServerAppTransferObject(id: "activity", order: 1, href: "/apps/activity/", name: "Activity"),
-        ]))
+        .environment(Store())
 }

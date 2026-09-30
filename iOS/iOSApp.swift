@@ -17,7 +17,7 @@ struct iOSApp: App {
     private static let logger = Logger(for: iOSApp.self)
 
     ///
-    /// Global app state, built from whatever credentials this device already holds and handed to every screen.
+    /// Global app state, built from whatever credentials this device already holds and handed to every screen and to the menu bar's commands.
     ///
     let store = Store.restored()
 
@@ -31,6 +31,11 @@ struct iOSApp: App {
         WindowGroup {
             ContentView()
                 .environment(store)
+        }
+        // The server apps in the View menu of an iPad's menu bar. An iPhone has no menu bar, and no item here carries
+        // a keyboard shortcut, so nothing of this reaches the key commands SwiftUI builds there instead.
+        .commands {
+            ServerAppCommands(store: store)
         }
         // Registers `NotificationRefreshTask.identifier` with `BGTaskScheduler` while this scene is built, which
         // happens inside launch — the deadline registration has, and the reason no application delegate is needed to

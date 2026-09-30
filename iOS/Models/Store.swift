@@ -111,7 +111,7 @@ class Store {
     ///
     /// Re-read the persisted app list, and note that whatever draws it should draw it again.
     ///
-    /// `iconGeneration` is bumped on every announcement rather than only on the one that follows an icon fetch. The apps themselves are value snapshots and carry no icon, so a view drawing one has nothing else to observe; bumping on both announcements costs one redraw of a menu that is not on screen and is what makes the icons appear when they land.
+    /// `iconGeneration` is bumped on every announcement rather than only on the one that follows an icon fetch. The apps themselves are value snapshots and carry no icon, so a view drawing one has nothing else to observe; bumping on both announcements costs one redraw of the menus listing the apps, neither of which is usually on screen, and is what makes the icons appear when they land.
     ///
     private func adoptPersistedApps() {
         apps = AccountStore.shared.serverApps
@@ -191,7 +191,7 @@ class Store {
     /// The server app a page belongs to, or `nil` when it belongs to none of them.
     ///
     /// The rule is the shared one in `ServerAppTransferObject+Resolution.swift`, so this and the Mac's window reuse cannot come to different conclusions about the same address. It answers `nil` with no account configured, there being no server to resolve against.
-    /// Expect `nil` for a short while after every launch as well: `apps` is empty until `updateApps()` has heard back from the server, so nothing resolves until it has. A caller wanting to name the current app therefore needs something to say in the meantime.
+    /// Expect `nil` for a short while after a first sign-in as well: `apps` is empty until `updateApps()` has heard back from the server, so nothing resolves until it has. A relaunch starts from the persisted list instead, but a caller wanting to name the current app still needs something to say in the meantime.
     ///
     func app(for url: URL) -> ServerAppTransferObject? {
         guard let account else {
@@ -199,6 +199,25 @@ class Store {
         }
 
         return apps.app(for: url, on: account.server)
+    }
+
+    ///
+    /// The request that opens `app` on the connected server, signed in as the account, or `nil` when there is no account or the path the server gave for it leaves the server.
+    ///
+    /// The path comes from the server, and `ServerAccount.authenticatedRequest(for:)` attaches the app password to whatever it is handed, so it is proven to stay on the connected server first. macOS resolves the same value the same way, through the same type.
+    /// It lives here rather than on a screen because more than one menu opens an app — a window's own title menu, and the iPad's View menu, which reaches whichever window is in front — and what may carry the app password is not a rule to hold twice.
+    ///
+    func request(opening app: ServerAppTransferObject) -> URLRequest? {
+        guard let account else {
+            return nil
+        }
+
+        guard let target = SameOriginURL(path: app.href, relativeTo: account.server) else {
+            logger.error("The path offered for server app \(app.id, privacy: .public) does not stay on the connected server; refusing to open it")
+            return nil
+        }
+
+        return account.authenticatedRequest(for: target.url)
     }
 
     ///

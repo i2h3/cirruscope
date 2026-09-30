@@ -5,9 +5,10 @@ import Foundation
 import os
 import Rainmaker
 
-/// `ServerConnection`'s macOS half: the parts of talking to a server that also write what was learned to `AccountStore`.
+/// `ServerConnection`'s app half: the parts of talking to a server that also write what was learned to `AccountStore`.
 ///
-/// `ServerConnection` itself lives in `Core/` and is compiled into both apps and the widget extension, so it can depend on nothing macOS-only — and `AccountStore` is SwiftData, main-actor, and macOS-only, as are the `ServerAppTransferObject` values it stores. This extension is where that dependency is allowed to exist. iOS reuses the pure half and persists nothing but the credential.
+/// `ServerConnection` itself lives in `Core/` and is compiled into the widget extension as well as both apps, so it can depend on nothing the extension does not compile — and `AccountStore` is a main-actor SwiftData store only the apps have. This extension is where that dependency is allowed to exist, which is why it sits in `Cirruscope/` rather than beside the type it extends.
+/// Both apps call it. macOS refreshes the app list from `AppDelegate` and `ServerAddressViewController`, and iOS from `Store.updateApps()`, so the list every menu on either platform draws is persisted the same way; `validateAndPersist(_:)` is the one part only macOS calls.
 extension ServerConnection {
     /// `validateAndPersist(_:)` validates `server` and records what the validation found: its theming, and — when the version is supported — its version string.
     ///

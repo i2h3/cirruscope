@@ -5,7 +5,7 @@ import Foundation
 
 /// This extension builds the iOS app's process-wide account store.
 ///
-/// It is the counterpart of the macOS file of the same name, and differs in exactly one thing: nothing is passed for `isReservedShortcut`, so the store keeps its default answer that no shortcut is reserved. That is not a stub standing in for unfinished work — it is the truth. A reserved shortcut is one of Cirruscope's own menu items already holding a key equivalent, and iOS has no menu bar for one to be held in.
+/// It is the counterpart of the macOS file of the same name, and differs in exactly one thing: nothing is passed for `isReservedShortcut`, so the store keeps its default answer that no shortcut is reserved. That is not a stub standing in for unfinished work — it is the truth. A reserved shortcut is one a server app cannot be given because one of Cirruscope's own menu items already holds it, and iOS never gives a server app a shortcut at all — the iPad's View menu lists them without any.
 extension AccountStore {
     /// `shared` is the process-wide account store, over the app's on-disk container.
     ///
