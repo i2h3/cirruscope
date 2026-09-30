@@ -62,6 +62,7 @@ extension ServerConnection {
     /// The second announcement is what redraws the menus with the icons in them; `persist(serverApps:)` has already made the first. It is sent only when something was actually fetched, so an unchanged app list does not rebuild every menu to look exactly as it already did. A third name goes out beside it for the domains that draw these icons without owning them — see `Notification.Name.donatedArtworkDidChange`.
     private static func refreshServerAppIcons(from items: [NavigationItem], using server: Server) async {
         guard let credentials = Keychain.credentials(for: server.address) else {
+            logger.notice("No credentials are stored for the server whose apps were just listed; not fetching their icons")
             return
         }
 
