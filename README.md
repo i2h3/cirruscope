@@ -16,11 +16,13 @@ SPDX-License-Identifier: MIT
 [![Test](https://github.com/i2h3/cirruscope/actions/workflows/test.yml/badge.svg)](https://github.com/i2h3/cirruscope/actions/workflows/test.yml)
 [![Website](https://github.com/i2h3/cirruscope/actions/workflows/website.yml/badge.svg)](https://github.com/i2h3/cirruscope/actions/workflows/website.yml)
 
-**This page is for developers. For a more general introduction, see [the official website](https://cirruscope.app).**
+**This page is for developers.
+For a more general introduction, see [the official website](https://cirruscope.app).**
 
 ## Contributing
 
-Contributions are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) for the workflow.
+Contributions are welcome.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for the workflow.
 
 ## License
 

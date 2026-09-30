@@ -5,227 +5,424 @@ SPDX-License-Identifier: MIT
 
 # Design Decisions
 
-A technical FAQ of the design and architecture choices behind Cirruscope, and the reasoning for each — from the maintainer's perspective. It records *why* the project is built the way it is, complementing [AGENTS.md](./AGENTS.md), which covers *how* to work in the codebase. It is the developer-facing counterpart to the public [FAQ on the website](./Website/support.html); where a decision also shapes the public story, such as supported platforms or features, that page carries the polished version.
+A technical FAQ of the design and architecture choices behind Cirruscope, and the reasoning for each — from the maintainer's perspective.
+It records *why* the project is built the way it is, complementing [AGENTS.md](./AGENTS.md), which covers *how* to work in the codebase.
+It is the developer-facing counterpart to the public [FAQ on the website](./Website/support.html); where a decision also shapes the public story, such as supported platforms or features, that page carries the polished version.
 
-Entries are edited freely. This file is version-controlled, so its history lives in git — when a decision changes, the answer is simply updated or removed rather than annotated with its past.
+Entries are edited freely.
+This file is version-controlled, so its history lives in git — when a decision changes, the answer is simply updated or removed rather than annotated with its past.
 
 ## Why AppKit and not SwiftUI?
 
-This is about the macOS app. Cirruscope is a thin native frame around Nextcloud's web interface, so nearly all of that app's own user interface is macOS chrome: the menu bar, document-like web windows, the Dock menu, window restoration, and standard keyboard handling. AppKit lets it reach all of that directly, whereas SwiftUI's macOS scene model abstracts exactly these away. Two areas make the choice concrete rather than a matter of taste.
+This is about the macOS app.
+Cirruscope is a thin native frame around Nextcloud's web interface, so nearly all of that app's own user interface is macOS chrome: the menu bar, document-like web windows, the Dock menu, window restoration, and standard keyboard handling.
+AppKit lets it reach all of that directly, whereas SwiftUI's macOS scene model abstracts exactly these away.
+Two areas make the choice concrete rather than a matter of taste.
 
 Nothing here argues against SwiftUI generally, and the iOS target uses it throughout: none of the reasoning below is about SwiftUI as a framework, only about what its scene model exposes of a Mac window.
 
-**Window chrome and lifecycle.** The web windows are a custom `NSWindow` subclass ([`macOS/Web/WebWindow.swift`](./macOS/Web/WebWindow.swift)) with a transparent, title-hidden, full-size-content title bar so Nextcloud's UI extends under the chrome — and the subclass then repositions the traffic-light buttons by hand (`standardWindowButton(.closeButton / .miniaturizeButton / .zoomButton)` in `repositionControlButtons()`), re-running on every relayout and stepping aside in the window's own, native fullscreen. The same class overrides `performKeyEquivalent(with:)` to claim ⌃⌘S for "Show/Hide Sidebar" *before* the event reaches the embedded `WKWebView`, because Nextcloud Talk's own JavaScript would otherwise swallow it (issue #59). Window state restoration is hand-written as well: `AppDelegate` is the `restorationClass`, each window encodes its URL through `encodeRestorableState(with:)` and carries a UUID identity, and at launch the restored windows are reconciled against stored credentials and the server's supported version before being shown. Manipulating the standard window buttons, intercepting a key equivalent above the content view, and gating per-window restoration on app state all sit outside what SwiftUI's `WindowGroup`/`Window` scenes expose.
+**Window chrome and lifecycle.**
+The web windows are a custom `NSWindow` subclass ([`macOS/Web/WebWindow.swift`](./macOS/Web/WebWindow.swift)) with a transparent, title-hidden, full-size-content title bar so Nextcloud's UI extends under the chrome — and the subclass then repositions the traffic-light buttons by hand (`standardWindowButton(.closeButton / .miniaturizeButton / .zoomButton)` in `repositionControlButtons()`), re-running on every relayout and stepping aside in the window's own, native fullscreen.
+The same class overrides `performKeyEquivalent(with:)` to claim ⌃⌘S for "Show/Hide Sidebar" *before* the event reaches the embedded `WKWebView`, because Nextcloud Talk's own JavaScript would otherwise swallow it (issue #59).
+Window state restoration is hand-written as well: `AppDelegate` is the `restorationClass`, each window encodes its URL through `encodeRestorableState(with:)` and carries a UUID identity, and at launch the restored windows are reconciled against stored credentials and the server's supported version before being shown.
+Manipulating the standard window buttons, intercepting a key equivalent above the content view, and gating per-window restoration on app state all sit outside what SwiftUI's `WindowGroup`/`Window` scenes expose.
 
-**The embedded web view.** SwiftUI gained a native `WebView` and observable `WebPage` in macOS 26, but as of that release it does not surface the WebKit APIs Cirruscope depends on. Two the app uses today have no equivalent there:
+**The embedded web view.**
+SwiftUI gained a native `WebView` and observable `WebPage` in macOS 26, but as of that release it does not surface the WebKit APIs Cirruscope depends on.
+Two the app uses today have no equivalent there:
 
-- **Downloads.** Every transfer is driven through `WKDownloadDelegate` / `WKDownload` — choosing a non-clobbering destination in `~/Downloads`, observing its `Progress`, cancelling, and deliberately moving the delegate onto an app-wide `DownloadManager` so a transfer survives the window that started it ([`Cirruscope/Downloads/`](./macOS/Downloads/)). `WebPage` ships no download support at all — no `WKDownload`, no download events — so the download manager would have nothing to attach to.
-- **New windows from web content.** `WKUIDelegate`'s `webView(_:createWebViewWith:for:windowFeatures:)` ([`macOS/Web/WebViewController+WKUIDelegate.swift`](./macOS/Web/WebViewController+WKUIDelegate.swift)) turns `window.open()` / `target="_blank"` into a real new Cirruscope window for the same host, or hands external links to the system browser. `WebPage` exposes no `createWebViewWith`-style hook.
+- **Downloads.**
+  Every transfer is driven through `WKDownloadDelegate` / `WKDownload` — choosing a non-clobbering destination in `~/Downloads`, observing its `Progress`, cancelling, and deliberately moving the delegate onto an app-wide `DownloadManager` so a transfer survives the window that started it ([`Cirruscope/Downloads/`](./macOS/Downloads/)).
+  `WebPage` ships no download support at all — no `WKDownload`, no download events — so the download manager would have nothing to attach to.
+- **New windows from web content.**
+  `WKUIDelegate`'s `webView(_:createWebViewWith:for:windowFeatures:)` ([`macOS/Web/WebViewController+WKUIDelegate.swift`](./macOS/Web/WebViewController+WKUIDelegate.swift)) turns `window.open()` / `target="_blank"` into a real new Cirruscope window for the same host, or hands external links to the system browser.
+  `WebPage` exposes no `createWebViewWith`-style hook.
 
-Where the new API *does* cover a need — navigation policy via `WebPage.NavigationDeciding`, JavaScript dialogs and the file-upload panel via `WebPage.DialogPresenting`, and even the JavaScript-to-native bridge through the `WKUserContentController` it still exposes — Cirruscope simply predates it and already leans on the mature `WKNavigationDelegate` / `WKUIDelegate` / `WKScriptMessageHandler` model. But the download and new-window gaps are hard blockers, not conveniences, so hosting the web view in AppKit stays the right call.
+Where the new API *does* cover a need — navigation policy via `WebPage.NavigationDeciding`, JavaScript dialogs and the file-upload panel via `WebPage.DialogPresenting`, and even the JavaScript-to-native bridge through the `WKUserContentController` it still exposes — Cirruscope simply predates it and already leans on the mature `WKNavigationDelegate` / `WKUIDelegate` / `WKScriptMessageHandler` model.
+But the download and new-window gaps are hard blockers, not conveniences, so hosting the web view in AppKit stays the right call.
 
 ## Why wrap Nextcloud's web interface in a `WKWebView` instead of building the UI natively?
 
-Nextcloud's functionality — Files, Talk, Calendar, Mail, and every other app — lives server-side as web applications that evolve with each server release. Reimplementing any of it natively would be an enormous, never-finished effort that would always lag the server and break as it changes. And the payoff would be slight: the web interface already delivers the full feature set competently, so a native rebuild would spend disproportionate, frankly unreasonable effort duplicating what already works for barely any user-visible benefit. Hosting the web interface in a `WKWebView` means Cirruscope always shows the real, current Nextcloud, and the native shell contributes only what the web UI *cannot*: OS integration such as downloads, notifications, the Dock badge, and system keyboard shortcuts.
+Nextcloud's functionality — Files, Talk, Calendar, Mail, and every other app — lives server-side as web applications that evolve with each server release.
+Reimplementing any of it natively would be an enormous, never-finished effort that would always lag the server and break as it changes.
+And the payoff would be slight: the web interface already delivers the full feature set competently, so a native rebuild would spend disproportionate, frankly unreasonable effort duplicating what already works for barely any user-visible benefit.
+Hosting the web interface in a `WKWebView` means Cirruscope always shows the real, current Nextcloud, and the native shell contributes only what the web UI *cannot*: OS integration such as downloads, notifications, the Dock badge, and system keyboard shortcuts.
 
 ## Why does a page's full screen button put the web view into WebKit's own window rather than the app's?
 
-Because that is the only mechanism there is, and it happens to be the right one. `WKPreferences.isElementFullscreenEnabled` is `false` for every embedded `WKWebView` — Safari opts in for itself, which is why Nextcloud Talk's "Full screen" button worked there and did nothing at all in Cirruscope until [`WebViewController.enableElementFullscreen()`](./macOS/Web/WebViewController.swift) turned it on (issue #84). WebKit gates the DOM entry points on that same preference rather than rejecting the call, so with it off `Element.requestFullscreen` was not even defined and Talk, which tests for the function and only ever updates its own state from the resulting `fullscreenchange` event, failed silently and left nothing in the page's console to find.
+Because that is the only mechanism there is, and it happens to be the right one.
+`WKPreferences.isElementFullscreenEnabled` is `false` for every embedded `WKWebView` — Safari opts in for itself, which is why Nextcloud Talk's "Full screen" button worked there and did nothing at all in Cirruscope until [`WebViewController.enableElementFullscreen()`](./macOS/Web/WebViewController.swift) turned it on (issue #84).
+WebKit gates the DOM entry points on that same preference rather than rejecting the call, so with it off `Element.requestFullscreen` was not even defined and Talk, which tests for the function and only ever updates its own state from the resulting `fullscreenchange` event, failed silently and left nothing in the page's console to find.
 
-Switching it on means WebKit takes the web view out of the app's view hierarchy, leaves a placeholder in its place, and moves it into a fullscreen window of its own. So the Nextcloud interface itself becomes the full screen space, exactly as it does in Safari, rather than `WebWindow` entering `NSWindow`'s fullscreen with the page still inside it — and there is no public API to route `requestFullscreen()` into `toggleFullScreen:` instead, so the choice is that behaviour or none.
+Switching it on means WebKit takes the web view out of the app's view hierarchy, leaves a placeholder in its place, and moves it into a fullscreen window of its own.
+So the Nextcloud interface itself becomes the full screen space, exactly as it does in Safari, rather than `WebWindow` entering `NSWindow`'s fullscreen with the page still inside it — and there is no public API to route `requestFullscreen()` into `toggleFullScreen:` instead, so the choice is that behaviour or none.
 
-No native *interface* is adjusted around the transition, and none needs to be: everything the app draws for itself — the traffic-light placement, the window material, `stateOverlay`, and the themed background image — stays behind in the host window the web view leaves, and the last two are hidden for as long as a page is on screen anyway; `WebWindow.repositionControlButtons()`'s fullscreen guard is about the window's own fullscreen and is simply not involved. Two things do have to survive the move, though, and both are driven from the observation of `WKWebView.fullscreenState` — which also logs each transition, so that the next report of a fullscreen button "doing nothing" is answerable from a log capture rather than from guesswork.
+No native *interface* is adjusted around the transition, and none needs to be: everything the app draws for itself — the traffic-light placement, the window material, `stateOverlay`, and the themed background image — stays behind in the host window the web view leaves, and the last two are hidden for as long as a page is on screen anyway; `WebWindow.repositionControlButtons()`'s fullscreen guard is about the window's own fullscreen and is simply not involved.
+Two things do have to survive the move, though, and both are driven from the observation of `WKWebView.fullscreenState` — which also logs each transition, so that the next report of a fullscreen button "doing nothing" is answerable from a log capture rather than from guesswork.
 
-**Layout.** WebKit carries the web view's frame and autoresizing mask into its fullscreen window and back, but not its constraints — removing a view from its superview destroys those. The storyboard pinned the web view to its four edges with Auto Layout, so it arrived in the fullscreen window with no layout at all and froze at the size it had on entry: moving the fullscreen space to a larger external display resized WebKit's window and left the page rendering at the internal display's size. The web view is therefore laid out by an autoresizing mask instead ([`WebViewController.makeWebViewResizeWithItsSuperview()`](./macOS/Web/WebViewController.swift)), which belongs to the view rather than to the superview that owns its constraints and so survives the round trip. For a subview that simply fills its parent the two are equivalent, so nothing is given up.
+**Layout.**
+WebKit carries the web view's frame and autoresizing mask into its fullscreen window and back, but not its constraints — removing a view from its superview destroys those.
+The storyboard pinned the web view to its four edges with Auto Layout, so it arrived in the fullscreen window with no layout at all and froze at the size it had on entry: moving the fullscreen space to a larger external display resized WebKit's window and left the page rendering at the internal display's size.
+The web view is therefore laid out by an autoresizing mask instead ([`WebViewController.makeWebViewResizeWithItsSuperview()`](./macOS/Web/WebViewController.swift)), which belongs to the view rather than to the superview that owns its constraints and so survives the round trip.
+For a subview that simply fills its parent the two are equivalent, so nothing is given up.
 
-**⌃⌘S.** AppKit offers a key equivalent to the key window first, and while the page is fullscreen that window is WebKit's, not `WebWindow` — so `WebWindow.performKeyEquivalent(with:)` never sees the keystroke and issue #59's misbehaviour came straight back for the duration of a call. The "Show/Hide Sidebar" menu item is no fallback either: its action targets the first responder, the responder chain of WebKit's window does not lead back to `WebViewController`, so nothing implements `toggleSidebar(_:)` there and AppKit disables the item without ever asking `WebViewController+NSMenuItemValidation` about it.
+**⌃⌘S.**
+AppKit offers a key equivalent to the key window first, and while the page is fullscreen that window is WebKit's, not `WebWindow` — so `WebWindow.performKeyEquivalent(with:)` never sees the keystroke and issue #59's misbehaviour came straight back for the duration of a call.
+The "Show/Hide Sidebar" menu item is no fallback either: its action targets the first responder, the responder chain of WebKit's window does not lead back to `WebViewController`, so nothing implements `toggleSidebar(_:)` there and AppKit disables the item without ever asking `WebViewController+NSMenuItemValidation` about it.
 
-That leaves nothing native to intercept with, which is why [`SidebarShortcut.js`](./macOS/Scripts/SidebarShortcut.js) claims the keystroke from inside the page instead — registered on `window` in the capture phase at document start, so it is offered the event ahead of the page's own handlers wherever the page happens to live, and reports it back through a message handler. A local `NSEvent` monitor was tried first and is the obvious native answer, since a monitor is offered a keystroke before any window is; it did not work, and the page-level listener has the further advantage of not depending on which window AppKit considers key at all. The window override stays the ordinary path and the script the exception, rather than the script replacing both: while one of the app's own windows is key it claims the event before the page is asked, so the script never runs and no keystroke has to survive a round trip through JavaScript to reach a native action.
+That leaves nothing native to intercept with, which is why [`SidebarShortcut.js`](./macOS/Scripts/SidebarShortcut.js) claims the keystroke from inside the page instead — registered on `window` in the capture phase at document start, so it is offered the event ahead of the page's own handlers wherever the page happens to live, and reports it back through a message handler.
+A local `NSEvent` monitor was tried first and is the obvious native answer, since a monitor is offered a keystroke before any window is; it did not work, and the page-level listener has the further advantage of not depending on which window AppKit considers key at all.
+The window override stays the ordinary path and the script the exception, rather than the script replacing both: while one of the app's own windows is key it claims the event before the page is asked, so the script never runs and no keystroke has to survive a round trip through JavaScript to reach a native action.
 
 What the shortcut can *do* in fullscreen is a separate question: `SidebarToggle.js` clicks `.app-navigation-toggle`, and if the page in its fullscreen state does not offer that control then swallowing the keystroke — no sidebar, but no bogus download either — is the whole of the fix.
 
 ## Why does the Mac's accent color reach Nextcloud as one injected value the stylesheet re-derives, rather than as Nextcloud's own variables written from Swift?
 
-Because Nextcloud's colors are computed server-side in PHP, and the arithmetic that produces them turns out to be expressible in CSS. [`CommonThemeTrait`](https://github.com/nextcloud/server/blob/master/apps/theming/lib/Themes/CommonThemeTrait.php) derives a dozen custom properties from the configured primary color and emits ten of them as *literal* hex values, so overriding `--color-primary-element` alone — the obvious single lever — leaves every hover state, every text-on-primary color, and every light tint at the server's own color. Overriding all twelve from Swift would mean reimplementing Nextcloud's color math in Swift and rebuilding the app every time the server renames a variable.
+Because Nextcloud's colors are computed server-side in PHP, and the arithmetic that produces them turns out to be expressible in CSS.
+[`CommonThemeTrait`](https://github.com/nextcloud/server/blob/master/apps/theming/lib/Themes/CommonThemeTrait.php) derives a dozen custom properties from the configured primary color and emits ten of them as *literal* hex values, so overriding `--color-primary-element` alone — the obvious single lever — leaves every hover state, every text-on-primary color, and every light tint at the server's own color.
+Overriding all twelve from Swift would mean reimplementing Nextcloud's color math in Swift and rebuilding the app every time the server renames a variable.
 
-The mix and lightness functions behind those literals are ordinary sRGB operations, though: `Util::mix()` is a weighted average in gamma-encoded sRGB, which `color-mix(in srgb, …)` reproduces exactly, and `lighten`/`darken` are offsets of sRGB-HSL lightness, which is `hsl(from … calc(l ± n))`. So Swift forwards a single accent color and [`Cirruscope.css`](./macOS/Cirruscope.css) re-derives the family, keyed off `--color-main-background` so the results self-correct across the server's light, dark, and high-contrast stylesheets. Nextcloud's variable *names* then live in the file that already tracks its DOM, and adding another one is a stylesheet edit rather than a Swift change.
+The mix and lightness functions behind those literals are ordinary sRGB operations, though: `Util::mix()` is a weighted average in gamma-encoded sRGB, which `color-mix(in srgb, …)` reproduces exactly, and `lighten`/`darken` are offsets of sRGB-HSL lightness, which is `hsl(from … calc(l ± n))`.
+So Swift forwards a single accent color and [`Cirruscope.css`](./macOS/Cirruscope.css) re-derives the family, keyed off `--color-main-background` so the results self-correct across the server's light, dark, and high-contrast stylesheets.
+Nextcloud's variable *names* then live in the file that already tracks its DOM, and adding another one is a stylesheet edit rather than a Swift change.
 
-Two things resist that split and are handled natively for stated reasons. A brightness flag crosses alongside the color because `--primary-invert-if-bright` and `--primary-invert-if-dark` hold the keywords `invert(100%)` and `no` rather than colors, and no CSS function turns a color into a keyword; the flag also supplies the sign of the hover step, which Nextcloud moves away from the text color. And a data attribute gates the whole block rather than the stylesheet simply referencing the property, because CSS cannot test whether a custom property is set, and a `var()` reference to an unset one is invalid at computed-value time — which would strip `--color-primary-element` from the entire page instead of leaving the server's color alone.
+Two things resist that split and are handled natively for stated reasons.
+A brightness flag crosses alongside the color because `--primary-invert-if-bright` and `--primary-invert-if-dark` hold the keywords `invert(100%)` and `no` rather than colors, and no CSS function turns a color into a keyword; the flag also supplies the sign of the hover step, which Nextcloud moves away from the text color.
+And a data attribute gates the whole block rather than the stylesheet simply referencing the property, because CSS cannot test whether a custom property is set, and a `var()` reference to an unset one is invalid at computed-value time — which would strip `--color-primary-element` from the entire page instead of leaving the server's color alone.
 
-The override is also scoped to the translucent appearance, not applied unconditionally. Recoloring the interface is only appropriate once the page has already surrendered its own backgrounds to the native window material; with translucency off, what the user asked for is Nextcloud's theme exactly as the server sent it. That gate lives in the stylesheet's selectors rather than in Swift so the setting switches live, and so the accent color that is forwarded stays current for the moment translucency is switched back on.
+The override is also scoped to the translucent appearance, not applied unconditionally.
+Recoloring the interface is only appropriate once the page has already surrendered its own backgrounds to the native window material; with translucency off, what the user asked for is Nextcloud's theme exactly as the server sent it.
+That gate lives in the stylesheet's selectors rather than in Swift so the setting switches live, and so the accent color that is forwarded stays current for the moment translucency is switched back on.
 
-Keeping it current is the reason for [`AccentColorMonitor`](./macOS/AccentColorMonitor.swift), which watches two signals rather than the obvious one. `NSColor.systemColorsDidChangeNotification` reports accent-color changes and is posted *after* AppKit has invalidated its own color caches, so `NSColor.controlAccentColor` already answers with the new value; key-value observing `NSApplication.effectiveAppearance` reports light/dark, which the color notification does not reliably cover. The distributed `AppleColorPreferencesChangedNotification` is the path this deliberately avoids: it is receivable under the App Sandbox, but it arrives before that in-process cache is invalidated, so an observer of it reads the previous color, and it stopped reporting accent changes reliably on macOS 26.
+Keeping it current is the reason for [`AccentColorMonitor`](./macOS/AccentColorMonitor.swift), which watches two signals rather than the obvious one.
+`NSColor.systemColorsDidChangeNotification` reports accent-color changes and is posted *after* AppKit has invalidated its own color caches, so `NSColor.controlAccentColor` already answers with the new value; key-value observing `NSApplication.effectiveAppearance` reports light/dark, which the color notification does not reliably cover.
+The distributed `AppleColorPreferencesChangedNotification` is the path this deliberately avoids: it is receivable under the App Sandbox, but it arrives before that in-process cache is invalidated, so an observer of it reads the previous color, and it stopped reporting accent changes reliably on macOS 26.
 
 ## Why macOS only, and not iOS (for now)?
 
-Focus. Cirruscope's value is deep, macOS-specific native integration, and doing that well for one platform with a single maintainer is already a full effort. Nextcloud already ships its own iOS client, so the gap Cirruscope fills is on the Mac. This is deliberately "for now" not "never."
+Focus.
+Cirruscope's value is deep, macOS-specific native integration, and doing that well for one platform with a single maintainer is already a full effort.
+Nextcloud already ships its own iOS client, so the gap Cirruscope fills is on the Mac.
+This is deliberately "for now" not "never."
 
-The project does build an iOS app target, created for two reasons that still hold. Xcode cannot render a widget extension in its Previews canvas from a macOS target — Apple's own documentation says previews support iOS and watchOS widgets and points macOS widgets at the debugger instead — so designing widgets at all needs an active iOS target, and widgets are wanted on the Mac. And having a second target compile the same folders is the only thing that keeps `Cirruscope/` honest about what is genuinely platform-neutral; without it, "shared" is an assertion nothing checks. It is built for the Simulator on every pull request for exactly that reason.
+The project does build an iOS app target, created for two reasons that still hold.
+Xcode cannot render a widget extension in its Previews canvas from a macOS target — Apple's own documentation says previews support iOS and watchOS widgets and points macOS widgets at the debugger instead — so designing widgets at all needs an active iOS target, and widgets are wanted on the Mac.
+And having a second target compile the same folders is the only thing that keeps `Cirruscope/` honest about what is genuinely platform-neutral; without it, "shared" is an assertion nothing checks.
+It is built for the Simulator on every pull request for exactly that reason.
 
-What has changed is the app that target produces. It began as a placeholder and is now a side product, grown slowly and for its own sake: it signs in through Nextcloud's Login Flow v2, restores its account from the Keychain, and presents the web interface signed in. No release is planned or scheduled, and macOS keeps the attention; the goal is a prototype usable enough to judge the experience it offers. The consequence for the codebase is the part that carries design weight, and it is why this entry says so: shared code is now organized for two consumers by default rather than generalized on demand, which is what `Core/` and `Cirruscope/` are for and why domain logic landing in `macOS/` is now the choice that needs an argument.
+What has changed is the app that target produces.
+It began as a placeholder and is now a side product, grown slowly and for its own sake: it signs in through Nextcloud's Login Flow v2, restores its account from the Keychain, and presents the web interface signed in.
+No release is planned or scheduled, and macOS keeps the attention; the goal is a prototype usable enough to judge the experience it offers.
+The consequence for the codebase is the part that carries design weight, and it is why this entry says so: shared code is now organized for two consumers by default rather than generalized on demand, which is what `Core/` and `Cirruscope/` are for and why domain logic landing in `macOS/` is now the choice that needs an argument.
 
-That the two apps share one bundle identifier is deliberate too, and is what App Store Connect requires to offer them as a single app record rather than two unrelated listings. Provisioning profiles are per-platform even so, which is why a profile is named only where the build is for macOS: the two macOS targets name theirs outright, and the widget extension names its own behind an `[sdk=macosx*]` qualifier.
+That the two apps share one bundle identifier is deliberate too, and is what App Store Connect requires to offer them as a single app record rather than two unrelated listings.
+Provisioning profiles are per-platform even so, which is why a profile is named only where the build is for macOS: the two macOS targets name theirs outright, and the widget extension names its own behind an `[sdk=macosx*]` qualifier.
 
 ## Why one widget extension for both platforms, and not one per platform?
 
-Because there is nothing platform-specific to separate. A widget is WidgetKit and SwiftUI on both platforms, and Apple ships a multiplatform app-extension template built for exactly this: one target with `SDKROOT = auto` and both platforms in `SUPPORTED_PLATFORMS`, which each app then embeds built against its own SDK. Even `#Preview(as:widget:)` compiles on macOS — what macOS lacks is the canvas rendering it, which is what the iOS app target is for.
+Because there is nothing platform-specific to separate.
+A widget is WidgetKit and SwiftUI on both platforms, and Apple ships a multiplatform app-extension template built for exactly this: one target with `SDKROOT = auto` and both platforms in `SUPPORTED_PLATFORMS`, which each app then embeds built against its own SDK.
+Even `#Preview(as:widget:)` compiles on macOS — what macOS lacks is the canvas rendering it, which is what the iOS app target is for.
 
-The alternative was two targets, and the argument against it is the one this project already learned the expensive way: two near-identical targets drift. Xcode writes its template's build settings into each target rather than into an xcconfig, so a second copy is a second set of settings to keep aligned, a second bundle identifier and App ID to register, a second asset catalog and String Catalog, and a second set of `REUSE.toml` annotations. The iOS app target had drifted on five settings within days of being created, one of which would have failed App Store validation.
+The alternative was two targets, and the argument against it is the one this project already learned the expensive way: two near-identical targets drift.
+Xcode writes its template's build settings into each target rather than into an xcconfig, so a second copy is a second set of settings to keep aligned, a second bundle identifier and App ID to register, a second asset catalog and String Catalog, and a second set of `REUSE.toml` annotations.
+The iOS app target had drifted on five settings within days of being created, one of which would have failed App Store validation.
 
-The trade-off accepted is that genuine platform differences now live inside one target instead of being separated by construction: `[sdk=…]`-qualified assignments in `Widgets/Widgets.xcconfig` for build settings, and `#if os(…)` in source for anything WidgetKit exposes on only one platform. That is a smaller cost than it looks, because those differences are rare — so far the runpath search paths, the provisioning profile, and one `#if os(macOS)` choosing the scale the widget's header is drawn at — and a qualified assignment states the difference in one place, where a duplicated target leaves it implicit in two.
+The trade-off accepted is that genuine platform differences now live inside one target instead of being separated by construction: `[sdk=…]`-qualified assignments in `Widgets/Widgets.xcconfig` for build settings, and `#if os(…)` in source for anything WidgetKit exposes on only one platform.
+That is a smaller cost than it looks, because those differences are rare — so far the runpath search paths, the provisioning profile, and one `#if os(macOS)` choosing the scale the widget's header is drawn at — and a qualified assignment states the difference in one place, where a duplicated target leaves it implicit in two.
 
 ## Why is there a `Core/` folder as well as `Cirruscope/`?
 
-Because Xcode's synchronized folders are all-or-nothing, and an app extension wants less than an app. A folder listed by a target contributes every file it holds to that target; the only lever is `membershipExceptions`, which is a deny list. So if the widget extension listed `Cirruscope/`, every file later migrated there — as macOS code is generalized for iOS reuse — would silently join the extension too, and each one not wanted would need an exclusion added by hand. Forgetting one either bloats the extension or breaks its build, with no warning either way.
+Because Xcode's synchronized folders are all-or-nothing, and an app extension wants less than an app.
+A folder listed by a target contributes every file it holds to that target; the only lever is `membershipExceptions`, which is a deny list.
+So if the widget extension listed `Cirruscope/`, every file later migrated there — as macOS code is generalized for iOS reuse — would silently join the extension too, and each one not wanted would need an exclusion added by hand.
+Forgetting one either bloats the extension or breaks its build, with no warning either way.
 
-`Core/` inverts that default: it holds only what genuinely has no UI-framework dependency and is therefore safe in an app extension, and all three targets list it. `Cirruscope/` keeps the narrower job of bundle identity and configuration for the two apps. The cost is that a new shared file has two plausible homes and putting it in the wrong one is a silent mistake; the alternative shapes — a deny list that grows forever, or a local Swift package with `public` annotations on every shared symbol — were both worse for a shared surface this small. That last sentence used to end "a package remains the right answer if that surface grows to hold the models and the store", and the surface has now grown to hold exactly that: the SwiftData stack and the App Intents layer both moved into `Cirruscope/` when iOS was given them. A package is still declined, and the reason has changed rather than been ignored. What a package would buy is an enforced boundary; what it would cost is `public` on every shared symbol for two consumers inside one project, plus a second build product to keep signed and versioned. The boundary it would enforce is one the synchronized folders already enforce for free: `Core/` is listed by the widget extension and `Cirruscope/` is not, so a file's folder already decides what compiles it, and putting a file in the wrong one still fails to build rather than failing quietly. Revisit this if a third consumer appears that wants a different subset again.
+`Core/` inverts that default: it holds only what genuinely has no UI-framework dependency and is therefore safe in an app extension, and all three targets list it.
+`Cirruscope/` keeps the narrower job of bundle identity and configuration for the two apps.
+The cost is that a new shared file has two plausible homes and putting it in the wrong one is a silent mistake; the alternative shapes — a deny list that grows forever, or a local Swift package with `public` annotations on every shared symbol — were both worse for a shared surface this small.
+That last sentence used to end "a package remains the right answer if that surface grows to hold the models and the store", and the surface has now grown to hold exactly that: the SwiftData stack and the App Intents layer both moved into `Cirruscope/` when iOS was given them.
+A package is still declined, and the reason has changed rather than been ignored.
+What a package would buy is an enforced boundary; what it would cost is `public` on every shared symbol for two consumers inside one project, plus a second build product to keep signed and versioned.
+The boundary it would enforce is one the synchronized folders already enforce for free: `Core/` is listed by the widget extension and `Cirruscope/` is not, so a file's folder already decides what compiles it, and putting a file in the wrong one still fails to build rather than failing quietly.
+Revisit this if a third consumer appears that wants a different subset again.
 
 ## Why Apple platforms only (no Windows or Linux)?
 
-The entire point of the project is being deeply native to Apple's platform technologies. A Windows or Linux version would not be a port — it would be a separate project built from the ground up, sharing essentially none of the native integration that gives Cirruscope its reason to exist. That is out of scope for the resources available, and on Linux especially, Nextcloud's own web interface already works well in any browser.
+The entire point of the project is being deeply native to Apple's platform technologies.
+A Windows or Linux version would not be a port — it would be a separate project built from the ground up, sharing essentially none of the native integration that gives Cirruscope its reason to exist.
+That is out of scope for the resources available, and on Linux especially, Nextcloud's own web interface already works well in any browser.
 
 ## Why SwiftData with value-type DTOs behind a main-actor store?
 
-Persistence uses SwiftData rather than Core Data or a third-party store, for a modern, first-party model with low ceremony and an explicitly versioned schema. Because the app builds with complete strict concurrency, `@Model` objects are never passed across actor boundaries: a single main-actor store is the sole gateway to the container and hands out `Sendable` value-type data transfer objects, so the rest of the app works with safe, inert value types rather than live managed objects. See the persistence layer for the store and schema.
+Persistence uses SwiftData rather than Core Data or a third-party store, for a modern, first-party model with low ceremony and an explicitly versioned schema.
+Because the app builds with complete strict concurrency, `@Model` objects are never passed across actor boundaries: a single main-actor store is the sole gateway to the container and hands out `Sendable` value-type data transfer objects, so the rest of the app works with safe, inert value types rather than live managed objects.
+See the persistence layer for the store and schema.
 
 ## Why did the persistence and App Intents layers go to `Cirruscope/` and not `Core/`?
 
 Because `Core/` is compiled into the widget extension and neither layer has anything to do there.
 
-The folder rule asks two questions in order: can this live without AppKit and UIKit, and would the extension ever want it? The SwiftData stack passes the first — it did need a small AppKit remainder left behind on macOS, but the stack itself is Foundation and SwiftData — and fails the second. A widget that showed persisted data would be a second live process opening the same store, free to race `CirruscopeMigrationPlan` across a schema change, and this project has already decided the widget fetches its activity from the server rather than reading what the app stored.
+The folder rule asks two questions in order: can this live without AppKit and UIKit, and would the extension ever want it?
+The SwiftData stack passes the first — it did need a small AppKit remainder left behind on macOS, but the stack itself is Foundation and SwiftData — and fails the second.
+A widget that showed persisted data would be a second live process opening the same store, free to race `CirruscopeMigrationPlan` across a schema change, and this project has already decided the widget fetches its activity from the server rather than reading what the app stored.
 
 The App Intents layer fails the second question more concretely still, and the cost is measurable rather than theoretical: a String Catalog is a per-target resource, so an entity and an intent compiled into the extension would extract their every user-facing string into `Widgets/Localizable.xcstrings` as well — a third copy of eleven keys to translate into German, French and Spanish, for strings a widget never shows.
 
-So both went to `Cirruscope/`, which the two apps list and the extension does not. The value types stayed in `Core/`: `ServerAppTransferObject` was already there, and a widget listing what a server offers is plausible enough that the snapshots should stay reachable from it even while the store that vends them is not.
+So both went to `Cirruscope/`, which the two apps list and the extension does not.
+The value types stayed in `Core/`: `ServerAppTransferObject` was already there, and a widget listing what a server offers is plausible enough that the snapshots should stay reachable from it even while the store that vends them is not.
 
 ## Why is every shipped schema frozen into nested model copies?
 
 Because a versioned schema that points at the app's live models does not describe a store — it describes whatever the code happens to look like today, and the two stop agreeing the moment a model changes.
 
-`SchemaV1` was frozen from the start: its `Account`, `ServerApp` and `AppShortcut` are copies nested inside the enum, so `Schema.Version(1, 0, 0)` means exactly what `1.0.0` wrote and nothing else. `SchemaV2` was not. It named the live top-level types, which was correct only for as long as nobody edited them — an accident, not a property. The failure it invites is quiet and total: `CirruscopeMigrationPlan`'s `1.0.0` → `1.1.0` stage recreates each keyboard shortcut after the `AppShortcut` → `KeyboardShortcut` rename, and it did so by fetching the *live* `ServerApp` and inserting a *live* `KeyboardShortcut`. Add a property to either model and that stage would be reading a `1.0.0` store through a shape it has never had. Keyboard shortcuts are the only thing in this store a user authors by hand and the only thing that cannot be re-fetched from the server, so the cost of getting it wrong is the one cost that is not recoverable.
+`SchemaV1` was frozen from the start: its `Account`, `ServerApp` and `AppShortcut` are copies nested inside the enum, so `Schema.Version(1, 0, 0)` means exactly what `1.0.0` wrote and nothing else.
+`SchemaV2` was not.
+It named the live top-level types, which was correct only for as long as nobody edited them — an accident, not a property.
+The failure it invites is quiet and total: `CirruscopeMigrationPlan`'s `1.0.0` → `1.1.0` stage recreates each keyboard shortcut after the `AppShortcut` → `KeyboardShortcut` rename, and it did so by fetching the *live* `ServerApp` and inserting a *live* `KeyboardShortcut`.
+Add a property to either model and that stage would be reading a `1.0.0` store through a shape it has never had.
+Keyboard shortcuts are the only thing in this store a user authors by hand and the only thing that cannot be re-fetched from the server, so the cost of getting it wrong is the one cost that is not recoverable.
 
-So the rule is now uniform, and it has two halves. **A schema that has shipped is frozen** — its models become nested copies, its version identifier never moves again, and every migration stage addresses `SchemaV{n}.Model` rather than the bare name. **Exactly one schema is live at a time**, the newest, and it references the top-level models so that `AppDatabase.schema` registers the types every `FetchDescriptor` in the app actually names. That second half is why freezing and succeeding are one change rather than two: the moment `SchemaV2` stopped naming the live models, something had to, or the container would have registered models no fetch could reach.
+So the rule is now uniform, and it has two halves.
+**A schema that has shipped is frozen** — its models become nested copies, its version identifier never moves again, and every migration stage addresses `SchemaV{n}.Model` rather than the bare name.
+**Exactly one schema is live at a time**, the newest, and it references the top-level models so that `AppDatabase.schema` registers the types every `FetchDescriptor` in the app actually names.
+That second half is why freezing and succeeding are one change rather than two: the moment `SchemaV2` stopped naming the live models, something had to, or the container would have registered models no fetch could reach.
 
-`SchemaV3` exists for exactly that reason and for no other. It is shape-identical to `SchemaV2`, its migration stage is lightweight and has no work to do, and it is where the next model or property goes — until a build carrying it ships, at which point it is frozen and `SchemaV4` is created in the same change.
+`SchemaV3` exists for exactly that reason and for no other.
+It is shape-identical to `SchemaV2`, its migration stage is lightweight and has no work to do, and it is where the next model or property goes — until a build carrying it ships, at which point it is frozen and `SchemaV4` is created in the same change.
 
-The version identifier of `SchemaV2` was deliberately *not* bumped when it was frozen. Stores in the field carry `2.0.0`, and the models nested into it are byte-for-byte the live models at the `1.1.0` tag, so the identity it claims is the identity those stores have. Freezing after the fact is only safe because that was checked rather than assumed; it would not have been safe a single model edit later, which is the whole argument for the rule.
+The version identifier of `SchemaV2` was deliberately *not* bumped when it was frozen.
+Stores in the field carry `2.0.0`, and the models nested into it are byte-for-byte the live models at the `1.1.0` tag, so the identity it claims is the identity those stores have.
+Freezing after the fact is only safe because that was checked rather than assumed; it would not have been safe a single model edit later, which is the whole argument for the rule.
 
 ## Why does the store keep every failed copy instead of overwriting the last one?
 
 Because the run most worth recovering is the first one that failed, and overwriting destroyed exactly that.
 
-When `AppDatabase` cannot open the store it moves the files aside rather than deleting them, then rebuilds. That is the right shape: most of the store is reconstructible — apps, theming and the server version all come back from the server on the next launch — so recovering beats crash-looping, while the user's keyboard shortcuts stay on disk. But the quarantined copy used one fixed name, and the move removed anything already sitting there. A store that failed to open twice therefore ended with the second failure's copy, made *after* the first rebuild had already replaced the user's data with an empty store — so the rescue copy was of nothing, and the real one was gone.
+When `AppDatabase` cannot open the store it moves the files aside rather than deleting them, then rebuilds.
+That is the right shape: most of the store is reconstructible — apps, theming and the server version all come back from the server on the next launch — so recovering beats crash-looping, while the user's keyboard shortcuts stay on disk.
+But the quarantined copy used one fixed name, and the move removed anything already sitting there.
+A store that failed to open twice therefore ended with the second failure's copy, made *after* the first rebuild had already replaced the user's data with an empty store — so the rescue copy was of nothing, and the real one was gone.
 
-Later passes now land on `.quarantine-2`, `.quarantine-3`, and so on. The plain `.quarantine` is kept for the first pass because that is the case that essentially always happens. The search is bounded at ten: more quarantined copies of one store is not a state worth generating, and stopping there is what keeps this from becoming an unbounded loop on a directory the app cannot write to anyway.
+Later passes now land on `.quarantine-2`, `.quarantine-3`, and so on.
+The plain `.quarantine` is kept for the first pass because that is the case that essentially always happens.
+The search is bounded at ten: more quarantined copies of one store is not a state worth generating, and stopping there is what keeps this from becoming an unbounded loop on a directory the app cannot write to anyway.
 
 ## Why ad-hoc code signing by default?
 
-The checked-in build signs ad-hoc (`CODE_SIGN_IDENTITY = -`, no team, no provisioning profile) so that a fresh clone, a fork, or CI can build and link with no Apple Developer account installed at all. The project previously required the maintainer's own real credentials for every build, which is exactly why CI itself could not build. A real "Apple Development" identity, and the entitlement-backed capabilities that need it, are opted into locally through a gitignored `Local.xcconfig`. See [AGENTS.md → Building and Signing](./AGENTS.md#building-and-signing) for the mechanics.
+The checked-in build signs ad-hoc (`CODE_SIGN_IDENTITY = -`, no team, no provisioning profile) so that a fresh clone, a fork, or CI can build and link with no Apple Developer account installed at all.
+The project previously required the maintainer's own real credentials for every build, which is exactly why CI itself could not build.
+A real "Apple Development" identity, and the entitlement-backed capabilities that need it, are opted into locally through a gitignored `Local.xcconfig`.
+See [AGENTS.md → Building and Signing](./AGENTS.md#building-and-signing) for the mechanics.
 
-That commitment now extends from building to *running*, which is a second decision rather than a detail of the first. Ad-hoc signing embeds no entitlements while the App Sandbox stays active, so an ad-hoc build cannot reach the shared App Group container at all — and the code used to treat that as a provisioning error worth trapping on, which meant the app built for everyone but only launched for whoever held the maintainer's certificate. It is treated as a degraded state instead: [`AppDatabase`](./Cirruscope/Persistence/AppDatabase.swift) opens its store in the app's own container when the shared one cannot be opened, and [`AssetCache`](./Core/RemoteAssets/AssetCache.swift) caches into its own caches directory. Falling back is deliberately the last resort and is logged where the system log keeps it, because a *provisioned* build reaching it would be quietly reading an empty store rather than the user's data. The payoff beyond forks is that CI runs the app on every pull request, so a change that makes launch depend on an entitlement now shows up as a failing test instead of as somebody else's crash.
+That commitment now extends from building to *running*, which is a second decision rather than a detail of the first.
+Ad-hoc signing embeds no entitlements while the App Sandbox stays active, so an ad-hoc build cannot reach the shared App Group container at all — and the code used to treat that as a provisioning error worth trapping on, which meant the app built for everyone but only launched for whoever held the maintainer's certificate.
+It is treated as a degraded state instead: [`AppDatabase`](./Cirruscope/Persistence/AppDatabase.swift) opens its store in the app's own container when the shared one cannot be opened, and [`AssetCache`](./Core/RemoteAssets/AssetCache.swift) caches into its own caches directory.
+Falling back is deliberately the last resort and is logged where the system log keeps it, because a *provisioned* build reaching it would be quietly reading an empty store rather than the user's data.
+The payoff beyond forks is that CI runs the app on every pull request, so a change that makes launch depend on an entitlement now shows up as a failing test instead of as somebody else's crash.
 
 ## Why is App Transport Security disabled (arbitrary loads allowed)?
 
-`Info.plist` sets `NSAllowsArbitraryLoads = true`. Cirruscope connects to whatever Nextcloud server the user runs, and self-hosted instances are commonly reached over plain HTTP, a self-signed certificate, or a `.local`/LAN hostname. ATS's default policy would refuse those connections outright, making the app unusable for a large part of its audience. The trade-off — giving up ATS's blanket transport guarantees — is accepted deliberately, because the destination is a server the user chose and controls.
+`Info.plist` sets `NSAllowsArbitraryLoads = true`.
+Cirruscope connects to whatever Nextcloud server the user runs, and self-hosted instances are commonly reached over plain HTTP, a self-signed certificate, or a `.local`/LAN hostname.
+ATS's default policy would refuse those connections outright, making the app unusable for a large part of its audience.
+The trade-off — giving up ATS's blanket transport guarantees — is accepted deliberately, because the destination is a server the user chose and controls.
 
 ## Why strict Swift 6 concurrency with no default main-actor isolation?
 
-The app builds with `SWIFT_STRICT_CONCURRENCY = complete` and no default actor isolation, so main-actor isolation is always explicit rather than assumed. This is a correctness decision: Cirruscope lives among WebKit, AppKit, and authentication callbacks that do not all run on the main thread, and a closure that merely *looks* main-actor-isolated because of where it is written caused a real production crash when the framework invoked it off the main thread. The codebase therefore standardizes on forming such closures in `nonisolated` factory methods that hop explicitly to the main actor. See [AGENTS.md → Concurrency](./AGENTS.md#concurrency) for the pattern and the specific fix.
+The app builds with `SWIFT_STRICT_CONCURRENCY = complete` and no default actor isolation, so main-actor isolation is always explicit rather than assumed.
+This is a correctness decision: Cirruscope lives among WebKit, AppKit, and authentication callbacks that do not all run on the main thread, and a closure that merely *looks* main-actor-isolated because of where it is written caused a real production crash when the framework invoked it off the main thread.
+The codebase therefore standardizes on forming such closures in `nonisolated` factory methods that hop explicitly to the main actor.
+See [AGENTS.md → Concurrency](./AGENTS.md#concurrency) for the pattern and the specific fix.
 
 ## Why does opening a new window not wait for the server?
 
-Because a window is native UI, and native UI must never be gated on a network round-trip. It used to be: ⌘N ran the same `presentInitialWindow(forLaunch:)` path as launch, which awaited `ServerConnection.validate(_:)` — a live `capabilities()` fetch plus the theming assets `AccountStore.persist(theming:)` revalidates — and only then instantiated the window. Measured against a healthy server on a fast connection, that was 1,035 ms of waiting for 33 ms of actual window creation, so the app looked frozen for a second every time. The validation now runs behind the window instead of in front of it, and nothing about what gets refreshed changed.
+Because a window is native UI, and native UI must never be gated on a network round-trip.
+It used to be: ⌘N ran the same `presentInitialWindow(forLaunch:)` path as launch, which awaited `ServerConnection.validate(_:)` — a live `capabilities()` fetch plus the theming assets `AccountStore.persist(theming:)` revalidates — and only then instantiated the window.
+Measured against a healthy server on a fast connection, that was 1,035 ms of waiting for 33 ms of actual window creation, so the app looked frozen for a second every time.
+The validation now runs behind the window instead of in front of it, and nothing about what gets refreshed changed.
 
-The gate was never load-bearing for a user-initiated window, which is why removing it costs nothing: the session validated at launch, `NotificationMonitor` watches for revoked credentials throughout it, and `WebViewController+WKNavigationDelegate` catches a login redirect. `openServerApp(_:)` — the View menu, the Dock menu, Spotlight, and Siri — and `WKUIDelegate`'s `createWebViewWith` had always opened windows with no validation at all, so ⌘N was the outlier rather than the rule.
+The gate was never load-bearing for a user-initiated window, which is why removing it costs nothing: the session validated at launch, `NotificationMonitor` watches for revoked credentials throughout it, and `WebViewController+WKNavigationDelegate` catches a login redirect.
+`openServerApp(_:)` — the View menu, the Dock menu, Spotlight, and Siri — and `WKUIDelegate`'s `createWebViewWith` had always opened windows with no validation at all, so ⌘N was the outlier rather than the rule.
 
-Launch is the one case that still waits, deliberately. There the validation result decides something a fast window cannot: whether the windows AppKit just restored may stay open at all, against a server whose credentials may have been revoked or whose version may have fallen below the supported minimum while the app was closed. The trade-off accepted for every other case is that a window can briefly exist against a server the validation then rejects, which is resolved by closing web windows unconditionally on the unsupported-version path, as `requireSignIn()` already did for revoked credentials. An unreachable server needs no such handling and in fact improves: the window opens instantly and surfaces its own retry UI, instead of the user staring at nothing until the request times out.
+Launch is the one case that still waits, deliberately.
+There the validation result decides something a fast window cannot: whether the windows AppKit just restored may stay open at all, against a server whose credentials may have been revoked or whose version may have fallen below the supported minimum while the app was closed.
+The trade-off accepted for every other case is that a window can briefly exist against a server the validation then rejects, which is resolved by closing web windows unconditionally on the unsupported-version path, as `requireSignIn()` already did for revoked credentials.
+An unreachable server needs no such handling and in fact improves: the window opens instantly and surfaces its own retry UI, instead of the user staring at nothing until the request times out.
 
 ## Why do all web windows share one remembered size?
 
-Because a window's size is a habit, not a property of what it shows. A user settles on one comfortable size for Nextcloud in a window and expects the next window to match it, whether that window is opened by ⌘N, from the View or Dock menu, from Spotlight or Siri, or by the web interface's own `window.open()`. `AppDelegate.presentWebViewWindow(targetURL:)` is where all of those converge, so applying one remembered size there covers every entry point at once, and none of them had to know the rule.
+Because a window's size is a habit, not a property of what it shows.
+A user settles on one comfortable size for Nextcloud in a window and expects the next window to match it, whether that window is opened by ⌘N, from the View or Dock menu, from Spotlight or Siri, or by the web interface's own `window.open()`.
+`AppDelegate.presentWebViewWindow(targetURL:)` is where all of those converge, so applying one remembered size there covers every entry point at once, and none of them had to know the rule.
 
-The size lives in `UserDefaults.standard`, through AppKit's own `NSWindow.saveFrame(usingName:)`/`setFrameUsingName(_:)` pair, rather than on the `Account` record next to the appearance settings. Window geometry is this app's window chrome, not the connected account's data: it should survive a log out, and `AccountStore.disconnect()` deletes the account. It also must not depend on an entitlement, since anything reached during launch has to behave the same in an ad-hoc build as in a provisioned one — which is why the standard defaults domain is used and not the shared App Group suite. The framework pair carries the rest for free: it encodes the frame against the screen it was saved on and adjusts for a changed display configuration on the way back out. `setFrameAutosaveName(_:)` would have been the shorter spelling but is unusable here, because it refuses a name another live window already claimed, so with several web windows open only the first would ever autosave.
+The size lives in `UserDefaults.standard`, through AppKit's own `NSWindow.saveFrame(usingName:)`/`setFrameUsingName(_:)` pair, rather than on the `Account` record next to the appearance settings.
+Window geometry is this app's window chrome, not the connected account's data: it should survive a log out, and `AccountStore.disconnect()` deletes the account.
+It also must not depend on an entitlement, since anything reached during launch has to behave the same in an ad-hoc build as in a provisioned one — which is why the standard defaults domain is used and not the shared App Group suite.
+The framework pair carries the rest for free: it encodes the frame against the screen it was saved on and adjusts for a changed display configuration on the way back out.
+`setFrameAutosaveName(_:)` would have been the shorter spelling but is unusable here, because it refuses a name another live window already claimed, so with several web windows open only the first would ever autosave.
 
-Only the size is applied, never the position. `AppDelegate.present(windowController:sender:)` already owns where a window goes, cascading each one off the last, and a remembered absolute position would compete with that — every window of a session would want the same spot. A window's frame is still what gets stored, since that is what AppKit's mechanism speaks, and `WebWindowFrame.applySize(to:)` puts the origin back afterwards. Fullscreen is excluded outright: a fullscreen window's frame is its screen's, so remembering it would open the next, ordinary window at screen size.
+Only the size is applied, never the position.
+`AppDelegate.present(windowController:sender:)` already owns where a window goes, cascading each one off the last, and a remembered absolute position would compete with that — every window of a session would want the same spot.
+A window's frame is still what gets stored, since that is what AppKit's mechanism speaks, and `WebWindowFrame.applySize(to:)` puts the origin back afterwards.
+Fullscreen is excluded outright: a fullscreen window's frame is its screen's, so remembering it would open the next, ordinary window at screen size.
 
 ## Why does the app measure Nextcloud's header height instead of assuming one?
 
-Because the bar Cirruscope uses as its title bar belongs to the server, and the server changes it. A web window hides its own title bar and lets the web view reach the top edge, so the close, miniaturize, and zoom buttons are repositioned into Nextcloud's `#header` and vertically centered there. That height used to be a constant in [`WebWindow`](./macOS/Web/WebWindow.swift), and it was Nextcloud server 34's: that release declares `$header-height: 50px`, server 35 declares `44px`, and the traffic lights consequently sat visibly low on 35 for everyone who upgraded their server without the app changing at all.
+Because the bar Cirruscope uses as its title bar belongs to the server, and the server changes it.
+A web window hides its own title bar and lets the web view reach the top edge, so the close, miniaturize, and zoom buttons are repositioned into Nextcloud's `#header` and vertically centered there.
+That height used to be a constant in [`WebWindow`](./macOS/Web/WebWindow.swift), and it was Nextcloud server 34's: that release declares `$header-height: 50px`, server 35 declares `44px`, and the traffic lights consequently sat visibly low on 35 for everyone who upgraded their server without the app changing at all.
 
-Keying a table off the server version would only move the assumption, since nothing guarantees the value is a function of the version: a theme may override the custom property the header's height is declared from, and a relative unit grows with the browser's own text size. So the height is read where it is actually true. [`HeaderHeight.js`](./macOS/Scripts/HeaderHeight.js) measures the header element's own bounding rect — what rendered, rather than a property that has to be parsed — once per document and again through a `ResizeObserver`, and reports it over a script message. [`NextcloudHeaderHeight`](./macOS/Web/NextcloudHeaderHeight.swift) believes a reported height only within the range a real header falls in, so a header caught collapsed or mid-animation cannot place the buttons somewhere unreachable.
+Keying a table off the server version would only move the assumption, since nothing guarantees the value is a function of the version: a theme may override the custom property the header's height is declared from, and a relative unit grows with the browser's own text size.
+So the height is read where it is actually true.
+[`HeaderHeight.js`](./macOS/Scripts/HeaderHeight.js) measures the header element's own bounding rect — what rendered, rather than a property that has to be parsed — once per document and again through a `ResizeObserver`, and reports it over a script message.
+[`NextcloudHeaderHeight`](./macOS/Web/NextcloudHeaderHeight.swift) believes a reported height only within the range a real header falls in, so a header caught collapsed or mid-animation cannot place the buttons somewhere unreachable.
 
-It is kept in `UserDefaults.standard` for the same three reasons the remembered window size above is: it is the app's own window chrome rather than the account's data, so it should survive a log out that deletes the account; it is read during the first layout pass of the first window, before any page has loaded, so it must not depend on an entitlement an ad-hoc build cannot carry; and one value serves every window, all of them showing the same server. A height recorded against one server is simply corrected by the first page load against the next.
+It is kept in `UserDefaults.standard` for the same three reasons the remembered window size above is: it is the app's own window chrome rather than the account's data, so it should survive a log out that deletes the account; it is read during the first layout pass of the first window, before any page has loaded, so it must not depend on an entitlement an ad-hoc build cannot carry; and one value serves every window, all of them showing the same server.
+A height recorded against one server is simply corrected by the first page load against the next.
 
-The trade-off accepted is a visible one, and the alternative was worse. While no height has ever been reported the buttons are left exactly where AppKit puts them — no replacement at all — which costs a single shift on the very first window of a fresh install, once its first load reports; every launch after that reads the value back before the window is shown. Shipping a fallback constant would remove that one shift by re-introducing precisely the thing that broke: a number that is right for one server release and quietly wrong for the next.
+The trade-off accepted is a visible one, and the alternative was worse.
+While no height has ever been reported the buttons are left exactly where AppKit puts them — no replacement at all — which costs a single shift on the very first window of a fresh install, once its first load reports; every launch after that reads the value back before the window is shown.
+Shipping a fallback constant would remove that one shift by re-introducing precisely the thing that broke: a number that is right for one server release and quietly wrong for the next.
 
-The horizontal half of the same bar goes the other way, and the asymmetry is the point. How tall the bar is belongs to the server, so the page measures it and reports it; how far in the window buttons reach belongs to the app, so Swift computes it and the page is told. [`WebWindow.windowButtonClearance(isFullScreen:buttonWidth:)`](./macOS/Web/WebWindow.swift) derives that distance from the very constants the buttons are laid out from — the last button's leading edge, the width of the button AppKit vends, and the gap the header keeps past it — and it arrives on `<html>` as `--cirruscope-window-button-clearance`, alongside the accent color and on the same publication schedule, which is the only thing the header's leading margin reads. It used to read a hand-tuned `90px`: the same arithmetic written out a second time, in a file with no way of noticing when the first one changed, and no way of noticing native fullscreen either — where macOS moves the buttons into the auto-revealing title bar and the header needs no clearance at all, which is the excess inset issue #95 arrived as. CSS cannot decide that for itself, `:fullscreen` being the Fullscreen API's pseudo-class about an element the page put in the top layer rather than anything about the window the page is in, so the two `NSWindowDelegate` hooks that see the transition state where the window is heading and the page is told per window — never broadcast, since a sibling window that is not in fullscreen would lose its own clearance.
+The horizontal half of the same bar goes the other way, and the asymmetry is the point.
+How tall the bar is belongs to the server, so the page measures it and reports it; how far in the window buttons reach belongs to the app, so Swift computes it and the page is told.
+[`WebWindow.windowButtonClearance(isFullScreen:buttonWidth:)`](./macOS/Web/WebWindow.swift) derives that distance from the very constants the buttons are laid out from — the last button's leading edge, the width of the button AppKit vends, and the gap the header keeps past it — and it arrives on `<html>` as `--cirruscope-window-button-clearance`, alongside the accent color and on the same publication schedule, which is the only thing the header's leading margin reads.
+It used to read a hand-tuned `90px`: the same arithmetic written out a second time, in a file with no way of noticing when the first one changed, and no way of noticing native fullscreen either — where macOS moves the buttons into the auto-revealing title bar and the header needs no clearance at all, which is the excess inset issue #95 arrived as.
+CSS cannot decide that for itself, `:fullscreen` being the Fullscreen API's pseudo-class about an element the page put in the top layer rather than anything about the window the page is in, so the two `NSWindowDelegate` hooks that see the transition state where the window is heading and the page is told per window — never broadcast, since a sibling window that is not in fullscreen would lose its own clearance.
 
-One literal stays in the stylesheet, in a `:root` declaration, and has to: a `var()` reference to an unset custom property is invalid at computed-value time and would drop the margin outright, so a value must be in force from the first paint, before any Swift has run against the document. What keeps it from going the way the old margin did is a test rather than a comment — [`WebWindowButtonClearanceTests`](./macOSTests/Windows/WebWindowButtonClearanceTests.swift) asks AppKit for a real window button through `NSWindow.standardWindowButton(_:for:)` and asserts that the function's answer for an ordinary window is exactly the number the stylesheet falls back to.
+One literal stays in the stylesheet, in a `:root` declaration, and has to: a `var()` reference to an unset custom property is invalid at computed-value time and would drop the margin outright, so a value must be in force from the first paint, before any Swift has run against the document.
+What keeps it from going the way the old margin did is a test rather than a comment — [`WebWindowButtonClearanceTests`](./macOSTests/Windows/WebWindowButtonClearanceTests.swift) asks AppKit for a real window button through `NSWindow.standardWindowButton(_:for:)` and asserts that the function's answer for an ordinary window is exactly the number the stylesheet falls back to.
 
 ## Why are only parts of the app unit-tested?
 
-The app splits into two halves, and only one of them repays unit testing. The native half holds real decision logic that is pure input-to-output — whether two keyboard shortcuts mean the same keystroke, how one renders as symbolic text, how the store derives its snapshots — and that code is both cheap to test and demonstrably in need of it: the rule for comparing key equivalents was subtly wrong in a way that reading it never revealed. The WebKit half is the opposite. Navigation policy, downloads, injected JavaScript, and notification bridging only mean anything against a live Nextcloud server in a real web view, so a test there buys little beyond "the delegate fired" while costing a server fixture, network flakiness, and permanent maintenance. Those paths are verified by hand against a real server, with the app's own `os` logging as the record.
+The app splits into two halves, and only one of them repays unit testing.
+The native half holds real decision logic that is pure input-to-output — whether two keyboard shortcuts mean the same keystroke, how one renders as symbolic text, how the store derives its snapshots — and that code is both cheap to test and demonstrably in need of it: the rule for comparing key equivalents was subtly wrong in a way that reading it never revealed.
+The WebKit half is the opposite.
+Navigation policy, downloads, injected JavaScript, and notification bridging only mean anything against a live Nextcloud server in a real web view, so a test there buys little beyond "the delegate fired" while costing a server fixture, network flakiness, and permanent maintenance.
+Those paths are verified by hand against a real server, with the app's own `os` logging as the record.
 
-Tests are therefore expected wherever logic is Swift-only and server-free, and deliberately absent around WebKit — a deliberate scope, not a backlog. Two store methods sit on the WebKit side of that line despite being persistence code: `disconnect()` empties the real asset cache and the real Keychain, and `persist(theming:)` downloads over the network on every call, so both are verified by hand while the storage half of the first, `deleteAccount()`, is covered like everything else.
+Tests are therefore expected wherever logic is Swift-only and server-free, and deliberately absent around WebKit — a deliberate scope, not a backlog.
+Two store methods sit on the WebKit side of that line despite being persistence code: `disconnect()` empties the real asset cache and the real Keychain, and `persist(theming:)` downloads over the network on every call, so both are verified by hand while the storage half of the first, `deleteAccount()`, is covered like everything else.
 
-One habit comes out of the same work and generalizes: where the app depends on undocumented framework behaviour, the test measures the framework rather than restating the belief, so [`KeyEquivalentMatchingOracleTests`](./macOSTests/KeyboardShortcuts/KeyEquivalentMatchingOracleTests.swift) asks a real `NSMenu` what it matches and holds [`ShortcutMatching`](./macOS/ShortcutMatching.swift) to that answer. See [AGENTS.md → Testing](./AGENTS.md#testing) for the mechanics.
+One habit comes out of the same work and generalizes: where the app depends on undocumented framework behaviour, the test measures the framework rather than restating the belief, so [`KeyEquivalentMatchingOracleTests`](./macOSTests/KeyboardShortcuts/KeyEquivalentMatchingOracleTests.swift) asks a real `NSMenu` what it matches and holds [`ShortcutMatching`](./macOS/ShortcutMatching.swift) to that answer.
+See [AGENTS.md → Testing](./AGENTS.md#testing) for the mechanics.
 
 ## Why does a Swift project carry a JavaScript linter?
 
-Because the half of the app that has no tests is also the half that is not Swift. The entry above records that navigation policy, downloads, injected scripts, and notification bridging are deliberately left out of the test suites — they only mean anything against a live Nextcloud server in a real web view — and of all of that, the injected scripts are the part the Swift compiler never sees either. Twelve files and some seven hundred lines, ten of them injected straight into Nextcloud's own DOM: the sidebar toggle both apps click and the state it reports back, the header the Mac measures to place its traffic lights, the window drag, the ⌃⌘S the page must not swallow, the `Notification` API override, the appearance attributes, the iPhone's safe-area insets and its notifications panel — with the remaining two behind the website's own progressive enhancements. Nothing checked any of them. A mistake in one is not a build failure but a feature that quietly does nothing against a server, which is exactly what hand-verification is worst at noticing, so static analysis — the only automated check that code can have — is now applied to it.
+Because the half of the app that has no tests is also the half that is not Swift.
+The entry above records that navigation policy, downloads, injected scripts, and notification bridging are deliberately left out of the test suites — they only mean anything against a live Nextcloud server in a real web view — and of all of that, the injected scripts are the part the Swift compiler never sees either.
+Twelve files and some seven hundred lines, ten of them injected straight into Nextcloud's own DOM: the sidebar toggle both apps click and the state it reports back, the header the Mac measures to place its traffic lights, the window drag, the ⌃⌘S the page must not swallow, the `Notification` API override, the appearance attributes, the iPhone's safe-area insets and its notifications panel — with the remaining two behind the website's own progressive enhancements.
+Nothing checked any of them.
+A mistake in one is not a build failure but a feature that quietly does nothing against a server, which is exactly what hand-verification is worst at noticing, so static analysis — the only automated check that code can have — is now applied to it.
 
-Biome is what applies it: one binary installed with `brew install biome`, one `biome.jsonc` at the repository root, and formatting and linting in the same pass. That shape matters more here than any individual rule. `Cirruscope/`, `Core/`, `macOS/`, `iOS/`, and `Widgets/` are synchronized folders, so anything dropped inside one of them is copied into the built app with no project-file edit and nothing to review — which turns "installs no folder next to the code" from a preference into a requirement. The configuration is `biome.jsonc` rather than `biome.json` because JSONC accepts the same inline SPDX header every other source file here carries, where pure JSON has to be annotated in [`REUSE.toml`](./REUSE.toml) instead; `reuse` draws that same line itself, treating `.jsonc` as commentable and `.json` as not. Its `files.includes` is an allowlist pinned to `*.js`, because Biome formats stylesheets and JSON by default and would otherwise rewrite the Xcode-owned files that `REUSE.toml` annotates precisely because they must never be hand-edited.
+Biome is what applies it: one binary installed with `brew install biome`, one `biome.jsonc` at the repository root, and formatting and linting in the same pass.
+That shape matters more here than any individual rule.
+`Cirruscope/`, `Core/`, `macOS/`, `iOS/`, and `Widgets/` are synchronized folders, so anything dropped inside one of them is copied into the built app with no project-file edit and nothing to review — which turns "installs no folder next to the code" from a preference into a requirement.
+The configuration is `biome.jsonc` rather than `biome.json` because JSONC accepts the same inline SPDX header every other source file here carries, where pure JSON has to be annotated in [`REUSE.toml`](./REUSE.toml) instead; `reuse` draws that same line itself, treating `.jsonc` as commentable and `.json` as not.
+Its `files.includes` is an allowlist pinned to `*.js`, because Biome formats stylesheets and JSON by default and would otherwise rewrite the Xcode-owned files that `REUSE.toml` annotates precisely because they must never be hand-edited.
 
-Adopting it forced one change in the app itself. [`AppearanceAttributes.js`](./macOS/Scripts/AppearanceAttributes.js) and [`SafeAreaInsets.js`](./iOS/Scripts/SafeAreaInsets.js) were not programs at all but bare function expressions, which Swift completed by appending its arguments to their text — and no formatter can leave that alone, because terminating the expression with a semicolon detaches the call and the script then does nothing at all, silently. Both now assign onto a `window.Cirruscope` namespace that Swift calls by name, which is a valid program either way, survives being re-evaluated in a page that already has one, and persists whether or not WebKit wraps the text in a function body of its own. [`NotificationBridge.js`](./macOS/Scripts/NotificationBridge.js)'s activation hook moved onto the same object rather than staying a prefixed global of its own. What did *not* move is how the scripts talk to each other: the selector [`NotificationsPanelState.js`](./iOS/Scripts/NotificationsPanelState.js) publishes for [`NotificationsPanel.js`](./iOS/Scripts/NotificationsPanel.js), and the appearance attributes the stylesheets read, stay on `<html>`, because a global is visible only in the content world that defined it and that is not a thing to depend on. The namespace carries what Swift calls; the DOM carries what scripts tell each other.
+Adopting it forced one change in the app itself.
+[`AppearanceAttributes.js`](./macOS/Scripts/AppearanceAttributes.js) and [`SafeAreaInsets.js`](./iOS/Scripts/SafeAreaInsets.js) were not programs at all but bare function expressions, which Swift completed by appending its arguments to their text — and no formatter can leave that alone, because terminating the expression with a semicolon detaches the call and the script then does nothing at all, silently.
+Both now assign onto a `window.Cirruscope` namespace that Swift calls by name, which is a valid program either way, survives being re-evaluated in a page that already has one, and persists whether or not WebKit wraps the text in a function body of its own.
+[`NotificationBridge.js`](./macOS/Scripts/NotificationBridge.js)'s activation hook moved onto the same object rather than staying a prefixed global of its own.
+What did *not* move is how the scripts talk to each other: the selector [`NotificationsPanelState.js`](./iOS/Scripts/NotificationsPanelState.js) publishes for [`NotificationsPanel.js`](./iOS/Scripts/NotificationsPanel.js), and the appearance attributes the stylesheets read, stay on `<html>`, because a global is visible only in the content world that defined it and that is not a thing to depend on.
+The namespace carries what Swift calls; the DOM carries what scripts tell each other.
 
-ESLint with Prettier was the obvious alternative and lost on the synchronized folders. Both arrive through npm, which means a `node_modules` tree of thousands of files somewhere in the checkout, kept out of the shipping bundle only by a project-file exception that a later reorganization can quietly undo — and it would put the first package manifest and the first lockfile into a repository whose entire dependency graph is three Swift packages, each needing its own SPDX coverage, its own ignore rule, and its own step in CI. That is an ecosystem's worth of paperwork for seven hundred lines of DOM manipulation. Prettier with oxlint lost for a smaller reason: two tools, two configurations, two installations, and two CI steps to do what one binary does. Doing nothing lost on the paragraph above.
+ESLint with Prettier was the obvious alternative and lost on the synchronized folders.
+Both arrive through npm, which means a `node_modules` tree of thousands of files somewhere in the checkout, kept out of the shipping bundle only by a project-file exception that a later reorganization can quietly undo — and it would put the first package manifest and the first lockfile into a repository whose entire dependency graph is three Swift packages, each needing its own SPDX coverage, its own ignore rule, and its own step in CI.
+That is an ecosystem's worth of paperwork for seven hundred lines of DOM manipulation.
+Prettier with oxlint lost for a smaller reason: two tools, two configurations, two installations, and two CI steps to do what one binary does.
+Doing nothing lost on the paragraph above.
 
-The trade-off accepted is that a checked script is not a verified one. Biome can prove that the syntax parses, that the style is uniform, and that no name is used before it is declared; it cannot know whether `.app-navigation-toggle` is still the selector Nextcloud ships, which is the failure these scripts actually suffer. Their behaviour stays verified by hand against a real server, exactly as before, with the linter as a floor under that rather than a replacement for it. Biome's rule set is also narrower and younger than ESLint's, with no plugins to reach for, so a rule this project turns out to want may simply not exist — and one rule has to be switched off outright, because Biome reads every `.js` file as a module and would therefore delete the `"use strict"` that [`site.js`](./Website/js/site.js) depends on for being loaded as a classic script.
+The trade-off accepted is that a checked script is not a verified one.
+Biome can prove that the syntax parses, that the style is uniform, and that no name is used before it is declared; it cannot know whether `.app-navigation-toggle` is still the selector Nextcloud ships, which is the failure these scripts actually suffer.
+Their behaviour stays verified by hand against a real server, exactly as before, with the linter as a floor under that rather than a replacement for it.
+Biome's rule set is also narrower and younger than ESLint's, with no plugins to reach for, so a rule this project turns out to want may simply not exist — and one rule has to be switched off outright, because Biome reads every `.js` file as a module and would therefore delete the `"use strict"` that [`site.js`](./Website/js/site.js) depends on for being loaded as a classic script.
 
 ## Why does the account store take its SwiftData container instead of reaching for the app's?
 
-Because otherwise its logic cannot be exercised without writing to the developer's own account. [`AccountStore`](./Cirruscope/Persistence/AccountStore.swift) keeps its `shared` instance — some three dozen call sites reach it that way, and none of them changed — but the container arrives as an initializer parameter, so a test hands in an in-memory one and drives the shortcut and app-list rules against a store nothing else can see. The same initializer takes the two things the store reaches outside itself for, the reserved-shortcut lookup and the change announcement, as plain closures defaulted to their production behaviour.
+Because otherwise its logic cannot be exercised without writing to the developer's own account.
+[`AccountStore`](./Cirruscope/Persistence/AccountStore.swift) keeps its `shared` instance — some three dozen call sites reach it that way, and none of them changed — but the container arrives as an initializer parameter, so a test hands in an in-memory one and drives the shortcut and app-list rules against a store nothing else can see.
+The same initializer takes the two things the store reaches outside itself for, the reserved-shortcut lookup and the change announcement, as plain closures defaulted to their production behaviour.
 
-Closures rather than protocols and mock types, deliberately: the app has no dependency-injection layer and does not want one, and a protocol per collaborator would buy nothing over a function value here. Those two are injected at all — rather than simply called — because the test bundle is hosted by the app, so the real menu bar and the real application delegate are both live during a test run: the reserved-shortcut lookup would answer from the storyboard's own shortcuts, and a test write would rebuild the app's actual View menu behind the test's back. The same reasoning is why the app-list write takes the app's own `ServerAppTransferObject` rather than the network library's model, which the test target does not link. See [AGENTS.md → Testing](./AGENTS.md#testing).
+Closures rather than protocols and mock types, deliberately: the app has no dependency-injection layer and does not want one, and a protocol per collaborator would buy nothing over a function value here.
+Those two are injected at all — rather than simply called — because the test bundle is hosted by the app, so the real menu bar and the real application delegate are both live during a test run: the reserved-shortcut lookup would answer from the storyboard's own shortcuts, and a test write would rebuild the app's actual View menu behind the test's back.
+The same reasoning is why the app-list write takes the app's own `ServerAppTransferObject` rather than the network library's model, which the test target does not link.
+See [AGENTS.md → Testing](./AGENTS.md#testing).
 
 ## Why is a keyboard shortcut another app already uses rejected rather than moved?
 
-Recording a combination that a different Nextcloud server app — or one of Cirruscope's own menu items — already holds is refused, naming the occupant, instead of quietly transferring it. Two enabled menu items sharing one key equivalent have no reliable, documented tie-break in AppKit, so accepting the second assignment would leave one of the two unreachable and give the user no way to tell which. Refusing in place keeps the menu bar unambiguous and puts the explanation where the user is already looking. Transferring was considered and rejected: a shortcut silently disappearing from another app's row is a worse surprise than a keystroke that visibly declines to take.
+Recording a combination that a different Nextcloud server app — or one of Cirruscope's own menu items — already holds is refused, naming the occupant, instead of quietly transferring it.
+Two enabled menu items sharing one key equivalent have no reliable, documented tie-break in AppKit, so accepting the second assignment would leave one of the two unreachable and give the user no way to tell which.
+Refusing in place keeps the menu bar unambiguous and puts the explanation where the user is already looking.
+Transferring was considered and rejected: a shortcut silently disappearing from another app's row is a worse surprise than a keystroke that visibly declines to take.
 
-Shortcuts stored before that check existed can still collide, and those are honoured for the first app in menu order while showing as unassigned for the other, rather than being deleted. A duplicate is something the user once entered deliberately, so the app declines to destroy it behind their back and merely stops applying it; clearing or re-recording the winner hands the combination back. See [`AccountStore.shortcut(forAppID:)`](./Cirruscope/Persistence/AccountStore.swift).
+Shortcuts stored before that check existed can still collide, and those are honoured for the first app in menu order while showing as unassigned for the other, rather than being deleted.
+A duplicate is something the user once entered deliberately, so the app declines to destroy it behind their back and merely stops applying it; clearing or re-recording the winner hands the combination back.
+See [`AccountStore.shortcut(forAppID:)`](./Cirruscope/Persistence/AccountStore.swift).
 
 ## Why can Siri not open a specific Nextcloud app by name, when Spotlight and Shortcuts can?
 
-Because macOS 26 refuses the phrase, not because the app fails to offer it. [`ServerAppShortcuts`](./Cirruscope/AppIntents/ServerAppShortcuts.swift) declares both a parameter-free phrase and two that interpolate the app parameter, and the system accepts only the first: `linkd` logs `Skipping phrase template with an unrecognized token: Open ${target} in ${applicationName}` for each parameterized template and then `Empty spans, will not donate`, so Siri receives no phrase carrying an app name and falls back to merely launching Cirruscope. Everything the phrase would need is in place and verified in the built metadata — `OpenIntent` conformance (which is what records the `com.apple.link.systemProtocol.OpenEntity` system protocol), a `numericFormat` on the entity's `TypeDisplayRepresentation`, and a `name` property bound to Spotlight's `displayName` — each matching Apple's "Adopting App Intents to support system experiences" sample field for field.
+Because macOS 26 refuses the phrase, not because the app fails to offer it.
+[`ServerAppShortcuts`](./Cirruscope/AppIntents/ServerAppShortcuts.swift) declares both a parameter-free phrase and two that interpolate the app parameter, and the system accepts only the first: `linkd` logs `Skipping phrase template with an unrecognized token: Open ${target} in ${applicationName}` for each parameterized template and then `Empty spans, will not donate`, so Siri receives no phrase carrying an app name and falls back to merely launching Cirruscope.
+Everything the phrase would need is in place and verified in the built metadata — `OpenIntent` conformance (which is what records the `com.apple.link.systemProtocol.OpenEntity` system protocol), a `numericFormat` on the entity's `TypeDisplayRepresentation`, and a `name` property bound to Spotlight's `displayName` — each matching Apple's "Adopting App Intents to support system experiences" sample field for field.
 
-That this is a platform limitation rather than an app defect was established by building that sample and installing it unmodified: it is rejected with the identical message, in both `de-DE` and `en-US`, on a freshly booted system. Chasing it in app code cost considerable effort, so the reproduction is worth remembering — when a spoken phrase silently does nothing, register Apple's sample and compare before changing anything here.
+That this is a platform limitation rather than an app defect was established by building that sample and installing it unmodified: it is rejected with the identical message, in both `de-DE` and `en-US`, on a freshly booted system.
+Chasing it in app code cost considerable effort, so the reproduction is worth remembering — when a spoken phrase silently does nothing, register Apple's sample and compare before changing anything here.
 
-**On iOS this does not happen, which was measured rather than assumed.** The iOS app was built, installed on a simulator and launched, and `linkd` processed all three templates without complaint: the log shows `Interpolating Öffne ${applicationName} ${target} with Cirruscope` and `Interpolating Öffne ${target} in ${applicationName} with Cirruscope`, and neither "Skipping phrase template with an unrecognized token" nor "Empty spans, will not donate" appears anywhere in it. The macOS symptom is simply absent.
+**On iOS this does not happen, which was measured rather than assumed.**
+The iOS app was built, installed on a simulator and launched, and `linkd` processed all three templates without complaint: the log shows `Interpolating Öffne ${applicationName} ${target} with Cirruscope` and `Interpolating Öffne ${target} in ${applicationName} with Cirruscope`, and neither "Skipping phrase template with an unrecognized token" nor "Empty spans, will not donate" appears anywhere in it.
+The macOS symptom is simply absent.
 
-What that does *not* yet establish is that iOS donates a working parameterized phrase, and the same log says why: it ends with "Generated 1 AppShortcuts with 1 total phrases". Three templates went in and one phrase came out, which is what should happen when `${target}` has no values to interpolate — the app under test had no account, so the entity query returned nothing. So the finding is narrower than it looks and worth stating exactly: the token is recognized on iOS where it is not on macOS, and whether the phrases then reach Siri with real values is still open. Finishing it needs an account on a real server, and a device rather than a simulator.
+What that does *not* yet establish is that iOS donates a working parameterized phrase, and the same log says why: it ends with "Generated 1 AppShortcuts with 1 total phrases".
+Three templates went in and one phrase came out, which is what should happen when `${target}` has no values to interpolate — the app under test had no account, so the entity query returned nothing.
+So the finding is narrower than it looks and worth stating exactly: the token is recognized on iOS where it is not on macOS, and whether the phrases then reach Siri with real values is still open.
+Finishing it needs an account on a real server, and a device rather than a simulator.
 
-The parameterized phrases stay in the source regardless. They cost nothing, they are what the API documents, and they begin working the day the system stops rejecting them. Nothing about this affects Spotlight, which indexes each app as a [`ServerAppEntity`](./Cirruscope/AppEntities/ServerAppEntity.swift) and works, or the Shortcuts app, which offers the app parameter and works; only spoken phrases are constrained.
+The parameterized phrases stay in the source regardless.
+They cost nothing, they are what the API documents, and they begin working the day the system stops rejecting them.
+Nothing about this affects Spotlight, which indexes each app as a [`ServerAppEntity`](./Cirruscope/AppEntities/ServerAppEntity.swift) and works, or the Shortcuts app, which offers the app parameter and works; only spoken phrases are constrained.
 
-So the integration ships, but unannounced: the website's macOS-integration feature names Spotlight and the Shortcuts app only, and never Siri ([`Website/index.html`](./Website/index.html) and its `de`/`fr`/`es` counterparts). Promising a spoken phrase that the system currently discards would be a broken promise, while shipping it quietly costs nothing and means the feature simply starts working if a later macOS release accepts the phrases. Do not add Siri to that copy — or to any other user-facing text — without first confirming that a spoken phrase really does open an app.
+So the integration ships, but unannounced: the website's macOS-integration feature names Spotlight and the Shortcuts app only, and never Siri ([`Website/index.html`](./Website/index.html) and its `de`/`fr`/`es` counterparts).
+Promising a spoken phrase that the system currently discards would be a broken promise, while shipping it quietly costs nothing and means the feature simply starts working if a later macOS release accepts the phrases.
+Do not add Siri to that copy — or to any other user-facing text — without first confirming that a spoken phrase really does open an app.
 
 ## Why do the App Intents strings name Nextcloud in some places and not others?
 
-Because the two product names are easy to confuse, and each surface differs in how much context it already gives. What the user opens is a *Nextcloud* app — Files, Notes, Talk — presented *by* Cirruscope, so neither name alone is right everywhere. The rule the strings follow: name the server product only where nothing else identifies what the entry is, and never call these "Cirruscope apps", which would be plainly wrong since the apps belong to the server.
+Because the two product names are easy to confuse, and each surface differs in how much context it already gives.
+What the user opens is a *Nextcloud* app — Files, Notes, Talk — presented *by* Cirruscope, so neither name alone is right everywhere.
+The rule the strings follow: name the server product only where nothing else identifies what the entry is, and never call these "Cirruscope apps", which would be plainly wrong since the apps belong to the server.
 
 Named, because the surface has no other context: the entity's type name and its numeric form (`Nextcloud server app`, the kind of value the Shortcuts app shows for the parameter), the Spotlight subtitle, the Spotlight keywords, and the action's title and description, which are also how someone searching the Shortcuts action list for "Nextcloud" finds it at all.
 
-The subtitles follow one pattern, *`<what it is>` in Nextcloud `<the app it lives in>`* — "Note in Nextcloud Notes", "Conversation in Nextcloud Talk", "Collective in Nextcloud Collectives", "Page in Nextcloud Collectives". Naming the app alone was tried first and read badly on a live account: a row titled with a colleague's name under "Nextcloud Talk" says where the thing came from and leaves what it is to be guessed, Talk holding calls and messages as well as conversations. Both halves are therefore said outright, and said the same way everywhere, so a column of mixed results reads as one list rather than four.
+The subtitles follow one pattern, *`<what it is>` in Nextcloud `<the app it lives in>`* — "Note in Nextcloud Notes", "Conversation in Nextcloud Talk", "Collective in Nextcloud Collectives", "Page in Nextcloud Collectives".
+Naming the app alone was tried first and read badly on a live account: a row titled with a colleague's name under "Nextcloud Talk" says where the thing came from and leaves what it is to be guessed, Talk holding calls and messages as well as conversations.
+Both halves are therefore said outright, and said the same way everywhere, so a column of mixed results reads as one list rather than four.
 
-A page pays for that pattern, and knowingly. Its subtitle used to be the name of the collective it belongs to, which is the better answer to "which of my two pages called Notes is this" — but it is also the rarer question, and one row reading "Nextcloud Handbook" among three reading "… in Nextcloud …" reads as a different kind of entry altogether. Which collective a page is in is still carried, by the artwork — that collective's own emoji — and by the keywords.
+A page pays for that pattern, and knowingly.
+Its subtitle used to be the name of the collective it belongs to, which is the better answer to "which of my two pages called Notes is this" — but it is also the rarer question, and one row reading "Nextcloud Handbook" among three reading "… in Nextcloud …" reads as a different kind of entry altogether.
+Which collective a page is in is still carried, by the artwork — that collective's own emoji — and by the keywords.
 
 The server app is the one entity outside the pattern, because it has no app to be *in*: its subtitle stays `Nextcloud`, the title already being an app's name.
 
-Left out, because the context carries it: the intent's parameter is simply `App` with "Which app?" as its prompt, and the parameter-free Siri phrase says "Open an app in Cirruscope". Every phrase must interpolate the application name, so naming the server product there too would put both products in one spoken sentence and imply they are the same thing. A bare "app" is likewise not among the entity type's `synonyms`: too generic to match on without pulling in unrelated utterances. See [`ServerAppEntity`](./Cirruscope/AppEntities/ServerAppEntity.swift) and [`ServerAppShortcuts`](./Cirruscope/AppIntents/ServerAppShortcuts.swift).
+Left out, because the context carries it: the intent's parameter is simply `App` with "Which app?" as its prompt, and the parameter-free Siri phrase says "Open an app in Cirruscope".
+Every phrase must interpolate the application name, so naming the server product there too would put both products in one spoken sentence and imply they are the same thing.
+A bare "app" is likewise not among the entity type's `synonyms`: too generic to match on without pulling in unrelated utterances.
+See [`ServerAppEntity`](./Cirruscope/AppEntities/ServerAppEntity.swift) and [`ServerAppShortcuts`](./Cirruscope/AppIntents/ServerAppShortcuts.swift).
 ## Why are the server apps listed alphabetically instead of in the server's own order?
 
-The server reports a position for each app, the one arranging the web interface's app menu, and Cirruscope ignores it for ordering and sorts by localized name instead. That order is a layout: an admin arranges it, and it works in a browser window because the menu it belongs to is right there, spatial and small. A native menu is not read that way. Nobody scans the View menu, the Dock menu, or the iPhone's title menu for the third item — they scan it for a name, and an order with no visible logic makes that a linear search every time. Alphabetical is the only ordering a user can predict without having seen the list before, which is why the standard macOS lists that grow with the user's own data are sorted that way too.
+The server reports a position for each app, the one arranging the web interface's app menu, and Cirruscope ignores it for ordering and sorts by localized name instead.
+That order is a layout: an admin arranges it, and it works in a browser window because the menu it belongs to is right there, spatial and small.
+A native menu is not read that way.
+Nobody scans the View menu, the Dock menu, or the iPhone's title menu for the third item — they scan it for a name, and an order with no visible logic makes that a linear search every time.
+Alphabetical is the only ordering a user can predict without having seen the list before, which is why the standard macOS lists that grow with the user's own data are sorted that way too.
 
-One rule serves every surface on both platforms. The comparison itself is [`sortedByName()`](./Core/ServerApps/ServerAppTransferObject+Sorting.swift), shared so the two apps cannot drift, and it is applied at the one read every surface on both platforms shares — [`AccountStore.serverApps`](./Cirruscope/Persistence/AccountStore.swift) — rather than in each of them: the View menu, the Dock menu, the Apps settings tab, the Shortcuts and Siri lists, the Spotlight index, the iPhone's title menu, and the iPad's View menu therefore cannot disagree about where an app sits — which matters most in that settings tab, where the row a user assigns a shortcut to should be findable in the same place as the menu item it drives. That the App Intents surfaces list the apps this way without knowing the rule exists is the argument for where it sits: they read the same snapshot every other surface does. It also keeps the duplicate-shortcut rule above honest, since "the first app in menu order" now names the first app the user actually sees. The collation is `localizedStandardCompare(_:)`, the one Finder sorts names with, rather than `<`, which would file a lowercase name behind every uppercase one and read "Talk 10" as preceding "Talk 2".
+One rule serves every surface on both platforms.
+The comparison itself is [`sortedByName()`](./Core/ServerApps/ServerAppTransferObject+Sorting.swift), shared so the two apps cannot drift, and it is applied at the one read every surface on both platforms shares — [`AccountStore.serverApps`](./Cirruscope/Persistence/AccountStore.swift) — rather than in each of them: the View menu, the Dock menu, the Apps settings tab, the Shortcuts and Siri lists, the Spotlight index, the iPhone's title menu, and the iPad's View menu therefore cannot disagree about where an app sits — which matters most in that settings tab, where the row a user assigns a shortcut to should be findable in the same place as the menu item it drives.
+That the App Intents surfaces list the apps this way without knowing the rule exists is the argument for where it sits: they read the same snapshot every other surface does.
+It also keeps the duplicate-shortcut rule above honest, since "the first app in menu order" now names the first app the user actually sees.
+The collation is `localizedStandardCompare(_:)`, the one Finder sorts names with, rather than `<`, which would file a lowercase name behind every uppercase one and read "Talk 10" as preceding "Talk 2".
 
 The server's position is still recorded on every refresh rather than discarded, so offering it back — as a preference, say — needs no schema change.
 
@@ -233,11 +430,17 @@ The server's position is still recorded on every refresh rather than discarded, 
 
 Because the two lists answer different questions.
 
-A list of server apps is a menu of fixed things. Nobody scans it for the third item; they scan it for a name, which is why it is sorted the way Finder sorts names and why an order the server chose is ignored. A list of conversations is a record of what has been happening, and the question asked of it is "what is new" — so it is ordered most recently active first, which is also how Nextcloud's own Talk interface presents it and what the network library's documentation says the server expects of a client, the server not sorting them at all.
+A list of server apps is a menu of fixed things.
+Nobody scans it for the third item; they scan it for a name, which is why it is sorted the way Finder sorts names and why an order the server chose is ignored.
+A list of conversations is a record of what has been happening, and the question asked of it is "what is new" — so it is ordered most recently active first, which is also how Nextcloud's own Talk interface presents it and what the network library's documentation says the server expects of a client, the server not sorting them at all.
 
-The ordering is total rather than merely by timestamp, and that part is not cosmetic: the server stamps activity in whole seconds, so ties are ordinary rather than theoretical, and `sorted(by:)` promises no stability. Two conversations sharing a second would otherwise be free to swap places between one list and the next, which for a donated Spotlight item means the identifier behind a row changing under the user. Name settles a tie and the token settles that.
+The ordering is total rather than merely by timestamp, and that part is not cosmetic: the server stamps activity in whole seconds, so ties are ordinary rather than theoretical, and `sorted(by:)` promises no stability.
+Two conversations sharing a second would otherwise be free to swap places between one list and the next, which for a donated Spotlight item means the identifier behind a row changing under the user.
+Name settles a tie and the token settles that.
 
-Notes follow the same reasoning to a third answer: favourites first, then most recently changed. A favourite is the only thing in that data which is the user saying "this one matters", so it is what a list offering a handful should offer first, and Nextcloud's own Notes interface orders them the same way — a list that disagrees with the app it mirrors reads as a bug rather than as a choice. Every one of these orderings is made total by falling through to a name and then to an identifier, for the reason above: an unstable order moves the identifier behind a donated Spotlight row under the user between one refresh and the next.
+Notes follow the same reasoning to a third answer: favourites first, then most recently changed.
+A favourite is the only thing in that data which is the user saying "this one matters", so it is what a list offering a handful should offer first, and Nextcloud's own Notes interface orders them the same way — a list that disagrees with the app it mirrors reads as a bug rather than as a choice.
+Every one of these orderings is made total by falling through to a name and then to an identifier, for the reason above: an unstable order moves the identifier behind a donated Spotlight row under the user between one refresh and the next.
 
 So the rule is not "sort alphabetically" or "sort by recency" but: sort by what the list is *for*, decide it once at the single read every surface shares, and make it total.
 
@@ -245,359 +448,608 @@ So the rule is not "sort alphabetically" or "sort by recency" but: sort by what 
 
 Because it would be a number the app is confidently wrong about.
 
-The server reports how many messages are unread in each conversation and whether any of them mentions the account, and both are tempting: an unread count is exactly the sort of thing a Spotlight result could carry. But what reads this is an index refreshed when the *conversation list* changes — at launch, at sign-in, on a refresh — and not when a message arrives or is read. A stored count would therefore be correct at the moment it was written and drift from then on, with nothing on the result to say how old it is.
+The server reports how many messages are unread in each conversation and whether any of them mentions the account, and both are tempting: an unread count is exactly the sort of thing a Spotlight result could carry.
+But what reads this is an index refreshed when the *conversation list* changes — at launch, at sign-in, on a refresh — and not when a message arrives or is read.
+A stored count would therefore be correct at the moment it was written and drift from then on, with nothing on the result to say how old it is.
 
-A count that is only sometimes right is worse than no count at all, because the user cannot tell which time it is. The same reasoning is why a row in the activity widget names neither the verb nor the person: the app shows what it can stand behind.
+A count that is only sometimes right is worse than no count at all, because the user cannot tell which time it is.
+The same reasoning is why a row in the activity widget names neither the verb nor the person: the app shows what it can stand behind.
 
 ## Why is a collective addressed by `<slug>-<id>` rather than by its name?
 
 Because that is what the app that owns the route matches first, and building the other form is what made both collectives and their pages open the wrong thing on a real server.
 
-This was for a long time the one address in the app not read out of the owning app's own routing. Talk's conversation route came from the controller declaring it and the Notes route from that app's `routes.php`; the Collectives app is installed on none of the instances available here, so its addresses were derived from a production URL captured in the wild plus what the network library documents about the fields. That produced a bare slug for the collective and, for the page, the whole ancestor chain of titles with a `fileId` query item as a hedge.
+This was for a long time the one address in the app not read out of the owning app's own routing.
+Talk's conversation route came from the controller declaring it and the Notes route from that app's `routes.php`; the Collectives app is installed on none of the instances available here, so its addresses were derived from a production URL captured in the wild plus what the network library documents about the fields.
+That produced a bare slug for the collective and, for the page, the whole ancestor chain of titles with a `fileId` query item as a hedge.
 
 Both were wrong, and they failed in the way an unverified route does: on a live account every selection resolved, every window opened, and none of them showed what had been asked for — which is indistinguishable from the feature working until somebody looks at the window.
 
-The routing was there to be read the whole time; it is simply not where the other apps keep theirs. Collectives declares a catch-all on the server (`/{path}` → `start#indexPath`) and decides everything in its Vue router, and `src/router.js` declares, in order:
+The routing was there to be read the whole time; it is simply not where the other apps keep theirs.
+Collectives declares a catch-all on the server (`/{path}` → `start#indexPath`) and decides everything in its Vue router, and `src/router.js` declares, in order:
 
     { path: '/:collectiveSlug-:collectiveId(\\d+)', children: [
         { path: ':pageSlug-:pageId(\\d+)' },
         { path: ':page(.*)' } ] },
     { path: '/:collective', children: [ …the same two… ] },
 
-So each half has a canonical form and a fallback, and the app now builds the canonical one wherever it can: `<slug>-<id>` for the collective and for the page. Both halves come from the server, neither can be ambiguous, and it is the form the app's own links carry.
+So each half has a canonical form and a fallback, and the app now builds the canonical one wherever it can: `<slug>-<id>` for the collective and for the page.
+Both halves come from the server, neither can be ambiguous, and it is the form the app's own links carry.
 
-The fallbacks are kept because they are the documented reality of an older server, not a guess: the library states that a collective's `slug` is `nil` on an instance whose Collectives app predates slugs. Such a collective is addressed by its name, and such a page by its ancestor path — which is the one branch that can still be wrong, and the only one that still carries `fileId`, that being the part the server can resolve a page from when the path is not what it expects.
+The fallbacks are kept because they are the documented reality of an older server, not a guess: the library states that a collective's `slug` is `nil` on an instance whose Collectives app predates slugs.
+Such a collective is addressed by its name, and such a page by its ancestor path — which is the one branch that can still be wrong, and the only one that still carries `fileId`, that being the part the server can resolve a page from when the path is not what it expects.
 
-When no address for a page can be built at all, the intent opens the **collective** containing it. That is certainly the right neighbourhood, and a person who asked for a page and was shown its collective can see both what happened and where to go next; opening nothing would read as the app having failed, and opening something arbitrary would be worse.
+When no address for a page can be built at all, the intent opens the **collective** containing it.
+That is certainly the right neighbourhood, and a person who asked for a page and was shown its collective can see both what happened and where to go next; opening nothing would read as the app having failed, and opening something arbitrary would be worse.
 
-The lesson worth keeping is not about collectives. A route nobody could verify was documented as unverified, hedged, and shipped — and the hedge did not save it, because "opens a window on the right server" looks exactly like success. What settled it was reading the owning app's routing, which was public the whole time.
+The lesson worth keeping is not about collectives.
+A route nobody could verify was documented as unverified, hedged, and shipped — and the hedge did not save it, because "opens a window on the right server" looks exactly like success.
+What settled it was reading the owning app's routing, which was public the whole time.
 
 ## Why are collectives gated before they are asked for, when Talk and Notes are not?
 
 Because the gate saves a different number of requests.
 
-Talk and Notes each advertise a capability, and the app still decides from the response: acting on the capability would save one request, at the cost of either fetching the capabilities separately or threading them through callers that do not all have them. Collectives advertises no capability at all, and the server lists pages *per collective* — so a refresh is one request for the collectives plus one for every one of them. On an instance without the app, all of those are wasted rather than one.
+Talk and Notes each advertise a capability, and the app still decides from the response: acting on the capability would save one request, at the cost of either fetching the capabilities separately or threading them through callers that do not all have them.
+Collectives advertises no capability at all, and the server lists pages *per collective* — so a refresh is one request for the collectives plus one for every one of them.
+On an instance without the app, all of those are wasted rather than one.
 
-The gate is also free here in a way it is not elsewhere. The network library's own documentation points at the navigation entry with the identifier `collectives`, and that list is something this app already fetches and stores a moment earlier, so the check is a read of local data rather than a round trip.
+The gate is also free here in a way it is not elsewhere.
+The network library's own documentation points at the navigation entry with the identifier `collectives`, and that list is something this app already fetches and stores a moment earlier, so the check is a read of local data rather than a round trip.
 
-A `404` is still handled, because the gate is a prediction made from a list that can be one refresh out of date. The two mean different things and only one of them clears what was stored: the gate says "do not ask", while a `404` says the app is gone.
+A `404` is still handled, because the gate is a prediction made from a list that can be one refresh out of date.
+The two mean different things and only one of them clears what was stored: the gate says "do not ask", while a `404` says the app is gone.
 
 ## Why is a note's text neither stored nor indexed?
 
 Because the store is an unencrypted file in a container shared with an app extension, and a person's notes are the most private thing this app has any reason to touch.
 
-The server sends every note in full — the endpoint returns the whole collection with bodies unless a chunk size is requested, which the network library deliberately does not request — so the text arrives whether or not it is wanted. It is dropped in the same expression that maps the server's answer into this app's own value type, which is the strongest place to put that rule: `NoteTransferObject` has no field for a body, so nothing downstream can be made to carry one by accident, and a test asserts that shape rather than a behaviour precisely so it fails the day somebody adds one.
+The server sends every note in full — the endpoint returns the whole collection with bodies unless a chunk size is requested, which the network library deliberately does not request — so the text arrives whether or not it is wanted.
+It is dropped in the same expression that maps the server's answer into this app's own value type, which is the strongest place to put that rule: `NoteTransferObject` has no field for a body, so nothing downstream can be made to carry one by accident, and a test asserts that shape rather than a behaviour precisely so it fails the day somebody adds one.
 
-The obvious middle ground is to leave the body out of the store but hand it to Spotlight as `textContent`, so a note could be found by a phrase inside it. **That is not a privacy win and is declined for saying so.** Spotlight's index is itself a file on disk, no more encrypted than the store, and putting the text there moves the exposure rather than removing it — while making it harder to see, since nothing in this app's own code would then contain the note. Full-text search over notes is a feature worth having, and if it is built it should be built deliberately, with its own entry here saying what it costs.
+The obvious middle ground is to leave the body out of the store but hand it to Spotlight as `textContent`, so a note could be found by a phrase inside it.
+**That is not a privacy win and is declined for saying so.**
+Spotlight's index is itself a file on disk, no more encrypted than the store, and putting the text there moves the exposure rather than removing it — while making it harder to see, since nothing in this app's own code would then contain the note.
+Full-text search over notes is a feature worth having, and if it is built it should be built deliberately, with its own entry here saying what it costs.
 
-What is kept is a title and a category, which is enough to find a note and open it. The body is fetched by the web view from the server at the moment the note is actually opened, over a connection that was going to carry it anyway.
+What is kept is a title and a category, which is enough to find a note and open it.
+The body is fetched by the web view from the server at the moment the note is actually opened, over a connection that was going to carry it anyway.
 
-The cost accepted is that the fetch is still proportional to the size of the account's notes: every refresh decodes every body to discard it. That is a property of the endpoint rather than of this decision, and it is stated plainly rather than implied away — the incremental endpoint the app could use instead needs a cursor the network library does not currently surface.
+The cost accepted is that the fetch is still proportional to the size of the account's notes: every refresh decodes every body to discard it.
+That is a property of the endpoint rather than of this decision, and it is stated plainly rather than implied away — the incremental endpoint the app could use instead needs a cursor the network library does not currently surface.
 
 ## Why is Talk's availability decided from a 404 rather than from the capability the server advertises?
 
 Because the capability is a prediction and the response is the answer, and this project has already made that call once.
 
-Talk does advertise a `spreed` capability, so gating on it is possible — but acting on it means either an extra request for the capabilities, or threading a `CapabilitySet` through every caller of the refresh. The two callers differ: one has just validated the server and holds them, and one has not. A server without the app answers `404` regardless, which the network library surfaces as a not-found error, so the response settles the question for both callers with no extra round trip and no parameter.
+Talk does advertise a `spreed` capability, so gating on it is possible — but acting on it means either an extra request for the capabilities, or threading a `CapabilitySet` through every caller of the refresh.
+The two callers differ: one has just validated the server and holds them, and one has not.
+A server without the app answers `404` regardless, which the network library surfaces as a not-found error, so the response settles the question for both callers with no extra round trip and no parameter.
 
-The cost accepted is one wasted request per refresh against an instance that will never have Talk. That is the same bargain already recorded for how iOS decides its notifications app is missing, and it buys the same thing: one code path rather than two, and no second source of truth to fall out of step.
+The cost accepted is one wasted request per refresh against an instance that will never have Talk.
+That is the same bargain already recorded for how iOS decides its notifications app is missing, and it buys the same thing: one code path rather than two, and no second source of truth to fall out of step.
 
-Only a `404` clears what was stored. Every other failure leaves the previous list alone, because an unreachable server has told us nothing — emptying a Spotlight index because a laptop woke up on a captive portal would be reading silence as an answer.
+Only a `404` clears what was stored.
+Every other failure leaves the previous list alone, because an unreachable server has told us nothing — emptying a Spotlight index because a laptop woke up on a captive portal would be reading silence as an answer.
 
 ## Why does Cirruscope assume HTTPS for a server address entered without one, and say so out loud?
 
-Because the alternative is guessing on the user's behalf and never telling them. An address needs a scheme before anything can be requested, and HTTPS is the only defensible default: it is what a public Nextcloud serves, and silently falling back to HTTP on failure would downgrade a connection the user believes is encrypted. So a bare `localhost` or `cloud.example.com` becomes `https://…`, and HTTP is reachable only by typing `http://` explicitly — never inferred, not even from a port that suggests it, because port 8080 is as common for plain HTTP as it is for TLS behind a proxy and a rule that is right half the time is worse than one the user controls.
+Because the alternative is guessing on the user's behalf and never telling them.
+An address needs a scheme before anything can be requested, and HTTPS is the only defensible default: it is what a public Nextcloud serves, and silently falling back to HTTP on failure would downgrade a connection the user believes is encrypted.
+So a bare `localhost` or `cloud.example.com` becomes `https://…`, and HTTP is reachable only by typing `http://` explicitly — never inferred, not even from a port that suggests it, because port 8080 is as common for plain HTTP as it is for TLS behind a proxy and a rule that is right half the time is worse than one the user controls.
 
-What changed is that the assumption is now visible. It used to happen inside the sign-in action, so someone who typed `localhost` against a server with no certificate saw only "Could not reach server" and had no way to learn that HTTPS had been chosen for them. [`ServerAddressFormatter`](./macOS/ServerAddress/ServerAddressFormatter.swift) now rewrites the field to the address the app resolved the moment editing ends — tabbing out, clicking elsewhere, or pressing Return — and a hint under the field names the assumption whenever Cirruscope supplied the scheme. A formatter rather than a delegate callback because AppKit runs it from `NSControl.validateEditing()`, before the field's delegate is notified and before its action is sent, which is the only hook where the rewrite lands ahead of everything that observes it.
+What changed is that the assumption is now visible.
+It used to happen inside the sign-in action, so someone who typed `localhost` against a server with no certificate saw only "Could not reach server" and had no way to learn that HTTPS had been chosen for them.
+[`ServerAddressFormatter`](./macOS/ServerAddress/ServerAddressFormatter.swift) now rewrites the field to the address the app resolved the moment editing ends — tabbing out, clicking elsewhere, or pressing Return — and a hint under the field names the assumption whenever Cirruscope supplied the scheme.
+A formatter rather than a delegate callback because AppKit runs it from `NSControl.validateEditing()`, before the field's delegate is notified and before its action is sent, which is the only hook where the rewrite lands ahead of everything that observes it.
 
-That is also why the field's action no longer fires on losing focus. It used to click the Connect button whenever editing ended, so tabbing out of the field started a whole network sign-in — before the user had any chance to read what the address had become, and, since that window has no key view loop, without focus even leaving the field.
+That is also why the field's action no longer fires on losing focus.
+It used to click the Connect button whenever editing ended, so tabbing out of the field started a whole network sign-in — before the user had any chance to read what the address had become, and, since that window has no key view loop, without focus even leaving the field.
 
-The same normalization refuses what it cannot use, rather than passing it on. A scheme Cirruscope cannot speak is named in the error instead of being pasted in front of `https://` (which used to turn `ftp://x` into `https://ftp://x/` and would have treated a `javascript:` input as a host name), and credentials in an address are refused rather than dropped, both because the app password comes from Login Flow v2 a step later and because `https://cloud.example.com@evil.example` reads as one server while naming another.
+The same normalization refuses what it cannot use, rather than passing it on.
+A scheme Cirruscope cannot speak is named in the error instead of being pasted in front of `https://` (which used to turn `ftp://x` into `https://ftp://x/` and would have treated a `javascript:` input as a host name), and credentials in an address are refused rather than dropped, both because the app password comes from Login Flow v2 a step later and because `https://cloud.example.com@evil.example` reads as one server while naming another.
 
 ## Why is a pasted Nextcloud link reduced to the server address?
 
-Because that is what people paste. Asked for their server, users copy the URL out of the browser they are signed in to — `https://cloud.example.com/index.php/apps/files?dir=/&fileid=12`, a `/s/…` share link, a Talk `/call/…` link — and every one of those is the right server with the wrong path. [`ServerAddress`](./Cirruscope/ServerAddress/ServerAddress.swift) therefore cuts the path at the first segment that belongs to Nextcloud's own routing and keeps everything before it, so a subpath install keeps its subpath (`nextcloud` is deliberately not one of those segments) while a deep link collapses to the instance root.
+Because that is what people paste.
+Asked for their server, users copy the URL out of the browser they are signed in to — `https://cloud.example.com/index.php/apps/files?dir=/&fileid=12`, a `/s/…` share link, a Talk `/call/…` link — and every one of those is the right server with the wrong path.
+[`ServerAddress`](./Cirruscope/ServerAddress/ServerAddress.swift) therefore cuts the path at the first segment that belongs to Nextcloud's own routing and keeps everything before it, so a subpath install keeps its subpath (`nextcloud` is deliberately not one of those segments) while a deep link collapses to the instance root.
 
-Dropping the query and the fragment is not a nicety but a correctness fix: `Rainmaker.Server` derives every endpoint by appending a path to the address it is given, which leaves a query in place, so an address carrying `?dir=/x` would have sent it along with every OCS request and with the Login Flow v2 POST. A trailing slash, by contrast, makes no difference to that appending, which is why the canonical form has none — matching the address the server itself reports back at the end of the login, which is what actually gets persisted.
+Dropping the query and the fragment is not a nicety but a correctness fix: `Rainmaker.Server` derives every endpoint by appending a path to the address it is given, which leaves a query in place, so an address carrying `?dir=/x` would have sent it along with every OCS request and with the Login Flow v2 POST.
+A trailing slash, by contrast, makes no difference to that appending, which is why the canonical form has none — matching the address the server itself reports back at the end of the login, which is what actually gets persisted.
 
-The trade accepted is that an instance installed under a subpath literally named after one of Nextcloud's own entry points would be truncated wrongly. That is worth it precisely because the result is written back into the field: the user sees the address the app arrived at and can correct it before anything is sent.
+The trade accepted is that an instance installed under a subpath literally named after one of Nextcloud's own entry points would be truncated wrongly.
+That is worth it precisely because the result is written back into the field: the user sees the address the app arrived at and can correct it before anything is sent.
 
 ## Why does the server address have its own error type instead of cases on `CirruscopeError`?
 
-[`CirruscopeError`](./Core/CirruscopeError.swift) collects the operational failures the app's facilities throw — a Keychain rejection, an unexpected HTTP status, a login that timed out. The ways a typed address can be unusable are statements about one text field's contents, and there are nine of them, so folding them in would have made the shared error type mostly about the sign-in field. Keeping [`ServerAddressError`](./Cirruscope/ServerAddress/ServerAddressError.swift) separate is also what lets the normalizer be `throws(ServerAddressError)`: the sign-in action then handles a closed set of input problems, instead of a signature that admits a `keychainFailure` it cannot produce there.
+[`CirruscopeError`](./Core/CirruscopeError.swift) collects the operational failures the app's facilities throw — a Keychain rejection, an unexpected HTTP status, a login that timed out.
+The ways a typed address can be unusable are statements about one text field's contents, and there are nine of them, so folding them in would have made the shared error type mostly about the sign-in field.
+Keeping [`ServerAddressError`](./Cirruscope/ServerAddress/ServerAddressError.swift) separate is also what lets the normalizer be `throws(ServerAddressError)`: the sign-in action then handles a closed set of input problems, instead of a signature that admits a `keychainFailure` it cannot produce there.
 
 ## Why does the iOS web view get its insets pushed in from SwiftUI rather than reading `env(safe-area-inset-*)`?
 
-Because the page is covered by more than the device covers it with. The iOS web view [ignores the container safe area](./iOS/Views/NextcloudView.swift) so Nextcloud's backgrounds and borders reach the bezel instead of stopping at a letterboxed rectangle, and the content inside them then has to be inset back off the notch, the home indicator, and the toolbar. WebKit can account for the first two on its own — that is what `env(safe-area-inset-*)` reports — but it has no idea a native toolbar is floating above it. Measured on an iPhone 17, the device inset is 59 points and the total obstruction 116; reading only what WebKit knows would leave the page half-inset, which is roughly what the hardcoded constants this replaced were guessing at.
+Because the page is covered by more than the device covers it with.
+The iOS web view [ignores the container safe area](./iOS/Views/NextcloudView.swift) so Nextcloud's backgrounds and borders reach the bezel instead of stopping at a letterboxed rectangle, and the content inside them then has to be inset back off the notch, the home indicator, and the toolbar.
+WebKit can account for the first two on its own — that is what `env(safe-area-inset-*)` reports — but it has no idea a native toolbar is floating above it.
+Measured on an iPhone 17, the device inset is 59 points and the total obstruction 116; reading only what WebKit knows would leave the page half-inset, which is roughly what the hardcoded constants this replaced were guessing at.
 
-So SwiftUI measures instead, and [`SafeAreaInsets.js`](./iOS/Scripts/SafeAreaInsets.js) publishes the result onto `<html>` as four custom properties the stylesheet references — the same shape the Mac already uses to hand its accent color to the page, for the same reason: CSS cannot ask the app a question, so the app has to answer before it is asked. The values are re-published whenever the geometry changes and re-seeded into every document as it starts parsing, so a rotation, a different device, or a Display Zoom setting needs no new number anywhere.
+So SwiftUI measures instead, and [`SafeAreaInsets.js`](./iOS/Scripts/SafeAreaInsets.js) publishes the result onto `<html>` as four custom properties the stylesheet references — the same shape the Mac already uses to hand its accent color to the page, for the same reason: CSS cannot ask the app a question, so the app has to answer before it is asked.
+The values are re-published whenever the geometry changes and re-seeded into every document as it starts parsing, so a rotation, a different device, or a Display Zoom setting needs no new number anywhere.
 
-The API that would have made all of this unnecessary is `WKWebView.obscuredContentInsets`, new in iOS 26 and exactly this feature: it shrinks the layout viewport and fixes up `position: fixed` elements itself, no stylesheet involved. It is unreachable. SwiftUI's `WebView`/`WebPage` pair exposes no inset property and no accessor to the `WKWebView` underneath it, so using it would mean dropping back to a `UIViewRepresentable` and giving up `WebPage`'s title, navigation stream, and JavaScript interface — a large loss to avoid four CSS declarations. That trade is worth revisiting the moment WebKit surfaces the property on `WebPage`.
+The API that would have made all of this unnecessary is `WKWebView.obscuredContentInsets`, new in iOS 26 and exactly this feature: it shrinks the layout viewport and fixes up `position: fixed` elements itself, no stylesheet involved.
+It is unreachable.
+SwiftUI's `WebView`/`WebPage` pair exposes no inset property and no accessor to the `WKWebView` underneath it, so using it would mean dropping back to a `UIViewRepresentable` and giving up `WebPage`'s title, navigation stream, and JavaScript interface — a large loss to avoid four CSS declarations.
+That trade is worth revisiting the moment WebKit surfaces the property on `WebPage`.
 
-The accepted limitation is that the insets cross as points and are written as CSS pixels without conversion, which is only true while the page declares a viewport of `width=device-width` at scale 1. Nextcloud does. Deriving a scale factor instead was tried and is worse: at document start, when the seed runs, the viewport meta has not been applied yet and `clientWidth` still reports the 980-pixel default, so every page would open inset by roughly two and a half times before being corrected.
+The accepted limitation is that the insets cross as points and are written as CSS pixels without conversion, which is only true while the page declares a viewport of `width=device-width` at scale 1.
+Nextcloud does.
+Deriving a scale factor instead was tried and is worse: at document start, when the seed runs, the viewport meta has not been applied yet and `clientWidth` still reports the 980-pixel default, so every page would open inset by roughly two and a half times before being corrected.
 
 ## Why does the iPhone's title bar name the Nextcloud app instead of the web page?
 
-Because the page's own name is mostly the server's. Nextcloud titles a document with the application followed by the instance, so the web view reports "Files - Nextcloud" where the useful word is the first one — and on an iPhone that title is not just a label but the button that opens the app menu, sitting between the app-navigation toggle and the account menu on a bar a few hundred points wide. Everything the title does not spend is spent by those.
+Because the page's own name is mostly the server's.
+Nextcloud titles a document with the application followed by the instance, so the web view reports "Files - Nextcloud" where the useful word is the first one — and on an iPhone that title is not just a label but the button that opens the app menu, sitting between the app-navigation toggle and the account menu on a bar a few hundred points wide.
+Everything the title does not spend is spent by those.
 
-The short name was already on hand. The [navigation endpoint](./Core/ServerApps/ServerAppTransferObject.swift) reports each app's display name, already localized by the server, and Cirruscope keeps it to label the menu items; the loaded URL says which of those apps is on screen. So the title costs no request, no cache, and no string of ours to translate — the one thing Cirruscope has to supply is the [rule for reading a URL as an app](./Core/ServerApps/ServerAppTransferObject+Resolution.swift), and macOS wanted that anyway, having compared app identifiers by hand to decide whether a window was already open on a page. That rule asks the app's own path first and its identifier only second, because the path is what the server actually serves the app at while the identifier merely usually matches it.
+The short name was already on hand.
+The [navigation endpoint](./Core/ServerApps/ServerAppTransferObject.swift) reports each app's display name, already localized by the server, and Cirruscope keeps it to label the menu items; the loaded URL says which of those apps is on screen.
+So the title costs no request, no cache, and no string of ours to translate — the one thing Cirruscope has to supply is the [rule for reading a URL as an app](./Core/ServerApps/ServerAppTransferObject+Resolution.swift), and macOS wanted that anyway, having compared app identifiers by hand to decide whether a window was already open on a page.
+That rule asks the app's own path first and its identifier only second, because the path is what the server actually serves the app at while the identifier merely usually matches it.
 
-Not every page is reached under its app's own prefix, and Talk is why that matters. An app may register a route at the server's own root instead — the mechanism is `root: ''` on its controller's `FrontpageRoute` attribute — and Talk does exactly that for `/call/<token>`, which is where an iPhone lands the instant a conversation is opened. Such a path names its owner nowhere, so the title fell back to the page's own, and the result was both long and redundant: the navigation bar read "Ada - Talk" directly above Talk's own header already showing the conversation. [A small table](./Core/ServerApps/ServerAppPath.swift) maps such a route to the path of the app that owns it, and the ordinary comparison does the rest. It maps to the *path* rather than to the identifier on purpose, so an app named differently from the path it is served at needs no second rule.
+Not every page is reached under its app's own prefix, and Talk is why that matters.
+An app may register a route at the server's own root instead — the mechanism is `root: ''` on its controller's `FrontpageRoute` attribute — and Talk does exactly that for `/call/<token>`, which is where an iPhone lands the instant a conversation is opened.
+Such a path names its owner nowhere, so the title fell back to the page's own, and the result was both long and redundant: the navigation bar read "Ada - Talk" directly above Talk's own header already showing the conversation.
+[A small table](./Core/ServerApps/ServerAppPath.swift) maps such a route to the path of the app that owns it, and the ordinary comparison does the rest.
+It maps to the *path* rather than to the identifier on purpose, so an app named differently from the path it is served at needs no second rule.
 
-That table is a short list and can be regenerated rather than guessed at: the routes that escape their app are the ones declaring `root: ''`, so grepping an installed instance for that attribute finds them. On Nextcloud 34 with Talk installed it also finds `/settings/apps` and `/u/<userId>`, which are left out deliberately — the app-management and profile pages belong to no app the navigation endpoint offers, so there is no name to resolve them to.
+That table is a short list and can be regenerated rather than guessed at: the routes that escape their app are the ones declaring `root: ''`, so grepping an installed instance for that attribute finds them.
+On Nextcloud 34 with Talk installed it also finds `/settings/apps` and `/u/<userId>`, which are left out deliberately — the app-management and profile pages belong to no app the navigation endpoint offers, so there is no name to resolve them to.
 
-The alternative was to stop reading URLs and read the page: Nextcloud's server-rendered layout puts the real identifier on the document as `<div id="content" class="app-spreed">`, and that marker survives the single-page route change which defeats the URL, because it is written once per document load. It would need no table and never go stale, and it would be cheap: `SidebarToggleState.js` already observes `class` attributes across the whole document precisely to survive these navigations, and both platforms already have the handler its messages arrive on, so the marker would be one more field on a message that is already sent. What it was rejected on is not cost but fit. It answers only for a document that has loaded, while the Mac has to know which app a window will show *before* it loads it — that is the whole point of asking, since the alternative is opening a second window on a page the user already has open — so the URL rule is needed regardless and the DOM would be a second source of truth over the same question, with a precedence rule between them for every moment a document is still arriving. One table of one entry, shared by both platforms and true offline, is less to keep honest than two mechanisms that must agree.
+The alternative was to stop reading URLs and read the page: Nextcloud's server-rendered layout puts the real identifier on the document as `<div id="content" class="app-spreed">`, and that marker survives the single-page route change which defeats the URL, because it is written once per document load.
+It would need no table and never go stale, and it would be cheap: `SidebarToggleState.js` already observes `class` attributes across the whole document precisely to survive these navigations, and both platforms already have the handler its messages arrive on, so the marker would be one more field on a message that is already sent.
+What it was rejected on is not cost but fit.
+It answers only for a document that has loaded, while the Mac has to know which app a window will show *before* it loads it — that is the whole point of asking, since the alternative is opening a second window on a page the user already has open — so the URL rule is needed regardless and the DOM would be a second source of truth over the same question, with a precedence rule between them for every moment a document is still arriving.
+One table of one entry, shared by both platforms and true offline, is less to keep honest than two mechanisms that must agree.
 
 So the page title remains the answer for pages that genuinely belong to no app, which is a class and not a failure, and it is shortened rather than shown raw: [`PageTitle`](./Cirruscope/PageTitle.swift) drops the instance's name, which is what made the full title long to begin with.
 
-That shortening is positional — it drops the last of the components Nextcloud joins a title from — rather than matching the instance's real name, which arrives on the theming capability and is stored on macOS but never on iOS. An instance whose own name contains " - " is therefore only partly shortened. That is a longer title rather than a wrong one, which is the trade taken deliberately: the rule declines to apply at all wherever it would produce an empty string, because a title is something a user reads and no shortening is worth showing them nothing.
+That shortening is positional — it drops the last of the components Nextcloud joins a title from — rather than matching the instance's real name, which arrives on the theming capability and is stored on macOS but never on iOS.
+An instance whose own name contains " - " is therefore only partly shortened.
+That is a longer title rather than a wrong one, which is the trade taken deliberately: the rule declines to apply at all wherever it would produce an empty string, because a title is something a user reads and no shortening is worth showing them nothing.
 
 ## Why does the iPad's View menu open an app in the window in front, rather than the window already showing it?
 
 Because an iPad window is a scene Cirruscope does not track, and the one window it can name without tracking anything is the one the user is looking at.
 
-On the Mac the View menu brings forward a window already showing the chosen app and opens one otherwise, which works because `AppDelegate` keeps every window controller it presents and each web window can work out from its own address which app it shows. On an iPad each window is a SwiftUI scene with a `NextcloudView` and a `WebPage` of its own, and the menu bar is told nothing about them except which one is in front. So the screen publishes its page as a focused scene value, [`ServerAppCommands`](./iOS/ServerAppCommands.swift) reads it back through `@FocusedValue`, and the chosen app loads there — which is also what that window's own title menu does. SwiftUI keeps each scene's state to itself, so matching the Mac would need every scene to register its page in a process-wide list, leave it again when the scene disconnects, and be brought forward through UIKit's scene activation — a second registry of windows, kept true through every navigation, for a behaviour an iPad user has less reason to expect.
+On the Mac the View menu brings forward a window already showing the chosen app and opens one otherwise, which works because `AppDelegate` keeps every window controller it presents and each web window can work out from its own address which app it shows.
+On an iPad each window is a SwiftUI scene with a `NextcloudView` and a `WebPage` of its own, and the menu bar is told nothing about them except which one is in front.
+So the screen publishes its page as a focused scene value, [`ServerAppCommands`](./iOS/ServerAppCommands.swift) reads it back through `@FocusedValue`, and the chosen app loads there — which is also what that window's own title menu does.
+SwiftUI keeps each scene's state to itself, so matching the Mac would need every scene to register its page in a process-wide list, leave it again when the scene disconnects, and be brought forward through UIKit's scene activation — a second registry of windows, kept true through every navigation, for a behaviour an iPad user has less reason to expect.
 
-It is a *scene* value rather than a focused one because focus inside the web view belongs to WebKit's own first responder, which SwiftUI's focus system never sees, so a plain focused value would vanish the moment the user typed into a Nextcloud page. It is the page rather than a closure because a closure is a new value on every redraw and every new value rebuilds the main menu, while a page keeps its identity for as long as its window lasts. It is withheld until the window has measured its insets, for the reason the first load is: nothing may load into the page before the first document can inset itself. While an account is connected but no window in front has a page, the items are disabled rather than removed, so they keep their place in the menu; signed out, there are none. The same window also publishes its display scale, and that is not decoration: command content is laid out in no window, with SwiftUI's default scale of one, so the icons — bitmaps rendered at whatever scale their view is given — came out at a third or half the resolution of the screen showing them, and blurred.
+It is a *scene* value rather than a focused one because focus inside the web view belongs to WebKit's own first responder, which SwiftUI's focus system never sees, so a plain focused value would vanish the moment the user typed into a Nextcloud page.
+It is the page rather than a closure because a closure is a new value on every redraw and every new value rebuilds the main menu, while a page keeps its identity for as long as its window lasts.
+It is withheld until the window has measured its insets, for the reason the first load is: nothing may load into the page before the first document can inset itself.
+While an account is connected but no window in front has a page, the items are disabled rather than removed, so they keep their place in the menu; signed out, there are none.
+The same window also publishes its display scale, and that is not decoration: command content is laid out in no window, with SwiftUI's default scale of one, so the icons — bitmaps rendered at whatever scale their view is given — came out at a third or half the resolution of the screen showing them, and blurred.
 
-[`EntityOpening`](./Cirruscope/AppIntents/EntityOpening.swift), the seam Spotlight and the Shortcuts app use, was deliberately not reused. It serves a request with the window most recently brought to the front — see the next entry — and it keeps a request that arrives while no window can serve it until one can. That suits a request from outside the app, which names no window. It does not suit a menu, which always means the window in front and must never be held for later.
+[`EntityOpening`](./Cirruscope/AppIntents/EntityOpening.swift), the seam Spotlight and the Shortcuts app use, was deliberately not reused.
+It serves a request with the window most recently brought to the front — see the next entry — and it keeps a request that arrives while no window can serve it until one can.
+That suits a request from outside the app, which names no window.
+It does not suit a menu, which always means the window in front and must never be held for later.
 
-The items carry no keyboard shortcuts. Every shortcut on the Mac is one its user recorded, into that Mac's own store, and deciding which app a keystroke reaches goes through AppKit; iOS has no recorder and a store of its own, so there is nothing to apply. Numbering the apps ⌘1 to ⌘9 was considered and not done: the list is alphabetical and follows whatever the server offers, so a number would silently move to another app whenever one is installed or renamed, and each would be taken from the Nextcloud page underneath. The cost is that an app cannot be reached from an iPad's keyboard; recording shortcuts on iOS is where that would be fixed, together with a reserved-shortcut lookup of its own.
+The items carry no keyboard shortcuts.
+Every shortcut on the Mac is one its user recorded, into that Mac's own store, and deciding which app a keystroke reaches goes through AppKit; iOS has no recorder and a store of its own, so there is nothing to apply.
+Numbering the apps ⌘1 to ⌘9 was considered and not done: the list is alphabetical and follows whatever the server offers, so a number would silently move to another app whenever one is installed or renamed, and each would be taken from the Nextcloud page underneath.
+The cost is that an app cannot be reached from an iPad's keyboard; recording shortcuts on iOS is where that would be fixed, together with a reserved-shortcut lookup of its own.
 
 ## Why does a Spotlight result on an iPad open in the window most recently in front?
 
-Because a request from outside the app names no window, and the window the user last brought forward is the best answer available without the app tracking its windows itself. The answer it replaced — the window that appeared last — could be one that had since been closed, so a result picked in Spotlight loaded into a web view nobody could see.
+Because a request from outside the app names no window, and the window the user last brought forward is the best answer available without the app tracking its windows itself.
+The answer it replaced — the window that appeared last — could be one that had since been closed, so a result picked in Spotlight loaded into a web view nobody could see.
 
-[`EntityOpening`](./Cirruscope/AppIntents/EntityOpening.swift) therefore holds one handler per window rather than one for the process. Each iPad window installs its own when it starts, installs it again whenever its scene becomes active, which brings it to the front of the list, and removes it whenever its scene goes to the background, which hands requests to the window in front before it. The background is the signal rather than the view disappearing, and that was observed rather than assumed: closing windows under Stage Manager sent their scenes to the background without `onDisappear` ever running, so an opener removed only on disappearance lingered and could keep serving a window nobody could see. A request arriving while every window is in the background waits in the latch for the one that comes forward, which a Spotlight tap brings about by itself. macOS keeps a single handler for the whole process, installed at launch and never removed, because `AppDelegate` already decides which of its windows a request belongs in.
+[`EntityOpening`](./Cirruscope/AppIntents/EntityOpening.swift) therefore holds one handler per window rather than one for the process.
+Each iPad window installs its own when it starts, installs it again whenever its scene becomes active, which brings it to the front of the list, and removes it whenever its scene goes to the background, which hands requests to the window in front before it.
+The background is the signal rather than the view disappearing, and that was observed rather than assumed: closing windows under Stage Manager sent their scenes to the background without `onDisappear` ever running, so an opener removed only on disappearance lingered and could keep serving a window nobody could see.
+A request arriving while every window is in the background waits in the latch for the one that comes forward, which a Spotlight tap brings about by itself.
+macOS keeps a single handler for the whole process, installed at launch and never removed, because `AppDelegate` already decides which of its windows a request belongs in.
 
-A window starts serving only once it has measured its insets, and a request waiting from a cold launch becomes that window's first document rather than a second load straight after the server's front page. The window's other first-run work — refreshing the app list — is keyed to a flag of its own rather than to the page still having no address. It used to be the latter, and a request served before the first measurement left the address set, so a cold launch from Spotlight opened the right thing and then never refreshed the app list for the whole session.
+A window starts serving only once it has measured its insets, and a request waiting from a cold launch becomes that window's first document rather than a second load straight after the server's front page.
+The window's other first-run work — refreshing the app list — is keyed to a flag of its own rather than to the page still having no address.
+It used to be the latter, and a request served before the first measurement left the address set, so a cold launch from Spotlight opened the right thing and then never refreshed the app list for the whole session.
 
-The limit accepted is that "most recently in front" means the window whose scene most recently became active. With Stage Manager several windows are active at once, and moving between them changes which is key without changing any scene's phase, so a request can land in a window that is visible but not the one being typed into. A Spotlight result is also delivered to one particular scene, which need not be the one serving it. Knowing the key window would mean observing UIKit's key-window changes from every scene, for a case — several windows open and a request arriving from outside the app — where any window the user can see is a reasonable place for it.
+The limit accepted is that "most recently in front" means the window whose scene most recently became active.
+With Stage Manager several windows are active at once, and moving between them changes which is key without changing any scene's phase, so a request can land in a window that is visible but not the one being typed into.
+A Spotlight result is also delivered to one particular scene, which need not be the one serving it.
+Knowing the key window would mean observing UIKit's key-window changes from every scene, for a case — several windows open and a request arriving from outside the app — where any window the user can see is a reasonable place for it.
 
 ## Why does the web view claim to be Safari while sign-in claims to be Cirruscope?
 
 Because the two strings are read by different things for different purposes, and each one has to be what its reader expects.
 
-Nextcloud checks a browser by its user agent and warns about one it does not recognize — Talk shows a banner of its own. A `WebPage` left alone names no browser at all: it reports `Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko)` and stops, with neither a `Version/` nor a `Safari/` token, so the warning appears. Naming the app in that spot only changes which browser the warning names, which is how the Mac shipped the same bug (issue #15) before its web view was given `applicationNameForUserAgent` in [`Main.storyboard`](./macOS/Base.lproj/Main.storyboard). [`SafariUserAgent`](./iOS/Web/SafariUserAgent.swift) does the same on iOS, completing the string into one Safari really sends — and it derives `Version/` from the running system rather than writing it down, because Safari's marketing version on iOS is the system's own and the Mac's frozen `Version/18.0` is now a claim about a Safari that has not shipped in years.
+Nextcloud checks a browser by its user agent and warns about one it does not recognize — Talk shows a banner of its own.
+A `WebPage` left alone names no browser at all: it reports `Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko)` and stops, with neither a `Version/` nor a `Safari/` token, so the warning appears.
+Naming the app in that spot only changes which browser the warning names, which is how the Mac shipped the same bug (issue #15) before its web view was given `applicationNameForUserAgent` in [`Main.storyboard`](./macOS/Base.lproj/Main.storyboard).
+[`SafariUserAgent`](./iOS/Web/SafariUserAgent.swift) does the same on iOS, completing the string into one Safari really sends — and it derives `Version/` from the running system rather than writing it down, because Safari's marketing version on iOS is the system's own and the Mac's frozen `Version/18.0` is now a claim about a Safari that has not shipped in years.
 
-Sign-in keeps the app's own name, and has to. Login Flow v2 names the app password it issues after the `User-Agent` of the request that began the flow — Rainmaker's, from [`ServerConnection.userAgent`](./Core/ServerConnection.swift) — and that name is what the user later reads in their security settings when deciding what to revoke. A password called `Version/26.5 Mobile/15E148 Safari/604.1` would be unrecognizable there. So the app is Cirruscope to the endpoints it calls itself and Safari to the pages it renders, and [`SafariUserAgentTests`](./iOSTests/WebView/SafariUserAgentTests.swift) pins that split against a real `WebPage` rather than against a belief about what WebKit does with what it is handed.
+Sign-in keeps the app's own name, and has to.
+Login Flow v2 names the app password it issues after the `User-Agent` of the request that began the flow — Rainmaker's, from [`ServerConnection.userAgent`](./Core/ServerConnection.swift) — and that name is what the user later reads in their security settings when deciding what to revoke.
+A password called `Version/26.5 Mobile/15E148 Safari/604.1` would be unrecognizable there.
+So the app is Cirruscope to the endpoints it calls itself and Safari to the pages it renders, and [`SafariUserAgentTests`](./iOSTests/WebView/SafariUserAgentTests.swift) pins that split against a real `WebPage` rather than against a belief about what WebKit does with what it is handed.
 
 ## Why does Cirruscope rasterize the server's app icons itself?
 
 Because neither platform will do it, and the alternatives cost more than the renderer does.
 
-A Nextcloud server names each of its apps' icons as an SVG — `NavigationItem.icon` answers `/apps/files/img/app.svg` — and that is the only per-app icon it offers. `UIImage(data:)` returns `nil` for an SVG and ImageIO advertises no SVG type on either platform. macOS is the odd one out: `NSImage(data:)` does decode one, through a private `_NSSVGImageRep`. That is a trap rather than a solution, and worth writing down because the next person to try `NSImage(data:)` will find it works: it is undocumented, it has no counterpart on iOS, and leaning on it would mean the Mac showing icons while the iPhone showed placeholders.
+A Nextcloud server names each of its apps' icons as an SVG — `NavigationItem.icon` answers `/apps/files/img/app.svg` — and that is the only per-app icon it offers.
+`UIImage(data:)` returns `nil` for an SVG and ImageIO advertises no SVG type on either platform.
+macOS is the odd one out: `NSImage(data:)` does decode one, through a private `_NSSVGImageRep`.
+That is a trap rather than a solution, and worth writing down because the next person to try `NSImage(data:)` will find it works: it is undocumented, it has no counterpart on iOS, and leaning on it would mean the Mac showing icons while the iPhone showed placeholders.
 
-A library was the other option and is a large dependency for what the corpus turned out to be. Measured across all 44 navigation icons of a stock Nextcloud 34: 43 `<path>`, 7 `<rect>`, 2 `<g>`, and nothing else — no `<mask>`, no `<clipPath>`, no `<defs>`, no gradients, never more than one path per file, and a white fill in every case but two. [`Core/RemoteAssets/SVG/`](./Core/RemoteAssets/SVG) reads exactly that much and returns `nil` for anything else, so the failure mode is a placeholder rather than a wrong picture. The whole of it is smaller than the API surface a general-purpose SVG library would add, and it needs no network, no view, and no main actor — which is what lets an icon be drawn where it is asked for synchronously, as the Speed Dials table rows and the App Intents entities both are.
+A library was the other option and is a large dependency for what the corpus turned out to be.
+Measured across all 44 navigation icons of a stock Nextcloud 34: 43 `<path>`, 7 `<rect>`, 2 `<g>`, and nothing else — no `<mask>`, no `<clipPath>`, no `<defs>`, no gradients, never more than one path per file, and a white fill in every case but two.
+[`Core/RemoteAssets/SVG/`](./Core/RemoteAssets/SVG) reads exactly that much and returns `nil` for anything else, so the failure mode is a placeholder rather than a wrong picture.
+The whole of it is smaller than the API surface a general-purpose SVG library would add, and it needs no network, no view, and no main actor — which is what lets an icon be drawn where it is asked for synchronously, as the Speed Dials table rows and the App Intents entities both are.
 
-The accepted limitation is that limitation: an icon using anything outside the subset does not render. That is a deliberate trade against the alternative of approximating it, since a placeholder announces itself and a wrongly drawn glyph does not.
+The accepted limitation is that limitation: an icon using anything outside the subset does not render.
+That is a deliberate trade against the alternative of approximating it, since a placeholder announces itself and a wrongly drawn glyph does not.
 
 ## Why the apps' own SVGs, and not the theming icon endpoint?
 
-Because `/index.php/apps/theming/icon/{app}` answers with the wrong picture, not with a small one. It returns a 512×512 PNG — ample — but what it draws is the *touch icon*: the theme's primary colour as a rounded square with the glyph knocked out of it, the thing a home screen shows. A menu listing ten of those shows ten coloured tiles.
+Because `/index.php/apps/theming/icon/{app}` answers with the wrong picture, not with a small one.
+It returns a 512×512 PNG — ample — but what it draws is the *touch icon*: the theme's primary colour as a rounded square with the glyph knocked out of it, the thing a home screen shows.
+A menu listing ten of those shows ten coloured tiles.
 
-The app's own SVG is the glyph alone, and being monochrome it can be a template image, which is the property that actually matters in a menu: it takes the tint of the appearance it is drawn in and inverts when its row highlights, exactly as one of the system's own symbols does. A PNG could do neither.
+The app's own SVG is the glyph alone, and being monochrome it can be a template image, which is the property that actually matters in a menu: it takes the tint of the appearance it is drawn in and inverts when its row highlights, exactly as one of the system's own symbols does.
+A PNG could do neither.
 
 ## Why does fetching something a server named require a same-origin URL?
 
 Because the path is chosen by the server and the request carries the user's app password.
 
-Both halves are reasonable alone. Nextcloud describes its own resources by path — `"/apps/files/"` for where an app lives, `"/apps/files/img/app.svg"` for its icon — and Cirruscope requests them with HTTP Basic authentication so they work on an instance that restricts them. Together they are a credential-harvesting primitive: an app that is compromised, or simply malicious, can name `https://evil.example/x.svg` and be handed the app password in an `Authorization` header.
+Both halves are reasonable alone.
+Nextcloud describes its own resources by path — `"/apps/files/"` for where an app lives, `"/apps/files/img/app.svg"` for its icon — and Cirruscope requests them with HTTP Basic authentication so they work on an instance that restricts them.
+Together they are a credential-harvesting primitive: an app that is compromised, or simply malicious, can name `https://evil.example/x.svg` and be handed the app password in an `Authorization` header.
 
-[`SameOriginURL`](./Core/SameOriginURL.swift) is therefore what a path resolves into, and what everything attaching credentials takes. Anything landing on a different scheme, host, or port — including the protocol-relative form, which reads like a path and is not one — does not produce a value at all. The rule is then enforced by the type system rather than by remembering to check, which is the difference between a rule and a habit; it also covers the navigation `href`, which had exactly the same exposure and is now resolved the same way on both platforms.
+[`SameOriginURL`](./Core/SameOriginURL.swift) is therefore what a path resolves into, and what everything attaching credentials takes.
+Anything landing on a different scheme, host, or port — including the protocol-relative form, which reads like a path and is not one — does not produce a value at all.
+The rule is then enforced by the type system rather than by remembering to check, which is the difference between a rule and a habit; it also covers the navigation `href`, which had exactly the same exposure and is now resolved the same way on both platforms.
 
 ## Why does the web view intercept the sign-in and sign-out routes instead of just displaying them?
 
 Because both are the server telling the app something about the session, and neither is something the user can act on inside the page.
 
-Nextcloud's sign-in form is where the server sends any unauthenticated request for a page, and the web view's browser cookie expires on the server's schedule rather than the app's — reopen the app the next morning and the first navigation is redirected there. That says nothing about the app password Cirruscope holds, and the form itself is a dead end: signing in happens natively through Login Flow v2, not in the page. So the navigation is cancelled and the page the request had been for is re-requested with the app password attached, exactly as the first load of the session already does. The user sees the page they left.
+Nextcloud's sign-in form is where the server sends any unauthenticated request for a page, and the web view's browser cookie expires on the server's schedule rather than the app's — reopen the app the next morning and the first navigation is redirected there.
+That says nothing about the app password Cirruscope holds, and the form itself is a dead end: signing in happens natively through Login Flow v2, not in the page.
+So the navigation is cancelled and the page the request had been for is re-requested with the app password attached, exactly as the first load of the session already does.
+The user sees the page they left.
 
-Sign-out is the mirror image. Nextcloud's own "Log out" would end the browser session while leaving the app holding a perfectly good app password, so it is widened into an app-level sign-out. Because the navigation is cancelled, the server never processes the request, which is why the app has to revoke that password itself.
+Sign-out is the mirror image.
+Nextcloud's own "Log out" would end the browser session while leaving the app holding a perfectly good app password, so it is widened into an app-level sign-out.
+Because the navigation is cancelled, the server never processes the request, which is why the app has to revoke that password itself.
 
-The interesting part is what happens when the retry fails. A retry that lands back on the sign-in form means the app password is genuinely rejected, and the account is signed out — but *exactly one* retry may be outstanding, and getting that bookkeeping wrong signs people out of working accounts. Both apps did, in different ways. The budget is therefore [one shared type](./Cirruscope/SilentRetryBudget.swift) keyed to the address being retried and released the moment the server answers it, with a one-minute window so a retry lost to a dropped connection cannot poison the next genuine expiry. Recognizing the routes is [shared too](./Cirruscope/NextcloudSessionRoute.swift), and anchored immediately below the instance's web root: matching on the last path component instead — which macOS did — means a file a user named `logout` revokes their app password.
+The interesting part is what happens when the retry fails.
+A retry that lands back on the sign-in form means the app password is genuinely rejected, and the account is signed out — but *exactly one* retry may be outstanding, and getting that bookkeeping wrong signs people out of working accounts.
+Both apps did, in different ways.
+The budget is therefore [one shared type](./Cirruscope/SilentRetryBudget.swift) keyed to the address being retried and released the moment the server answers it, with a one-minute window so a retry lost to a dropped connection cannot poison the next genuine expiry.
+Recognizing the routes is [shared too](./Cirruscope/NextcloudSessionRoute.swift), and anchored immediately below the instance's web root: matching on the last path component instead — which macOS did — means a file a user named `logout` revokes their app password.
 
 ## Why do paths the app knows append to the server address instead of resolving from its root?
 
 Because the two kinds of path are not the same kind of thing, and treating them alike produces a link that works everywhere except where it matters.
 
-Nextcloud writes its own web root into every address it names. An instance installed in a subdirectory answers `"/nextcloud/apps/files/"` for where an app lives, so resolving that from the server root is what puts it back where the server meant. A path the *app* knows — Talk's `/call/<token>`, the Notes route, the account settings page — carries no such prefix, so resolving it the same way produces `https://example.com/settings/user` on an instance served from `https://example.com/nextcloud`: a live page, on the right server, with nothing to do with the account. The origin proof does not catch it, because the origin is right.
+Nextcloud writes its own web root into every address it names.
+An instance installed in a subdirectory answers `"/nextcloud/apps/files/"` for where an app lives, so resolving that from the server root is what puts it back where the server meant.
+A path the *app* knows — Talk's `/call/<token>`, the Notes route, the account settings page — carries no such prefix, so resolving it the same way produces `https://example.com/settings/user` on an instance served from `https://example.com/nextcloud`: a live page, on the right server, with nothing to do with the account.
+The origin proof does not catch it, because the origin is right.
 
-That failure is the reason the rule is in the type rather than in a convention. `SameOriginURL` has two initializers: one resolves, for what the server named, and one appends components, for what the app knows. A caller holding a `"/settings/user"` literal has already made the decision the second initializer exists to take away, so it takes components — the broken form cannot be expressed. It shipped in the iOS account menu and was very nearly shipped in the Talk conversation route; a subdirectory-install test caught the second, and every route now has one.
+That failure is the reason the rule is in the type rather than in a convention.
+`SameOriginURL` has two initializers: one resolves, for what the server named, and one appends components, for what the app knows.
+A caller holding a `"/settings/user"` literal has already made the decision the second initializer exists to take away, so it takes components — the broken form cannot be expressed.
+It shipped in the iOS account menu and was very nearly shipped in the Talk conversation route; a subdirectory-install test caught the second, and every route now has one.
 
-The appending form also refuses a `.` or `..` component, which is less obvious and was found by review rather than by design. Appending escapes a slash but passes a dot segment through, so two `..` in a row resolve to a path outside the instance's web root while remaining on its origin. The components reaching it are often the server's own values — a collective page's `filePath`, split on `/` — so without that refusal a server could name a path outside its own installation and be handed the account's app password for it.
+The appending form also refuses a `.` or `..` component, which is less obvious and was found by review rather than by design.
+Appending escapes a slash but passes a dot segment through, so two `..` in a row resolve to a path outside the instance's web root while remaining on its origin.
+The components reaching it are often the server's own values — a collective page's `filePath`, split on `/` — so without that refusal a server could name a path outside its own installation and be handed the account's app password for it.
 
 ## Why is anything off the server's origin handed to the system rather than shown in the web view?
 
 Because the web view carries the account's session, and because a page shown inside the app borrows the app's window and the trust that comes with it.
 
-The rule is [one shared decision](./Cirruscope/WebViewDestination.swift) on origin — scheme, host and port together. Host alone is not enough, and that is not theoretical: it was what both apps compared, so a plain-HTTP listener or a differently-ported service on the very machine the server runs on counted as the server, and could be loaded in a window that attaches the app password. The same comparison now guards the `redirect_url` the sign-in retry follows, the link a notification banner opens, and the request a download is re-issued as.
+The rule is [one shared decision](./Cirruscope/WebViewDestination.swift) on origin — scheme, host and port together.
+Host alone is not enough, and that is not theoretical: it was what both apps compared, so a plain-HTTP listener or a differently-ported service on the very machine the server runs on counted as the server, and could be loaded in a window that attaches the app password.
+The same comparison now guards the `redirect_url` the sign-in retry follows, the link a notification banner opens, and the request a download is re-issued as.
 
-Deciding by origin also answers a question that was previously unanswered: what to do with an address that is not a page at all. A `tel:` or `mailto:` link is not the server's, so it goes to the system, which is how it reaches the app that can act on it — neither platform used to do anything with one. The exceptions are the schemes a document uses on itself — `about:`, `blob:`, `data:`, `javascript:`, `file:` — which mean nothing outside WebKit and stay there. Nothing guesses which schemes the machine can open: macOS asks Launch Services and iOS asks SwiftUI's `openURL` and reads its answer, and anything the system declines is handed back to the web view rather than silently swallowed.
+Deciding by origin also answers a question that was previously unanswered: what to do with an address that is not a page at all.
+A `tel:` or `mailto:` link is not the server's, so it goes to the system, which is how it reaches the app that can act on it — neither platform used to do anything with one.
+The exceptions are the schemes a document uses on itself — `about:`, `blob:`, `data:`, `javascript:`, `file:` — which mean nothing outside WebKit and stay there.
+Nothing guesses which schemes the machine can open: macOS asks Launch Services and iOS asks SwiftUI's `openURL` and reads its answer, and anything the system declines is handed back to the web view rather than silently swallowed.
 
 ## Why does a Spotlight tap resolve what it opens by entity *type*, and refuse a selection that carries no type?
 
 Because an identifier is unique within a type and not across them, and reading one without its type is how four of the five kinds of result came to open nothing at all.
 
-Tapping a donated Spotlight result does not run the matching `Open…Intent`. The system foregrounds the app and hands it a `CSSearchableItemActionType` activity, and recovering what was picked is the app's job. The first version of that recovery read `EntityIdentifier.identifier` — a plain string — and looked it up as a server app. Every server app resolved; every conversation, note, collective and page resolved to nothing and returned silently, so the app came forward and sat there. It read as Spotlight being broken rather than as the app refusing something, which is exactly what an unlogged early return looks like from outside.
+Tapping a donated Spotlight result does not run the matching `Open…Intent`.
+The system foregrounds the app and hands it a `CSSearchableItemActionType` activity, and recovering what was picked is the app's job.
+The first version of that recovery read `EntityIdentifier.identifier` — a plain string — and looked it up as a server app.
+Every server app resolved; every conversation, note, collective and page resolved to nothing and returned silently, so the app came forward and sat there.
+It read as Spotlight being broken rather than as the app refusing something, which is exactly what an unlogged early return looks like from outside.
 
-The type was there the whole time: `EntityIdentifier` carries `entityType` beside `identifier`. Resolution now switches on it, and the numeric types are parsed back from the text the activity carries them as. What that leaves is the fallback for an activity whose App Intents annotation is absent — the raw Spotlight identifier — and that one is **refused rather than guessed**. Without a type, `42` is a note and also a collective and also a page, and the app would be picking one of three things the person did not ask for. A refusal at least says so in the log.
+The type was there the whole time: `EntityIdentifier` carries `entityType` beside `identifier`.
+Resolution now switches on it, and the numeric types are parsed back from the text the activity carries them as.
+What that leaves is the fallback for an activity whose App Intents annotation is absent — the raw Spotlight identifier — and that one is **refused rather than guessed**.
+Without a type, `42` is a note and also a collective and also a page, and the app would be picking one of three things the person did not ask for.
+A refusal at least says so in the log.
 
-The resolution itself lives in one place, [`EntityActivation`](./Cirruscope/AppIntents/EntityActivation.swift), which the intents use too. That is not tidiness: a collective page whose address cannot be built opens its collective instead, and a fallback that applied to the Shortcuts action but not to the Spotlight result would be one feature behaving two ways depending on where it was reached from.
+The resolution itself lives in one place, [`EntityActivation`](./Cirruscope/AppIntents/EntityActivation.swift), which the intents use too.
+That is not tidiness: a collective page whose address cannot be built opens its collective instead, and a fallback that applied to the Shortcuts action but not to the Spotlight result would be one feature behaving two ways depending on where it was reached from.
 
 ## Why does the app read a Spotlight selection's identifier itself instead of asking App Intents to?
 
 Because `EntityIdentifier(activityIdentifier:)` is not a parser, and what it actually consults can be an app from two months ago.
 
-Spotlight hands over one string, `<EntityTypeName>/<identifier>` — a real one seen in the field is `CollectivePageEntity/4012700`. The SDK appears to offer exactly the right tool for reading it, and using that tool meant every selection but a server app's was refused with `CollectivePageEntity is not a registered AppEntity identifier`, while the running app's own extracted metadata listed all five entity types.
+Spotlight hands over one string, `<EntityTypeName>/<identifier>` — a real one seen in the field is `CollectivePageEntity/4012700`.
+The SDK appears to offer exactly the right tool for reading it, and using that tool meant every selection but a server app's was refused with `CollectivePageEntity is not a registered AppEntity identifier`, while the running app's own extracted metadata listed all five entity types.
 
-The initializer turns out to be a synchronous round trip into `linkd`'s App Intents index, which answers from whichever bundle Launch Services calls canonical for the bundle identifier. On this machine that was one of nine registrations of `de.i2h3.cirruscope` — an archive from July whose metadata registers a single entity — and `linkd` logs `Found existing canonical bundle with matching hash, skipping` rather than re-reading anything, so rebuilding does not help. Reproduced from scratch in a throwaway app with two invented entities, where both were refused and the log carried the identical message, so this is the mechanism rather than anything about this project.
+The initializer turns out to be a synchronous round trip into `linkd`'s App Intents index, which answers from whichever bundle Launch Services calls canonical for the bundle identifier.
+On this machine that was one of nine registrations of `de.i2h3.cirruscope` — an archive from July whose metadata registers a single entity — and `linkd` logs `Found existing canonical bundle with matching hash, skipping` rather than re-reading anything, so rebuilding does not help.
+Reproduced from scratch in a throwaway app with two invented entities, where both were refused and the log carried the identical message, so this is the mechanism rather than anything about this project.
 
-Reading the string directly is not a shortcut around a check. The type names it is matched against are this app's own metatypes, and the five it knows are the five it donates; anything else is refused with a line saying so. The difference is which registry is consulted — one that certainly describes the app that is running, rather than one that describes whichever copy a developer's machine happens to prefer.
+Reading the string directly is not a shortcut around a check.
+The type names it is matched against are this app's own metatypes, and the five it knows are the five it donates; anything else is refused with a line saying so.
+The difference is which registry is consulted — one that certainly describes the app that is running, rather than one that describes whichever copy a developer's machine happens to prefer.
 
-`NSUserActivity.appEntityIdentifier` is not consulted either, for a plainer reason: it cannot answer. Assigning one leaves `userInfo` empty, because it is held out of band and does not survive the crossing, and an activity carrying only `CSSearchableItemActivityIdentifier` — exactly what Spotlight delivers — answers `nil`. Reading it would also make the same failing call.
+`NSUserActivity.appEntityIdentifier` is not consulted either, for a plainer reason: it cannot answer.
+Assigning one leaves `userInfo` empty, because it is held out of band and does not survive the crossing, and an activity carrying only `CSSearchableItemActivityIdentifier` — exactly what Spotlight delivers — answers `nil`.
+Reading it would also make the same failing call.
 
 ## Why is a conversation picture the app cannot draw remembered on disk?
 
 Because the alternative was asking the server about most of an account's conversations on every single launch.
 
-Talk answers its avatar endpoint with an SVG for every generated icon and every emoji avatar, and this app reads SVG only far enough for the monochrome app glyphs Nextcloud ships. Those answers are refused, and the refusal used to be remembered only in memory — deliberately, with the reasoning written down: a moderator uploading a photograph should see it appear, and a process ending bounds how long the app can be wrong about it. That reasoning was sound and the cost was not counted. On an account whose conversations are mostly groups, it meant re-requesting nearly every avatar at every launch, which is most of what made the first refresh slow enough to notice.
+Talk answers its avatar endpoint with an SVG for every generated icon and every emoji avatar, and this app reads SVG only far enough for the monochrome app glyphs Nextcloud ships.
+Those answers are refused, and the refusal used to be remembered only in memory — deliberately, with the reasoning written down: a moderator uploading a photograph should see it appear, and a process ending bounds how long the app can be wrong about it.
+That reasoning was sound and the cost was not counted.
+On an account whose conversations are mostly groups, it meant re-requesting nearly every avatar at every launch, which is most of what made the first refresh slow enough to notice.
 
-The verdict is now a zero-length file under the same cache key. The key already carries the conversation's avatar version, so a moderator's new picture is a different key and the old verdict simply does not apply to it.
+The verdict is now a zero-length file under the same cache key.
+The key already carries the conversation's avatar version, so a moderator's new picture is a different key and the old verdict simply does not apply to it.
 
-That is not sufficient on its own, and the insufficiency is the interesting part. For a one-to-one conversation the server derives the avatar version from the path of a *generic icon*, so it is identical for every such conversation and never moves — which is precisely the case where the picture is a person's photograph and most likely to change. Persisting the verdict without a bound would make a colleague's newly uploaded photograph invisible forever. So every answer, bitmap or refusal alike, is trusted for a week and then asked again. The marker must not ship without that bound.
+That is not sufficient on its own, and the insufficiency is the interesting part.
+For a one-to-one conversation the server derives the avatar version from the path of a *generic icon*, so it is identical for every such conversation and never moves — which is precisely the case where the picture is a person's photograph and most likely to change.
+Persisting the verdict without a bound would make a colleague's newly uploaded photograph invisible forever.
+So every answer, bitmap or refusal alike, is trusted for a week and then asked again.
+The marker must not ship without that bound.
 
 ## Why do notes, collectives, pages and conversations wear the owning app's icon in Spotlight?
 
 Because a result's first job is to say what kind of thing it is, and the picture says that before the words do.
 
-These four entity types shipped without artwork, so Spotlight drew its own generic mark for each of them — which is what [`ServerAppEntity`](./Cirruscope/AppEntities/ServerAppEntity.swift) argues is better than an app inventing a second placeholder, and it is, right up until there is something real to draw. There is: the server publishes an icon per app, the app already caches and rasterizes it for the menus, and a Nextcloud serving Notes at `/apps/notes/` has told us the identifier that icon is filed under. So a note wears the Notes mark, a conversation Talk's, and a collective and its pages the Collectives mark, all on the same white plate a server app already wears — for the same reason it wears one, the plate being what makes a bitmap that leaves the process legible in both appearances.
+These four entity types shipped without artwork, so Spotlight drew its own generic mark for each of them — which is what [`ServerAppEntity`](./Cirruscope/AppEntities/ServerAppEntity.swift) argues is better than an app inventing a second placeholder, and it is, right up until there is something real to draw.
+There is: the server publishes an icon per app, the app already caches and rasterizes it for the menus, and a Nextcloud serving Notes at `/apps/notes/` has told us the identifier that icon is filed under.
+So a note wears the Notes mark, a conversation Talk's, and a collective and its pages the Collectives mark, all on the same white plate a server app already wears — for the same reason it wears one, the plate being what makes a bitmap that leaves the process legible in both appearances.
 
-Every note looking alike is the intended result rather than a compromise. That is how a set of search results normally reads, and the alternative for a note is its title drawn as a picture, which is the title again.
+Every note looking alike is the intended result rather than a compromise.
+That is how a set of search results normally reads, and the alternative for a note is its title drawn as a picture, which is the title again.
 
-The two places where something better exists get it. A collective or a page that somebody gave an **emoji** wears the emoji instead, drawn into the same plate through Core Text — pages within one collective are precisely the results a shared mark fails to tell apart, and the emoji is the thing their author chose to tell them apart by. A **conversation** wears its own picture where Talk sends one as PNG or JPEG. Neither is tinted: the plate's glyph colour exists to make a monochrome silhouette legible, and applying it to an emoji or a photograph would throw away what makes either recognizable.
+The two places where something better exists get it.
+A collective or a page that somebody gave an **emoji** wears the emoji instead, drawn into the same plate through Core Text — pages within one collective are precisely the results a shared mark fails to tell apart, and the emoji is the thing their author chose to tell them apart by.
+A **conversation** wears its own picture where Talk sends one as PNG or JPEG.
+Neither is tinted: the plate's glyph colour exists to make a monochrome silhouette legible, and applying it to an emoji or a photograph would throw away what makes either recognizable.
 
 ## Why are Talk conversation avatars fetched after the conversations rather than with them?
 
 Because the list is worth having before the pictures are, and the pictures cost a request each.
 
-A conversation's avatar is not part of the conversation list: it is a separate endpoint, one call per conversation. Fetching them before persisting would hold the whole domain — and the Spotlight results that depend on it — behind as many round trips as the account has conversations. So the conversations are stored and announced immediately, the pictures arrive behind them, and the list is announced a second time only if something new was actually cached. That is the arrangement the server apps' icons have always used, and the second announcement is what puts the pictures into the index without waiting for the next launch.
+A conversation's avatar is not part of the conversation list: it is a separate endpoint, one call per conversation.
+Fetching them before persisting would hold the whole domain — and the Spotlight results that depend on it — behind as many round trips as the account has conversations.
+So the conversations are stored and announced immediately, the pictures arrive behind them, and the list is announced a second time only if something new was actually cached.
+That is the arrangement the server apps' icons have always used, and the second announcement is what puts the pictures into the index without waiting for the next launch.
 
-Only PNG and JPEG are kept. The server answers this endpoint with an SVG for every generated icon and every emoji avatar, and this app's SVG reader is deliberately only big enough for the monochrome app glyphs Nextcloud ships. An answer that cannot be decoded is remembered as such for the life of the process — otherwise every launch re-requests a picture for every conversation the server draws itself, which on an account of group conversations is most of them — and the Talk mark stays in place, which is a correct picture rather than a wrong one.
+Only PNG and JPEG are kept.
+The server answers this endpoint with an SVG for every generated icon and every emoji avatar, and this app's SVG reader is deliberately only big enough for the monochrome app glyphs Nextcloud ships.
+An answer that cannot be decoded is remembered as such for the life of the process — otherwise every launch re-requests a picture for every conversation the server draws itself, which on an account of group conversations is most of them — and the Talk mark stays in place, which is a correct picture rather than a wrong one.
 
-The cache key carries the server, the account, the token, the avatar version and the appearance. Every part earns its place and the two that look redundant are the ones that do: the account, because a one-to-one conversation's picture is of *the other party* and so depends on who is signed in, and the version, because it is the only signal that a moderator changed a group's picture. Rainmaker states outright that the version alone is not enough — for a one-to-one conversation the server derives it from a generic icon's path, so it is identical everywhere and never moves.
+The cache key carries the server, the account, the token, the avatar version and the appearance.
+Every part earns its place and the two that look redundant are the ones that do: the account, because a one-to-one conversation's picture is of *the other party* and so depends on who is signed in, and the version, because it is the only signal that a moderator changed a group's picture.
+Rainmaker states outright that the version alone is not enough — for a one-to-one conversation the server derives it from a generic icon's path, so it is identical everywhere and never moves.
 
 ## Why is a Nextcloud app's icon a little window in Spotlight, but a bare glyph in the menus?
 
 Because those two surfaces draw the same bytes in opposite ways, and only one of them will tint them.
 
-An icon in the View menu or the Speed Dials tab is an `NSImage` marked `isTemplate`, so AppKit reads only its alpha and colours it for the appearance it is drawn in — the glyph is black on a light menu and white on a dark one without the app doing anything. An icon donated to Spotlight or the Shortcuts app is a PNG that leaves the process, and whatever composites it draws it literally. Shipping the same black glyph to both meant Spotlight results were black on near-black in dark appearance and all but invisible, while light appearance looked perfect.
+An icon in the View menu or the Speed Dials tab is an `NSImage` marked `isTemplate`, so AppKit reads only its alpha and colours it for the appearance it is drawn in — the glyph is black on a light menu and white on a dark one without the app doing anything.
+An icon donated to Spotlight or the Shortcuts app is a PNG that leaves the process, and whatever composites it draws it literally.
+Shipping the same black glyph to both meant Spotlight results were black on near-black in dark appearance and all but invisible, while light appearance looked perfect.
 
-The obvious fix is the one the SDK appears to offer. `CSSearchableItemAttributeSet` has three thumbnail members — `thumbnailData`, `thumbnailURL`, and `darkThumbnailURL`, the last documented as *"preferred in dark appearances"* and the only light/dark image pair anywhere in the SDK. **It does not work.** A throwaway sandboxed app indexed one item three ways — the two URLs alone, the bytes alone, and all three together — and only the bytes were ever drawn: the URL-only row showed no image at all and the all-three row showed the bytes. That held with the files inside the app's own container and with them in `/tmp`, and with the app registered in Launch Services, so it is not a sandbox or a resolution problem. `thumbnailURL` and `darkThumbnailURL` are therefore left unset, since setting them achieves nothing, and `DisplayRepresentation` offers no appearance variant either — one `image` slot and nothing else.
+The obvious fix is the one the SDK appears to offer.
+`CSSearchableItemAttributeSet` has three thumbnail members — `thumbnailData`, `thumbnailURL`, and `darkThumbnailURL`, the last documented as *"preferred in dark appearances"* and the only light/dark image pair anywhere in the SDK.
+**It does not work.**
+A throwaway sandboxed app indexed one item three ways — the two URLs alone, the bytes alone, and all three together — and only the bytes were ever drawn: the URL-only row showed no image at all and the all-three row showed the bytes.
+That held with the files inside the app's own container and with them in `/tmp`, and with the app registered in Launch Services, so it is not a sandbox or a resolution problem.
+`thumbnailURL` and `darkThumbnailURL` are therefore left unset, since setting them achieves nothing, and `DisplayRepresentation` offers no appearance variant either — one `image` slot and nothing else.
 
-That leaves the pixels themselves, and the answer has to be **opaque**: an image that does not depend on what is behind it is correct in both appearances at once, from a single bitmap, with no second donation and no re-indexing when the appearance changes. Which matters more than it sounds — an appearance switch usually happens while the app is not running, so any mechanism that re-donates on that signal would be right only by luck.
+That leaves the pixels themselves, and the answer has to be **opaque**: an image that does not depend on what is behind it is correct in both appearances at once, from a single bitmap, with no second donation and no re-indexing when the appearance changes.
+Which matters more than it sounds — an appearance switch usually happens while the app is not running, so any mechanism that re-donates on that signal would be right only by luck.
 
-The artwork [`ServerAppIconThumbnail`](./Cirruscope/ServerAppIconThumbnail.swift) draws is a small white window: three traffic lights in the top-left corner, the app's glyph centred in the body below them in the secondary label colour, and a soft drop shadow. It echoes the app's own icon, which is also a window, and gives a Spotlight row something recognizable at a glance where a bare glyph read as a smudge. The shadow earns its place by working in only the appearance that needs it — it lifts the white plate off Spotlight's near-white light background, and in dark appearance it vanishes into the background by itself, where the white body already contrasts strongly. Every measurement is a fraction of the bitmap's edge, so the artwork is identical whatever size it is asked for.
+The artwork [`ServerAppIconThumbnail`](./Cirruscope/ServerAppIconThumbnail.swift) draws is a small white window: three traffic lights in the top-left corner, the app's glyph centred in the body below them in the secondary label colour, and a soft drop shadow.
+It echoes the app's own icon, which is also a window, and gives a Spotlight row something recognizable at a glance where a bare glyph read as a smudge.
+The shadow earns its place by working in only the appearance that needs it — it lifts the white plate off Spotlight's near-white light background, and in dark appearance it vanishes into the background by itself, where the white body already contrasts strongly.
+Every measurement is a fraction of the bitmap's edge, so the artwork is identical whatever size it is asked for.
 
-Three other opaque candidates were drawn with real icons at the size Spotlight renders them, and rejected on the evidence rather than on taste. A **light plate with no shadow or border** is invisible in light appearance: it dissolves into Spotlight's own background, leaving the glyph alone and the bug's better half intact — which is what the shadow exists to prevent. A **mid-grey glyph with no plate** is legible on both and preserves the original look, but trades the crisp black that light appearance has today for something washed out, paying on the surface that already worked. A **flat plate in the app's accent colour** was what shipped first; it works, and was replaced only because a window says what these things are and a coloured square does not.
+Three other opaque candidates were drawn with real icons at the size Spotlight renders them, and rejected on the evidence rather than on taste.
+A **light plate with no shadow or border** is invisible in light appearance: it dissolves into Spotlight's own background, leaving the glyph alone and the bug's better half intact — which is what the shadow exists to prevent.
+A **mid-grey glyph with no plate** is legible on both and preserves the original look, but trades the crisp black that light appearance has today for something washed out, paying on the surface that already worked.
+A **flat plate in the app's accent colour** was what shipped first; it works, and was replaced only because a window says what these things are and a coloured square does not.
 
-The plate is drawn in code rather than loaded from an asset catalog, which is worth recording because the catalog looks like the obvious home for artwork. A vector imageset does work — `"properties": { "preserves-vector-representation": true }`, with a single image entry carrying no scale — but the shadow could not have lived there in any case, since the catalog rasterizes paths and fills and neither PDF nor SVG carries a shadow primitive through it. The asset would therefore have held a rounded rectangle and three circles, while costing two files needing `REUSE.toml` entries and a copy of the artwork inside the widget extension, which compiles `Core/Assets.xcassets` and has no use for it.
+The plate is drawn in code rather than loaded from an asset catalog, which is worth recording because the catalog looks like the obvious home for artwork.
+A vector imageset does work — `"properties": { "preserves-vector-representation": true }`, with a single image entry carrying no scale — but the shadow could not have lived there in any case, since the catalog rasterizes paths and fills and neither PDF nor SVG carries a shadow primitive through it.
+The asset would therefore have held a rounded rectangle and three circles, while costing two files needing `REUSE.toml` entries and a copy of the artwork inside the widget extension, which compiles `Core/Assets.xcassets` and has no use for it.
 
-The cost accepted is that Spotlight and the menus no longer show the same picture of the same thing. That is the right way round: a menu row is a list of words with a mark beside it, where a window would shout, and a Spotlight result is an icon with a label, where a bare glyph is what looks out of place.
+The cost accepted is that Spotlight and the menus no longer show the same picture of the same thing.
+That is the right way round: a menu row is a list of words with a mark beside it, where a window would shout, and a Spotlight result is an icon with a label, where a bare glyph is what looks out of place.
 
 ## Why do the server apps keep their icons in menus that now hide images?
 
 Because in that one list the icon is part of how a row is found, and everywhere else in the menu bar it is not.
 
-From macOS 27 and iPadOS 27 on, the system decides for itself whether the image beside a menu item is drawn, and for an app built against those SDKs it mostly decides not to. On the Mac the rule is keyed to the SDK the app was linked against rather than to anything in its code: an app built with the macOS 26 SDK loses only its symbol images, one built with the macOS 27 SDK loses its bitmaps as well — and a downloaded server-app icon is a bitmap. That is how the icons the View menu gained in #46 disappeared (issue #127) without a line of the icon code changing, and why it read as a regression on the branch that first required Xcode 27. AppKit says as much in its own log, at info level: "Hiding non-symbol image … (process linked on macOS 27)".
+From macOS 27 and iPadOS 27 on, the system decides for itself whether the image beside a menu item is drawn, and for an app built against those SDKs it mostly decides not to.
+On the Mac the rule is keyed to the SDK the app was linked against rather than to anything in its code: an app built with the macOS 26 SDK loses only its symbol images, one built with the macOS 27 SDK loses its bitmaps as well — and a downloaded server-app icon is a bitmap.
+That is how the icons the View menu gained in #46 disappeared (issue #127) without a line of the icon code changing, and why it read as a regression on the branch that first required Xcode 27.
+AppKit says as much in its own log, at info level: "Hiding non-symbol image … (process linked on macOS 27)".
 
-Each platform lets an item ask for its image anyway — `NSMenuItem.preferredImageVisibility` and `UIMenuElement.preferredImageVisibility`, set to `.visible` — and the server-app items in the menu bar ask: on the Mac from the one factory that builds every server-app item, on an iPad from the View menu's commands. Every other imaged item, the storyboard's Settings…, New Window and Downloads included, is left to the system. Those glyphs restate their titles, which is exactly the decoration the new default is meant to remove, and AppKit treats an image set in Interface Builder more leniently than one set in code in any case. A list of Nextcloud apps is different: the names are the server's, several are unfamiliar or third-party, and the mark beside each is the one Nextcloud's own web interface puts beside the same name, so the column is scanned by its marks. Every row asks, the placeholder included: the default decides symbols and bitmaps by different rules, so asking only for the downloaded icons would leave the `app.grid` placeholder to a rule of its own, and the list would come to mix rows with an image and rows without — which it promises never to do.
+Each platform lets an item ask for its image anyway — `NSMenuItem.preferredImageVisibility` and `UIMenuElement.preferredImageVisibility`, set to `.visible` — and the server-app items in the menu bar ask: on the Mac from the one factory that builds every server-app item, on an iPad from the View menu's commands.
+Every other imaged item, the storyboard's Settings…, New Window and Downloads included, is left to the system.
+Those glyphs restate their titles, which is exactly the decoration the new default is meant to remove, and AppKit treats an image set in Interface Builder more leniently than one set in code in any case.
+A list of Nextcloud apps is different: the names are the server's, several are unfamiliar or third-party, and the mark beside each is the one Nextcloud's own web interface puts beside the same name, so the column is scanned by its marks.
+Every row asks, the placeholder included: the default decides symbols and bitmaps by different rules, so asking only for the downloaded icons would leave the `app.grid` placeholder to a rule of its own, and the list would come to mix rows with an image and rows without — which it promises never to do.
 
-On the Mac the request sits behind `#available(macOS 27.0, *)`. That is the compiler's requirement rather than a second behaviour: the property is new in macOS 27, the app still deploys to macOS 26, and macOS 26 draws menu images without being asked.
+On the Mac the request sits behind `#available(macOS 27.0, *)`.
+That is the compiler's requirement rather than a second behaviour: the property is new in macOS 27, the app still deploys to macOS 26, and macOS 26 draws menu images without being asked.
 
-SwiftUI has no modifier named for the property. It has the label style, and turns `.titleAndIcon` into an element whose image is visible, `.titleOnly` into one whose image is hidden, and anything else into the automatic default. That mapping was read out of SwiftUI's binaries rather than out of any documentation, so it is the kind of assumption that deserves checking on screen whenever the SDK moves. The iPad's View menu applies `.labelStyle(.titleAndIcon)` to its server-app items, and on iPadOS 26, which draws menu images regardless, the modifier changes nothing. The navigation bar's title menu is left to the default, which on iOS 27 still draws its images; should that change, moving the modifier into `ServerAppMenuItems`, which both menus share, covers both at once.
+SwiftUI has no modifier named for the property.
+It has the label style, and turns `.titleAndIcon` into an element whose image is visible, `.titleOnly` into one whose image is hidden, and anything else into the automatic default.
+That mapping was read out of SwiftUI's binaries rather than out of any documentation, so it is the kind of assumption that deserves checking on screen whenever the SDK moves.
+The iPad's View menu applies `.labelStyle(.titleAndIcon)` to its server-app items, and on iPadOS 26, which draws menu images regardless, the modifier changes nothing.
+The navigation bar's title menu is left to the default, which on iOS 27 still draws its images; should that change, moving the modifier into `ServerAppMenuItems`, which both menus share, covers both at once.
 
-Two limits are accepted. The SDK says the system "may still hide the image" even when asked, and the app does not fight that: the only stronger instrument is a custom view per item, which would mean drawing titles, key equivalents and highlighting by hand to overrule a decision the system deliberately reserved. And the Dock menu still shows nothing — the same factory builds it, and the Dock draws it out of process and drops the image whatever it is asked for. None of this is unit-tested: what AppKit and UIKit finally draw is not observable through a public API, so it is verified on screen.
+Two limits are accepted.
+The SDK says the system "may still hide the image" even when asked, and the app does not fight that: the only stronger instrument is a custom view per item, which would mean drawing titles, key equivalents and highlighting by hand to overrule a decision the system deliberately reserved.
+And the Dock menu still shows nothing — the same factory builds it, and the Dock draws it out of process and drops the image whatever it is asked for.
+None of this is unit-tested: what AppKit and UIKit finally draw is not observable through a public API, so it is verified on screen.
 
 ## Why does the iPhone's background refresh do nothing but update the app icon badge?
 
-Because everything it does not do is one less thing that can fail where nobody can see it. A background launch gets a short, unpredictable slice of time on a schedule no one can force, with no debugger attached and no user watching, and the failure modes are all silent: an unarmed app is simply never woken again, and an app that overruns its slice is killed. What is left here is one HTTP GET and one integer — no persistence, no icon downloads, no web view, and no contact with `Store`, which is main-actor-bound and belongs to a process the job may not be sharing.
+Because everything it does not do is one less thing that can fail where nobody can see it.
+A background launch gets a short, unpredictable slice of time on a schedule no one can force, with no debugger attached and no user watching, and the failure modes are all silent: an unarmed app is simply never woken again, and an app that overruns its slice is killed.
+What is left here is one HTTP GET and one integer — no persistence, no icon downloads, no web view, and no contact with `Store`, which is main-actor-bound and belongs to a process the job may not be sharing.
 
-The requirement that the count not be persisted falls out of the same reasoning rather than fighting it. The server is the only record of these notifications; the foreground app keeps them for as long as it runs so the account menu can count them, and the background job keeps nothing at all, writing the badge from the fetch and discarding what came back.
+The requirement that the count not be persisted falls out of the same reasoning rather than fighting it.
+The server is the only record of these notifications; the foreground app keeps them for as long as it runs so the account menu can count them, and the background job keeps nothing at all, writing the badge from the fetch and discarding what came back.
 
-The scope is also what makes the feature verifiable. `BGTaskScheduler` refuses to schedule anything in the Simulator, so the scheduler itself can only be exercised on a device — but every other part of the path is the foreground refresh, which runs the same shared fetch and the same badge decision, and is fully verifiable in the Simulator. The cost accepted is that "iOS never ran the task" is not a fixable outcome, only a diagnosable one: whether a request was pending and whether a run started are logged separately, because the difference between those two is the difference between the system's judgement and our bug, and nothing else in the system distinguishes them.
+The scope is also what makes the feature verifiable.
+`BGTaskScheduler` refuses to schedule anything in the Simulator, so the scheduler itself can only be exercised on a device — but every other part of the path is the foreground refresh, which runs the same shared fetch and the same badge decision, and is fully verifiable in the Simulator.
+The cost accepted is that "iOS never ran the task" is not a fixable outcome, only a diagnosable one: whether a request was pending and whether a run started are logged separately, because the difference between those two is the difference between the system's judgement and our bug, and nothing else in the system distinguishes them.
 
 ## Why does iOS decide the notifications app is missing from a 404 rather than from the server's capabilities?
 
-Because the capability the Mac reads is not available to ask for at the moment iOS would ask. macOS validates a *credentialed* server at launch and hands the resulting `CapabilitySet` to `NotificationMonitor`, which gates on `contains(Notifications.self)`. iOS validates an *anonymous* server before Login Flow v2 and discards the result, and Nextcloud only advertises the `notifications` key to authenticated clients — so a check written that way would read false against every server, including working ones.
+Because the capability the Mac reads is not available to ask for at the moment iOS would ask.
+macOS validates a *credentialed* server at launch and hands the resulting `CapabilitySet` to `NotificationMonitor`, which gates on `contains(Notifications.self)`.
+iOS validates an *anonymous* server before Login Flow v2 and discards the result, and Nextcloud only advertises the `notifications` key to authenticated clients — so a check written that way would read false against every server, including working ones.
 
-`Store` does hold a credentialed server that could be asked, so the gate is reachable; it is declined because it would cost a `capabilities()` round trip on every launch and every background wake to answer a question the request being made already answers. `Server.notifications()` throws `notFound` when the app is absent or disabled, which is the same fact arriving for free.
+`Store` does hold a credentialed server that could be asked, so the gate is reachable; it is declined because it would cost a `capabilities()` round trip on every launch and every background wake to answer a question the request being made already answers.
+`Server.notifications()` throws `notFound` when the app is absent or disabled, which is the same fact arriving for free.
 
-The cost accepted is one wasted request per wake-up on an instance whose notifications app is switched off, forever — macOS latches that condition and stops asking, and iOS did not, because a background run is a fresh process and the only place to keep a latch across runs was persistence the app did not then have. It has it now, so this is re-openable rather than settled: the reason the latch is still absent is that nothing has measured whether one wasted GET a few times an hour is worth a stored flag that can itself go stale when an administrator switches the app back on. It is one cheap GET at most a few times an hour, the badge ends up correct either way, and the 404 is logged so the situation reads as understood rather than as a malfunction.
+The cost accepted is one wasted request per wake-up on an instance whose notifications app is switched off, forever — macOS latches that condition and stops asking, and iOS did not, because a background run is a fresh process and the only place to keep a latch across runs was persistence the app did not then have.
+It has it now, so this is re-openable rather than settled: the reason the latch is still absent is that nothing has measured whether one wasted GET a few times an hour is worth a stored flag that can itself go stale when an administrator switches the app back on.
+It is one cheap GET at most a few times an hour, the badge ends up correct either way, and the 404 is logged so the situation reads as understood rather than as a malfunction.
 
 ## Why is Nextcloud's notifications panel revealed by a stylesheet rule rather than by an attribute the app sets?
 
 The iOS stylesheet hides Nextcloud's entire header, and the notifications panel hangs inside it, so opening that panel means letting the header back in — and `display: none` is not something a descendant can opt out of.
 
-The obvious approach is for Swift to set an attribute on `<html>` when it clicks the bell and clear it when the panel closes, which is how the appearance settings already work. It was rejected. The panel's open state is something the page answers definitively — it sets a class on the menu and `aria-expanded` on the trigger — so an attribute would be a second source of truth over that same question, and its failure mode is bad: one missed "closed" report leaves a revealed, empty header on screen for the rest of the document's life. It is also the case an attribute handles worst, since Nextcloud's single-page navigations never replace the document, so a stale attribute outlives the panel it described. Keying `:has()` on the page's own two signals instead means there is nothing to keep in step and nothing to undo, and the header disappears in the same style recalculation as the panel.
+The obvious approach is for Swift to set an attribute on `<html>` when it clicks the bell and clear it when the panel closes, which is how the appearance settings already work.
+It was rejected.
+The panel's open state is something the page answers definitively — it sets a class on the menu and `aria-expanded` on the trigger — so an attribute would be a second source of truth over that same question, and its failure mode is bad: one missed "closed" report leaves a revealed, empty header on screen for the rest of the document's life.
+It is also the case an attribute handles worst, since Nextcloud's single-page navigations never replace the document, so a stale attribute outlives the panel it described.
+Keying `:has()` on the page's own two signals instead means there is nothing to keep in step and nothing to undo, and the header disappears in the same style recalculation as the panel.
 
-Two smaller choices inside that rule are worth recording. The header is hidden with `visibility` rather than `display`, because `visibility` is inherited *and* individually reversible by a descendant — so "nothing in the header paints except this one subtree" is one rule about two elements instead of a list of every header child that must stay hidden, a list that would have to track the server's markup as it changes. And a transparent scrim is added, which Nextcloud itself does not draw: it closes the menu on any pointer event outside it, which is right in a desktop browser where the header remains on screen, but here the header is invisible and the dismissing tap would otherwise also open whatever file or conversation sat under the finger.
+Two smaller choices inside that rule are worth recording.
+The header is hidden with `visibility` rather than `display`, because `visibility` is inherited *and* individually reversible by a descendant — so "nothing in the header paints except this one subtree" is one rule about two elements instead of a list of every header child that must stay hidden, a list that would have to track the server's markup as it changes.
+And a transparent scrim is added, which Nextcloud itself does not draw: it closes the menu on any pointer event outside it, which is right in a desktop browser where the header remains on screen, but here the header is invisible and the dismissing tap would otherwise also open whatever file or conversation sat under the finger.
 
-The selectors are verified against Nextcloud 34 and 32 and unverified beyond them, which is why the script tries an ordered list of candidates resting on different assumptions and reports which one matched at `.notice`. That report, not a guess, is how the next server's markup gets established.
+The selectors are verified against Nextcloud 34 and 32 and unverified beyond them, which is why the script tries an ordered list of candidates resting on different assumptions and reports which one matched at `.notice`.
+That report, not a guess, is how the next server's markup gets established.
 
 ## Why does the widget fetch the activity from the server instead of reading what the app already stored?
 
-Because there is nothing to read. Both apps now have the same store — iOS gained it when the persistence layer became shared — but what it holds is accounts, theming and server apps, not activity. Adding activity to it would be a schema change against a store already shipped in a Mac App Store release, so it would need a real migration, written and tested, before a widget could show its first row.
+Because there is nothing to read.
+Both apps now have the same store — iOS gained it when the persistence layer became shared — but what it holds is accounts, theming and server apps, not activity.
+Adding activity to it would be a schema change against a store already shipped in a Mac App Store release, so it would need a real migration, written and tested, before a widget could show its first row.
 
-It would also be the wrong source even if it were free. A store is only as current as the last time the app ran, and the whole point of the widget is to be right when the app has not been running at all. A machine whose owner opened Cirruscope on Friday would show Friday's activity all weekend — which is precisely the state the stale treatment exists to *mark*, not to be the normal case.
+It would also be the wrong source even if it were free.
+A store is only as current as the last time the app ran, and the whole point of the widget is to be right when the app has not been running at all.
+A machine whose owner opened Cirruscope on Friday would show Friday's activity all weekend — which is precisely the state the stale treatment exists to *mark*, not to be the normal case.
 
-So the widget asks the server itself, through `Core/Activity/RecentActivity`, which is the same shared facility any other surface would use. That is the same shape `UnreadNotifications` already has and for the same reason: one question, one implementation, one closed set of answers, so the foreground app and a process with no store at all cannot reach different conclusions from the same response.
+So the widget asks the server itself, through `Core/Activity/RecentActivity`, which is the same shared facility any other surface would use.
+That is the same shape `UnreadNotifications` already has and for the same reason: one question, one implementation, one closed set of answers, so the foreground app and a process with no store at all cannot reach different conclusions from the same response.
 
-The cost accepted is a network round trip on every refresh, including refreshes where nothing changed. That is a cheap authenticated GET on a schedule the system already rations, and the alternative was a migration plus a staleness problem the fetch does not have.
+The cost accepted is a network round trip on every refresh, including refreshes where nothing changed.
+That is a cheap authenticated GET on a schedule the system already rations, and the alternative was a migration plus a staleness problem the fetch does not have.
 
 ## Why does the widget show file changes but no shares?
 
 Because the server offers no filter that covers both, and the widget asks the server which filters exist rather than deciding for itself what an activity is.
 
-Nextcloud's activity API exposes named filters, and a stock server offers exactly four: `all`, `self`, `by`, and `files`. The `files` filter is `FileChanges`, which admits `file_created`, `file_changed`, `file_deleted` and `file_restored` and declares `allowedApps() = ['files']` — so sharing activities, which belong to `files_sharing`, are outside it by construction. The design that this widget was built from drew a share badge; it cannot be drawn from this filter.
+Nextcloud's activity API exposes named filters, and a stock server offers exactly four: `all`, `self`, `by`, and `files`.
+The `files` filter is `FileChanges`, which admits `file_created`, `file_changed`, `file_deleted` and `file_restored` and declares `allowedApps() = ['files']` — so sharing activities, which belong to `files_sharing`, are outside it by construction.
+The design that this widget was built from drew a share badge; it cannot be drawn from this filter.
 
-The alternative was `all`, filtering client-side to the types we want. That was rejected because `all` is genuinely everything the instance's apps publish — calendar invitations, Talk messages, comments, app-specific events from apps we have never seen — so the widget would be paging through an unbounded and unknowable stream to find the few rows it can draw, with the page size deciding how far back it sees. Asking for the filter the server itself defines means the server decides what a file change is, and keeps deciding as it changes.
+The alternative was `all`, filtering client-side to the types we want.
+That was rejected because `all` is genuinely everything the instance's apps publish — calendar invitations, Talk messages, comments, app-specific events from apps we have never seen — so the widget would be paging through an unbounded and unknowable stream to find the few rows it can draw, with the page size deciding how far back it sees.
+Asking for the filter the server itself defines means the server decides what a file change is, and keeps deciding as it changes.
 
-The cost accepted is that a share never appears, and it is recorded here because it will read as an oversight later rather than as a decision. The palette does not lose the colour: `file_restored` takes the slot the share badge would have had. Should the scope ever widen, a `shared` case belongs in `ActivityVerb` beside the other four rather than in a view.
+The cost accepted is that a share never appears, and it is recorded here because it will read as an oversight later rather than as a decision.
+The palette does not lose the colour: `file_restored` takes the slot the share badge would have had.
+Should the scope ever widen, a `shared` case belongs in `ActivityVerb` beside the other four rather than in a view.
 
 ## Why does the widget keep its own copy of the last feed?
 
-Because "what we had last time" cannot be state on the timeline provider. A widget is redrawn by a process that does not outlive the drawing; the next refresh happens somewhere else entirely, with a fresh provider and no memory of the last one. A property would be empty every time it mattered.
+Because "what we had last time" cannot be state on the timeline provider.
+A widget is redrawn by a process that does not outlive the drawing; the next refresh happens somewhere else entirely, with a fresh provider and no memory of the last one.
+A property would be empty every time it mattered.
 
-It has to be remembered because of what an unreachable server should look like. Drawing an empty card says *nothing happened*, which is a different and wrong statement from *this could not be refreshed*. So a failed refresh keeps the rows it last had, dims them, and dates them — and that needs the rows to still exist.
+It has to be remembered because of what an unreachable server should look like.
+Drawing an empty card says *nothing happened*, which is a different and wrong statement from *this could not be refreshed*.
+So a failed refresh keeps the rows it last had, dims them, and dates them — and that needs the rows to still exist.
 
-`Core/Activity/ActivityFeedStore` is therefore a JSON snapshot in the shared App Group container, beside the cached assets. It does not contradict the decision above about not reading the app's store: this is the widget's own scratch copy of an answer it fetched itself, not domain data another target owns, so nothing migrates and nothing else depends on its shape.
+`Core/Activity/ActivityFeedStore` is therefore a JSON snapshot in the shared App Group container, beside the cached assets.
+It does not contradict the decision above about not reading the app's store: this is the widget's own scratch copy of an answer it fetched itself, not domain data another target owns, so nothing migrates and nothing else depends on its shape.
 
 ## Why does a row name neither the verb nor the person?
 
-Because both were already on the row, drawn rather than written. The badge on the corner of the avatar states what happened, and the avatar states who did it. A row that also spelled out "changed" and "Anja Kranz" was making the same two statements twice, in the scarcest space on the card.
+Because both were already on the row, drawn rather than written.
+The badge on the corner of the avatar states what happened, and the avatar states who did it.
+A row that also spelled out "changed" and "Anja Kranz" was making the same two statements twice, in the scarcest space on the card.
 
-It did not read as redundant in a mockup, where a row is one line of a drawing with room around it. It read as redundant immediately on a real Home Screen, where the small card is about half a line wide: the text ran off the edge before reaching the end of itself, so what actually got cut was the folder — the one fact the row alone could state, and the one a person needs to tell `report.pdf` in `Finance/2026` from `report.pdf` in `Design/Archive`.
+It did not read as redundant in a mockup, where a row is one line of a drawing with room around it.
+It read as redundant immediately on a real Home Screen, where the small card is about half a line wide: the text ran off the edge before reaching the end of itself, so what actually got cut was the folder — the one fact the row alone could state, and the one a person needs to tell `report.pdf` in `Finance/2026` from `report.pdf` in `Design/Archive`.
 
-So every size now shows the filename over the folder, and nothing else. The cost accepted is that the verb and the actor are legible only if their badge and their face are — which is a real cost in the accented and vibrant rendering modes, where colour is discarded and the badge is distinguished by its glyph alone. The alternative was to keep saying it twice and lose the folder, and the folder is worth more.
+So every size now shows the filename over the folder, and nothing else.
+The cost accepted is that the verb and the actor are legible only if their badge and their face are — which is a real cost in the accented and vibrant rendering modes, where colour is discarded and the badge is distinguished by its glyph alone.
+The alternative was to keep saying it twice and lose the folder, and the folder is worth more.
 
-The macOS medium card held out longest. It is wider than the phone's at the same family, and the room was spent moving the folder out from under the filename into a right-aligned column of its own — which read, on a real desktop, as the one card that had been laid out by somebody else. It is now the small card's row on a wider card, with the time trailing it, and the folder is back under the filename where every other size has it.
+The macOS medium card held out longest.
+It is wider than the phone's at the same family, and the room was spent moving the folder out from under the filename into a right-aligned column of its own — which read, on a real desktop, as the one card that had been laid out by somebody else.
+It is now the small card's row on a wider card, with the time trailing it, and the folder is back under the filename where every other size has it.
 
 ## Why does a short feed leave the bottom of the card empty instead of spreading out?
 
-Because a widget is glanced at, and a glance is cheapest when nothing has moved since the last one. Each size divides its feed into a fixed number of slots — three on a small or medium card, ten on a large one — and a row occupies the slot its position in the feed gives it. A server with two recent changes fills the top two slots and leaves the rest empty, rather than sharing the whole height between two rows that then sit lower, and further apart, than the same two sat an hour ago.
+Because a widget is glanced at, and a glance is cheapest when nothing has moved since the last one.
+Each size divides its feed into a fixed number of slots — three on a small or medium card, ten on a large one — and a row occupies the slot its position in the feed gives it.
+A server with two recent changes fills the top two slots and leaves the rest empty, rather than sharing the whole height between two rows that then sit lower, and further apart, than the same two sat an hour ago.
 
-It is the same contract the redacted card already draws. The placeholder puts a full set of bars in those slots, so when real rows replace them the card changes what it says and not where it says it.
+It is the same contract the redacted card already draws.
+The placeholder puts a full set of bars in those slots, so when real rows replace them the card changes what it says and not where it says it.
 
-The message states keep their own centring, and that is deliberate rather than an oversight. A feed is a list, and a list begins at the top; "All quiet" is a statement about the whole card, and centring is what makes it read as one rather than as a first row waiting for a second.
+The message states keep their own centring, and that is deliberate rather than an oversight.
+A feed is a list, and a list begins at the top; "All quiet" is a statement about the whole card, and centring is what makes it read as one rather than as a first row waiting for a second.
 
-The cost accepted is a card that looks under-filled when the server has been quiet, which is the honest thing for it to look like. The alternative makes the layout a second, silent report on how much activity there is — and the rows are already that report.
+The cost accepted is a card that looks under-filled when the server has been quiet, which is the honest thing for it to look like.
+The alternative makes the layout a second, silent report on how much activity there is — and the rows are already that report.
 
 ## Why does the widget use the system's colours rather than the design's own?
 
-Because a widget is drawn in more appearances than a design file has. Beyond light and dark there is Increase Contrast, and the accented and vibrant rendering modes a tinted or clear Home Screen and the Lock Screen impose, where the system discards colour and keeps alpha. A hex value transcribed from a mockup is correct in one of those and wrong in the rest, silently, in modes that are tedious to go and look at.
+Because a widget is drawn in more appearances than a design file has.
+Beyond light and dark there is Increase Contrast, and the accented and vibrant rendering modes a tinted or clear Home Screen and the Lock Screen impose, where the system discards colour and keeps alpha.
+A hex value transcribed from a mockup is correct in one of those and wrong in the rest, silently, in modes that are tedious to go and look at.
 
-`ActivityStyle` therefore holds no colour literal. The two colours the app actually owns — the accent and the card — are the assets already shipped in `Core/Assets.xcassets`, read by name, so they have one definition rather than two that can drift. Everything else is the system's: `.primary` through `.quinary` for the text and the redaction bars, and `.green`, `.red` and `.orange` for the badges, which are conventions rather than brand decisions.
+`ActivityStyle` therefore holds no colour literal.
+The two colours the app actually owns — the accent and the card — are the assets already shipped in `Core/Assets.xcassets`, read by name, so they have one definition rather than two that can drift.
+Everything else is the system's: `.primary` through `.quinary` for the text and the redaction bars, and `.green`, `.red` and `.orange` for the badges, which are conventions rather than brand decisions.
 
-That is also why the type takes no `ColorScheme`. Every value resolves itself against the environment it is drawn in, so there is one style instead of a light one and a dark one, and nothing upstream needs to know which is being drawn.
+That is also why the type takes no `ColorScheme`.
+Every value resolves itself against the environment it is drawn in, so there is one style instead of a light one and a dark one, and nothing upstream needs to know which is being drawn.
 
-The cost accepted is that the widget does not match the design's palette exactly — the system's green is cooler than the green that was drawn, its red brighter. Green, red and orange are also kept out of the avatar fills, because those three mean something specific here and a badge sits on the corner of one of those circles.
+The cost accepted is that the widget does not match the design's palette exactly — the system's green is cooler than the green that was drawn, its red brighter.
+Green, red and orange are also kept out of the avatar fills, because those three mean something specific here and a badge sits on the corner of one of those circles.
