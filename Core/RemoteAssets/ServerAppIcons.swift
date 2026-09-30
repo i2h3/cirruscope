@@ -94,7 +94,7 @@ final class ServerAppIcons: Sendable {
                         try await cache.cache(remote: asset, key: Self.cacheKey(appID: item.id, serverAddress: serverAddress), authenticatedAs: credentials)
                         return item.id
                     } catch {
-                        logger.notice("Could not fetch the icon for '\(item.id, privacy: .public)': \(error.localizedDescription)")
+                        logger.notice("Could not fetch the icon for '\(item.id, privacy: .public)': \(error.localizedDescription, privacy: .public)")
                         return nil
                     }
                 }
