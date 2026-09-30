@@ -5,7 +5,7 @@ import CryptoKit
 import Foundation
 import os
 
-/// `AssetCache` downloads remote assets into the shared App Group container's caches directory and avoids redundant downloads by revalidating cached copies with the server using their HTTP `ETag`.
+/// `AssetCache` downloads remote assets into a caches directory, normally the shared App Group container's, and avoids redundant downloads by revalidating cached copies with the server using their HTTP `ETag`.
 ///
 /// `AccountStore.persist(theming:)` uses the `shared` instance to keep local copies of the Nextcloud server's branding assets up to date so they can be displayed without re-fetching them every launch.
 /// Cached files are addressed by the SHA-256 digest of their absolute URL so that distinct remote URLs map to distinct local files.
@@ -18,7 +18,7 @@ final class AssetCache: Sendable {
     /// `logger` records asset caching activity under the `AssetCache` category.
     private let logger = Logger(for: AssetCache.self)
 
-    /// `directory` is the on-disk location, rooted in the shared App Group container's caches directory, in which cached asset payloads and their `ETag` sidecars are stored.
+    /// `directory` is where cached asset payloads and their `ETag` sidecars are stored: the directory `assetsDirectory()` resolved for `init()`, or the one handed to `init(directory:)`.
     private let directory: URL
 
     /// `session` is the `URLSession` used to download assets.
@@ -27,6 +27,14 @@ final class AssetCache: Sendable {
     /// `init()` creates the cache over the directory `assetsDirectory()` resolved.
     init() {
         directory = Self.assetsDirectory()
+        session = .shared
+    }
+
+    /// `init(directory:)` creates a cache over `directory`, which must already exist.
+    ///
+    /// Tests use it to keep what they write out of the directory `shared` caches into, which holds the developer's real cached assets.
+    init(directory: URL) {
+        self.directory = directory
         session = .shared
     }
 

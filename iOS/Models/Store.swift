@@ -263,33 +263,27 @@ class Store {
     ///
     /// Forget everything this device holds about the connected account, which is the half `logout()` and `requireSignIn()` have in common.
     ///
-    /// The web view's site data goes with the credentials, so a later account does not inherit a session from this one, and so do the cached assets, which include the avatars of everyone whose activity this account could see. The background refresh is disarmed and the app icon badge cleared before the credentials they counted with are gone, so the home screen does not keep advertising a number from a session that no longer exists. Neither is strictly load-bearing — the next foreground refresh would find no account and clear the badge anyway — but a badge that outlives a sign-out even briefly is the kind of thing a user reports as the app still being logged in.
+    /// The web view's site data goes with the credentials, so a later account does not inherit a session from this one, and so does everything `AccountStore.disconnect()` forgets, the cached avatars of everyone whose activity this account could see included. The background refresh is disarmed before the credentials it counts with are gone, and the app icon badge is cleared as the session ends, so the home screen does not keep advertising a number from a session that no longer exists. Neither is strictly load-bearing — the next foreground refresh would find no account and clear the badge anyway — but a badge that outlives a sign-out even briefly is the kind of thing a user reports as the app still being logged in.
     ///
     private func discardSession() {
         WKWebsiteDataStore.default().removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast) {
             self.logger.debug("Cleared the web view's site data")
         }
 
-        Keychain.clearAll()
-
-        // The persisted account goes with it, and this is `deleteAccount()` rather than `disconnect()` because the
-        // clears `disconnect()` would also perform — the Keychain, the caches, the icons, the avatars — are the
-        // lines around this one. What has to go is what the store itself holds: the server address, the app list,
-        // and everything later domains hang off the same `Account` record. None of it is a secret, and all of it
-        // describes a server this device is no longer signed in to, in a file that is not encrypted.
-        AccountStore.shared.deleteAccount()
-
-        // The cached assets go too. Branding outliving a sign-out would only be untidy, but the avatar cache holds
-        // photographs of the people on that server, and those must not survive the account that was allowed to see them.
-        AssetCache.shared.clear()
-        ServerAppIcons.shared.clear()
-        ServerAvatars.shared.clear()
-
         NotificationRefreshTask.cancelRequest()
 
         Task {
             await AppIconBadge.apply(.clear)
         }
+
+        // The credentials, the persisted account and every cache go through the store's own sign-out, which the
+        // Mac's logout runs too, so the list of what a sign-out forgets cannot drift between them. What the store holds — the server address,
+        // the app list, and everything later domains hang off the same `Account` record — is no secret, but all of
+        // it describes a server this device is no longer signed in to, in a file that is not encrypted. Branding
+        // outliving a sign-out would only be untidy, but the avatar caches hold photographs of the people on that
+        // server and the widget's saved feed names their files, and those must not survive the account that was
+        // allowed to see them.
+        AccountStore.shared.disconnect()
 
         apps = []
         unreadNotifications = []

@@ -26,11 +26,12 @@ final class ConversationAvatars: Sendable {
     /// A `Mutex` rather than an actor for the reason the sibling stores use one: the readers cannot `await`, being on the path that builds an entity the moment it is asked for.
     private let decoded = Mutex<[String: CGImage]>([:])
 
-    /// `undrawable` remembers which pictures the server answered with something this cannot decode, so the same answer is not asked for again.
+    /// `refusals` remembers when the server answered a picture with something this cannot decode, so the same answer is not asked for again while it is fresh.
     ///
-    /// Without it, every refresh would re-request a picture for every conversation the server draws itself, which on an account whose conversations are mostly groups is most of them. This is the in-process half; the durable half is a zero-length file under the same cache key, which is what carries the verdict across a launch — without it the whole account was re-asked on every launch, which is most of what made the first refresh slow.
+    /// The durable record is a zero-length file under the same cache key, which carries the verdict across a launch and keeps a refresh from asking again about every conversation the server draws itself, which on an account whose conversations are mostly groups is most of them. This is the in-process copy, which keeps the verdict standing when that file could not be written.
     /// Neither is permanent, and that matters more than it sounds: the key holds the conversation's avatar version, so a moderator's new picture is a different key and the old verdict simply does not apply, and `freshness` bounds the case a version cannot describe.
-    private let undrawable = Mutex<Set<String>>([])
+    /// It holds the date of each answer rather than only the fact of it, because a set would be consulted before the file's date and would keep a refusal read at launch alive for as long as the process runs, which on a Mac is for weeks.
+    private let refusals = Mutex<[String: Date]>([:])
 
     /// `logger` records fetching and decoding under the `ConversationAvatars` category.
     private let logger = Logger(for: ConversationAvatars.self)
@@ -72,8 +73,13 @@ final class ConversationAvatars: Sendable {
         // Zero bytes is the recorded refusal rather than a broken file, and it has to be read as one here:
         // `CGImageSourceCreateWithData` answers an empty source rather than `nil` for it, so without this every
         // entity built for such a conversation would take the decode path and log a failure that is not one.
+        // It is remembered as of when the server gave it, which is the file's date, not as of now: an entity is
+        // built for every conversation at launch, and dating a week-old refusal to that moment would renew it.
+        // A date already remembered is never moved back, because it may be a newer answer whose file could not
+        // be rewritten, leaving an older refusal on disk.
         guard data.isEmpty == false else {
-            undrawable.withLock { _ = $0.insert(key) }
+            let answeredAt = answerDate(forKey: key) ?? .now
+            refusals.withLock { $0[key] = max($0[key] ?? .distantPast, answeredAt) }
             return nil
         }
 
@@ -92,7 +98,7 @@ final class ConversationAvatars: Sendable {
         return image
     }
 
-    /// `refresh(conversations:accountName:on:)` fetches the picture of each conversation that has not already been answered for, and reports whether anything new landed.
+    /// `refresh(conversations:accountName:on:)` fetches the picture of each conversation whose last answer is no longer fresh, and reports whether anything new landed.
     ///
     /// The caller announces the conversations again when this answers `true`, which is what puts the pictures into Spotlight without waiting for the next launch — the same arrangement the server apps' icons already use, and for the same reason: the list is worth having before the pictures are, so it is persisted first.
     /// Fetches run concurrently, a bounded number at a time, which `ServerAppIcons` already does for the icons and for the same reason: each of these is a few kilobytes, they are independent, and an account of forty conversations was otherwise paying forty round trips in a row for pictures nothing was waiting on in order — with the notes and the collectives queued behind all of them.
@@ -100,23 +106,9 @@ final class ConversationAvatars: Sendable {
     /// Nothing is thrown. A picture that cannot be fetched leaves the cache as it was, and the caller draws the Talk mark, which is the same outcome as a conversation the server has no bitmap for.
     @discardableResult
     func refresh(conversations: [(token: String, avatarVersion: String)], accountName: String, on server: Server) async -> Bool {
-        let serverAddress = server.address
-
-        // Decided before anything starts, and on this task rather than inside the group: both of these read
-        // shared state, and settling them here keeps every task that is started a request and nothing else.
-        let pending: [(token: String, key: String)] = conversations.compactMap { conversation in
-            let key = Self.cacheKey(token: conversation.token, avatarVersion: conversation.avatarVersion, accountName: accountName, serverAddress: serverAddress)
-
-            if undrawable.withLock({ $0.contains(key) }) {
-                return nil
-            }
-
-            if hasFreshAnswer(forKey: key) {
-                return nil
-            }
-
-            return (token: conversation.token, key: key)
-        }
+        // Decided before anything starts, and on this task rather than inside the group: deciding reads shared
+        // state, and settling it here keeps every task that is started a request and nothing else.
+        let pending = pendingFetches(for: conversations, accountName: accountName, serverAddress: server.address)
 
         guard pending.isEmpty == false else {
             logger.notice("All \(conversations.count, privacy: .public) conversation(s) already had a fresh answer; nothing was fetched")
@@ -156,11 +148,31 @@ final class ConversationAvatars: Sendable {
         return didFetchAny
     }
 
+    /// `pendingFetches(for:accountName:serverAddress:now:)` is the conversations whose picture has to be asked for, each with the key its answer is stored under.
+    ///
+    /// A conversation is left out while the server's last answer about it is fresh, whichever of the two records says so: the date remembered in this process, or the date of the file on disk. Both are needed, because the file is what survives a launch and the date in memory is what survives a file that could not be written.
+    /// `now` is a parameter so that the rule can be exercised a week ahead without waiting one.
+    func pendingFetches(for conversations: [(token: String, avatarVersion: String)], accountName: String, serverAddress: URL, now: Date = .now) -> [(token: String, key: String)] {
+        conversations.compactMap { conversation in
+            let key = Self.cacheKey(token: conversation.token, avatarVersion: conversation.avatarVersion, accountName: accountName, serverAddress: serverAddress)
+
+            if let refusedAt = refusals.withLock({ $0[key] }), Self.isFresh(answeredAt: refusedAt, now: now) {
+                return nil
+            }
+
+            if hasFreshAnswer(forKey: key, now: now) {
+                return nil
+            }
+
+            return (token: conversation.token, key: key)
+        }
+    }
+
     /// `fetch(token:storingUnder:on:)` is one conversation's request, and reports whether it left something new behind.
     ///
     /// A method rather than a closure written into the group, so what each task captures is spelled out: a token, a key, and the two `Sendable` things this type is made of.
-    /// An answer this cannot decode is recorded as a zero-length file under the same key, which is what stops it being asked again on the next launch as well as on the next refresh.
-    /// It answers `false` for bytes identical to the ones already cached, so that revalidating a picture a week later does not announce a change nothing can see — the caller turns a `true` into a Spotlight re-donation of the whole domain.
+    /// An answer this cannot decode is recorded as a zero-length file under the same key, which is what stops it being asked again, on the next launch as well as on the next refresh, until it is `freshness` old.
+    /// It answers `false` for bytes identical to the ones already cached, and for a refusal that replaces nothing but an earlier refusal, so that revalidating an answer a week later does not announce a change nothing can see — the caller turns a `true` into a Spotlight re-donation of the whole domain.
     private func fetch(token: String, storingUnder key: String, on server: Server) async -> Bool {
         do {
             // The light variant only. The artwork donated to Spotlight is opaque precisely so that one bitmap is
@@ -169,10 +181,16 @@ final class ConversationAvatars: Sendable {
             let avatar = try await server.conversationAvatar(token, darkTheme: false)
 
             guard Self.drawableContentTypes.contains(avatar.contentType.lowercased()) else {
-                logger.notice("A conversation's picture arrived as \(avatar.contentType, privacy: .public), which this does not decode; recording that so it is not asked for again, and leaving the Talk mark in place for it")
-                undrawable.withLock { _ = $0.insert(key) }
+                // A refusal can replace a picture: a week-old photograph is asked about again, and the other person
+                // may since have removed it. The decoded bitmap has to go with the file, or `image()` keeps serving
+                // it, and the replacement is a change somebody can see, so it is reported as one.
+                let replacesPicture = cache.data(forKey: key)?.isEmpty == false
+
+                logger.notice("A conversation's picture arrived as \(avatar.contentType, privacy: .public), which this does not decode; recording that so it is not asked for again while it is fresh, and leaving the Talk mark in place for it")
+                refusals.withLock { $0[key] = .now }
                 cache.store(Data(), forKey: key)
-                return false
+                decoded.withLock { $0[key] = nil }
+                return replacesPicture
             }
 
             let wasUnchanged = cache.data(forKey: key) == avatar.data
@@ -188,20 +206,35 @@ final class ConversationAvatars: Sendable {
         }
     }
 
-    /// `hasFreshAnswer(forKey:)` reports whether the server's last answer about `key` is recent enough to stand.
+    /// `hasFreshAnswer(forKey:now:)` reports whether the server's last answer about `key`, as recorded on disk, is recent enough to stand at `now`.
     ///
-    /// An answer is a bitmap or the zero-length file recording one this cannot decode, and both age the same way. Asked by file date rather than by reading the bytes, so a refresh no longer reads every cached picture off disk only to learn it exists.
+    /// An answer is a bitmap or the zero-length file recording one this cannot decode, and both age the same way. Asked by file date rather than by reading the bytes, so a refresh does not read every cached picture off disk only to learn it exists.
     /// A file whose date cannot be read counts as fresh rather than stale: the cost of being wrong that way is a picture a week out of date, and the cost of being wrong the other way is a request per conversation on every single refresh.
-    private func hasFreshAnswer(forKey key: String) -> Bool {
+    private func hasFreshAnswer(forKey key: String, now: Date) -> Bool {
         guard let fileURL = cache.localURL(forKey: key) else {
             return false
         }
 
-        guard let modified = try? fileURL.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate else {
+        guard let answeredAt = Self.answerDate(of: fileURL) else {
             return true
         }
 
-        return Date.now.timeIntervalSince(modified) < Self.freshness
+        return Self.isFresh(answeredAt: answeredAt, now: now)
+    }
+
+    /// `answerDate(forKey:)` is when the answer cached under `key` was written, or `nil` when there is none or its date cannot be read.
+    private func answerDate(forKey key: String) -> Date? {
+        cache.localURL(forKey: key).flatMap(Self.answerDate(of:))
+    }
+
+    /// `answerDate(of:)` is when the file at `fileURL` was last written, or `nil` when that cannot be read.
+    private static func answerDate(of fileURL: URL) -> Date? {
+        try? fileURL.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
+    }
+
+    /// `isFresh(answeredAt:now:)` is the one rule both records are judged by: an answer stands for `freshness` after it was given.
+    private static func isFresh(answeredAt: Date, now: Date) -> Bool {
+        now.timeIntervalSince(answeredAt) < freshness
     }
 
     /// `clear()` drops every decoded bitmap and every remembered refusal, for a sign-out.
@@ -209,13 +242,13 @@ final class ConversationAvatars: Sendable {
     /// The files themselves go with `AssetCache.clear()`, which runs beside this when an account is disconnected; this is what stops the ones already decoded from outliving them in memory, exactly as the sibling stores do.
     func clear() {
         decoded.withLock { $0.removeAll() }
-        undrawable.withLock { $0.removeAll() }
+        refusals.withLock { $0.removeAll() }
     }
 
     /// `cacheKey(token:avatarVersion:accountName:serverAddress:)` is what one conversation's picture is stored under.
     ///
     /// Every part of it earns its place, and the two that look redundant are the ones that are not: the account, because a one-to-one conversation's picture is of the other party and so depends on who is signed in, and the version, because it is the only signal that a moderator changed a group's picture. Neither is sufficient alone, which is why both are here.
-    private static func cacheKey(token: String, avatarVersion: String, accountName: String, serverAddress: URL) -> String {
+    static func cacheKey(token: String, avatarVersion: String, accountName: String, serverAddress: URL) -> String {
         "conversation-avatar\u{1}\(serverAddress.absoluteString)\u{1}\(accountName)\u{1}\(token)\u{1}\(avatarVersion)\u{1}light"
     }
 }

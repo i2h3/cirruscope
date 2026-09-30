@@ -172,21 +172,23 @@ final class AccountStore {
         notifyChange(.donatedArtworkDidChange)
     }
 
-    /// `disconnect()` deletes the account — cascading to its apps and their shortcuts — then empties `AssetCache` and the app icons and user avatars already drawn from it, and clears the stored Login Flow v2 credentials, so nothing describing the old server — or the people on it — remains.
+    /// `disconnect()` deletes the account — cascading to its apps and their shortcuts — then empties `AssetCache`, the app icons, user avatars and conversation pictures already drawn from it, and the widget's saved activity feed, and clears the stored Login Flow v2 credentials, so nothing describing the old server, or the people on it, remains in the store, the caches or the Keychain.
     ///
-    /// `AppDelegate.logOut()` calls it; this reproduces the old `Settings.serverAddress = nil` cascade in one place. The announcement now happens in `deleteAccount()`, ahead of the two clears rather than after them, which is unobservable: the post is delivered on the next main-thread turn, while both clears are synchronous and finish inside the current one.
+    /// The Mac's `AppDelegate.logOut()` and both of iOS's sign-outs run it, so the list of what a sign-out forgets is written once rather than once per app; the Mac's `requireSignIn()` clears only the Keychain and leaves the stored account in place. The announcement happens in `deleteAccount()`, ahead of the clears rather than after them, which is unobservable: the post is delivered on the next main-thread turn, while every clear is synchronous and finishes inside the current one.
     func disconnect() {
         deleteAccount()
 
         AssetCache.shared.clear()
         ServerAppIcons.shared.clear()
         ServerAvatars.shared.clear()
+        ConversationAvatars.shared.clear()
+        ActivityFeedStore.clear()
         Keychain.clearAll()
     }
 
     /// `deleteAccount()` deletes the account record — cascading to its apps and their shortcuts — drops the memoized `cachedAccount`, commits, and announces the change.
     ///
-    /// It is the storage half of `disconnect()`, separated so it can be exercised on its own: `disconnect()`'s remaining two steps empty `AssetCache` and clear the `Keychain`, neither of which a test can run without destroying the developer's real cached assets and stored credentials. Clearing `cachedAccount` is what keeps a later write from landing on the deleted object instead of a fresh account.
+    /// It is the storage half of `disconnect()`, separated so it can be exercised on its own: `disconnect()`'s remaining steps empty the shared caches and the widget's saved feed and clear the `Keychain`, none of which a test can run without destroying the developer's real cached assets and stored credentials. Clearing `cachedAccount` is what keeps a later write from landing on the deleted object instead of a fresh account.
     func deleteAccount() {
         if let account = currentAccount(createIfNeeded: false) {
             logger.notice("Deleting the connected account and everything cascading from it")

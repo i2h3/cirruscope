@@ -315,7 +315,7 @@ What that code *decides* is pulled out of it wherever it can be, and is then nat
 Whether an address is the connected server's to display or the system's to open, whether it is one of the server's sign-in or sign-out routes, and whether a lapsed session may still be retried silently are each answered by a value type that takes everything it needs as arguments, the time included, and the suites in [`Tests/WebView/`](./Tests/WebView/) cover all three against both app modules.
 
 Tests are therefore expected wherever logic is Swift-only and server-free, including a decision a web view acts on, and deliberately absent around the code that hands those decisions to WebKit — a deliberate scope, not a backlog.
-Two store methods sit on the hand-verified side of that line despite being persistence code: `disconnect()` empties the real asset cache and the real Keychain, and `persist(theming:)` downloads over the network on every call, so both are verified by hand while the storage half of the first, `deleteAccount()`, is covered like everything else.
+Two store methods sit on the hand-verified side of that line despite being persistence code: `disconnect()` empties the real caches, the widget's saved feed and the real Keychain, and `persist(theming:)` downloads over the network on every call, so both are verified by hand while the storage half of the first, `deleteAccount()`, is covered like everything else.
 
 One habit comes out of the same work and generalizes: where the app depends on undocumented framework behaviour, the test measures the framework rather than restating the belief, so [`KeyEquivalentMatchingOracleTests`](./macOSTests/KeyboardShortcuts/KeyEquivalentMatchingOracleTests.swift) asks a real `NSMenu` what it matches and holds [`ShortcutMatching`](./macOS/ShortcutMatching.swift) to that answer.
 The same shape reaches into WebKit where no server is needed: [`SafariUserAgentProbe`](./iOSTests/WebView/SafariUserAgentProbe.swift) loads `about:blank` into a real `WebPage` so that [`SafariUserAgentTests`](./iOSTests/WebView/SafariUserAgentTests.swift) can assert against the user agent WebKit actually reports.
@@ -859,6 +859,7 @@ For a one-to-one conversation the server derives the avatar version from the pat
 Persisting the verdict without a bound would make a colleague's newly uploaded photograph invisible forever.
 So every answer, bitmap or refusal alike, is trusted for a week and then asked again.
 The marker must not ship without that bound.
+The copy of a refusal kept in memory carries the answer's date too, taken from the file rather than from the moment the file was read: every launch reads every conversation's answer, and a refusal dated to the read would renew itself at each one and never be asked about again.
 
 ## Why do notes, collectives, pages and conversations wear the owning app's icon in Spotlight?
 
@@ -888,7 +889,7 @@ That is the arrangement the server apps' icons already use, and the second annou
 
 Only PNG and JPEG are kept.
 The server answers this endpoint with an SVG for every generated icon and every emoji avatar, and this app's SVG reader is deliberately only big enough for the monochrome app glyphs Nextcloud ships.
-An answer that cannot be decoded is recorded as a zero-length file under the same cache key — otherwise every launch re-requests a picture for every conversation the server draws itself, which on an account of group conversations is most of them — and the Talk mark stays in place, which is a correct picture rather than a wrong one.
+An answer that cannot be decoded is recorded as a zero-length file under the same cache key and, like every answer, trusted for a week before it is asked again — otherwise every launch re-requests a picture for every conversation the server draws itself, which on an account of group conversations is most of them — and the Talk mark stays in place, which is a correct picture rather than a wrong one.
 
 The cache key carries the server, the account, the token and the avatar version, and names the light variant, the only one fetched: the donated artwork is opaque so that one bitmap is right in both appearances, and a dark variant would be a request per conversation for a picture nothing draws.
 Every part earns its place and the two that look redundant are the ones that do: the account, because a one-to-one conversation's picture is of *the other party* and so depends on who is signed in, and the version, because it is the only signal that a moderator changed a group's picture.
@@ -1047,6 +1048,7 @@ So a failed refresh keeps the rows it last had, dims them, and dates them — an
 
 `Core/Activity/ActivityFeedStore` is therefore a JSON snapshot in the shared App Group container, beside the cached assets.
 It does not contradict the decision above about not reading the app's store: this is the widget's own scratch copy of an answer it fetched itself, not domain data another target owns, so nothing migrates and nothing else depends on its shape.
+`AccountStore.disconnect()` deletes it along with the caches, because its rows name the files and the people of the server signed out of, and a later account whose server cannot be reached must not be shown them.
 
 ## Why does a row name neither the verb nor the person?
 

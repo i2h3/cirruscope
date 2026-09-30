@@ -338,7 +338,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         presentWebViewWindow(targetURL: target.url)
     }
 
-    /// `logOut()` performs a full app-level logout: fires off a best-effort revocation of the stored Login Flow v2 app password on the server, closes every window, clears the web view's stored cookies and site data so no session for the old server lingers, disconnects the account via `AccountStore.disconnect()` (which deletes the account — cascading into its cached theme, version, apps, and shortcuts — empties `AssetCache`, and clears the stored Login Flow v2 credentials), and presents a fresh `ServerAddressWindowController`.
+    /// `logOut()` performs a full app-level logout: fires off a best-effort revocation of the stored Login Flow v2 app password on the server, closes every window, clears the web view's stored cookies and site data so no session for the old server lingers, disconnects the account via `AccountStore.disconnect()` (which deletes the account — cascading into its cached theme, version, apps, and shortcuts — and forgets every cache and credential describing the old server), and presents a fresh `ServerAddressWindowController`.
     ///
     /// Both `GeneralSettingsViewController.logOut(_:)` (the explicit Settings button) and `WebViewController+WKNavigationDelegate`'s detection of the web view navigating to the server's own logout or login page call this shared implementation, so both entry points behave identically and go through the same tracked window-presentation path as every other window `AppDelegate` creates.
     ///
