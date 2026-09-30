@@ -6,7 +6,7 @@ import Foundation
 
 /// This extension turns the bitmap `ServerAppIcons` renders into the template image AppKit's menus and table cells take.
 extension NSImage {
-    /// `menuItemSize` is the edge length, in points, that a server app's icon is drawn at in a menu.
+    /// `serverAppIconSize` is the edge length, in points, that a server app's icon is drawn at in a menu.
     ///
     /// AppKit grows a menu row to fit an image taller than the text beside it, so an icon much above this makes the whole list taller than the rest of the menu it sits in. Sixteen points is what the system's own imaged menu items use.
     static let serverAppIconSize: CGFloat = 16
