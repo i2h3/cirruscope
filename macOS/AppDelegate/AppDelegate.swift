@@ -450,15 +450,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         logger.log("Completed server app menu rebuilding")
     }
 
+    ///
     /// `menuItem(for:)` builds a menu item that opens `app` via `performServerApp(_:)`, carrying the app's own icon and applying the user's configured keyboard shortcut for it when one exists.
     ///
     /// The icon is looked up rather than awaited, because this same factory builds the Dock menu, which AppKit asks for and draws immediately. A miss is ordinary — nothing has been downloaded on a first launch — and answers with the placeholder instead, so the list never mixes rows that have an image with rows that have none, which AppKit does not necessarily align to the same left edge.
+    /// From macOS 27 on, AppKit decides for itself whether a menu item's image is drawn and hides most of them, so the item asks for its icon to be shown: in this list the icon is what tells one app from the next rather than a glyph restating a command, and leaving it to the default is how the View menu came to list bare names (issue #127). Every row asks, the placeholder included, which is what keeps the promise above.
     /// The Dock menu shows no image whatever is set here, and nothing in this app can change that: the Dock renders that menu itself, out of process, and drops `NSMenuItem.image` entirely — measured against a system symbol, a template bitmap, and a plain bitmap alike, none of which appear. The image is still set on the way past, because this factory also builds the View menu, where it does appear. Do not go looking for a bug in the Dock menu's icons; there is nothing there to find.
+    ///
     private func menuItem(for app: ServerAppTransferObject) -> NSMenuItem {
         let item = NSMenuItem(title: app.name, action: #selector(performServerApp(_:)), keyEquivalent: "")
         item.target = self
         item.representedObject = app.id
         item.image = Self.icon(for: app)
+
+        // The check is the compiler's, not a second behaviour: the property is new in macOS 27, and the app still
+        // deploys to macOS 26, which draws menu images without being asked.
+        if #available(macOS 27.0, *) {
+            item.preferredImageVisibility = .visible
+        }
 
         if let shortcut = AccountStore.shared.shortcut(forAppID: app.id) {
             item.keyEquivalent = shortcut.keyEquivalent
