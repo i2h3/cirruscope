@@ -27,6 +27,12 @@ struct NextcloudView: View {
     @Environment(\.openURL)
     private var openURL
 
+    ///
+    /// Whether this window is in front of the user, which is when it serves what Spotlight and the Shortcuts app ask the app to open, and whether it has gone to the background, which is when it stops.
+    ///
+    @Environment(\.scenePhase)
+    private var scenePhase
+
     @State
     private var page: WebPage
 
@@ -67,6 +73,14 @@ struct NextcloudView: View {
     ///
     @State
     private var insets: WebPageInsets?
+
+    ///
+    /// Whether this screen has begun its session: loaded its first document, asked for the app list, and started serving what the App Intents layer asks it to open.
+    ///
+    /// A flag of its own rather than a reading of `page.url`, because a request waiting from a cold launch is loaded in place of the first document and leaves the address set before the session work has run; deciding by the address let such a request skip the app-list refresh for the whole session.
+    ///
+    @State
+    private var hasStarted = false
 
     ///
     /// Records this screen's activity under the `NextcloudView` category.
@@ -231,7 +245,7 @@ struct NextcloudView: View {
                 return
             }
 
-            guard page.url == nil else {
+            guard hasStarted == false else {
                 return
             }
 
@@ -239,32 +253,55 @@ struct NextcloudView: View {
                 return
             }
 
-            page.load(account.authenticatedRequest(for: account.server))
+            hasStarted = true
+            Self.logger.notice("Starting the session of this screen on its first measurement")
             store.updateApps()
-        }
-        .onAppear {
-            // Tell the App Intents layer how this screen opens a server app. It is installed here rather than at
-            // launch because this is the only thing that can do it: the web view is this screen's, and a request
-            // arriving while no screen is up has nowhere to go. `install(_:)` serves anything already waiting, so a
-            // Spotlight result picked while the app was not running — which launches it and reaches `EntityOpening`
-            // long before this appears — opens as soon as this screen does rather than being dropped.
-            EntityOpening.shared.install { request in
-                switch request {
-                    case let .serverApp(app):
-                        navigateToApp(app)
 
-                    case let .page(target):
-                        load(target)
-                }
+            // Only now, and not when the screen appears: the opener serves at once whatever Spotlight or the Shortcuts
+            // app asked for while the app was launching, and that has to wait for the first measurement exactly as
+            // the first document does. What was asked for is then that document, rather than a second load straight
+            // after the server's own front page.
+            guard installEntityOpener() == false else {
+                Self.logger.notice("Loaded a request that arrived during launch in place of the server's front page")
+                return
             }
+
+            page.load(account.authenticatedRequest(for: account.server))
+        }
+        .onChange(of: scenePhase) { _, phase in
+            switch phase {
+                case .active:
+                    // A window coming to the front takes over what the App Intents layer asks the app to open, so a
+                    // Spotlight result lands in the window the user was last looking at rather than in whichever
+                    // appeared first.
+                    guard hasStarted else {
+                        return
+                    }
+
+                    installEntityOpener()
+
+                case .background:
+                    // A window that is closed goes to the background, and that is the one signal it was seen to
+                    // give: closing windows under Stage Manager did not run `onDisappear` at all. Handing the job back
+                    // here means a closed window is never asked to open anything, and a request arriving while every
+                    // window is in the background waits for the one that comes forward.
+                    EntityOpening.shared.uninstall(for: page)
+
+                default:
+                    break
+            }
+        }
+        .onDisappear {
+            // A window whose views are torn down must stop being asked to open things too: its web view is gone from
+            // the screen, and a request loaded into it would be a request the user never sees answered.
+            EntityOpening.shared.uninstall(for: page)
         }
         .task {
             await republishInsetsOnNavigation()
         }
         // Tells the View menu of an iPad's menu bar which page to load a server app into while this window is in
-        // front. Withheld until the first measurement for the reason the first load is — nothing may load before the
-        // first document can inset itself — and for one of its own: a load before then would leave `page.url` set,
-        // so the `page.url == nil` guard in `.task(id: insets)` would skip the first load and the app-list refresh.
+        // front. Withheld until the first measurement for the reason the first load is: nothing may load before the
+        // first document can inset itself.
         .focusedSceneValue(insets == nil ? nil : page)
         // Tells the same menu the scale this window's screen draws at. Its content is in no window and would
         // otherwise render the icons at a scale of one, which a 2x or 3x screen then draws blurred. Not withheld with
@@ -442,6 +479,24 @@ struct NextcloudView: View {
         }
 
         page.load(request)
+    }
+
+    ///
+    /// Make this screen the one that opens what Spotlight and the Shortcuts app ask for, answering whether it opened a request that was already waiting.
+    ///
+    /// The page is the owner because it is this window's own and lives exactly as long as the window does, which is what lets the window hand the job back when it closes.
+    ///
+    @discardableResult
+    private func installEntityOpener() -> Bool {
+        EntityOpening.shared.install(for: page) { request in
+            switch request {
+                case let .serverApp(app):
+                    navigateToApp(app)
+
+                case let .page(target):
+                    load(target)
+            }
+        }
     }
 
     ///
