@@ -17,7 +17,7 @@ enum NextcloudHeaderHeight {
 
     /// `defaultsKey` is the `UserDefaults.standard` key the last reported header height is kept under.
     ///
-    /// It is the default argument of both `lastKnown(key:)` and `record(_:key:)` rather than being read directly by them, so a test can exercise this facility under a key of its own instead of overwriting the height the developer's real windows are laid out against.
+    /// It is the default argument of both `lastKnown(key:)` and `record(_:key:notifyChange:)` rather than being read directly by them, so a test can exercise this facility under a key of its own instead of overwriting the height the developer's real windows are laid out against.
     static let defaultsKey = "NextcloudHeaderHeight"
 
     /// `plausibleHeights` is the range of header heights worth believing, in points.
@@ -27,7 +27,7 @@ enum NextcloudHeaderHeight {
 
     /// `isPlausible(_:)` reports whether `height` is worth believing as the height of Nextcloud's header.
     ///
-    /// It is a pure rule of its own so it can be exercised directly, `record(_:key:)` needing a defaults domain to write into; `WebWindowFrame.isRecordable(styleMask:)` is split out from its own caller for the same reason. Non-finite values are refused explicitly rather than left to the range comparison, a `nan` comparing `false` against everything including a containment check.
+    /// It is a pure rule of its own so it can be exercised directly, `record(_:key:notifyChange:)` needing a defaults domain to write into; `WebWindowFrame.isRecordable(styleMask:)` is split out from its own caller for the same reason. Non-finite values are refused explicitly rather than left to the range comparison, a `nan` comparing `false` against everything including a containment check.
     static func isPlausible(_ height: CGFloat) -> Bool {
         height.isFinite && plausibleHeights.contains(height)
     }
@@ -51,11 +51,14 @@ enum NextcloudHeaderHeight {
         return height
     }
 
-    /// `record(_:key:)` remembers `height` as the height of Nextcloud's header and announces the change, ignoring a height not worth believing and doing nothing at all when it matches what is already stored.
+    /// `record(_:key:notifyChange:)` remembers `height` as the height of Nextcloud's header and announces the change, ignoring a height not worth believing and doing nothing at all when it matches what is already stored.
     ///
     /// `WebViewController` calls it for every report from `macOS/Scripts/HeaderHeight.js`. The height is rounded to whole points before being compared and stored, which is also what keeps a page reporting a fractional height from announcing a change no window would place a button differently for.
     /// An implausible report leaves the previously recorded height in place rather than clearing it: a page that measured its header while it was collapsed says nothing about the header, so the last height that *was* believable remains the better answer.
-    static func record(_ height: CGFloat, key: String = defaultsKey) {
+    /// It is isolated to the main actor because what it announces to is: every open `WebWindowController` observes the change, and `NotificationCenter` runs an observer synchronously on the thread that posted, so a post from anywhere else would run a main-actor observer off the main thread, which traps.
+    /// `notifyChange` is that announcement, injected for the reason `AccountStore.notifyChange` is: the test bundle is hosted by the app, whose restored web windows observe it for the whole run, so a test hands in a closure that counts instead — which is also the only way to assert that a change was announced at all. `postDidChange()` is the production announcement.
+    @MainActor
+    static func record(_ height: CGFloat, key: String = defaultsKey, notifyChange: @MainActor () -> Void = { NextcloudHeaderHeight.postDidChange() }) {
         guard isPlausible(height) else {
             logger.error("Ignoring reported header height \(height), which is not plausible")
             return
@@ -70,6 +73,14 @@ enum NextcloudHeaderHeight {
 
         UserDefaults.standard.set(Double(rounded), forKey: key)
         logger.notice("Recorded Nextcloud header height \(rounded, privacy: .public)")
+        notifyChange()
+    }
+
+    /// `postDidChange()` posts `Notification.Name.nextcloudHeaderHeightDidChange`, and is the production default for `record(_:key:notifyChange:)`'s `notifyChange`.
+    ///
+    /// It posts synchronously rather than on the next turn the way `AccountStore.post(_:)` does, so every open window has re-centered its buttons by the time `record(_:key:notifyChange:)` returns.
+    @MainActor
+    static func postDidChange() {
         NotificationCenter.default.post(name: .nextcloudHeaderHeightDidChange, object: nil)
     }
 }
