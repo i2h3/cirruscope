@@ -80,6 +80,7 @@
 		AA059CC42FE4130E00DE3094 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		AA059CC92FE414EB00DE3094 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		AA059CFA2FE558BD00DE3094 /* AGENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AGENTS.md; sourceTree = "<group>"; };
+		AA29AE61306D5D5400B72216 /* GOVERNANCE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = GOVERNANCE.md; sourceTree = "<group>"; };
 		AA2AC5D530189B11002A0C28 /* macOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = macOSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA89B73C303EC1B600C5D5D9 /* Widgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = Widgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA89B73D303EC1B600C5D5D9 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
@@ -254,6 +255,7 @@
 				AA059CC92FE414EB00DE3094 /* LICENSE */,
 				AAE675CD301CEB20007853C0 /* CODE_OF_CONDUCT.md */,
 				AAE675CE301CEB20007853C0 /* CONTRIBUTING.md */,
+				AA29AE61306D5D5400B72216 /* GOVERNANCE.md */,
 				AAE675CF301CEB20007853C0 /* REUSE.toml */,
 				AA8A9A90300522C20098151F /* Cirruscope.xcconfig */,
 				AAE70077303DB197001A7B02 /* .github */,
@@ -618,7 +620,6 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = 9258VT2Z85;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -683,7 +684,6 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = 9258VT2Z85;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
