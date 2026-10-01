@@ -937,7 +937,9 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iOS/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Grant access to your camera to show yourself during video calls.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Iva Horn";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Grant access to your microphone to speak freely during video calls.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -962,7 +964,9 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iOS/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Grant access to your camera to show yourself during video calls.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Iva Horn";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Grant access to your microphone to speak freely during video calls.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

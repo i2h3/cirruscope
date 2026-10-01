@@ -114,7 +114,7 @@ And having a second target compile the same folders is the only thing that keeps
 CI tests it and builds it for the Simulator on every pull request for exactly that reason.
 
 What the app does today is sign in through Nextcloud's Login Flow v2, restore its account from the Keychain at launch, and present the web interface signed in, signing back in silently when the browser session behind it lapses and revoking the app password on the server when the user signs out.
-It lists the server apps as the navigation bar's title menu and, on an iPad, in the View menu of the menu bar, and badges its icon with the unread-notification count from both the foreground and a background refresh.
+It lists the server apps as the navigation bar's title menu and, on an iPad, in the View menu of the menu bar, badges its icon with the unread-notification count from both the foreground and a background refresh, and gives a call in Talk the camera and the microphone.
 It persists the account's data through the same SwiftData stack as the Mac app, and offers the same App Intents and Spotlight results over it.
 The consequence for the codebase is the part that carries design weight, and it is why this entry says so: shared code is organized for two consumers by default rather than generalized on demand, which is what `Core/` and `Cirruscope/` are for and why domain logic landing in `macOS/` is the choice that needs an argument.
 None of this changes the public story, and deliberately so: the [FAQ on the website](./Website/support.html) and its German, French and Spanish translations still answer "Will there be an iOS or iPadOS version?" with "Not right now", because this entry describes how the work is organized, not what has been promised.
@@ -825,7 +825,7 @@ Because the web view carries the account's session, and because a page shown ins
 The rule is [one shared decision](./Cirruscope/WebViewDestination.swift) on origin — scheme, host and port together.
 Host alone is not enough, and that is not theoretical: it was what both apps compared, so a plain-HTTP listener or a differently-ported service on the very machine the server runs on counted as the server, and could be loaded in a window that attaches the app password.
 The same comparison guards the `redirect_url` the sign-in retry follows, the link a notification banner opens, and the request a download is re-issued as.
-It also decides which page the Mac gives the camera and the microphone without a prompt of the web view's own, in [`MediaCaptureDecision`](./Cirruscope/MediaCaptureDecision.swift), which used to compare hosts as well.
+It also decides which page either app gives the camera and the microphone without a prompt of the web view's own, in [`MediaCaptureDecision`](./Cirruscope/MediaCaptureDecision.swift), which on the Mac used to compare hosts as well.
 There it is asked of the frame requesting them as well as of the page, because a frame is not held to the navigation rule, and one from another origin can sit inside the server's own page.
 
 Deciding by origin also answers what to do with an address that is not a page at all.

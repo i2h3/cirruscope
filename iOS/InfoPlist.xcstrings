@@ -1,0 +1,90 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "CFBundleName" : {
+      "comment" : "Bundle name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Cirruscope"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "NSCameraUsageDescription" : {
+      "comment" : "Reason shown in the system permission prompt asking to use the camera, presented the first time the web interface requests camera access for a video call.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erlauben Sie den Zugriff auf Ihre Kamera, um sich während Videoanrufen zu zeigen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grant access to your camera to show yourself during video calls."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Concede acceso a tu cámara para mostrarte durante las videollamadas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autorisez l'accès à votre caméra pour vous montrer pendant les appels vidéo."
+          }
+        }
+      }
+    },
+    "NSHumanReadableCopyright" : {
+      "comment" : "Copyright (human-readable)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Copyright © 2026 Iva Horn"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "NSMicrophoneUsageDescription" : {
+      "comment" : "Reason shown in the system permission prompt asking to use the microphone, presented the first time the web interface requests microphone access for a call.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erlauben Sie den Zugriff auf Ihr Mikrofon, um während Videoanrufen frei zu sprechen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grant access to your microphone to speak freely during video calls."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Concede acceso a tu micrófono para hablar libremente durante las videollamadas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autorisez l'accès à votre microphone pour parler librement pendant les appels vidéo."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

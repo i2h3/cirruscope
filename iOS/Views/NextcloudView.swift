@@ -96,6 +96,32 @@ struct NextcloudView: View {
     ///
     private static let safeAreaInsetsEntryPoint = "window.Cirruscope.applySafeAreaInsets"
 
+    ///
+    /// Decides which of the device's sensors a page is given without WebKit asking first: the camera and the microphone for the connected server, and nothing for anyone else.
+    ///
+    /// `MediaCaptureDecision` answers it, on the origins of both the page and the frame asking, which is the decision the Mac's web view makes too, so a call asks only the system's own question, once. Anything else keeps WebKit's prompt, the motion sensors included, nothing in Nextcloud asking for them.
+    ///
+    private static var deviceSensorAuthorization: WebPage.DeviceSensorAuthorization {
+        WebPage.DeviceSensorAuthorization { permission, frame, origin in
+            guard case .mediaCapture = permission else {
+                logger.debug("Leaving a request for the motion sensors to WebKit's prompt")
+                return .prompt
+            }
+
+            let frameOrigin = frame.securityOrigin
+
+            switch MediaCaptureDecision.forRequest(page: (origin.protocol, origin.host, origin.port), frame: (frameOrigin.protocol, frameOrigin.host, frameOrigin.port), connectedTo: AccountStore.shared.serverAddress) {
+                case .grant:
+                    logger.debug("Page and frame are both on the configured server's origin; granting media capture")
+                    return .grant
+
+                case .prompt:
+                    logger.debug("Page or frame is not on the configured server's origin, or no server is configured; leaving media capture to WebKit's prompt")
+                    return .prompt
+            }
+        }
+    }
+
     init() {
         var configuration = WebPage.Configuration()
         let appNavigation = AppNavigationBridge()
@@ -106,6 +132,11 @@ struct NextcloudView: View {
         // It has to be set here for the same reason as the handler below, and stays set for the whole session: the
         // Cirruscope name the server associates a login with belongs to the sign-in request, not to this web view.
         configuration.applicationNameForUserAgent = SafariUserAgent.applicationName
+
+        // A call needs both of these. Talk marks its videos `playsinline`, which an iPhone's web view ignores unless
+        // inline playback is allowed, so every participant's video would otherwise take over the screen as it starts.
+        configuration.deviceSensorAuthorization = Self.deviceSensorAuthorization
+        configuration.mediaPlaybackBehavior = .allowsInlinePlayback
 
         // The handlers have to be on the configuration before the page is built: `WebPage.Configuration` is a struct
         // the page copies at initialization, so one registered afterwards would never reach it. User scripts are not

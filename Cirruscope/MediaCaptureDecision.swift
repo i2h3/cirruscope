@@ -8,7 +8,7 @@ import Foundation
 /// Only the connected server is granted anything, and the server means its origin — scheme, host and port together — compared by the same rule `SameOriginURL` applies before the app password is attached to anything.
 /// Host alone once decided it, so a plain-HTTP listener or a differently-ported service on the server's machine was handed the camera and the microphone unasked.
 /// Everything else is prompted for rather than refused, so the person can still allow a site they trust.
-/// The system's own permission is a separate question, asked by macOS once per app, and nothing here answers it.
+/// The system's own permission is a separate question, asked once per app, and nothing here answers it.
 ///
 /// Two origins are asked about, and both must be the server's.
 /// WebKit documents the one it passes as the page's, and the frame whose script asked has an origin of its own: a frame is not held to the rule that keeps navigations on the server, so one from another origin can sit inside the server's own page.
