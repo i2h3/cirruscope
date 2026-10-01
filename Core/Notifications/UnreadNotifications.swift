@@ -75,21 +75,33 @@ enum UnreadNotifications {
     /// `fetch(reason:)` asks the connected server for the notifications queued for the user, reporting what came back.
     ///
     /// `reason` names which half of the app asked — `"foreground"` or `"background"` — and appears in every line this logs, because the two can overlap: a background run started while the app was away is still in flight when the user brings the app back and the foreground refresh begins beside it. A `StaticString` is used so the value prints in the clear in the log store rather than as `<private>`.
-    /// The account is resolved through `Keychain.accounts().first`, exactly as `Store.restored()` resolves it, rather than taken as a parameter. That is not indirection for its own sake: the background path has no store to ask, a `Rainmaker.Server` is then built and used entirely inside this one function so it never crosses an isolation boundary, and the foreground path pays one Keychain read to be provably running the same code.
+    /// The account is resolved through `Keychain.storedAccounts().first`, exactly as `Store.restored()` resolves it, rather than taken as a parameter. That is not indirection for its own sake: the background path has no store to ask, a `Rainmaker.Server` is then built and used entirely inside this one function so it never crosses an isolation boundary, and the foreground path pays one Keychain read to be provably running the same code.
     /// It never throws. Every failure is a case of `Outcome`, because both callers want to decide what a failure means for the badge rather than to handle an error.
+    /// A Keychain that refuses a read is `unreachable` rather than `noAccount`, because it says nothing about whether anybody is signed in, and `noAccount` would clear the badge and stop the background refresh until the app is next opened.
     static func fetch(reason: StaticString) async -> Outcome {
         let started = ContinuousClock.now
 
         logger.notice("Fetching unread notifications (\(reason))")
 
-        guard let account = Keychain.accounts().first else {
+        let accounts: [ServerAccount]
+
+        do {
+            accounts = try Keychain.storedAccounts()
+        } catch {
+            logger.error("The Keychain could not be read, so whether an account is configured is unknown (\(reason)): \(error.localizedDescription, privacy: .public)")
+            return .unreachable
+        }
+
+        guard let account = accounts.first else {
             logger.notice("No account is configured, so there is nothing to fetch (\(reason))")
             return .noAccount
         }
 
         guard let server = ServerConnection.authenticated(address: account.server) else {
-            logger.notice("No credentials are stored for the configured account, so there is nothing to fetch (\(reason))")
-            return .noAccount
+            // The enumeration above has just read these very credentials, so failing to read them again is the
+            // Keychain refusing, or a sign-out landing in between, which clears the badge itself.
+            logger.error("The credentials just enumerated could not be read again, so there is nothing to fetch with (\(reason))")
+            return .unreachable
         }
 
         do {
@@ -98,7 +110,16 @@ enum UnreadNotifications {
             // A sign-out does not wait for a fetch under way, and the app password is revoked without waiting either,
             // so this can succeed for an account that is gone; publishing it would put that account's count back on
             // the app icon after the sign-out cleared it.
-            guard Keychain.accounts().first == account else {
+            let configured: [ServerAccount]
+
+            do {
+                configured = try Keychain.storedAccounts()
+            } catch {
+                logger.error("The Keychain could not be read after the fetch, so whether its account is still configured is unknown; discarding it (\(reason)): \(error.localizedDescription, privacy: .public)")
+                return .unreachable
+            }
+
+            guard configured.first == account else {
                 logger.notice("Fetched unread notifications for an account that is no longer the configured one; discarding them (\(reason))")
                 return .noAccount
             }
