@@ -66,7 +66,7 @@ struct ActivityTimelineProvider: TimelineProvider {
     /// The two failures that carry over are the transient ones. An unreachable server and a cancelled refresh have learned nothing about what the feed contains, so whatever was last known stays on screen, dimmed and dated. Everything else has learned something definite — there is no account, or the instance has no activity app — and says so plainly, because a stale feed under one of those would be a lie about why it is old.
     private static func entry() async -> ActivityEntry {
         switch await RecentActivity.fetch(limit: fetchLimit, reason: "widget") {
-            case let .fetched(rows, server):
+            case let .fetched(rows, account):
                 let visible = Array(rows.prefix(rowLimit))
                 let fetchedAt = Date.now
 
@@ -77,10 +77,12 @@ struct ActivityTimelineProvider: TimelineProvider {
                 // Checked after saving rather than before, so the two processes cannot interleave between the check
                 // and the write: the app clears the credentials before the saved feed, so either this sees them gone
                 // and takes the rows back itself, or it saved them before the app's own clear, which removes them.
-                // A Keychain that cannot be read says nothing about that, and leaves the rows in place.
-                if let accounts = try? Keychain.storedAccounts(), accounts.contains(where: { $0.server == server }) == false {
+                // A Keychain that cannot be read says nothing about that, and leaves the rows in place. The photographs
+                // just fetched go too, since the app's sign-out may have emptied the cache before they landed.
+                if let accounts = try? Keychain.storedAccounts(), accounts.contains(account) == false {
                     logger.notice("The account these rows belong to signed out while they were being fetched; forgetting them")
                     ActivityFeedStore.clear()
+                    ServerAvatars.shared.forget(userIDs: visible.compactMap(\.actorID), serverAddress: account.server)
                     return ActivityEntry(date: .now, content: .notSignedIn)
                 }
 

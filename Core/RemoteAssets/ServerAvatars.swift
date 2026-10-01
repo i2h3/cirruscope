@@ -99,6 +99,18 @@ final class ServerAvatars: Sendable {
         }
     }
 
+    /// `forget(userIDs:serverAddress:)` removes what is cached about the named users of the server at `serverAddress`: their photographs on disk, the bitmaps decoded from them, and any remembered absence.
+    ///
+    /// It is for a refresh a sign-out overtook, whose photographs may have landed after the sign-out emptied the cache; removing only what that refresh asked for leaves alone whatever an account signed in since has cached.
+    func forget(userIDs: some Sequence<String>, serverAddress: URL) {
+        for userID in Set(userIDs) {
+            let key = Self.cacheKey(userID: userID, serverAddress: serverAddress)
+            cache.remove(forKey: key)
+            decoded.withLock { $0[key] = nil }
+            withoutPhotograph.withLock { _ = $0.remove(key) }
+        }
+    }
+
     /// `clear()` drops every decoded bitmap and every remembered absence, for a sign-out.
     ///
     /// The cached files themselves are removed by `AssetCache.clear()`, which runs beside this on every sign-out; this is what stops the ones already decoded from outliving them in memory, exactly as `ServerAppIcons.clear()` does.

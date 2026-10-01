@@ -13,10 +13,10 @@ import Rainmaker
 enum RecentActivity {
     /// `Outcome` is the closed set of results a fetch can have, carrying the prepared rows only in the one case where there are any to carry.
     enum Outcome: Sendable {
-        /// `fetched` carries the rows to draw, which is the empty array when the server has nothing to report — the widget's "All quiet", which is a success rather than a failure — and the address of the server they came from.
+        /// `fetched` carries the rows to draw, which is the empty array when the server has nothing to report — the widget's "All quiet", which is a success rather than a failure — and the account they were fetched as.
         ///
-        /// The address travels with the rows so a caller can confirm, once it has acted on them, that the account they belong to is still the one signed in.
-        case fetched([ActivityRow], server: URL)
+        /// The account travels with the rows so a caller can confirm, once it has acted on them, that it is still the one signed in, credentials and all: signing out and back in to the same server stores new credentials under the same address.
+        case fetched([ActivityRow], account: ServerAccount)
 
         /// `noAccount` reports that the Keychain holds no usable credentials, so there is no server to ask.
         ///
@@ -84,7 +84,7 @@ enum RecentActivity {
 
             logger.notice("Fetched \(page.items.count, privacy: .public) activity item(s), \(rows.count, privacy: .public) drawable, in \(Self.milliseconds(since: started), privacy: .public) ms (\(reason))")
 
-            return .fetched(rows, server: account.server)
+            return .fetched(rows, account: account)
         } catch is CancellationError {
             logger.error("Fetching recent activity was cancelled after \(Self.milliseconds(since: started), privacy: .public) ms (\(reason))")
             return .cancelled

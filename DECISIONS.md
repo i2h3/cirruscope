@@ -1105,6 +1105,7 @@ So a failed refresh keeps the rows it last had, dims them, and dates them — an
 It does not contradict the decision above about not reading the app's store: this is the widget's own scratch copy of an answer it fetched itself, not domain data another target owns, so nothing migrates and nothing else depends on its shape.
 Every sign-out deletes it along with the caches, because its rows name the files and the people of the server signed out of, and a later account whose server cannot be reached must not be shown them.
 The widget deletes it as well whenever the Keychain says nobody is signed in or the server rejects the stored app password, and checks again after saving whether the account it fetched for is still there, because a refresh already under way when the app signs out can save its rows after the app cleared them.
+That check compares the credentials as well as the server, since signing out and back in to the same server stores new ones under the same address, and when it fails the widget also removes the photographs it fetched for those rows, which can have landed after the app emptied the cache.
 The app clears the credentials before the feed, so a late save either lands before the app's own clear or finds the account gone, and it asks WidgetKit to redraw last, so that the widget finds out at once rather than at its next scheduled refresh.
 A Keychain the widget cannot read deletes nothing, since it says nothing about whether anybody is signed in.
 
