@@ -302,11 +302,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         presentSignInWindow()
     }
 
-    /// `signOutLocally()` is the part every sign-out shares: it stops the notification monitor, closes every web window, clears the web view's site data and signs out through `AccountStore.disconnect()`.
+    /// `signOutLocally()` is the part every sign-out shares: it stops the notification monitor, withdraws every notification the app delivered, closes every web window, clears the web view's site data and signs out through `AccountStore.disconnect()`.
     ///
     /// `logOut()`, `requireSignIn()` and `presentInitialWindow(forLaunch:)`'s missing-credentials branch all call it, so that no sign-out leaves a window open on a server the store no longer names, where the navigation delegate would stop confining it, or a monitor polling with credentials that are gone.
     private func signOutLocally() {
         NotificationMonitor.shared.stop()
+        UserNotifier.shared.withdrawAll()
         closeWebViewWindows()
 
         WKWebsiteDataStore.default().removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast) {

@@ -114,16 +114,36 @@ final class NotificationMonitor {
 
         do {
             let items = try await server.notifications()
+
+            // `stop()` does not cancel a refresh already under way, so a sign-out, or a sign-in to another account,
+            // can have happened while this one waited, and what it brings back belongs to a server the monitor no
+            // longer observes: its count on the Dock, its banners in Notification Center.
+            guard self.server === server else {
+                logger.notice("Discarding notifications fetched for a server the monitor no longer observes")
+                return
+            }
+
             logger.debug("Fetched \(items.count, privacy: .public) notification(s)")
             unreadCount = items.count
             updateDockBadge()
             postBanners(for: items)
         } catch RainmakerError.notFound {
+            guard self.server === server else {
+                return
+            }
+
             logger.notice("Notifications endpoint unavailable; clearing badge")
             endpointUnavailable = true
             unreadCount = 0
             updateDockBadge()
         } catch RainmakerError.credentialsRequired, RainmakerError.unexpectedStatus(code: 401) {
+            // A sign-out revokes the very app password this was refused for, and asking for a new sign-in after the
+            // user signed out themselves, or signing out whoever signed in since, would be wrong.
+            guard self.server === server else {
+                logger.notice("A server the monitor no longer observes refused its credentials; not asking for a new sign-in")
+                return
+            }
+
             logger.notice("Notification refresh rejected credentials; requiring sign-in")
             stop()
             NotificationCenter.default.post(name: .serverCredentialsRejected, object: nil)

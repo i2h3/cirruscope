@@ -53,6 +53,16 @@ final class UserNotifier: NSObject, UNUserNotificationCenterDelegate {
         }
     }
 
+    /// `withdrawAll()` removes every notification the app has delivered or still has pending, for a sign-out.
+    ///
+    /// Every one of them was about the account being signed out of — its server's notifications, its web interface's messages, the files it downloaded — and a banner left in Notification Center would otherwise go on naming that account's people and files, and open its server's pages when clicked.
+    func withdrawAll() {
+        let center = UNUserNotificationCenter.current()
+        center.removeAllDeliveredNotifications()
+        center.removeAllPendingNotificationRequests()
+        logger.notice("Withdrew every delivered and pending notification")
+    }
+
     /// `post(title:body:tag:webNotificationID:webView:)` posts a notification with `title` and `body`, remembering `webView` and `webNotificationID` so a later click can be routed back to the page that created it.
     ///
     /// When `tag` is non-empty it is used as the request identifier so a web notification reusing a tag replaces the earlier one, matching the web Notification API; otherwise a fresh identifier is generated. `webNotificationID` is the page-side id the activation hook uses to find the original `Notification`.
