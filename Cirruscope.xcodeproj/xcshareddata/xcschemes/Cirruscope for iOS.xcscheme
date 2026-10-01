@@ -41,17 +41,6 @@
                ReferencedContainer = "container:Cirruscope.xcodeproj">
             </BuildableReference>
          </TestableReference>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "AAE7F465303D7457001A7B02"
-               BuildableName = "iOSUITests.xctest"
-               BlueprintName = "iOSUITests"
-               ReferencedContainer = "container:Cirruscope.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

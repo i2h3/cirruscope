@@ -96,6 +96,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		AA3DC637796F155D6C1C8E16 /* Exceptions for "iOSTests" folder in "iOSTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				iOSTests.xcconfig,
+			);
+			target = AAE7F45B303D7457001A7B02 /* iOSTests */;
+		};
 		AA89B750303EC1B700C5D5D9 /* Exceptions for "Widgets" folder in "Widgets" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -108,6 +115,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				iOS.xcconfig,
 			);
 			target = AAE7F44F303D7455001A7B02 /* iOS */;
 		};
@@ -115,6 +123,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				macOS.xcconfig,
 			);
 			target = AA059CA22FE407A700DE3094 /* macOS */;
 		};
@@ -132,6 +141,13 @@
 			);
 			target = AAE7F44F303D7455001A7B02 /* iOS */;
 		};
+		AAFB12169E26512992919884 /* Exceptions for "macOSTests" folder in "macOSTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				macOSTests.xcconfig,
+			);
+			target = AA2AC5D430189B11002A0C28 /* macOSTests */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -146,6 +162,9 @@
 		};
 		AA2AC5D630189B11002A0C28 /* macOSTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AAFB12169E26512992919884 /* Exceptions for "macOSTests" folder in "macOSTests" target */,
+			);
 			path = macOSTests;
 			sourceTree = "<group>";
 		};
@@ -187,6 +206,9 @@
 		};
 		AAE7F45F303D7457001A7B02 /* iOSTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AA3DC637796F155D6C1C8E16 /* Exceptions for "iOSTests" folder in "iOSTests" target */,
+			);
 			path = iOSTests;
 			sourceTree = "<group>";
 		};
