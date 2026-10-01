@@ -6,7 +6,7 @@ import Foundation
 ///
 /// `ServerAccount` is a Nextcloud server address together with the credentials that authenticate against it — the two halves of one `Keychain` item, which files a `Credentials` value under the address it belongs to.
 ///
-struct ServerAccount {
+struct ServerAccount: Equatable {
     /// `server` is the root address of the Nextcloud server, as the server itself reported it in the Login Flow v2 result.
     let server: URL
 

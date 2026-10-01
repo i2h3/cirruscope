@@ -16,7 +16,7 @@ enum UnreadNotifications {
         /// `fetched` carries the notifications currently queued, which is the empty array when there are none.
         case fetched([NotificationItem])
 
-        /// `noAccount` reports that no usable credentials are stored, so there is no server to ask.
+        /// `noAccount` reports that no usable credentials are stored, so there is no server to ask, or that the account a fetch asked for is no longer the configured one by the time it was answered.
         case noAccount
 
         /// `endpointUnavailable` reports the `404` an instance answers while its notifications app is absent or disabled.
@@ -94,6 +94,15 @@ enum UnreadNotifications {
 
         do {
             let items = try await server.notifications()
+
+            // A sign-out does not wait for a fetch under way, and the app password is revoked without waiting either,
+            // so this can succeed for an account that is gone; publishing it would put that account's count back on
+            // the app icon after the sign-out cleared it.
+            guard Keychain.accounts().first == account else {
+                logger.notice("Fetched unread notifications for an account that is no longer the configured one; discarding them (\(reason))")
+                return .noAccount
+            }
+
             logger.notice("Fetched \(items.count, privacy: .public) unread notification(s) in \(Self.milliseconds(since: started), privacy: .public) ms (\(reason))")
             return .fetched(items)
         } catch is CancellationError {
