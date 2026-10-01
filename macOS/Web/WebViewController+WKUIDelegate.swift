@@ -7,20 +7,25 @@ import WebKit
 
 /// `WebViewController`'s conformance to `WKUIDelegate` handles the web interface's requests that need native UI.
 ///
-/// It grants camera and microphone capture to the configured Nextcloud server's host without an extra web-view prompt, presents an open panel so the web interface can upload files, and answers new-window requests itself rather than returning a second web view. WKWebView shows no file chooser of its own, so without `runOpenPanelWith` an "Upload" action in Nextcloud does nothing; and it would prompt per-site for camera/microphone on top of the one-time macOS system permission. Because `WebViewController+WKNavigationDelegate` offers a main-frame navigation off the signed-in server's origin to the system rather than displaying it, media capture is granted automatically to any requesting origin whose host matches the server's, compared case-insensitively and without regard to scheme or port; any other host falls back to the default prompt.
+/// It grants camera and microphone capture to the configured Nextcloud server without an extra web-view prompt, presents an open panel so the web interface can upload files, and answers new-window requests itself rather than returning a second web view. WKWebView shows no file chooser of its own, so without `runOpenPanelWith` an "Upload" action in Nextcloud does nothing; and it would prompt per-site for camera/microphone on top of the one-time macOS system permission. Which requests are granted is `MediaCaptureDecision`'s to say, on the origins of both the page and the frame asking, so a differently-ported service on the server's machine, or a frame from another origin inside the server's page, gets the default prompt rather than the camera.
 /// Nextcloud opens some actions, including certain downloads, in a new window — as does `target="_blank"`, `window.open()`, and the system context menu's "Open Link in New Window" — and WKWebView drops those unless a second web view is returned, so `createWebViewWith` instead asks `WebViewDestination` where the destination belongs, the same origin-based decision `WebViewController+WKNavigationDelegate` makes for a main-frame navigation: one it assigns to the web view opens in a genuine new Cirruscope window, and any other is handed to the system through `NSWorkspace`, or ignored when no application is registered to open it.
 /// Every method here logs its entry and each outcome at debug level so the behaviour of a specific window — identified by the appended `logID` — can be reconstructed from a log capture when tracing misbehaviour.
 extension WebViewController: WKUIDelegate {
-    func webView(_: WKWebView, decideMediaCapturePermissionsFor origin: WKSecurityOrigin, initiatedBy _: WKFrameInfo, type _: WKMediaCaptureType) async -> WKPermissionDecision {
-        logger.debug("Deciding media capture permission for origin \(origin.host) (WebViewController \(self.logID))")
+    func webView(_: WKWebView, decideMediaCapturePermissionsFor origin: WKSecurityOrigin, initiatedBy frame: WKFrameInfo, type _: WKMediaCaptureType) async -> WKPermissionDecision {
+        let frameOrigin = frame.securityOrigin
+        logger.debug("Deciding media capture permission for page origin \(origin.protocol)://\(origin.host):\(origin.port) and frame origin \(frameOrigin.protocol)://\(frameOrigin.host):\(frameOrigin.port) (WebViewController \(self.logID))")
 
-        guard let serverHost = AccountStore.shared.serverAddress?.host, origin.host.caseInsensitiveCompare(serverHost) == .orderedSame else {
-            logger.debug("Origin is not the configured server; returning .prompt (WebViewController \(self.logID))")
-            return .prompt
+        let decision = MediaCaptureDecision.forRequest(page: (origin.protocol, origin.host, origin.port), frame: (frameOrigin.protocol, frameOrigin.host, frameOrigin.port), connectedTo: AccountStore.shared.serverAddress)
+
+        switch decision {
+            case .grant:
+                logger.debug("Page and frame are both on the configured server's origin; granting media capture (WebViewController \(self.logID))")
+                return .grant
+
+            case .prompt:
+                logger.debug("Page or frame is not on the configured server's origin, or no server is configured; returning .prompt (WebViewController \(self.logID))")
+                return .prompt
         }
-
-        logger.debug("Origin is the configured server; granting media capture (WebViewController \(self.logID))")
-        return .grant
     }
 
     func webView(_ webView: WKWebView, runOpenPanelWith parameters: WKOpenPanelParameters, initiatedByFrame _: WKFrameInfo) async -> [URL]? {

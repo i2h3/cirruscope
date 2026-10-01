@@ -72,7 +72,8 @@ struct SameOriginURL: Sendable {
     /// `isSameOrigin(_:as:)` reports whether two URLs address the same scheme, host, and port.
     ///
     /// A port left out is the scheme's own, so `https://cloud.example.com` and `https://cloud.example.com:443` are one origin written two ways. Hosts compare case-insensitively, as DNS does.
-    private static func isSameOrigin(_ url: URL, as other: URL) -> Bool {
+    /// It is not private because it is the app's one comparison of origins, and a question about an origin that involves no address to request — which page may have the camera without being asked — is answered through it rather than through a second comparison free to differ from this one.
+    static func isSameOrigin(_ url: URL, as other: URL) -> Bool {
         guard let scheme = url.scheme?.lowercased(), let otherScheme = other.scheme?.lowercased(), scheme == otherScheme else {
             return false
         }

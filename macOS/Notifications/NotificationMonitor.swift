@@ -8,7 +8,7 @@ import Rainmaker
 /// `NotificationMonitor` is the app-wide facility that keeps the Dock badge and notification-center banners in sync with the unread Nextcloud notifications of the connected server, as issue #41 requires.
 ///
 /// It observes server-side changes through Rainmaker's `Server.events(_:)`, which prefers the `notify_push` WebSocket when the server offers it and otherwise polls every 30 seconds. Each event is only a hint, so the monitor reacts by re-fetching the full notification list via `Server.notifications()`; the unread count is that list's `count`, since the server returns exactly the notifications still queued for the user.
-/// It broadcasts `Notification.Name.unreadNotificationCountDidChange` whenever the count changes so other parts of the app can react, and posts `Notification.Name.serverCredentialsRejected` when the stream reports the stored app password was revoked so `AppDelegate` can require a new sign-in.
+/// It announces nothing when the count changes, the Dock badge being the count's only reader, and posts `Notification.Name.serverCredentialsRejected` when the stream reports the stored app password was revoked so `AppDelegate` can require a new sign-in.
 @MainActor
 final class NotificationMonitor {
     /// `shared` is the process-wide monitor, retained for the app's lifetime so it can own the long-lived event stream.
@@ -89,7 +89,6 @@ final class NotificationMonitor {
         endpointUnavailable = false
         unreadCount = 0
         updateDockBadge()
-        NotificationCenter.default.post(name: .unreadNotificationCountDidChange, object: nil)
     }
 
     /// `refreshNow()` re-fetches the notifications immediately, used by `AppDelegate.applicationDidBecomeActive(_:)` to keep the badge fresh when the user returns to the app.
@@ -118,14 +117,12 @@ final class NotificationMonitor {
             logger.debug("Fetched \(items.count, privacy: .public) notification(s)")
             unreadCount = items.count
             updateDockBadge()
-            NotificationCenter.default.post(name: .unreadNotificationCountDidChange, object: nil)
             postBanners(for: items)
         } catch RainmakerError.notFound {
             logger.notice("Notifications endpoint unavailable; clearing badge")
             endpointUnavailable = true
             unreadCount = 0
             updateDockBadge()
-            NotificationCenter.default.post(name: .unreadNotificationCountDidChange, object: nil)
         } catch RainmakerError.credentialsRequired, RainmakerError.unexpectedStatus(code: 401) {
             logger.notice("Notification refresh rejected credentials; requiring sign-in")
             stop()

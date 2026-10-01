@@ -825,6 +825,8 @@ Because the web view carries the account's session, and because a page shown ins
 The rule is [one shared decision](./Cirruscope/WebViewDestination.swift) on origin — scheme, host and port together.
 Host alone is not enough, and that is not theoretical: it was what both apps compared, so a plain-HTTP listener or a differently-ported service on the very machine the server runs on counted as the server, and could be loaded in a window that attaches the app password.
 The same comparison guards the `redirect_url` the sign-in retry follows, the link a notification banner opens, and the request a download is re-issued as.
+It also decides which page the Mac gives the camera and the microphone without a prompt of the web view's own, in [`MediaCaptureDecision`](./Cirruscope/MediaCaptureDecision.swift), which used to compare hosts as well.
+There it is asked of the frame requesting them as well as of the page, because a frame is not held to the navigation rule, and one from another origin can sit inside the server's own page.
 
 Deciding by origin also answers what to do with an address that is not a page at all.
 A `tel:` or `mailto:` link is not the server's, so it goes to the system, which is how it reaches the app that can act on it.
