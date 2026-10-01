@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/i2h3/nextcloud-container-manager",
       "state" : {
-        "revision" : "a9fbad8738e34a4bbb4782f48cee43cedede7ea8",
-        "version" : "2.0.1"
+        "revision" : "0b2eb6ab01e11357e816b1868a379318edd65ab8",
+        "version" : "2.0.2"
       }
     },
     {
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/i2h3/rainmaker",
       "state" : {
-        "revision" : "d6a2f72e0b1590c02e476b41d45789a0d4c35e57",
-        "version" : "4.1.0"
+        "revision" : "0c538c6f82aca9ac91a1248808e1a15c091822b4",
+        "version" : "4.1.1"
       }
     },
     {
