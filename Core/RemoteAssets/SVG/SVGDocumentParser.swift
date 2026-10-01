@@ -5,15 +5,17 @@ import CoreGraphics
 import Foundation
 import os
 
-/// `SVGDocumentParser` walks an SVG document and accumulates every shape it paints into one `CGPath` expressed in the document's own viewBox coordinates.
+/// `SVGDocumentParser` walks an SVG document and accumulates the shapes it paints, in document order and in the coordinates of the document's own viewBox.
 ///
-/// It reads the subset Nextcloud's app icons are drawn in — `<svg>`, `<g>`, `<path>`, `<rect>`, `<circle>`, `<ellipse>`, `<polygon>`, `<polyline>` and `<line>`, with transforms and painting properties inherited down the tree — and ignores everything else it meets rather than failing on it, so a stray `<title>` or `<metadata>` costs nothing.
+/// It reads the subset Nextcloud's app icons are drawn in — `<svg>`, `<g>`, `<path>`, `<rect>`, `<circle>`, `<ellipse>`, `<polygon>`, `<polyline>` and `<line>`, with transforms and painting properties inherited down the tree — and skips any other element rather than failing on it, so a stray `<title>` or `<metadata>` costs nothing.
 /// One thing makes it refuse a document outright instead: a `d` attribute it cannot read. A refused document falls back to a placeholder, which is the honest answer — a wrongly drawn one does not announce itself.
+/// Skipping is not refusing, though, and the walk still descends into an element it skips, so a shape inside `<defs>`, `<clipPath>` or `<mask>` is painted as though it were drawn directly, while a `<use>` or `<text>` element contributes nothing.
+/// A fill counts whenever it is anything but `none`, so a gradient fill such as `fill="url(#…)"` is painted as solid ink.
 final class SVGDocumentParser: NSObject {
     /// `viewBox` is the rectangle of the document's own coordinate system, once `<svg>` has been read.
     private(set) var viewBox: CGRect?
 
-    /// `shapes` is every painted element so far, in document order and in viewBox coordinates.
+    /// `shapes` is every fill and stroke outline painted so far, in document order and in viewBox coordinates.
     private var shapes: [SVGShape] = []
 
     /// `states` is the inherited rendering state of each open element, innermost last.
@@ -22,7 +24,7 @@ final class SVGDocumentParser: NSObject {
     /// `hiddenDepth` counts how deep inside a hidden element the walk currently is, so its whole subtree is skipped rather than only its own shape.
     private var hiddenDepth = 0
 
-    /// `isRefused` records that the document asked for something this parser will not approximate.
+    /// `isRefused` records that a `<path>` carried a `d` attribute that could not be read, which is the only thing that refuses the whole document rather than being skipped.
     private(set) var isRefused = false
 
     /// `logger` records refused documents under the `SVGDocumentParser` category.
@@ -46,12 +48,12 @@ final class SVGDocumentParser: NSObject {
         return viewBox != nil && !shapes.isEmpty
     }
 
-    /// `accumulated` is every painted element, in the order the document painted them.
+    /// `accumulated` is every fill and stroke outline painted, in the order the document painted them.
     var accumulated: [SVGShape] {
         shapes
     }
 
-    /// `add(_:in:)` adds one shape, drawn in its element's own coordinates, to the accumulated path.
+    /// `add(_:in:)` adds one shape, drawn in its element's own coordinates, to the accumulated shapes in viewBox coordinates: its fill as one entry and the outline of its stroke as another, for whichever of the two it has.
     ///
     /// A shape that is only stroked is converted to the outline of that stroke first, so that an icon drawn as lines rather than as areas still contributes a silhouette. A shape that is neither filled nor stroked contributes nothing, which is what makes a full-bleed `<rect fill="none"/>` invisible rather than solid.
     /// The fill rule is read from the state the shape inherited rather than from whichever ancestor happened to mention it, because an ancestor's `fill-rule` means nothing where the shape overrides it — and in two thirds of Nextcloud's own icons it does.

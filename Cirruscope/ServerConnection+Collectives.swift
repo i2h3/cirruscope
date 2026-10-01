@@ -9,7 +9,7 @@ import Rainmaker
 ///
 /// This is the one domain that is gated before it asks anything, and the reason is arithmetic rather than principle. Talk and Notes are decided from the response because the gate would save a single request; here the server lists pages *per collective*, so a refresh is one request for the collectives plus one for each of them — and on an instance without the app, every one of those is wasted. The gate is free besides: Collectives advertises no capability at all, so the network library's own documentation points at the navigation entry with the identifier `collectives`, which this app already fetches and stores a moment earlier.
 ///
-/// A `404` is still handled, because the gate is a prediction made from a list that can be a refresh behind. What it means differs from the gate, though, and only one of them clears what was stored: the gate says "do not ask", while a `404` says the app is gone.
+/// A `404` is still handled, because the gate is a prediction made from a list that can be a refresh behind. Either one clears what was stored, since both say the app is gone: the gate before anything is asked, and a `404` when that list turns out to be out of date. Only a failure of any other kind keeps the previous list.
 extension ServerConnection {
     /// `refreshCollectives(using:)` fetches the account's collectives and each one's pages, or clears what was stored when the server has no Collectives app.
     ///

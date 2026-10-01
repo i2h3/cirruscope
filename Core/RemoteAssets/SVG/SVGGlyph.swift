@@ -7,7 +7,7 @@ import Foundation
 /// `SVGGlyph` is one monochrome vector icon read out of an SVG document: the coordinate system it was drawn in, and the shapes that make up its silhouette.
 ///
 /// It exists because a Nextcloud server names each of its apps' icons as an SVG and neither platform will decode one for the app. macOS does have a decoder behind `NSImage(data:)`, but it is a private image representation and iOS has no equivalent at all, so leaning on it would mean one platform showing icons and the other not.
-/// What it reads is deliberately a subset — enough for the icons Nextcloud ships, which are single-path white glyphs — and it returns `nil` rather than approximating anything outside it. No gradients, no `<use>`, no CSS stylesheets, no text. The document's own colours are discarded entirely, because most places these appear want a template that takes the tint of whatever is showing it. What a glyph is filled with is decided by whoever draws it: `SVGGlyphRasterizer` fills black for that template, and a caller wanting another colour fills `shapes` itself.
+/// What it reads is deliberately a subset — enough for the icons Nextcloud ships, which are single-path white glyphs — and what lies outside it is skipped rather than refused, so an icon drawn with more than that can come out as a wrong glyph instead of `nil`. A gradient fill paints as solid ink, a shape inside `<defs>`, `<clipPath>` or `<mask>` paints as though it were drawn directly, `<use>` and `<text>` contribute nothing, and a `<style>` stylesheet is not read. The document's own colours are discarded entirely, because most places these appear want a template that takes the tint of whatever is showing it. What a glyph is filled with is decided by whoever draws it: `SVGGlyphRasterizer` fills black for that template, and a caller wanting another colour fills `shapes` itself.
 struct SVGGlyph {
     /// `viewBox` is the rectangle of the coordinate system `shapes` are expressed in.
     ///
@@ -17,7 +17,7 @@ struct SVGGlyph {
     /// `shapes` are the icon's painted elements, in the order the document paints them.
     let shapes: [SVGShape]
 
-    /// `init?(data:)` reads an SVG document, or returns `nil` if it is not one this can draw faithfully.
+    /// `init?(data:)` reads an SVG document, or returns `nil` if it is not XML, names no coordinate system, paints nothing, or carries path data it cannot read.
     init?(data: Data) {
         let parser = SVGDocumentParser()
 

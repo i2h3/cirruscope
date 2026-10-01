@@ -7,7 +7,7 @@ import Testing
 
 /// `AccountDeletionCascadeTests` covers the one part of deleting an account that only macOS can assert: that the cascade reaches a keyboard shortcut.
 ///
-/// The rest of the account lifecycle moved to `Tests/Account/ConnectedAccountTests`, which both app modules run. This case could not follow it, and the reason is worth naming because it looks like an arbitrary line: assigning a shortcut needs a `ShortcutFixture`, and that fixture is built out of `NSEvent.ModifierFlags` and the Private Use Area scalars AppKit reserves for function keys. The split follows what a case *needs*, not what it is about \u2014 the same rule `AGENTS.md` records for `ServerAddress`.
+/// The rest of the account lifecycle is covered by `Tests/Account/ConnectedAccountTests`, which both app modules run. This case stays here instead, and the reason is worth naming because it looks like an arbitrary line: assigning a shortcut needs a `ShortcutFixture`, and that fixture is built out of `NSEvent.ModifierFlags` and the Private Use Area scalars AppKit reserves for function keys. The split follows what a case *needs*, not what it is about — the same rule `AGENTS.md` records for `ServerAddress`.
 @MainActor
 @Suite(.serialized)
 struct AccountDeletionCascadeTests {

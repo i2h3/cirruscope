@@ -8,7 +8,7 @@ import SwiftData
 
 /// `AccountStore` is the main-actor repository over a SwiftData container, owning every read and write of the connected account's data.
 ///
-/// It replaces the server-related values the app used to keep in `UserDefaults` via `Settings`. Consumers reach it as `AccountStore.shared`, mirroring the `AssetCache.shared` / `NotificationMonitor.shared` conventions, and it posts `Notification.Name.serverAppsDidChange` so every surface listing the apps refreshes. As further domains arrive (collectives, conversations, notes) they gain sections here rather than sibling stores: every record hangs off the single `Account` this one memoizes, and a second store over the same container would memoize it again and go stale.
+/// It is the only place the account's server-related values are kept, none of them in `UserDefaults`. Consumers reach it as `AccountStore.shared`, mirroring the `AssetCache.shared` / `NotificationMonitor.shared` conventions, and it posts `Notification.Name.serverAppsDidChange` so every surface listing the apps refreshes. Each further domain — conversations, notes and collectives so far — is a section of this same type, in a file of its own, rather than a sibling store: every record hangs off the single `Account` this one memoizes, and a second store over the same container would memoize it again and go stale.
 ///
 /// It is compiled into both apps. `shared` itself is not declared here but in a per-platform `AccountStore+Shared.swift`, because building the store means answering what counts as a reserved keyboard shortcut, and only macOS assigns shortcuts to server apps and so has that question to answer; the reads that consult that answer are likewise in `macOS/Persistence/AccountStore+KeyboardShortcuts.swift`.
 ///
@@ -37,7 +37,7 @@ final class AccountStore {
     ///
     /// It is injected for the mirror image of `isReservedShortcut`'s reason: `AppDelegate` observes `Notification.Name.serverAppsDidChange` for the whole life of a hosted test run, so a test write posting it would have the real `AppDelegate.rebuildServerAppsMenu()` read `shared` — the developer's actual account — and rewrite the live menu bar, on a main-queue turn no test can wait for. A test hands in a closure that counts instead, which is also the only way to assert that a mutator announced at all, the production post being deliberately asynchronous. `post(_:)` is that production post.
     ///
-    /// It takes the name rather than being one closure per domain. There are four more domains coming, and a seam that grows a parameter for each would put the cost of adding one in the initializer, in every call site of it, and in the test harness — which is how a seam stops being used. One name-taking closure means a new domain adds a name and nothing else.
+    /// It takes the name rather than being one closure per domain. Every domain announces under a name of its own, and a seam that grew a parameter for each would put the cost of adding one in the initializer, in every call site of it, and in the test harness — which is how a seam stops being used. One name-taking closure means a new domain adds a name and nothing else.
     /// It is `internal` rather than `private` because the per-domain files that make up this store are files of their own, and Swift's `private` is file-scoped.
     let notifyChange: @MainActor (Notification.Name) -> Void
 
@@ -133,7 +133,7 @@ final class AccountStore {
 
     /// `connect(to:)` records `address` as the connected server, creating the account record if needed.
     ///
-    /// `ServerAddressViewController` calls it after a successful Login Flow v2 sign-in.
+    /// `ServerAddressViewController` on macOS and `ServerAddressView` on iOS call it after a successful Login Flow v2 sign-in.
     func connect(to address: URL) {
         logger.notice("Recording the connected server address")
         currentAccount(createIfNeeded: true)?.serverAddress = address
@@ -142,8 +142,8 @@ final class AccountStore {
 
     /// `adopt(serverAddress:)` records `address` as the connected server if the account does not already say so, and announces it when it writes.
     ///
-    /// It exists because `connect(to:)` is reached only from an interactive sign-in, while six other writers create the account record without it — `persist(serverApps:)`, `persist(theming:)`, `setServerVersion(_:)` and the three domain upserts all call `currentAccount(createIfNeeded: true)` and none of them records the address of the server they were just talking to. A fully populated account with no address is therefore a reachable state, and until now a permanent one.
-    /// iOS is where it was actually reached, because the two platforms disagree about who is authoritative for "am I signed in". macOS gates on this store, so an account with no address forces a fresh sign-in, which writes one. iOS gates on the Keychain, so a device whose credential predates the store keeps launching signed in, fills the store with apps and conversations and notes through those other writers, and never learns the address. The visible result is everything that reads it coming back empty: no artwork on any Spotlight result, and every intent refusing to open anything because there is nothing to resolve a route against.
+    /// It exists because `connect(to:)` is reached only from an interactive sign-in, while eight other writers create the account record without it — `persist(serverApps:)`, `persist(theming:)`, `setServerVersion(_:)`, the two appearance setters and the three domain upserts all call `currentAccount(createIfNeeded: true)` and none of them records the address of the server they were just talking to. A fully populated account with no address is therefore a reachable state, and without this method a permanent one.
+    /// iOS is where it is actually reached, because the two platforms disagree about who is authoritative for "am I signed in". macOS gates on this store, so an account with no address forces a fresh sign-in, which writes one. iOS gates on the Keychain, so a device whose credential predates the store keeps launching signed in, fills the store with apps and conversations and notes through those other writers, and never learns the address. The visible result is everything that reads it coming back empty: no artwork on any Spotlight result, and every intent refusing to open anything because there is nothing to resolve a route against.
     /// Called from the app-list refresh, which is the one path that runs on every activation, already holds a credentialed server and already creates the account record downstream — so an install in that state repairs itself on its next launch with nothing asked of the user.
     func adopt(serverAddress address: URL) {
         guard let account = currentAccount(createIfNeeded: true) else {
@@ -172,7 +172,7 @@ final class AccountStore {
         notifyChange(.donatedArtworkDidChange)
     }
 
-    /// `disconnect()` deletes the account — cascading to its apps and their shortcuts — then empties `AssetCache`, the app icons, user avatars and conversation pictures already drawn from it, and the widget's saved activity feed, and clears the stored Login Flow v2 credentials, so nothing describing the old server, or the people on it, remains in the store, the caches or the Keychain.
+    /// `disconnect()` deletes the account — cascading to every record that hangs off it — then empties `AssetCache`, the app icons, user avatars and conversation pictures already drawn from it, and the widget's saved activity feed, and clears the stored Login Flow v2 credentials, so nothing describing the old server, or the people on it, remains in the store, the caches or the Keychain.
     ///
     /// The Mac's `AppDelegate.logOut()` and both of iOS's sign-outs run it, so the list of what a sign-out forgets is written once rather than once per app; the Mac's `requireSignIn()` clears only the Keychain and leaves the stored account in place. The announcement happens in `deleteAccount()`, ahead of the clears rather than after them, which is unobservable: the post is delivered on the next main-thread turn, while every clear is synchronous and finishes inside the current one.
     func disconnect() {
@@ -186,7 +186,7 @@ final class AccountStore {
         Keychain.clearAll()
     }
 
-    /// `deleteAccount()` deletes the account record — cascading to its apps and their shortcuts — drops the memoized `cachedAccount`, commits, and announces the change.
+    /// `deleteAccount()` deletes the account record — cascading to every record that hangs off it — drops the memoized `cachedAccount`, commits, and announces the change.
     ///
     /// It is the storage half of `disconnect()`, separated so it can be exercised on its own: `disconnect()`'s remaining steps empty the shared caches and the widget's saved feed and clear the `Keychain`, none of which a test can run without destroying the developer's real cached assets and stored credentials. Clearing `cachedAccount` is what keeps a later write from landing on the deleted object instead of a fresh account.
     func deleteAccount() {
@@ -221,7 +221,7 @@ final class AccountStore {
 
     /// `persist(theming:)` records the server's branding into the account and downloads the referenced assets into `AssetCache`.
     ///
-    /// The metadata write and its save happen synchronously on the main actor; the asset downloads are awaited afterwards and run off the main actor, so a slow download never blocks it and cannot interleave with the commit. `ServerConnection.validate(_:)` awaits this, and both paths that produce the first web window — `AppDelegate.presentInitialWindow(forLaunch:)` at launch and `ServerAddressViewController` after sign-in — await that validation before presenting, so the branding is cached before any UI relying on it is shown. A window opened later by ⌘N deliberately does not wait, reading the copy those paths already cached; `WebViewController.cachedBackgroundImage()` treats a miss as "no background available" rather than an error. The background download is skipped when `theming.background` is a color value rather than an `http`/`https` image URL.
+    /// The metadata write and its save happen synchronously on the main actor; the asset downloads are awaited afterwards and run off the main actor, so a slow download never blocks it and cannot interleave with the commit. `ServerConnection.validateAndPersist(_:)` awaits this, and both paths that produce the first web window — `AppDelegate.presentInitialWindow(forLaunch:)` at launch and `ServerAddressViewController` after sign-in — await that validation before presenting, so the branding is cached before any UI relying on it is shown. A window opened later by ⌘N deliberately does not wait, reading the copy those paths already cached; `WebViewController.cachedBackgroundImage()` treats a miss as "no background available" rather than an error. The background download is skipped when `theming.background` is a color value rather than an `http`/`https` image URL.
     ///
     /// `theming.background` may be an absolute URL or a server-root-relative path — Nextcloud returns a relative path for backgrounds picked from its shipped gallery — so it is resolved against `account.serverAddress` before being stored and cached. Resolution is skipped when `theming.backgroundPlain` is `true`, since `background` then holds a color value (e.g. `"#00679e"`) that would otherwise resolve into a bogus fetchable URL (the server address with a `#`-fragment).
     func persist(theming: Theming) async {
@@ -290,7 +290,7 @@ final class AccountStore {
 
     /// `setServerVersion(_:)` records the connected server's version string.
     ///
-    /// `ServerConnection.validate(_:)` calls it once a supported server's capabilities are retrieved. It is a method rather than a settable property because `ServerConnection` is nonisolated and reaches it with `await` across the main-actor boundary.
+    /// `ServerConnection.validateAndPersist(_:)` calls it once a supported server's capabilities are retrieved. It is a method rather than a settable property because `ServerConnection` is nonisolated and reaches it with `await` across the main-actor boundary.
     func setServerVersion(_ version: String?) {
         currentAccount(createIfNeeded: true)?.serverVersion = version
         save()
@@ -315,7 +315,7 @@ final class AccountStore {
 
     /// `serverApp(forID:)` is the connected server's app with `appID` as a value snapshot, or `nil` when the account offers no such app.
     ///
-    /// It is the single-app counterpart of `serverApps`, added for the App Intents layer: `ServerAppEntityQuery.entities(for:)` and `OpenServerAppIntent.perform()` resolve a donated or saved app id back to a `ServerAppTransferObject`. Like every other read here it returns a value-type DTO, never the managed `ServerApp`, and reuses the same `currentAccount` cache and `first(where:)` lookup as `shortcut(forAppID:)`.
+    /// It is the single-app counterpart of `serverApps`: `ServerAppEntityQuery.entities(for:)` and `EntityActivation` resolve a donated or saved app id back to a `ServerAppTransferObject` through it, and `ServerConnection.refreshCollectives(using:)` asks it whether the server offers the Collectives app at all. Like every other read here it returns a value-type DTO, never the managed `ServerApp`, and reuses the same `currentAccount` cache and `first(where:)` lookup as `shortcut(forAppID:)`.
     func serverApp(forID appID: String) -> ServerAppTransferObject? {
         guard let app = currentAccount(createIfNeeded: false)?.apps.first(where: { $0.appID == appID }) else {
             return nil

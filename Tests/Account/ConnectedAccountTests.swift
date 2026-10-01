@@ -10,7 +10,7 @@ import Testing
 ///
 /// The case worth the suite is about the memoized `cachedAccount`, which every read in the store goes through: deleting the account has to clear it, or a later write lands on a deleted object and the old app list comes back with it. `deleteAccount()` is exercised rather than `disconnect()` because `disconnect()`'s other steps empty the real `AssetCache` and clear the real `Keychain`.
 ///
-/// That the deletion also cascades to a keyboard shortcut is asserted by `macOSTests/Account/AccountDeletionCascadeTests`, which could not move here: assigning a shortcut needs a fixture built out of AppKit's own modifier flags. This suite runs against both app modules, which is what makes it the one that would notice an iOS-side difference in how the store or its container behaves.
+/// That the deletion also cascades to a keyboard shortcut is asserted by `macOSTests/Account/AccountDeletionCascadeTests`, which cannot live here: assigning a shortcut needs a fixture built out of AppKit's own modifier flags. This suite runs against both app modules, which is what makes it the one that would notice an iOS-side difference in how the store or its container behaves.
 @MainActor
 @Suite(.serialized)
 struct ConnectedAccountTests {
@@ -46,8 +46,8 @@ struct ConnectedAccountTests {
 
     @Test
     func `Recording the server version creates the account when none exists yet`() {
-        // `ServerConnection.validate(_:)` records the version before `connect(to:)` ever runs, so this write has to
-        // be able to create the account rather than quietly doing nothing.
+        // `ServerConnection.validateAndPersist(_:)` records the version before `connect(to:)` ever runs, so this
+        // write has to be able to create the account rather than quietly doing nothing.
         harness.store.setServerVersion("31.0.2")
 
         #expect(harness.store.serverVersion == "31.0.2")

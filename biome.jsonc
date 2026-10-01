@@ -86,11 +86,11 @@
                 // comment, which is how the guards in these scripts already document themselves.
                 "noEmptyBlockStatements": "error",
 
-                // Off deliberately, and defensively. Biome parses every .js file as a module, so it reads the
-                // "use strict" in Website/js/site.js as redundant and offers a *safe* fix deleting it — but
-                // that file is loaded as a classic script, so the directive is load-bearing and removing it
-                // would drop the file into sloppy mode. The rule is not in the recommended preset today; this
-                // pins it off in case a later release promotes it.
+                // Off deliberately. Biome parses every .js file as a module, so it reads the "use strict" in
+                // Website/js/site.js and Website/js/brand-colors.js as redundant and offers a *safe* fix deleting
+                // it — but both files are loaded as classic scripts, so the directive is load-bearing and
+                // removing it would drop them into sloppy mode. The rule is in the recommended preset, at warning
+                // level, so without this line `check --write` would apply that fix on its next run.
                 "noRedundantUseStrict": "off",
 
                 // Not recommended upstream, and its fix is unsafe — so `check --write` will not quietly

@@ -12,7 +12,7 @@ import Rainmaker
 extension ServerConnection {
     /// `validateAndPersist(_:)` validates `server` and records what the validation found: its theming, and — when the version is supported — its version string.
     ///
-    /// It is what `AppDelegate` and `ServerAddressViewController` call in place of `validate(_:)`, and it returns that call's outcome unchanged so their `switch` reads the same as before.
+    /// It is what `AppDelegate` and `ServerAddressViewController` call in place of `validate(_:)`, and it returns that call's outcome unchanged, so they switch over the same `ValidationOutcome` that iOS's `ServerAddressView` gets from `validate(_:)` directly.
     /// Theming is persisted on both branches, deliberately: an unsupported server's appearance is still the appearance of the server the user is looking at an alert about, and the sign-in window they are sent back to is themed from it.
     static func validateAndPersist(_ server: Server) async throws -> ValidationOutcome {
         let outcome = try await validate(server)
@@ -75,8 +75,8 @@ extension ServerConnection {
         // Posted on the main actor, not from here. `NotificationCenter` delivers synchronously on the
         // posting thread, and every observer of this — `AppDelegate.rebuildServerAppsMenu()`, the Apps
         // settings tab, `ServerAppIndexer` — is main-actor-isolated, so posting from this task's own
-        // executor trips Swift's isolation check and takes the process down. `AccountStore`'s own
-        // `postServerAppsDidChange()` hops to the main thread for exactly this reason.
+        // executor trips Swift's isolation check and takes the process down. The store's own announcements,
+        // made through `AccountStore.post(_:)`, are delivered on the main thread as well.
         await MainActor.run {
             NotificationCenter.default.post(name: .serverAppsDidChange, object: nil)
 

@@ -8,7 +8,7 @@ import Rainmaker
 /// `ServerConnection` builds `Rainmaker.Server` instances and validates them, centralizing the connection logic both apps' sign-in paths share.
 ///
 /// `anonymous(address:)` is used before the user has authenticated and to initiate Login Flow v2, `authenticated(address:)` builds a credentialed server from `Keychain`, `validate(_:)` fetches capabilities and reports whether the server's version is supported, and `revokeAppPassword(using:)` invalidates a credential the app is about to discard.
-/// Everything here is free of persistence on purpose. macOS records what a validation found — theming, the server version, the navigation apps — in `AccountStore`, which is SwiftData and macOS-only; that half lives in `ServerConnection+AccountStore` beside the store it writes to, and macOS calls `validateAndPersist(_:)` rather than `validate(_:)` directly. iOS keeps nothing but the credential, so it calls `validate(_:)` as it stands.
+/// Everything here is free of persistence on purpose: this type is compiled into the widget extension too, and `AccountStore` exists only in the two apps. The half that records what a server said lives beside that store in `ServerConnection+AccountStore` and its per-domain siblings, and both apps persist the app list, the Talk conversations, the notes and the collectives through it. Only macOS also records what a validation found, its theming and version, so it calls `validateAndPersist(_:)` where iOS calls `validate(_:)` as it stands.
 enum ServerConnection {
     /// `ValidationOutcome` reports the result of `validate(_:)`.
     ///

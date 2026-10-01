@@ -5,7 +5,7 @@ import Foundation
 
 /// This extension declares the in-process notifications only macOS posts and observes.
 ///
-/// The two `AccountStore` posts are not here: the store is compiled into both apps, so its names live in `Cirruscope/NotificationName.swift` where both can see them.
+/// The six names the shared layer posts are not here: what posts them is compiled into both apps, so those names live in `Cirruscope/Persistence/AccountStoreNotificationName.swift` where both can see them.
 extension Notification.Name {
     /// `downloadsDidChange` is posted by `DownloadManager` whenever its `downloads` list or a download's state changes so `DownloadViewController` can reload its table.
     static let downloadsDidChange = Notification.Name("DownloadsDidChange")

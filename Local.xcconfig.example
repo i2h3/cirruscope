@@ -4,12 +4,17 @@
 // Copy this file to Local.xcconfig (gitignored, next to this one) and fill in your own team to build and run
 // Cirruscope on-device with a real "Apple Development" signing identity instead of the project's ad-hoc default.
 // Cirruscope.xcconfig includes Local.xcconfig last, so whatever you set here overrides its ad-hoc defaults.
+// Cirruscope/Cirruscope.xcconfig and every per-target .xcconfig end with the same #include? "Local.xcconfig",
+// resolved relative to each file, so a Local.xcconfig in one of their folders would be read as well. Keep it at
+// the repository root all the same: every folder holding one of those files is synchronized, so a Local.xcconfig
+// placed there is copied into the built product of every target listing that folder, and ignoring it in git does
+// not stop that.
 
 CODE_SIGN_IDENTITY = Apple Development
 CODE_SIGN_STYLE = Manual
 DEVELOPMENT_TEAM = <your team ID>
 PROVISIONING_PROFILE_SPECIFIER = Cirruscope
 
-// The App Group and Keychain-sharing entitlements above need a real certificate to sign, so the default/CI build
+// The App Group and Keychain-sharing entitlements need a real certificate to sign, so the default/CI build
 // carries none at all; set this to restore them for a real, fully-functional local build.
 CODE_SIGN_ENTITLEMENTS = Cirruscope/Cirruscope.entitlements

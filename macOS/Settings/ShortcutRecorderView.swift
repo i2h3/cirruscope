@@ -177,7 +177,7 @@ class ShortcutRecorderView: NSTableCellView {
 
     /// `makeKeyDownHandler()` builds the local event monitor handler `startRecording()` installs.
     ///
-    /// It is `nonisolated` for the same reason as `ServerAddressViewController.makeAuthenticationCompletionHandler()`: `ShortcutRecorderView` is main-actor-isolated via `NSView`, so a closure written directly inside one of its methods would inherit that isolation too, even though its body only creates a `Task`. AppKit does not annotate `NSEvent.addLocalMonitorForEvents(matching:handler:)`'s handler as main-actor, so never assume the calling thread; the monitor's return value does not depend on `handle(_:)` completing first.
+    /// It is `nonisolated` for the same reason as `LoginSession.makeAuthenticationCompletionHandler()`: `ShortcutRecorderView` is main-actor-isolated via `NSView`, so a closure written directly inside one of its methods would inherit that isolation too, even though its body only creates a `Task`. AppKit does not annotate `NSEvent.addLocalMonitorForEvents(matching:handler:)`'s handler as main-actor, so never assume the calling thread; the monitor's return value does not depend on `handle(_:)` completing first.
     ///
     /// Only the `Sendable` fields `handle(keyCode:modifierFlags:charactersIgnoringModifiers:)` needs cross into the `Task`, rather than `event` itself, since `NSEvent` is not `Sendable`.
     private nonisolated func makeKeyDownHandler() -> (NSEvent) -> NSEvent? {

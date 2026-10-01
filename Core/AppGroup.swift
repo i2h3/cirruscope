@@ -32,6 +32,6 @@ enum AppGroup {
     ///
     /// Being unreachable is not always visible as a `nil`, either: the container path can resolve while the sandbox still refuses to create anything under it. Callers therefore treat a non-`nil` value as a candidate rather than a guarantee, and fall back on a location private to the build — `AssetCache.assetsDirectory()` for cached assets, `AppDatabase.container` for the store.
     ///
-    /// For the `Widgets` extension this is the normal state on iOS rather than a degraded one, and will be until an iOS App ID carrying the App Group exists: `Widgets/Widgets.xcconfig` names a provisioning profile for macOS only, so an iOS build signs without entitlements even when the maintainer's `Local.xcconfig` is in place.
+    /// The `Widgets` extension is no exception on either platform: `Widgets/Widgets.xcconfig` names a provisioning profile for each, under `[sdk=macosx*]` and `[sdk=iphone*]`, so once a `Local.xcconfig` is in place the extension is signed with the App Group just as the app embedding it is.
     static let containerURL: URL? = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: identifier)
 }

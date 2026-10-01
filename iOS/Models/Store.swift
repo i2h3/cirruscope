@@ -26,7 +26,7 @@ class Store {
     /// Nextcloud server apps.
     ///
     /// A projection of what `AccountStore` has persisted, refreshed whenever the store announces that the list changed. It is held here rather than read through on every access because SwiftUI observes this object, not the store.
-    /// It used to be the only copy there was, fetched into memory on every launch and gone again when the app quit. Now the list survives a relaunch, which is what lets a menu be drawn before the server has answered — or at all, on a launch with no network.
+    /// The persisted list it projects survives a relaunch, and `restored()` seeds this from it, which is what lets a menu be drawn before the server has answered — or at all, on a launch with no network.
     ///
     var apps: [ServerAppTransferObject]
 
@@ -130,7 +130,7 @@ class Store {
     ///
     /// Update the list of available Nextcloud server apps, and the icons they are shown with.
     ///
-    /// The fetch, the mapping out of `Rainmaker.NavigationItem`, the persistence and the icon download are all `ServerConnection.refreshNavigationApps(using:)`, shared with macOS. This used to be a second implementation of the same four steps, which is exactly the kind of pair that drifts: the order the two apps listed the same apps in was already a rule written down once and applied twice.
+    /// The fetch, the mapping out of `Rainmaker.NavigationItem`, the persistence and the icon download are all `ServerConnection.refreshNavigationApps(using:)`, shared with macOS. One implementation rather than one per app is deliberate: two copies of the same four steps are exactly the kind of pair that drifts, down to the order the two apps list the same apps in.
     /// Nothing is read back here. The refresh announces itself when the list lands and again when the icons do, and `adoptPersistedApps()` picks both up — so the menu still appears before the icons rather than waiting on a round trip per app.
     ///
     func updateApps() {
@@ -278,7 +278,7 @@ class Store {
 
         // The credentials, the persisted account and every cache go through the store's own sign-out, which the
         // Mac's logout runs too, so the list of what a sign-out forgets cannot drift between them. What the store holds — the server address,
-        // the app list, and everything later domains hang off the same `Account` record — is no secret, but all of
+        // the app list, and every other domain hanging off the same `Account` record — is no secret, but all of
         // it describes a server this device is no longer signed in to, in a file that is not encrypted. Branding
         // outliving a sign-out would only be untidy, but the avatar caches hold photographs of the people on that
         // server and the widget's saved feed names their files, and those must not survive the account that was

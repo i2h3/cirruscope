@@ -50,9 +50,9 @@ jobs:
       # A test action has to run somewhere, so unlike the build steps it needs a concrete Simulator rather than a
       # generic destination. The device is resolved here instead of written into the workflow because the runner
       # image's device list changes with every update, and a pinned name fails the day one is renamed or dropped —
-      # an available iPhone on the newest installed iOS runtime is whatever that image happens to offer. Device destinations
-      # stay out of scope: the checked-in ad-hoc default carries no DEVELOPMENT_TEAM, so an iOS device build fails
-      # signing, whereas a Simulator build signs ad-hoc happily.
+      # an available iPhone on the newest installed iOS runtime is whatever that image happens to offer. Device
+      # destinations stay out of scope: no checked-in .xcconfig or project.pbxproj names a DEVELOPMENT_TEAM, so an
+      # iOS device build fails signing, whereas a Simulator build signs ad-hoc happily.
       - name: Resolve an iOS Simulator
         id: simulator
         run: |
