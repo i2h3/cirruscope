@@ -205,6 +205,7 @@ Each of the five targets carries its own `.xcconfig`, all of them chaining up to
   `ActivityStyle.swift` is every colour in one place, and carries no literal: the two the app owns come from `Core/Assets.xcassets` and the rest are the system's own, which is why it needs no `ColorScheme` — see `DECISIONS.md`.
   `Localizable.xcstrings` is the target's own String Catalog.
   `Info.plist` declares the WidgetKit extension point and carries the values `Core/InfoPlist.swift` and `Core/AppGroup.swift` read, with the same App Transport Security exception as both apps.
+  It deliberately declares no `NSLocalNetworkUsageDescription`, although the extension reaches the server itself: an app extension shares its containing app's local network permission, and the reason belongs in the app's property list alone.
 - `Website/` contains the project's public website, deployed to GitHub Pages by `.github/workflows/website.yml`.
   It carries the polished, user-facing counterpart of the decisions recorded in `DECISIONS.md`.
 - `.github/CODEOWNERS` names `@i2h3` as the owner of every path, so GitHub requests that account's review on every pull request.
