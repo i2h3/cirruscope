@@ -1960,6 +1960,52 @@
           }
         }
       }
+    },
+    "Clear shortcut" : {
+      "comment" : "Accessibility label of the button in the Speed Dials settings tab that removes the keyboard shortcut recorded for a server app.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tastenkombination entfernen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Borrar atajo de teclado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Effacer le raccourci clavier"
+          }
+        }
+      }
+    },
+    "Not set" : {
+      "comment" : "Shown in the General settings tab in place of the server address while no server is connected.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht festgelegt"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No configurado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non défini"
+          }
+        }
+      }
     }
   },
   "version" : "1.1"

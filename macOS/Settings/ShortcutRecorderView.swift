@@ -85,7 +85,7 @@ class ShortcutRecorderView: NSTableCellView {
         displayField.font = .systemFont(ofSize: NSFont.systemFontSize)
         displayField.translatesAutoresizingMaskIntoConstraints = false
 
-        clearButton.image = NSImage(systemSymbolName: "xmark.circle.fill", accessibilityDescription: "Clear shortcut")
+        clearButton.image = NSImage(systemSymbolName: "xmark.circle.fill", accessibilityDescription: String(localized: "Clear shortcut", comment: "Accessibility label of the button in the Speed Dials settings tab that removes the keyboard shortcut recorded for a server app."))
         clearButton.imagePosition = .imageOnly
         clearButton.isBordered = false
         clearButton.setButtonType(.momentaryChange)
