@@ -17,17 +17,34 @@ extension ServerConnection {
     ///
     /// Every other failure leaves the previous list in place. An unreachable server has told us nothing, and emptying a Spotlight index on a network blip would be reading silence as an answer.
     static func refreshNotes(using server: Server) async {
+        let address = server.address
+        let credentials = credentials(of: server)
+
+        guard await isStillSignedIn(at: address, as: credentials) else {
+            logger.notice("The account this refresh was begun for is no longer signed in; not asking for notes")
+            return
+        }
+
         do {
             let notes = try await server.notes()
             let stored = notes.map { NoteTransferObject(id: $0.id, title: $0.title, category: $0.category, isFavorite: $0.isFavorite, isReadOnly: $0.isReadOnly, modification: $0.modification) }
             logger.notice("Fetched \(stored.count, privacy: .public) note(s); their text was dropped at this boundary")
-            await AccountStore.shared.persist(notes: stored)
+
+            await record("the notes", fetchedFrom: address, as: credentials) {
+                AccountStore.shared.persist(notes: stored)
+            }
         } catch RainmakerError.notFound {
             logger.notice("The notes endpoint answered 404, so the app is absent or disabled; dropping anything stored for it")
-            await AccountStore.shared.deleteNotes()
+
+            await record("the absence of the Notes app", fetchedFrom: address, as: credentials) {
+                AccountStore.shared.deleteNotes()
+            }
         } catch let RainmakerError.unsupportedAPIVersion(app, required, advertised) {
             logger.notice("The \(app, privacy: .public) app advertises API \(advertised, privacy: .public) but \(required, privacy: .public) is required; dropping anything stored for it")
-            await AccountStore.shared.deleteNotes()
+
+            await record("the absence of a usable Notes app", fetchedFrom: address, as: credentials) {
+                AccountStore.shared.deleteNotes()
+            }
         } catch {
             logger.notice("Could not refresh the notes; keeping the previous list: \(error.localizedDescription, privacy: .public)")
         }

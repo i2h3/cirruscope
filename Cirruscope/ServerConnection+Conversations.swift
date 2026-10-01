@@ -15,15 +15,34 @@ extension ServerConnection {
     ///
     /// Only a `404` clears what was stored. Every other failure leaves the previous list in place, for the reason a failed app-list refresh does: an unreachable server has told us nothing, and emptying a Spotlight index because a laptop woke up on a captive portal would be reading silence as an answer.
     static func refreshConversations(using server: Server) async {
+        let address = server.address
+        let credentials = credentials(of: server)
+
+        guard await isStillSignedIn(at: address, as: credentials) else {
+            logger.notice("The account this refresh was begun for is no longer signed in; not asking for Talk conversations")
+            return
+        }
+
         do {
             let conversations = try await server.conversations()
             let stored = conversations.map { ConversationTransferObject(id: $0.token, name: $0.displayName, kind: kind(of: $0.type), lastActivity: $0.lastActivity, avatarVersion: $0.avatarVersion) }
             logger.notice("Fetched \(stored.count, privacy: .public) Talk conversation(s)")
-            await AccountStore.shared.persist(conversations: stored)
+
+            let recorded = await record("the Talk conversations", fetchedFrom: address, as: credentials) {
+                AccountStore.shared.persist(conversations: stored)
+            }
+
+            guard recorded else {
+                return
+            }
+
             await refreshConversationAvatars(for: stored, using: server)
         } catch RainmakerError.notFound {
             logger.notice("The Talk conversations endpoint answered 404, so the app is absent or disabled; dropping anything stored for it")
-            await AccountStore.shared.deleteConversations()
+
+            await record("the absence of the Talk app", fetchedFrom: address, as: credentials) {
+                AccountStore.shared.deleteConversations()
+            }
         } catch {
             logger.notice("Could not refresh the Talk conversations; keeping the previous list: \(error.localizedDescription, privacy: .public)")
         }
@@ -40,6 +59,10 @@ extension ServerConnection {
 
         let identified = conversations.map { (token: $0.id, avatarVersion: $0.avatarVersion) }
         let didFetchAny = await ConversationAvatars.shared.refresh(conversations: identified, accountName: credentials.user, on: server)
+
+        // These are pictures of people, and a sign-out while they were downloading has emptied the caches already;
+        // one that landed after it would otherwise outlive it.
+        await AccountStore.shared.forgetCachesIfSignedOut()
 
         guard didFetchAny else {
             return

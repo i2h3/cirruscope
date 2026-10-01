@@ -102,7 +102,7 @@ enum Keychain {
 
     /// `storedAccounts()` is `accounts()` for a caller that must not mistake a Keychain it could not read for one holding no credentials.
     ///
-    /// It answers an empty array only when the Keychain says there is nothing stored, and throws `CirruscopeError.keychainFailure` with the status for any other refusal, of the enumeration or of reading any one item's data. The widget is the caller that needs the difference, because it forgets the rows it last drew when nobody is signed in, and a read that merely failed must not cost it those rows.
+    /// It answers an empty array only when the Keychain says there is nothing stored, and throws `CirruscopeError.keychainFailure` with the status for any other refusal, of the enumeration or of reading any one item's data. The widget is one caller that needs the difference, because it forgets the rows it last drew when nobody is signed in, and a read that merely failed must not cost it those rows; `AccountStore.forgetCachesIfSignedOut()` is the other, which empties the caches only when nobody is signed in.
     static func storedAccounts() throws -> [ServerAccount] {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,

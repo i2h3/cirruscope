@@ -149,9 +149,10 @@ final class AccountStore {
 
     /// `adopt(serverAddress:)` records `address` as the connected server if the account does not already say so, and announces it when it writes.
     ///
-    /// It exists because `connect(to:)` is reached only from an interactive sign-in, while six other writers create the account record without it — `persist(serverApps:)`, `persist(theming:)`, `setServerVersion(_:)` and the three domain upserts all call `currentAccount(createIfNeeded: true)` and none of them records the address of the server they were just talking to. A fully populated account with no address is therefore a reachable state, and without this method a permanent one.
-    /// iOS is where it is actually reached, because the two platforms disagree about who is authoritative for "am I signed in". macOS gates on this store, so an account with no address forces a fresh sign-in, which writes one. iOS gates on the Keychain, so a device whose credential predates the store keeps launching signed in, fills the store with apps and conversations and notes through those other writers, and never learns the address. The visible result is everything that reads it coming back empty: no artwork on any Spotlight result, and every intent refusing to open anything because there is nothing to resolve a route against.
-    /// Called from the app-list refresh, which is the one path that runs on every activation, already holds a credentialed server and already creates the account record downstream — so an install in that state repairs itself on its next launch with nothing asked of the user.
+    /// It exists because `connect(to:)` is reached only from an interactive sign-in, and an account can be signed in without one having happened against this store.
+    /// iOS is where that is reached, because the two platforms disagree about who is authoritative for "am I signed in": macOS gates on this store, so an account with no address forces a fresh sign-in, which writes one, while iOS gates on the Keychain, so a device whose credential predates the store keeps launching signed in to a store that records no server.
+    /// Every refresh writes only into a store that records the server it fetched from, so such a store would stay empty for good — no apps in any menu, nothing in Spotlight, every intent refusing to open anything — and before refreshes asked, it filled up without ever learning the address, which left every entity's artwork and route resolving against nothing.
+    /// Called from the app-list refresh, before anything is fetched and on the Keychain's word alone that the account it fetches as is still signed in, so an install in that state repairs itself on its next launch with nothing asked of the user.
     func adopt(serverAddress address: URL) {
         guard let account = currentAccount(createIfNeeded: true) else {
             return
@@ -192,12 +193,35 @@ final class AccountStore {
     /// The order is the point. The credentials go first, because the widget runs in a process of its own and reads them to decide whom to fetch for: a timeline that read them before this ran saves its rows either before the saved feed is cleared below, which removes them, or after the credentials are gone, which it checks for and takes them back itself. The widget is asked to redraw last, once nothing it could read would sign it in, because otherwise it draws what its last timeline held until WidgetKit next asks, which can be long after the account it shows has gone.
     private func forgetEverythingOutsideTheStore() {
         Keychain.clearAll()
+        forgetCaches()
+        ActivityFeedStore.clear()
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    /// `forgetCaches()` empties every cache of what the connected server sent: its branding and the app icons, and the pictures of the people on it.
+    private func forgetCaches() {
         AssetCache.shared.clear()
         ServerAppIcons.shared.clear()
         ServerAvatars.shared.clear()
         ConversationAvatars.shared.clear()
-        ActivityFeedStore.clear()
-        WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    /// `forgetCachesIfSignedOut()` empties the caches a sign-out empties, but only while nobody is signed in, for a download a sign-out overtook and which landed after it.
+    ///
+    /// A refresh already under way when the account signs out goes on downloading, and the caches it fills were emptied before it finished, so it calls this once its downloads are done and puts right what landed late.
+    /// Nobody being signed in means the store records no server and the Keychain holds no credentials, both at once: a store without an address is also how an iOS install whose credentials predate the store begins, and emptying the caches from under an account that is signed in would only cost it its icons until the next refresh.
+    /// A Keychain that cannot be read leaves the caches alone, for the same reason.
+    func forgetCachesIfSignedOut() {
+        guard serverAddress == nil else {
+            return
+        }
+
+        guard (try? Keychain.storedAccounts())?.isEmpty == true else {
+            return
+        }
+
+        logger.notice("Nobody is signed in, so emptying the caches again of whatever a refresh downloaded after the sign-out")
+        forgetCaches()
     }
 
     /// `deleteAccount()` deletes the account record — cascading to every record that hangs off it — drops the memoized `cachedAccount`, commits, and announces every domain the account held; the keyboard shortcuts and the appearance settings hang off nothing and are left alone.
@@ -335,7 +359,7 @@ final class AccountStore {
 
     /// `setServerVersion(_:)` records the connected server's version string.
     ///
-    /// `ServerConnection.validateAndPersist(_:)` calls it once a supported server's capabilities are retrieved. It is a method rather than a settable property because `ServerConnection` is nonisolated and reaches it with `await` across the main-actor boundary.
+    /// `ServerConnection.validateAndPersist(_:)` has it called once a supported server's capabilities are retrieved, and only while the account it validated as is still signed in, when it validated as one.
     func setServerVersion(_ version: String?) {
         currentAccount(createIfNeeded: true)?.serverVersion = version
         save()

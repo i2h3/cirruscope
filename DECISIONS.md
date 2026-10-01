@@ -800,6 +800,32 @@ That can produce a duplicate — the returning app's shortcut may since have bee
 They live in the same SwiftData store as the server's data, not in `UserDefaults`, because the store is what migrates and is quarantined as a whole, and a choice the user made should travel with it rather than beside it.
 Moving them out of the account is not something SwiftData can infer, so the store crosses into `SchemaV3` through an intermediate step that writes each shortcut's app identifier and the appearance choices into the store before the relationship and the account's attributes are dropped; the account itself survives the upgrade, which must not sign anybody out.
 
+## Why does a refresh ask again, as it writes, whether its account is still signed in?
+
+Because a sign-out does not stop a refresh already under way, and what such a refresh brings back belongs to an account that is gone.
+
+A refresh fetches with a server whose credentials were captured when that server was built, and the sign-out revokes the app password on the server without waiting for the answer.
+A fetch begun a moment before the sign-out can therefore succeed a moment after it, and every write used to happen regardless.
+Each upsert creates the account record when there is none, so the old server's apps, conversations, notes and collectives landed in a fresh account with no address, the Spotlight indexers donated them again, and the store a sign-out had just emptied was full.
+
+So the question is asked again at the moment of writing, of what holds then, and [`RefreshAdmission`](./Cirruscope/Persistence/RefreshAdmission.swift) answers it.
+The Keychain's credentials must be the very ones the fetch was made with, and the store must also still record the server fetched from.
+Recording that address is the exception, and asks the Keychain alone: it is how a store that lost its address is repaired, so the store's answer is the one thing that cannot be required to agree.
+The address alone is not enough: signing out and back in to the same server, perhaps as somebody else, stores new credentials under the same address, and a refresh begun before would write the first account's data into the second's.
+The answer and the write happen in one turn of the main actor, which is where the store and every sign-out run, so no sign-out can fall between them.
+Deletions are asked about too, since a `404` from a server nobody is signed in to says nothing about the account that is.
+
+A refresh also asks before each fetch, so one a sign-out overtook stops sending the signed-out account's app password rather than only discarding what comes back.
+
+Two things outside the store are put right as well, the first by a weaker rule.
+A download a sign-out overtook lands in caches the sign-out has already emptied, so a refresh empties them again once its downloads are done, but only if nobody at all is signed in by then: emptying them from under an account that is signed in would cost it its icons and pictures until the next refresh.
+The cost accepted is that a download overtaken by a sign-out and then a quick sign-in stays until the next sign-out, under a key naming the old server or account.
+And the Spotlight index takes one donation at a time, in the order they were asked for: two overlapping ones could finish in either order, and a donation still adding a signed-out account's entries could land after the one removing them.
+
+A token the store hands out and bumps at every sign-out was the alternative, and it was rejected because it answers a different question.
+It says whether a sign-out happened, not whether the account is signed in, so it would admit a refresh begun after a sign-out with a server built before it, and it would need every write in the store to take one.
+The cost accepted is a Keychain read on the main actor before each fetch and each write: a handful per refresh, and two more for every collective, whose pages are fetched and written one collective at a time.
+
 ## Why do paths the app knows append to the server address instead of resolving from its root?
 
 Because the two kinds of path are not the same kind of thing, and treating them alike produces a link that works everywhere except where it matters.

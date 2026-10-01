@@ -29,6 +29,12 @@ final class SpotlightIndex<Entity: IndexedEntity> {
     /// `indexedIDs` is the set of identifiers currently donated, retained so a shrinking list can have its removed entries deleted.
     private var indexedIDs: Set<Entity.ID> = []
 
+    /// `latestDonation` is the donation most recently asked for, which the next one waits for before it begins.
+    ///
+    /// Donations are made one at a time and in the order they were asked for, because two overlapping ones disagree about the end state and the index would keep whichever finished last.
+    /// A donation suspends while the index works, and another can begin on the main actor meanwhile: one carrying a signed-out account's empty list deletes every entry, and the one still adding them back can land after it, leaving entries for an account that is gone, which nothing would ever delete.
+    private var latestDonation: Task<Void, Never>?
+
     /// `init(label:)` builds an index for one entity type, naming it for the log.
     init(label: StaticString) {
         self.label = label
@@ -38,6 +44,21 @@ final class SpotlightIndex<Entity: IndexedEntity> {
     ///
     /// It replaces rather than merges: what it is given is the whole of what the account currently has, so anything previously donated and now absent is gone rather than merely unlisted. That is what makes a signed-out account's entries disappear — `AccountStore` empties the list and announces it, and this is called with nothing.
     func donate(_ entities: [Entity]) async {
+        let previous = latestDonation
+
+        let donation = Task {
+            await previous?.value
+            await self.replaceIndexedEntities(with: entities)
+        }
+
+        latestDonation = donation
+        await donation.value
+    }
+
+    /// `replaceIndexedEntities(with:)` is one donation: it puts `entities` into the index and removes whatever was donated before and is not among them.
+    ///
+    /// Only `donate(_:)` calls it, once the donation before it has finished, so the identifiers it compares against are the ones the index actually holds.
+    private func replaceIndexedEntities(with entities: [Entity]) async {
         let currentIDs = Set(entities.map(\.id))
         let removedIDs = indexedIDs.subtracting(currentIDs)
         indexedIDs = currentIDs
@@ -59,6 +80,11 @@ final class SpotlightIndex<Entity: IndexedEntity> {
             logger.notice("Donated \(entities.count, privacy: .public) \(self.label, privacy: .public) entit(y/ies)")
         } catch {
             logger.error("Could not update the Spotlight index for \(self.label, privacy: .public): \(error.localizedDescription, privacy: .public)")
+
+            // What was to be removed may still be in the index, so it stays on the books and the next donation tries
+            // again; forgetting it here would leave a signed-out account's entries behind with nothing left to
+            // delete them.
+            indexedIDs.formUnion(removedIDs)
         }
     }
 }

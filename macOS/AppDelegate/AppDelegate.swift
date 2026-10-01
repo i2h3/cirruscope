@@ -202,7 +202,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         Task {
             do {
-                switch try await ServerConnection.validateAndPersist(server) {
+                let outcome = try await ServerConnection.validateAndPersist(server)
+
+                // A sign-out while the validation ran has closed the web windows and presented the sign-in screen
+                // already, and everything below would act on an account nobody is signed in to: a fresh web window
+                // with nothing to load, an alert about a server nobody is using, a monitor badging the Dock.
+                guard ServerConnection.isStillSignedIn(server) else {
+                    logger.notice("The account was signed out while the server was being validated; doing nothing with the validation")
+                    return
+                }
+
+                switch outcome {
                     case let .supported(capabilities):
                         logger.info("Server supported")
                         // At launch the validate round-trip runs after AppKit's local restoration, so any restored
@@ -219,6 +229,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                         await ServerConnection.refreshConversations(using: server)
                         await ServerConnection.refreshNotes(using: server)
                         await ServerConnection.refreshCollectives(using: server)
+
+                        // Asked again, because the refreshes take far longer than the validation did: a sign-out while
+                        // they ran has stopped the monitor already, and starting it now would badge the Dock for an
+                        // account nobody is signed in to.
+                        guard ServerConnection.isStillSignedIn(server) else {
+                            logger.notice("The account was signed out while the refreshes after validation ran; not starting the notification monitor")
+                            return
+                        }
+
                         // Begin (or restart) tracking unread notifications for the Dock badge and banners.
                         NotificationMonitor.shared.start(for: server, capabilities: capabilities)
 
@@ -235,9 +254,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                         presentSignInWindow()
                 }
             } catch RainmakerError.credentialsRequired, RainmakerError.unexpectedStatus(code: 401) {
+                // A sign-out while the validation ran revokes the very app password this was refused for, and telling
+                // the user their credentials are no longer valid after they signed out themselves would be wrong.
+                guard ServerConnection.isStillSignedIn(server) else {
+                    logger.notice("The server refused credentials that a sign-out has discarded since; not asking for a new sign-in")
+                    return
+                }
+
                 // The stored app password was revoked on the server; sign out and require a new sign-in.
                 requireSignIn()
             } catch {
+                guard ServerConnection.isStillSignedIn(server) else {
+                    logger.notice("The account was signed out while the server was being validated; not opening a window for it")
+                    return
+                }
+
                 // The server is unreachable — network down, server offline, DNS/TLS/timeout — as opposed to
                 // reporting revoked credentials, which is handled above. This is transient and must not look
                 // like a reset: keep the configured server address and stored credentials, keep or open the

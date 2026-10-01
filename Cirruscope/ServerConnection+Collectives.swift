@@ -15,9 +15,23 @@ extension ServerConnection {
     ///
     /// The pages are fetched one collective at a time and in sequence rather than together. A collective's page listing is the whole truth about that collective and says nothing about the others, so each answer is written on its own — which is also what keeps a failure part-way through from emptying the collectives that were already refreshed.
     static func refreshCollectives(using server: Server) async {
+        let address = server.address
+        let credentials = credentials(of: server)
+
+        // Before the gate, which reads the store: a store a sign-out emptied offers no app at all, and the gate would
+        // log that as the server lacking one.
+        guard await isStillSignedIn(at: address, as: credentials) else {
+            logger.notice("The account this refresh was begun for is no longer signed in; not asking for collectives")
+            return
+        }
+
         guard await AccountStore.shared.serverApp(forID: "collectives") != nil else {
             logger.notice("The server does not offer the collectives app; not asking for collectives")
-            await AccountStore.shared.deleteCollectives()
+
+            await record("the absence of the Collectives app", fetchedFrom: address, as: credentials) {
+                AccountStore.shared.deleteCollectives()
+            }
+
             return
         }
 
@@ -27,10 +41,21 @@ extension ServerConnection {
             collectives = try await server.collectives()
             let stored = collectives.map { CollectiveTransferObject(id: $0.id, name: $0.name, slug: $0.slug, emoji: $0.emoji) }
             logger.notice("Fetched \(stored.count, privacy: .public) collective(s)")
-            await AccountStore.shared.persist(collectives: stored)
+
+            let recorded = await record("the collectives", fetchedFrom: address, as: credentials) {
+                AccountStore.shared.persist(collectives: stored)
+            }
+
+            guard recorded else {
+                return
+            }
         } catch RainmakerError.notFound {
             logger.notice("The collectives endpoint answered 404, so the app is absent or disabled; dropping anything stored for it")
-            await AccountStore.shared.deleteCollectives()
+
+            await record("the absence of the Collectives app", fetchedFrom: address, as: credentials) {
+                AccountStore.shared.deleteCollectives()
+            }
+
             return
         } catch {
             logger.notice("Could not refresh the collectives; keeping the previous list: \(error.localizedDescription, privacy: .public)")
@@ -38,21 +63,29 @@ extension ServerConnection {
         }
 
         for collective in collectives {
-            await refreshPages(ofCollective: collective.id, using: server)
+            guard await refreshPages(ofCollective: collective.id, using: server) else {
+                logger.notice("The account this refresh was begun for is no longer signed in; not asking for the pages of the remaining collectives")
+                return
+            }
         }
     }
 
     /// `refreshPages(ofCollective:using:)` fetches the pages of one collective and persists them.
     ///
     /// A failure here leaves that collective's stored pages alone and does not abort the collectives after it: one collective being unreadable — deleted between the listing and this request, or refused for this account — says nothing about the rest, and treating it as though it did would empty an index because of one row.
-    private static func refreshPages(ofCollective collectiveID: Int, using server: Server) async {
+    /// It answers `false` only when the account the refresh fetched as is no longer signed in, which is what does abort them.
+    private static func refreshPages(ofCollective collectiveID: Int, using server: Server) async -> Bool {
         do {
             let pages = try await server.pages(inCollective: collectiveID)
             let stored = pages.map { CollectivePageTransferObject(id: $0.id, collectiveID: collectiveID, title: $0.title, slug: $0.slug, emoji: $0.emoji, fileName: $0.fileName, filePath: $0.filePath, isLandingPage: $0.isLandingPage, modification: $0.modification) }
             logger.notice("Fetched \(stored.count, privacy: .public) page(s) of collective \(collectiveID, privacy: .public)")
-            await AccountStore.shared.persist(pages: stored, inCollective: collectiveID)
+
+            return await record("the pages of a collective", fetchedFrom: server.address, as: credentials(of: server)) {
+                AccountStore.shared.persist(pages: stored, inCollective: collectiveID)
+            }
         } catch {
             logger.notice("Could not refresh the pages of collective \(collectiveID, privacy: .public); keeping the previous ones: \(error.localizedDescription, privacy: .public)")
+            return true
         }
     }
 }
