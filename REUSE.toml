@@ -116,6 +116,7 @@ path = [
     "macOS/mul.lproj/Main.xcstrings",
     "Widgets/Info.plist",
     "Widgets/Localizable.xcstrings",
+    "Widgets/PrivacyInfo.xcprivacy",
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "2026 Iva Horn"
