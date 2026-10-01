@@ -182,13 +182,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        guard credentials != nil, let server = ServerConnection.authenticated(address: serverAddress) else {
+        guard credentials != nil else {
             // The address is configured but the Keychain holds no credentials for it, so the user must sign in
             // again — and what the store still holds about that server is a sign-out that did not finish, which
             // `1.1.0` left behind whenever the server rejected its app password. Finish it, so the menus and
             // Spotlight stop offering a server nobody is signed in to.
             logger.notice("Server configured but no stored credentials; signing out what is left and requiring sign-in")
             signOutLocally()
+            presentSignInWindow()
+            return
+        }
+
+        guard let server = ServerConnection.authenticated(address: serverAddress) else {
+            // Building the server reads the Keychain again, and that read failing where the one above found the
+            // credentials is a refusal rather than a sign-out: the macOS Keychain can ask on every read when the item
+            // was created by a differently signed build, and a denial must not delete what it was asked about.
+            logger.error("The stored credentials could not be read a second time; requiring sign-in without signing out")
             presentSignInWindow()
             return
         }
