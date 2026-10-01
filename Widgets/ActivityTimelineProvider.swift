@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 import Foundation
+import os
 import Rainmaker
 import WidgetKit
 
@@ -12,8 +13,12 @@ import WidgetKit
 struct ActivityTimelineProvider: TimelineProvider {
     /// `refreshInterval` is how long WidgetKit is asked to wait before rebuilding the timeline.
     ///
-    /// Half an hour is a ceiling rather than a promise: the system spends a widget's refreshes as it sees fit and routinely gives fewer. Asking for less would not buy more of them, and the app asks for an immediate reload whenever it learns the feed changed, which is what actually keeps the widget close to live while somebody is using Cirruscope.
+    /// Half an hour is a ceiling rather than a promise: the system spends a widget's refreshes as it sees fit and routinely gives fewer. Asking for less would not buy more of them.
+    /// While an account stays signed in this interval is the only thing that refreshes the widget; the apps ask for an immediate reload only when they sign in or out, so the widget stops drawing an account that has gone, or starts drawing one that has arrived, without waiting it out.
     private static let refreshInterval: TimeInterval = 30 * 60
+
+    /// `logger` records what the provider decides about a fetch under the `ActivityTimelineProvider` category.
+    private static let logger = Logger(for: ActivityTimelineProvider.self)
 
     /// `rowLimit` is how many rows the largest layout draws, and so how many are kept.
     private static let rowLimit = 10
@@ -61,12 +66,23 @@ struct ActivityTimelineProvider: TimelineProvider {
     /// The two failures that carry over are the transient ones. An unreachable server and a cancelled refresh have learned nothing about what the feed contains, so whatever was last known stays on screen, dimmed and dated. Everything else has learned something definite — there is no account, or the instance has no activity app — and says so plainly, because a stale feed under one of those would be a lie about why it is old.
     private static func entry() async -> ActivityEntry {
         switch await RecentActivity.fetch(limit: fetchLimit, reason: "widget") {
-            case let .fetched(rows):
+            case let .fetched(rows, server):
                 let visible = Array(rows.prefix(rowLimit))
                 let fetchedAt = Date.now
 
                 await refreshAvatars(for: visible)
                 ActivityFeedStore.save(rows: visible, fetchedAt: fetchedAt)
+
+                // The account may have signed out while this was fetching, in the app's process rather than this one.
+                // Checked after saving rather than before, so the two processes cannot interleave between the check
+                // and the write: the app clears the credentials before the saved feed, so either this sees them gone
+                // and takes the rows back itself, or it saved them before the app's own clear, which removes them.
+                // A Keychain that cannot be read says nothing about that, and leaves the rows in place.
+                if let accounts = try? Keychain.storedAccounts(), accounts.contains(where: { $0.server == server }) == false {
+                    logger.notice("The account these rows belong to signed out while they were being fetched; forgetting them")
+                    ActivityFeedStore.clear()
+                    return ActivityEntry(date: .now, content: .notSignedIn)
+                }
 
                 return ActivityEntry(
                     date: .now,
@@ -75,6 +91,10 @@ struct ActivityTimelineProvider: TimelineProvider {
                 )
 
             case .noAccount:
+                // A signed-out account's rows must not come back as the stale state of the next one. The app clears
+                // the saved feed when it signs out, and the widget clears it too whenever the Keychain says nobody is
+                // signed in, which covers anything a timeline fetched for that account managed to save after all.
+                ActivityFeedStore.clear()
                 return ActivityEntry(date: .now, content: .notSignedIn)
 
             case .endpointUnavailable:
@@ -82,7 +102,8 @@ struct ActivityTimelineProvider: TimelineProvider {
 
             case .credentialsRejected:
                 // The stored app password was revoked, so the account is no longer usable and the widget asks for the
-                // same thing a fresh install does: open the app and connect.
+                // same thing a fresh install does: open the app and connect. Its rows go for the reason they do above.
+                ActivityFeedStore.clear()
                 return ActivityEntry(date: .now, content: .notSignedIn)
 
             case .cancelled, .unreachable:

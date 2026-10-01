@@ -5,10 +5,13 @@ import Foundation
 import os
 import Rainmaker
 import SwiftData
+import WidgetKit
 
-/// `AccountStore` is the main-actor repository over a SwiftData container, owning every read and write of the connected account's data.
+/// `AccountStore` is the main-actor repository over a SwiftData container, owning every read and write of the connected account's data and of what the user set up on this device.
 ///
-/// It is the only place the account's server-related values are kept, none of them in `UserDefaults`. Consumers reach it as `AccountStore.shared`, mirroring the `AssetCache.shared` / `NotificationMonitor.shared` conventions, and it posts `Notification.Name.serverAppsDidChange` so every surface listing the apps refreshes. Each further domain — conversations, notes and collectives so far — is a section of this same type, in a file of its own, rather than a sibling store: every record hangs off the single `Account` this one memoizes, and a second store over the same container would memoize it again and go stale.
+/// It is the only place the account's server-related values are kept, none of them in `UserDefaults`. Consumers reach it as `AccountStore.shared`, mirroring the `AssetCache.shared` / `NotificationMonitor.shared` conventions, and it posts `Notification.Name.serverAppsDidChange` so every surface listing the apps refreshes. Each further domain — conversations, notes and collectives so far — is a section of this same type, in a file of its own, rather than a sibling store: every record describing the server hangs off the single `Account` this one memoizes, and a second store over the same container would memoize it again and go stale.
+///
+/// The keyboard shortcuts and the appearance settings are the exception, and deliberately so: they are what the user set up on this device, so they are records of their own with no relationship to the account, which a sign-out deletes without touching them. They live in this same store and container all the same, so they migrate, and are quarantined, together with everything else.
 ///
 /// It is compiled into both apps. `shared` itself is not declared here but in a per-platform `AccountStore+Shared.swift`, because building the store means answering what counts as a reserved keyboard shortcut, and only macOS assigns shortcuts to server apps and so has that question to answer; the reads that consult that answer are likewise in `macOS/Persistence/AccountStore+KeyboardShortcuts.swift`.
 ///
@@ -33,9 +36,12 @@ final class AccountStore {
     /// It is `internal` rather than `private` because `shortcut(forAppID:)` reads it and lives in this store's macOS half, Swift's `private` being file-scoped.
     let isReservedShortcut: @MainActor (KeyboardShortcutTransferObject) -> Bool
 
-    /// `notifyChange` announces that one of the account's stored domains changed, so whatever draws it refreshes.
+    /// `notifyChange` announces that one of the account's stored domains, or one of the device's own records — its keyboard shortcuts or its appearance settings — changed, so whatever draws it refreshes.
     ///
-    /// It is injected for the mirror image of `isReservedShortcut`'s reason: `AppDelegate` observes `Notification.Name.serverAppsDidChange` for the whole life of a hosted test run, so a test write posting it would have the real `AppDelegate.rebuildServerAppsMenu()` read `shared` — the developer's actual account — and rewrite the live menu bar, on a main-queue turn no test can wait for. A test hands in a closure that counts instead, which is also the only way to assert that a mutator announced at all, the production post being deliberately asynchronous. `post(_:)` is that production post.
+    /// It is injected for the mirror image of `isReservedShortcut`'s reason: the hosted app keeps observers of these names alive for the whole of a test run.
+    /// `AppDelegate` observes `Notification.Name.serverAppsDidChange` and `Notification.Name.keyboardShortcutsDidChange`, so a test write posting either would have the real `AppDelegate.rebuildServerAppsMenu()` read `shared` — the developer's actual account and shortcuts — and rewrite the live menu bar, on a main-queue turn no test can wait for.
+    /// Every open `WebViewController` observes `Notification.Name.appearanceSettingsDidChange` and would re-apply the appearance from `shared` in the same way.
+    /// A test hands in a closure that counts instead, which is also the only way to assert that a mutator announced at all, the production post being deliberately asynchronous. `post(_:)` is that production post.
     ///
     /// It takes the name rather than being one closure per domain. Every domain announces under a name of its own, and a seam that grew a parameter for each would put the cost of adding one in the initializer, in every call site of it, and in the test harness — which is how a seam stops being used. One name-taking closure means a new domain adds a name and nothing else.
     /// It is `internal` rather than `private` because the per-domain files that make up this store are files of their own, and Swift's `private` is file-scoped.
@@ -52,6 +58,16 @@ final class AccountStore {
     ///
     /// `AccountStore` is the sole mutator on the main actor, so the cache stays consistent; `deleteAccount()` clears it after deleting the record.
     private var cachedAccount: Account?
+
+    /// `cachedPreferences` retains the single `DevicePreferences` between calls, because a web view reads the appearance several times every time it re-applies it.
+    ///
+    /// Nothing ever deletes the record and only this store inserts it, so unlike `cachedAccount` this memo, and `lookedForPreferences` beside it, need no reset.
+    private var cachedPreferences: DevicePreferences?
+
+    /// `lookedForPreferences` is `true` once the store has looked for the `DevicePreferences` record, so finding none is remembered as well as finding one.
+    ///
+    /// Most devices never make a choice and so never have the record; without this, every appearance read on them would be a fetch.
+    private var lookedForPreferences = false
 
     /// `init(container:isReservedShortcut:notifyChange:)` builds a store over `container`, defaulting the two dependencies it reaches outside itself for to behaviour every platform can supply.
     ///
@@ -108,19 +124,10 @@ final class AccountStore {
 
     /// `post(_:)` posts `name` on the next main-thread turn, and is the production default for `notifyChange`.
     ///
-    /// The async hop is deliberate: it keeps `AppDelegate.rebuildServerAppsMenu()` and `ServerAppsViewController.reload()` from running reentrantly inside the `ShortcutRecorderView.onChange` handler that triggered the write. It is `static` and not `private` so it can serve as that default argument, which may not reference a declaration less visible than the initializer itself — keeping this explanation next to the behaviour rather than inside a parameter list.
+    /// The async hop is deliberate: it keeps the observers from running reentrantly inside the control that triggered the write — `AppDelegate.rebuildServerAppsMenu()` and `ServerAppsViewController.reload()` inside the `ShortcutRecorderView.onChange` handler, and every `WebViewController` re-applying the appearance inside the `NSSwitch` action handler in `AppearanceSettingsViewController`. It is `static` and not `private` so it can serve as that default argument, which may not reference a declaration less visible than the initializer itself — keeping this explanation next to the behaviour rather than inside a parameter list.
     static func post(_ name: Notification.Name) {
         DispatchQueue.main.async {
             NotificationCenter.default.post(name: name, object: nil)
-        }
-    }
-
-    /// `postAppearanceSettingsDidChange()` posts `Notification.Name.appearanceSettingsDidChange` on the next main-thread turn so every open `WebViewController` re-applies the appearance without a reload.
-    ///
-    /// The async hop mirrors `post(_:)`: it keeps the observers from running reentrantly inside the `NSSwitch` action handler in `AppearanceSettingsViewController` that triggered the write.
-    private func postAppearanceSettingsDidChange() {
-        DispatchQueue.main.async {
-            NotificationCenter.default.post(name: .appearanceSettingsDidChange, object: nil)
         }
     }
 
@@ -142,7 +149,7 @@ final class AccountStore {
 
     /// `adopt(serverAddress:)` records `address` as the connected server if the account does not already say so, and announces it when it writes.
     ///
-    /// It exists because `connect(to:)` is reached only from an interactive sign-in, while eight other writers create the account record without it — `persist(serverApps:)`, `persist(theming:)`, `setServerVersion(_:)`, the two appearance setters and the three domain upserts all call `currentAccount(createIfNeeded: true)` and none of them records the address of the server they were just talking to. A fully populated account with no address is therefore a reachable state, and without this method a permanent one.
+    /// It exists because `connect(to:)` is reached only from an interactive sign-in, while six other writers create the account record without it — `persist(serverApps:)`, `persist(theming:)`, `setServerVersion(_:)` and the three domain upserts all call `currentAccount(createIfNeeded: true)` and none of them records the address of the server they were just talking to. A fully populated account with no address is therefore a reachable state, and without this method a permanent one.
     /// iOS is where it is actually reached, because the two platforms disagree about who is authoritative for "am I signed in". macOS gates on this store, so an account with no address forces a fresh sign-in, which writes one. iOS gates on the Keychain, so a device whose credential predates the store keeps launching signed in, fills the store with apps and conversations and notes through those other writers, and never learns the address. The visible result is everything that reads it coming back empty: no artwork on any Spotlight result, and every intent refusing to open anything because there is nothing to resolve a route against.
     /// Called from the app-list refresh, which is the one path that runs on every activation, already holds a credentialed server and already creates the account record downstream — so an install in that state repairs itself on its next launch with nothing asked of the user.
     func adopt(serverAddress address: URL) {
@@ -172,23 +179,31 @@ final class AccountStore {
         notifyChange(.donatedArtworkDidChange)
     }
 
-    /// `disconnect()` deletes the account — cascading to every record that hangs off it — then empties `AssetCache`, the app icons, user avatars and conversation pictures already drawn from it, and the widget's saved activity feed, and clears the stored Login Flow v2 credentials, so nothing describing the old server, or the people on it, remains in the store, the caches or the Keychain.
+    /// `disconnect()` signs out: it deletes the account — cascading to every record that hangs off it — then forgets every cache describing the old server and clears the stored Login Flow v2 credentials, so nothing that came from that server, or describes the people on it, remains in the store, the caches, the Spotlight index, the widget or the Keychain.
     ///
-    /// The Mac's `AppDelegate.logOut()` and both of iOS's sign-outs run it, so the list of what a sign-out forgets is written once rather than once per app; the Mac's `requireSignIn()` clears only the Keychain and leaves the stored account in place. The announcement happens in `deleteAccount()`, ahead of the clears rather than after them, which is unobservable: the post is delivered on the next main-thread turn, while every clear is synchronous and finishes inside the current one.
+    /// It is the one sign-out there is: the Mac's `AppDelegate.logOut()` and `requireSignIn()`, the Mac's launch when it finds a server named but no credential stored for it, both of iOS's sign-outs and iOS's launch in the same state run it, so the list of what a sign-out forgets is written once. What the user set up on this device — the keyboard shortcuts and the appearance settings — has no relationship to the account and stays, ready for the next sign-in. The announcements happen in `deleteAccount()`, ahead of the clears rather than after them, which is unobservable inside this process: the posts are delivered on the next main-thread turn, while every clear is synchronous and finishes inside the current one.
     func disconnect() {
         deleteAccount()
+        forgetEverythingOutsideTheStore()
+    }
 
+    /// `forgetEverythingOutsideTheStore()` clears the stored credentials, empties every cache that describes the connected server or the people on it, and then asks WidgetKit to redraw the widget.
+    ///
+    /// The order is the point. The credentials go first, because the widget runs in a process of its own and reads them to decide whom to fetch for: a timeline that read them before this ran saves its rows either before the saved feed is cleared below, which removes them, or after the credentials are gone, which it checks for and takes them back itself. The widget is asked to redraw last, once nothing it could read would sign it in, because otherwise it draws what its last timeline held until WidgetKit next asks, which can be long after the account it shows has gone.
+    private func forgetEverythingOutsideTheStore() {
+        Keychain.clearAll()
         AssetCache.shared.clear()
         ServerAppIcons.shared.clear()
         ServerAvatars.shared.clear()
         ConversationAvatars.shared.clear()
         ActivityFeedStore.clear()
-        Keychain.clearAll()
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
-    /// `deleteAccount()` deletes the account record — cascading to every record that hangs off it — drops the memoized `cachedAccount`, commits, and announces the change.
+    /// `deleteAccount()` deletes the account record — cascading to every record that hangs off it — drops the memoized `cachedAccount`, commits, and announces every domain the account held; the keyboard shortcuts and the appearance settings hang off nothing and are left alone.
     ///
     /// It is the storage half of `disconnect()`, separated so it can be exercised on its own: `disconnect()`'s remaining steps empty the shared caches and the widget's saved feed and clear the `Keychain`, none of which a test can run without destroying the developer's real cached assets and stored credentials. Clearing `cachedAccount` is what keeps a later write from landing on the deleted object instead of a fresh account.
+    /// Each domain is announced under its own name because each Spotlight indexer listens for its own: announcing only the server apps left every conversation, note and collective of a signed-out account in the index.
     func deleteAccount() {
         if let account = currentAccount(createIfNeeded: false) {
             logger.notice("Deleting the connected account and everything cascading from it")
@@ -200,6 +215,9 @@ final class AccountStore {
         cachedAccount = nil
         save()
         notifyChange(.serverAppsDidChange)
+        notifyChange(.conversationsDidChange)
+        notifyChange(.notesDidChange)
+        notifyChange(.collectivesDidChange)
     }
 
     // MARK: - Theming
@@ -253,32 +271,59 @@ final class AccountStore {
 
     // MARK: - Appearance
 
-    /// `translucentAppearance` is the user's choice to let the macOS window material show through the web view, or `nil` when the user has not chosen — in which case callers apply the app default (off). `WebViewController` reads it to drive both the injected stylesheet and the native background image's visibility.
-    var translucentAppearance: Bool? {
-        currentAccount(createIfNeeded: false)?.translucentAppearance
+    /// `currentPreferences(createIfNeeded:)` returns the single `DevicePreferences`, fetching it once and caching it, and optionally inserting a fresh one when none exists yet.
+    private func currentPreferences(createIfNeeded: Bool) -> DevicePreferences? {
+        if let cachedPreferences {
+            return cachedPreferences
+        }
+
+        if lookedForPreferences == false {
+            var descriptor = FetchDescriptor<DevicePreferences>()
+            descriptor.fetchLimit = 1
+            cachedPreferences = try? context.fetch(descriptor).first
+            lookedForPreferences = true
+
+            if let cachedPreferences {
+                return cachedPreferences
+            }
+        }
+
+        guard createIfNeeded else {
+            return nil
+        }
+
+        let preferences = DevicePreferences()
+        context.insert(preferences)
+        cachedPreferences = preferences
+        return preferences
     }
 
-    /// `setTranslucentAppearance(_:)` records whether the translucent appearance is enabled, then notifies open web views so they re-apply it without a reload.
+    /// `translucentAppearance` is the user's choice to let the macOS window material show through the web view, or `nil` when the user has not chosen — in which case callers apply the app default (off). `WebViewController` reads it to drive both the injected stylesheet and the native background image's visibility.
+    var translucentAppearance: Bool? {
+        currentPreferences(createIfNeeded: false)?.translucentAppearance
+    }
+
+    /// `setTranslucentAppearance(_:)` records whether the translucent appearance is enabled on this device, then announces `Notification.Name.appearanceSettingsDidChange` so open web views re-apply it without a reload.
     ///
-    /// `AppearanceSettingsViewController` calls it from the translucent-appearance switch.
+    /// `AppearanceSettingsViewController` calls it from the translucent-appearance switch, which is reachable whether or not anybody is signed in; the choice is recorded on the device and never creates an account.
     func setTranslucentAppearance(_ enabled: Bool) {
-        currentAccount(createIfNeeded: true)?.translucentAppearance = enabled
+        currentPreferences(createIfNeeded: true)?.translucentAppearance = enabled
         save()
-        postAppearanceSettingsDidChange()
+        notifyChange(.appearanceSettingsDidChange)
     }
 
     /// `removeGaps` is the user's choice to expand Nextcloud's content to the window edges, or `nil` when the user has not chosen — in which case callers apply the app default (on).
     var removeGaps: Bool? {
-        currentAccount(createIfNeeded: false)?.removeGaps
+        currentPreferences(createIfNeeded: false)?.removeGaps
     }
 
-    /// `setRemoveGaps(_:)` records whether the content gaps are removed, then notifies open web views so they re-apply it without a reload.
+    /// `setRemoveGaps(_:)` records whether the content gaps are removed on this device, then announces `Notification.Name.appearanceSettingsDidChange` so open web views re-apply it without a reload.
     ///
-    /// `AppearanceSettingsViewController` calls it from the remove-gaps switch.
+    /// `AppearanceSettingsViewController` calls it from the remove-gaps switch; like the translucency setter, it never creates an account.
     func setRemoveGaps(_ enabled: Bool) {
-        currentAccount(createIfNeeded: true)?.removeGaps = enabled
+        currentPreferences(createIfNeeded: true)?.removeGaps = enabled
         save()
-        postAppearanceSettingsDidChange()
+        notifyChange(.appearanceSettingsDidChange)
     }
 
     // MARK: - Server Version
@@ -300,7 +345,7 @@ final class AccountStore {
 
     /// `serverApps` is the connected server's apps as value snapshots, in the one order every surface lists them in: alphabetically by localized name, with the app identifier settling a tie.
     ///
-    /// The sort is applied here rather than left to each caller for two reasons. SwiftData does not preserve the order of a to-many relationship, so the records arrive in no meaningful order and something has to impose one; and sorting once, at the single read every surface shares, is what keeps the View menu, the Dock menu (both built by `AppDelegate`), the Apps settings tab (`ServerAppsViewController`), the Shortcuts and Siri lists (`ServerAppEntityQuery`), the Spotlight index (`ServerAppIndexer`), `storedShortcuts` — which walks this list — and on iOS `Store.apps`, which the iPhone's title menu and the iPad's View menu both draw, from being able to disagree about where an app sits. Each of those consumers arrived without having to know the rule, which is the point of the sort living at the read rather than in any of them. The server's own position for an app, `ServerAppTransferObject.order`, deliberately decides nothing here: it arranges the web interface's app menu, where it reads as a layout the admin chose, while a native menu is scanned for a name.
+    /// The sort is applied here rather than left to each caller for two reasons. SwiftData does not preserve the order of a to-many relationship, so the records arrive in no meaningful order and something has to impose one; and sorting once, at the single read every surface shares, is what keeps the View menu, the Dock menu (both built by `AppDelegate`), the Speed Dials settings tab (`ServerAppsViewController`), the Shortcuts and Siri lists (`ServerAppEntityQuery`), the Spotlight index (`ServerAppIndexer`), `storedShortcuts` — which walks this list — and on iOS `Store.apps`, which the iPhone's title menu and the iPad's View menu both draw, from being able to disagree about where an app sits. Each of those consumers arrived without having to know the rule, which is the point of the sort living at the read rather than in any of them. The server's own position for an app, `ServerAppTransferObject.order`, deliberately decides nothing here: it arranges the web interface's app menu, where it reads as a layout the admin chose, while a native menu is scanned for a name.
     ///
     /// The comparison itself is `sortedByName()`, applied nowhere else: iOS reads this same property rather than sorting for itself, so the two apps cannot list the apps differently; its own documentation says why the collation is `localizedStandardCompare(_:)` and why the identifier settles a tie. That totality matters here specifically: two apps a server offers under one name would otherwise be free to swap places between two menu rebuilds, taking which of them a duplicate shortcut reaches with them, `appHolding(_:)` reading the first match.
     var serverApps: [ServerAppTransferObject] {
@@ -315,7 +360,7 @@ final class AccountStore {
 
     /// `serverApp(forID:)` is the connected server's app with `appID` as a value snapshot, or `nil` when the account offers no such app.
     ///
-    /// It is the single-app counterpart of `serverApps`: `ServerAppEntityQuery.entities(for:)` and `EntityActivation` resolve a donated or saved app id back to a `ServerAppTransferObject` through it, and `ServerConnection.refreshCollectives(using:)` asks it whether the server offers the Collectives app at all. Like every other read here it returns a value-type DTO, never the managed `ServerApp`, and reuses the same `currentAccount` cache and `first(where:)` lookup as `shortcut(forAppID:)`.
+    /// It is the single-app counterpart of `serverApps`: `ServerAppEntityQuery.entities(for:)` and `EntityActivation` resolve a donated or saved app id back to a `ServerAppTransferObject` through it, and `ServerConnection.refreshCollectives(using:)` asks it whether the server offers the Collectives app at all. Like every other read here it returns a value-type DTO, never the managed `ServerApp`.
     func serverApp(forID appID: String) -> ServerAppTransferObject? {
         guard let app = currentAccount(createIfNeeded: false)?.apps.first(where: { $0.appID == appID }) else {
             return nil
@@ -324,9 +369,9 @@ final class AccountStore {
         return ServerAppTransferObject(id: app.appID, order: app.order, href: app.href, name: app.name)
     }
 
-    /// `persist(serverApps:)` upserts the server's apps: existing rows are updated in place, new ones inserted, and ones the server no longer offers deleted — which cascades to their shortcuts.
+    /// `persist(serverApps:)` upserts the server's apps: existing rows are updated in place, new ones inserted, and ones the server no longer offers deleted.
     ///
-    /// Matching by `id` rather than replacing the list wholesale is what lets a user's keyboard shortcut survive an app-list refresh; a shortcut is pruned only when its app actually disappears. `ServerConnection.refreshNavigationApps(using:)` calls it with the `Rainmaker.NavigationItem`s it fetched already mapped to this app's own value type, so the store's write side speaks the same type its read side returns and neither depends on the shape of the network library — which is also what lets a test seed an app list without the test target linking that library.
+    /// Pruning an app leaves its keyboard shortcut alone, the shortcut being keyed by the app's identifier rather than belonging to the record, so it applies again whenever a later refresh lists the app. `ServerConnection.refreshNavigationApps(using:)` calls it with the `Rainmaker.NavigationItem`s it fetched already mapped to this app's own value type, so the store's write side speaks the same type its read side returns and neither depends on the shape of the network library — which is also what lets a test seed an app list without the test target linking that library.
     func persist(serverApps: [ServerAppTransferObject]) {
         guard let account = currentAccount(createIfNeeded: true) else {
             return
@@ -345,8 +390,8 @@ final class AccountStore {
         var pruned = 0
 
         // Skip an id already seen in this list rather than inserting a second row for it: two rows sharing one id
-        // would leave `serverApps`' name-then-identifier ordering with a tie it cannot break, so which of them a
-        // shared shortcut belongs to would stop being decidable. No real server sends duplicates.
+        // would leave `serverApps`' name-then-identifier ordering with a tie it cannot break, and two menu items
+        // would then claim the one shortcut recorded for that id. No real server sends duplicates.
         for item in serverApps where incomingIDs.contains(item.id) == false {
             incomingIDs.insert(item.id)
 
@@ -378,23 +423,18 @@ final class AccountStore {
     // store into a folder iOS also compiles, so they live in `macOS/Persistence/AccountStore+KeyboardShortcuts.swift`.
     // What stays is the storage: reading the shortcuts out of the records, and writing one back.
 
-    /// `storedShortcuts` are the shortcuts currently stored for the connected account's apps, each paired with the app it belongs to, in the order the menus list those apps.
+    /// `storedShortcuts` are the shortcuts recorded on this device for the apps the connected server offers, each paired with its app, in the order the menus list those apps.
     ///
     /// `internal` rather than `private` because `appHolding(_:)` walks it and lives in this store's macOS half, Swift's `private` being file-scoped.
-    /// It walks `serverApps` rather than sorting the records itself, so that order is the menus' own by construction — alphabetical by name, with the app identifier breaking a tie so that it is total. `appHolding(_:)` reads the first match from it to decide which single app a shared shortcut belongs to, and that answer has to be the same on every call rather than depend on an unstable sort. Collecting the shortcuts into a dictionary first is what keeps that walk from being a search of the relationship per app.
+    /// It walks `serverApps` rather than sorting the records itself, so that order is the menus' own by construction — alphabetical by name, with the app identifier breaking a tie so that it is total. `appHolding(_:)` reads the first match from it to decide which single app a shared shortcut reaches, and that answer has to be the same on every call rather than depend on an unstable sort.
+    /// Walking the offered apps is also the rule for a shortcut whose app the server does not offer: it is left out, so it reaches nothing, takes part in no conflict and is named as nobody's occupant, until a refresh lists its app again.
     var storedShortcuts: [(appID: String, name: String, shortcut: KeyboardShortcutTransferObject)] {
-        guard let account = currentAccount(createIfNeeded: false) else {
-            return []
-        }
+        let records = (try? context.fetch(FetchDescriptor<KeyboardShortcut>())) ?? []
 
         var shortcutsByAppID: [String: KeyboardShortcutTransferObject] = [:]
 
-        for app in account.apps {
-            guard let stored = app.shortcut else {
-                continue
-            }
-
-            shortcutsByAppID[app.appID] = KeyboardShortcutTransferObject(keyEquivalent: stored.keyEquivalent, modifierFlags: stored.modifierFlags)
+        for record in records {
+            shortcutsByAppID[record.appID] = KeyboardShortcutTransferObject(keyEquivalent: record.keyEquivalent, modifierFlags: record.modifierFlags)
         }
 
         return serverApps.compactMap { app in
@@ -406,28 +446,46 @@ final class AccountStore {
         }
     }
 
-    /// `setShortcut(_:forAppID:)` assigns, replaces, or (when `shortcut` is `nil`) clears the keyboard shortcut of the app with `appID`, then notifies observers so the menus update.
+    /// `storedShortcut(forAppID:)` is the shortcut recorded on this device for the app with `appID`, whether or not the connected server offers that app, or `nil` when none is.
     ///
-    /// `ServerAppsViewController` calls it from each row's `ShortcutRecorderView`. It does nothing when the app is unknown, which cannot happen for a row the settings tab is showing.
-    ///
-    /// It deliberately stores whatever it is given: rejecting a shortcut another app or a fixed menu item already occupies is the caller's job, done while recording (see `nameOfApp(usingShortcut:otherThanAppID:)` and `AppDelegate.reservedShortcutName(for:)`), so the settings tab can explain the rejection where the user is looking instead of a write silently doing nothing. Should a future caller — an App Intent, a widget — write a duplicate anyway, `shortcut(forAppID:)` still keeps it off the menus.
-    func setShortcut(_ shortcut: KeyboardShortcutTransferObject?, forAppID appID: String) {
-        guard let app = currentAccount(createIfNeeded: false)?.apps.first(where: { $0.appID == appID }) else {
-            return
+    /// It is the raw record, with none of the rules `shortcut(forAppID:)` applies before a shortcut reaches a menu.
+    func storedShortcut(forAppID appID: String) -> KeyboardShortcutTransferObject? {
+        guard let record = shortcutRecord(forAppID: appID) else {
+            return nil
         }
 
+        return KeyboardShortcutTransferObject(keyEquivalent: record.keyEquivalent, modifierFlags: record.modifierFlags)
+    }
+
+    /// `shortcutRecord(forAppID:)` is the `KeyboardShortcut` record for `appID`, or `nil` when none exists.
+    private func shortcutRecord(forAppID appID: String) -> KeyboardShortcut? {
+        var descriptor = FetchDescriptor<KeyboardShortcut>(predicate: #Predicate { $0.appID == appID })
+        descriptor.fetchLimit = 1
+        return try? context.fetch(descriptor).first
+    }
+
+    /// `setShortcut(_:forAppID:)` assigns, replaces, or (when `shortcut` is `nil`) clears the keyboard shortcut of the app with `appID` on this device, then announces `Notification.Name.keyboardShortcutsDidChange` so the menus and the Speed Dials tab update.
+    ///
+    /// `ServerAppsViewController` calls it from each row's `ShortcutRecorderView`. It records against the identifier alone, needing neither an account nor the app being offered: the shortcut belongs to the device, and applies wherever and whenever a server offers an app with that identifier.
+    ///
+    /// It deliberately stores whatever it is given: rejecting a shortcut another app or a fixed menu item already occupies is the caller's job, done while recording (see `nameOfApp(usingShortcut:otherThanAppID:)` and `AppDelegate.reservedShortcutName(for:)`), so the settings tab can explain the rejection where the user is looking instead of a write silently doing nothing. Should a duplicate be stored anyway — by a future caller, or by an app returning to a server that offers another app the same shortcut was recorded for meanwhile — `shortcut(forAppID:)` still keeps it off the menus.
+    func setShortcut(_ shortcut: KeyboardShortcutTransferObject?, forAppID appID: String) {
+        let existing = shortcutRecord(forAppID: appID)
+
         if let shortcut {
-            if let existing = app.shortcut {
+            if let existing {
                 existing.keyEquivalent = shortcut.keyEquivalent
                 existing.modifierFlags = shortcut.modifierFlags
             } else {
-                context.insert(KeyboardShortcut(keyEquivalent: shortcut.keyEquivalent, modifierFlags: shortcut.modifierFlags, app: app))
+                context.insert(KeyboardShortcut(appID: appID, keyEquivalent: shortcut.keyEquivalent, modifierFlags: shortcut.modifierFlags))
             }
-        } else if let existing = app.shortcut {
+        } else if let existing {
             context.delete(existing)
+        } else {
+            return
         }
 
         save()
-        notifyChange(.serverAppsDidChange)
+        notifyChange(.keyboardShortcutsDidChange)
     }
 }

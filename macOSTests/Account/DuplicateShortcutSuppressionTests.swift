@@ -6,7 +6,8 @@ import Testing
 
 /// `DuplicateShortcutSuppressionTests` covers the rule that decides which single app a keyboard shortcut reaches when the stored data offers more than one candidate.
 ///
-/// This is the logic issue #64 is about, and the reason it needs covering at this level rather than through `ShortcutRecorderView`: the recorder refuses a combination another app already holds, but data recorded before that check existed can still contain duplicates, and the store is what keeps such a duplicate off the menus. Two enabled menu items sharing one key equivalent have no reliable tie-break in AppKit, so "the first app in menu order, on every call" is the property these cases pin — together with the matching asymmetry `appHolding(_:)` exists to prevent, where an app the store suppresses would still be named as a combination's occupant.
+/// This is the logic issue #64 is about, and the reason it needs covering at this level rather than through `ShortcutRecorderView`: the recorder refuses a combination another app already holds, but duplicates can still be stored — by data recorded before that check existed, and, a shortcut belonging to the device rather than to a server, by an app returning to a server that offers another app the same combination was recorded for meanwhile — and the store is what keeps such a duplicate off the menus. Two enabled menu items sharing one key equivalent have no reliable tie-break in AppKit, so "the first app in menu order, on every call" is the property these cases pin — together with the matching asymmetry `appHolding(_:)` exists to prevent, where an app the store suppresses would still be named as a combination's occupant.
+/// A shortcut whose app the connected server does not offer is no candidate for as long as the app is missing, and two cases pin both ends of that: meanwhile it neither suppresses nor occupies anything, and once the app returns it competes like any other duplicate, the first app in menu order winning, and is kept rather than deleted when it loses.
 @MainActor
 @Suite(.serialized)
 struct DuplicateShortcutSuppressionTests {
@@ -143,5 +144,48 @@ struct DuplicateShortcutSuppressionTests {
         // the row showing ⌘1 must be able to re-record it, and the row showing nothing must be told who has it.
         #expect(harness.store.nameOfApp(usingShortcut: commandOne, otherThanAppID: "photos") == "Files")
         #expect(harness.store.nameOfApp(usingShortcut: commandOne, otherThanAppID: "files") == nil)
+    }
+
+    @Test
+    func `A shortcut for an app the server does not offer neither suppresses nor occupies anything`() {
+        harness.store.persist(serverApps: [ServerAppFixture.files, ServerAppFixture.photos])
+        harness.store.setShortcut(commandOne, forAppID: "talk")
+        harness.store.setShortcut(commandOne, forAppID: "photos")
+
+        // Talk is not offered, so its shortcut takes no part: Photos holds the combination, alone.
+        #expect(harness.store.shortcut(forAppID: "photos") == commandOne)
+        #expect(harness.store.nameOfApp(usingShortcut: commandOne, otherThanAppID: "files") == "Photos")
+    }
+
+    @Test
+    func `An app returning to a combination another app holds yields to the first in menu order`() {
+        harness.store.persist(serverApps: [ServerAppFixture.photos])
+        harness.store.setShortcut(commandOne, forAppID: "talk")
+        harness.store.setShortcut(commandOne, forAppID: "photos")
+
+        harness.store.persist(serverApps: [ServerAppFixture.photos, ServerAppFixture.talk])
+
+        // Photos sorts before Talk, so it keeps the combination and Talk's is honoured for nobody but kept.
+        #expect(harness.store.shortcut(forAppID: "photos") == commandOne)
+        #expect(harness.store.shortcut(forAppID: "talk") == nil)
+        #expect(harness.store.storedShortcut(forAppID: "talk") == commandOne)
+    }
+
+    @Test
+    func `An app returning to a combination takes it when it is first in menu order`() {
+        harness.store.persist(serverApps: [ServerAppFixture.photos])
+        harness.store.setShortcut(commandOne, forAppID: "files")
+        harness.store.setShortcut(commandOne, forAppID: "photos")
+
+        // Photos holds the combination alone until Files returns…
+        #expect(harness.store.shortcut(forAppID: "photos") == commandOne)
+
+        harness.store.persist(serverApps: [ServerAppFixture.files, ServerAppFixture.photos])
+
+        // …and Files sorts first, so it takes it: menu order decides, not which app held it before.
+        #expect(harness.store.shortcut(forAppID: "files") == commandOne)
+        #expect(harness.store.shortcut(forAppID: "photos") == nil)
+        #expect(harness.store.storedShortcut(forAppID: "photos") == commandOne)
+        #expect(harness.store.nameOfApp(usingShortcut: commandOne, otherThanAppID: "photos") == "Files")
     }
 }

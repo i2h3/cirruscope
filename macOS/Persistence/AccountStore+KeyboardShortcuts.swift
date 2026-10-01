@@ -5,7 +5,7 @@ import Foundation
 
 /// `AccountStore`'s macOS half: the reads that decide which app a keystroke actually reaches.
 ///
-/// They are here rather than with the rest of the store because each of them compares two shortcuts through `ShortcutMatching`, and that comparison is a measured statement about how AppKit matches key equivalents against a real `NSMenu` — AppKit, and so unusable from a folder the iOS app also compiles. The storage half of the same domain stayed behind: reading a stored shortcut out of a record and writing one back needs nothing but the record.
+/// They are here rather than with the rest of the store because each of them compares two shortcuts through `ShortcutMatching`, and that comparison is a measured statement about how AppKit matches key equivalents against a real `NSMenu` — AppKit, and so unusable from a folder the iOS app also compiles. The storage half of the same domain is shared: reading a stored shortcut out of its record and writing one back needs nothing but the record.
 ///
 /// This is the split `Core/ServerConnection.swift` and `ServerConnection+AccountStore` already make, applied within one type rather than across two: what can be shared is, and what names a platform framework sits beside the platform that has it. iOS assigns no server-app shortcuts, the iPad's View menu included, so nothing there asks which app a keystroke reaches, and `isReservedShortcut` correspondingly answers that nothing is.
 extension AccountStore {
@@ -16,15 +16,17 @@ extension AccountStore {
         storedShortcuts.first { ShortcutMatching.areEquivalent($0.shortcut, shortcut) }
     }
 
-    /// `shortcut(forAppID:)` is the user's keyboard shortcut for the app with `appID`, or `nil` when none is assigned, the app is unknown, the stored shortcut collides with one of Cirruscope's own reserved shortcuts (see `AppDelegate.reservedShortcutName(for:)`), or another app already holds the same one (see `appHolding(_:)`).
+    /// `shortcut(forAppID:)` is the keyboard shortcut that reaches the app with `appID`, or `nil` when none is recorded, the connected server does not offer the app, the recorded shortcut collides with one of Cirruscope's own reserved shortcuts (see `AppDelegate.reservedShortcutName(for:)`), or another offered app already holds the same one (see `appHolding(_:)`).
     ///
-    /// Both collisions can only come from data recorded before their respective checks existed, since `ShortcutRecorderView` now refuses to record either going forward; suppressing them here as well means such a shortcut is not applied to a menu item — and is shown as unassigned in the settings tab, so the user can see it is not in effect and record another — rather than being deleted behind the user's back.
+    /// `ShortcutRecorderView` refuses to record either collision, but both can still be stored: a shortcut recorded before its check existed, and — because a shortcut belongs to the device rather than to a server — one recorded for an app that returns to a server offering another app the same combination was recorded for meanwhile. Suppressing them here means such a shortcut is not applied to a menu item, and is shown as unassigned in the settings tab so the user can see it is not in effect and record another, rather than being deleted behind the user's back.
     func shortcut(forAppID appID: String) -> KeyboardShortcutTransferObject? {
-        guard let stored = currentAccount(createIfNeeded: false)?.apps.first(where: { $0.appID == appID })?.shortcut else {
+        guard serverApp(forID: appID) != nil else {
             return nil
         }
 
-        let shortcut = KeyboardShortcutTransferObject(keyEquivalent: stored.keyEquivalent, modifierFlags: stored.modifierFlags)
+        guard let shortcut = storedShortcut(forAppID: appID) else {
+            return nil
+        }
 
         guard isReservedShortcut(shortcut) == false else {
             return nil

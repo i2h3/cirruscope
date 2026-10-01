@@ -13,10 +13,14 @@ import Rainmaker
 enum RecentActivity {
     /// `Outcome` is the closed set of results a fetch can have, carrying the prepared rows only in the one case where there are any to carry.
     enum Outcome: Sendable {
-        /// `fetched` carries the rows to draw, which is the empty array when the server has nothing to report — the widget's "All quiet", which is a success rather than a failure.
-        case fetched([ActivityRow])
+        /// `fetched` carries the rows to draw, which is the empty array when the server has nothing to report — the widget's "All quiet", which is a success rather than a failure — and the address of the server they came from.
+        ///
+        /// The address travels with the rows so a caller can confirm, once it has acted on them, that the account they belong to is still the one signed in.
+        case fetched([ActivityRow], server: URL)
 
-        /// `noAccount` reports that no usable credentials are stored, so there is no server to ask.
+        /// `noAccount` reports that the Keychain holds no usable credentials, so there is no server to ask.
+        ///
+        /// A Keychain that could not be read is not this, but `unreachable`: nothing has been learned about whether anybody is signed in.
         case noAccount
 
         /// `endpointUnavailable` reports that the instance offers no file activity: either the activity app answered `404`, or it is enabled but publishes no `files` filter.
@@ -50,7 +54,16 @@ enum RecentActivity {
 
         logger.notice("Fetching recent activity (\(reason))")
 
-        guard let account = Keychain.accounts().first else {
+        let accounts: [ServerAccount]
+
+        do {
+            accounts = try Keychain.storedAccounts()
+        } catch {
+            logger.error("The Keychain could not be read, so whether an account is configured is unknown (\(reason)): \(error.localizedDescription, privacy: .public)")
+            return .unreachable
+        }
+
+        guard let account = accounts.first else {
             logger.notice("No account is configured, so there is nothing to fetch (\(reason))")
             return .noAccount
         }
@@ -71,7 +84,7 @@ enum RecentActivity {
 
             logger.notice("Fetched \(page.items.count, privacy: .public) activity item(s), \(rows.count, privacy: .public) drawable, in \(Self.milliseconds(since: started), privacy: .public) ms (\(reason))")
 
-            return .fetched(rows)
+            return .fetched(rows, server: account.server)
         } catch is CancellationError {
             logger.error("Fetching recent activity was cancelled after \(Self.milliseconds(since: started), privacy: .public) ms (\(reason))")
             return .cancelled

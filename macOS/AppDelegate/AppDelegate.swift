@@ -8,7 +8,7 @@ import WebKit
 
 /// `AppDelegate` is the application delegate of Cirruscope and owns the lifecycle of every window the app shows.
 ///
-/// On launch it consults `AccountStore.serverAddress` to decide whether to present `WebViewController` directly or to first show `ServerAddressViewController`. When a server address is already configured it first re-validates the server's capabilities against `InfoPlist.minimumSupportedServerMajorVersion`, falling back to `ServerAddressViewController` only when the stored credentials were revoked or the server runs an unsupported major version; an unreachable server is treated as transient and keeps the web window, which surfaces its own retry UI. It also keeps freshly instantiated `NSWindowController`s alive until their windows close.
+/// On launch it consults `AccountStore.serverAddress` to decide whether to present `WebViewController` directly or to first show `ServerAddressViewController`. When a server address is already configured it first re-validates the server's capabilities against `InfoPlist.minimumSupportedServerMajorVersion`, falling back to `ServerAddressViewController` only when no credentials are stored for it, the stored ones were revoked, or the server runs an unsupported major version; an unreachable server is treated as transient and keeps the web window, which surfaces its own retry UI. It also keeps freshly instantiated `NSWindowController`s alive until their windows close.
 @main
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -38,6 +38,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         logger.notice("Application finished launching")
         UserNotifier.shared.configure()
         NotificationCenter.default.addObserver(self, selector: #selector(serverAppsDidChange), name: .serverAppsDidChange, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(serverAppsDidChange), name: .keyboardShortcutsDidChange, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(downloadDidStart), name: .downloadDidStart, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(serverCredentialsRejected), name: .serverCredentialsRejected, object: nil)
         rebuildServerAppsMenu()
@@ -51,6 +52,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     self?.openServerApp(app)
 
                 case let .page(target):
+                    guard self?.isSignedIn == true else {
+                        self?.presentSignInWindow()
+                        return
+                    }
+
                     // A page rather than an app, so it opens in its own window rather than reusing one: the window
                     // already showing Talk is showing a different conversation, and bringing it forward unchanged
                     // would look like the app had ignored what was asked for.
@@ -147,7 +153,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSWorkspace.shared.open(InfoPlist.support)
     }
 
-    /// `presentInitialWindow(forLaunch:)` validates the configured server and presents the window the app should show: a `WebViewWindowController` when a supported server is reachable or merely unreachable — in which case the web view shows its own "Server unreachable" retry UI — and a `ServerAddressWindowController` when no server is configured, the stored credentials were revoked, or the server runs an unsupported major version.
+    /// `presentInitialWindow(forLaunch:)` validates the configured server and presents the window the app should show: a `WebViewWindowController` when a supported server is reachable or merely unreachable — in which case the web view shows its own "Server unreachable" retry UI — and a `ServerAddressWindowController` when no server is configured, no credentials are stored for it, the stored credentials were revoked, or the server runs an unsupported major version.
+    /// A configured server with no stored credentials is a sign-out that did not finish, so that case completes it through `AccountStore.disconnect()` before asking for a sign-in; a revoked credential goes through `requireSignIn()`, which signs out the same way.
     ///
     /// `applicationDidFinishLaunching(_:)` calls it with `forLaunch` set to coordinate with AppKit window restoration: it opens a fresh web window only when none was restored. When the server reports an unsupported version or revoked credentials it closes any restored web windows so none lingers on a server the app can no longer use; an unreachable server is treated as transient, so restored windows are left in place to show their retry UI. `newWindow(_:)` and `applicationShouldHandleReopen(_:hasVisibleWindows:)` call it with `forLaunch` cleared, which always opens a new web window and leaves any already-open windows untouched unless validation reports the server unusable.
     ///
@@ -155,16 +162,34 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func presentInitialWindow(forLaunch: Bool) {
         logger.log("Presenting initial window")
 
+        adoptStoredCredentialsIfTheStoreLostItsAccount()
+
         guard let serverAddress = AccountStore.shared.serverAddress else {
             logger.info("No server address configured; presenting sign-in")
-            presentWindow(withIdentifier: "ServerAddressWindowController")
+            presentSignInWindow()
             return
         }
 
-        guard let server = ServerConnection.authenticated(address: serverAddress) else {
-            // The address is configured but no credentials are stored, so the user must log in again.
-            logger.notice("Server configured but no stored credentials; requiring sign-in")
-            presentWindow(withIdentifier: "ServerAddressWindowController")
+        let credentials: Credentials?
+
+        do {
+            credentials = try Keychain.storedCredentials(for: serverAddress)
+        } catch {
+            // The Keychain refused the read, which says nothing about whether the credential is there: ask for a
+            // sign-in, which replaces it, rather than sign out what may be a working account.
+            logger.error("The stored credentials could not be read; requiring sign-in without signing out: \(error.localizedDescription, privacy: .public)")
+            presentSignInWindow()
+            return
+        }
+
+        guard credentials != nil, let server = ServerConnection.authenticated(address: serverAddress) else {
+            // The address is configured but the Keychain holds no credentials for it, so the user must sign in
+            // again — and what the store still holds about that server is a sign-out that did not finish, which
+            // `1.1.0` left behind whenever the server rejected its app password. Finish it, so the menus and
+            // Spotlight stop offering a server nobody is signed in to.
+            logger.notice("Server configured but no stored credentials; signing out what is left and requiring sign-in")
+            signOutLocally()
+            presentSignInWindow()
             return
         }
 
@@ -207,10 +232,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                         closeWebViewWindows()
 
                         presentAlert(title: String(localized: "Unsupported Server", comment: "Alert title shown at launch when the configured server runs a Nextcloud version older than the app supports."), message: String(localized: "Cirruscope requires Nextcloud version \(InfoPlist.minimumSupportedServerMajorVersion) or later. The server at “\(serverAddress.absoluteString)” is running version \(version).", comment: "Alert message shown at launch when the configured server's Nextcloud version is too old; placeholders are the minimum supported major version, the server address, and the server's version."))
-                        presentWindow(withIdentifier: "ServerAddressWindowController")
+                        presentSignInWindow()
                 }
             } catch RainmakerError.credentialsRequired, RainmakerError.unexpectedStatus(code: 401) {
-                // The stored app password was revoked on the server; discard it and require a new login.
+                // The stored app password was revoked on the server; sign out and require a new sign-in.
                 requireSignIn()
             } catch {
                 // The server is unreachable — network down, server offline, DNS/TLS/timeout — as opposed to
@@ -231,21 +256,55 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// `requireSignIn()` discards the rejected credentials, alerts the user, and returns the app to the sign-in screen.
+    /// `requireSignIn()` signs out because the server rejected the stored credentials, alerts the user, and returns the app to the sign-in screen.
     ///
-    /// `presentInitialWindow(forLaunch:)` calls it when validation reports the stored app password was revoked, the `serverCredentialsRejected` observer calls it when `NotificationMonitor`'s event stream detects the same during a session, and `WebViewController+WKNavigationDelegate` calls it when a silent retry of the server's login page with the stored app password lands back on the login page a second time. In every case the app is signing the user out on its own initiative rather than because the user asked to, so — unlike `logOut()` — it shows an alert explaining why before presenting the sign-in screen. It stops the monitor, clears the keychain, closes any web windows left on the now-unusable server, and presents `ServerAddressWindowController`. It does not attempt to revoke the app password: the server has already rejected it, so revoking it again would be pointless.
+    /// `presentInitialWindow(forLaunch:)` calls it when validation reports the stored app password was revoked, the `serverCredentialsRejected` observer calls it when `NotificationMonitor`'s event stream detects the same during a session, and `WebViewController+WKNavigationDelegate` calls it when a silent retry of the server's login page with the stored app password lands back on the login page a second time. In every case the app is signing the user out on its own initiative rather than because the user asked to, so — unlike `logOut()` — it shows an alert explaining why before presenting the sign-in screen. It stops the monitor, closes any web windows left on the now-unusable server, clears the web view's site data, signs out through `AccountStore.disconnect()` exactly as `logOut()` does, and presents `ServerAddressWindowController`; the keyboard shortcuts and appearance settings, which belong to the device, survive it as they survive any sign-out. It does not attempt to revoke the app password: the server has already rejected it, so revoking it again would be pointless.
     func requireSignIn() {
-        logger.notice("Credentials rejected; clearing keychain and requiring sign-in")
-        NotificationMonitor.shared.stop()
-        Keychain.clearAll()
-        closeWebViewWindows()
+        logger.notice("Credentials rejected; signing out and requiring sign-in")
+        signOutLocally()
 
         presentAlert(
             title: String(localized: "Signed Out", comment: "Alert title shown when the app signs the user out on its own because the server rejected the stored credentials."),
             message: String(localized: "Your Nextcloud credentials are no longer valid, so Cirruscope signed you out. Sign in again to continue.", comment: "Alert message shown when the app signs the user out because the server rejected the stored credentials.")
         )
 
-        presentWindow(withIdentifier: "ServerAddressWindowController")
+        presentSignInWindow()
+    }
+
+    /// `signOutLocally()` is the part every sign-out shares: it stops the notification monitor, closes every web window, clears the web view's site data and signs out through `AccountStore.disconnect()`.
+    ///
+    /// `logOut()`, `requireSignIn()` and `presentInitialWindow(forLaunch:)`'s missing-credentials branch all call it, so that no sign-out leaves a window open on a server the store no longer names, where the navigation delegate would stop confining it, or a monitor polling with credentials that are gone.
+    private func signOutLocally() {
+        NotificationMonitor.shared.stop()
+        closeWebViewWindows()
+
+        WKWebsiteDataStore.default().removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast) {
+            self.logger.debug("Cleared the web view's site data")
+        }
+
+        AccountStore.shared.disconnect()
+    }
+
+    /// `adoptStoredCredentialsIfTheStoreLostItsAccount()` records the server the Keychain holds credentials for as the connected one when the store names no server at all, which is what a store rebuilt empty leaves behind.
+    ///
+    /// `AppDatabase` rebuilds the store empty when it cannot be opened, and leaves the Keychain alone, so without this the app would ask for a sign-in while the widget, which signs itself in from the Keychain, went on drawing the account. Taking the credential the Keychain holds is what iOS does on every launch; the next app-list refresh fills the store again. More than one stored credential is not a state any build writes on purpose, and is signed out rather than guessed between.
+    private func adoptStoredCredentialsIfTheStoreLostItsAccount() {
+        guard AccountStore.shared.serverAddress == nil else {
+            return
+        }
+
+        guard let stored = try? Keychain.storedAccounts(), stored.isEmpty == false else {
+            return
+        }
+
+        guard stored.count == 1, let account = stored.first else {
+            logger.error("The store names no server but the Keychain holds credentials for \(stored.count, privacy: .public); signing out rather than choosing one")
+            signOutLocally()
+            return
+        }
+
+        logger.notice("The store names no server but the Keychain holds credentials for one; adopting it rather than signing out")
+        AccountStore.shared.connect(to: account.server)
     }
 
     /// `serverCredentialsRejected()` returns the app to sign-in when `NotificationMonitor` reports its stream was rejected because the stored app password was revoked.
@@ -275,7 +334,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// `closeWebViewWindows()` closes every open web window.
     ///
-    /// `presentInitialWindow(forLaunch:)` calls it at launch when the server turns out to be unreachable, unsupported, or to have revoked the stored credentials, so a restored window does not linger on a server the app can no longer use.
+    /// `presentInitialWindow(forLaunch:)` calls it when the server turns out to run an unsupported version, and `requireSignIn()` whenever the stored credentials are rejected, so no window — restored at launch or opened since — lingers on a server the app can no longer use. An unreachable server is not one of those cases: its windows stay open to show their retry UI.
     private func closeWebViewWindows() {
         logger.debug("Closing web view windows…")
 
@@ -287,7 +346,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// `presentWebViewWindow(targetURL:)` opens and tracks a web window, loading `targetURL` when given or `AccountStore.serverAddress` otherwise.
     ///
-    /// `presentInitialWindow()` and `ServerAddressViewController` open the root window through it, and `openServerApp(_:)` opens app-specific windows, so every web window is created, cascaded, and retained the same way.
+    /// `presentInitialWindow(forLaunch:)` and `ServerAddressViewController` open the root window through it, and `openServerApp(_:)`, a page an intent or a Spotlight result asks for, a clicked server notification and a page's own request for a new window open theirs through it too, so every web window is created, cascaded, and retained the same way.
     ///
     /// Being the one place every web window is created is also what makes it the one place the remembered size is applied (issue #82): `WebWindowFrame.applySize(to:)` resizes the window before `present(windowController:sender:)` cascades it, so the cascade offsets the origin and leaves that size alone. Windows AppKit restores at launch bypass this method entirely and keep the frame AppKit saved for each of them.
     func presentWebViewWindow(targetURL: URL? = nil) {
@@ -312,11 +371,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// `openServerApp(_:)` brings the web window already showing `app` to the front, or opens a new window loading the app when none is open.
     ///
-    /// The currently shown app of each window is reported by `WebViewController.currentApp`. It does nothing when no server address is configured.
+    /// The currently shown app of each window is reported by `WebViewController.currentApp`. It does nothing when no server address is configured, and brings the sign-in window forward instead when no credentials are stored for it.
+    /// Every sign-out deletes the server apps, so the menus and Spotlight normally offer none while nobody is signed in. The second case covers an account that outlived its credential — one removed from the Keychain behind the app's back, or a request latched at launch and served before `presentInitialWindow(forLaunch:)` has finished signing such an account out — where a window opened anyway would load the sign-in form, fail its silent retry and sign the user out with an alert they did nothing to cause.
     func openServerApp(_ app: ServerAppTransferObject) {
         logger.log("Opening server app…")
 
         guard let serverAddress = AccountStore.shared.serverAddress else {
+            return
+        }
+
+        guard isSignedIn else {
+            logger.notice("Asked to open server app \(app.id) while no credentials are stored; bringing the sign-in window forward instead")
+            presentSignInWindow()
             return
         }
 
@@ -338,9 +404,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         presentWebViewWindow(targetURL: target.url)
     }
 
-    /// `logOut()` performs a full app-level logout: fires off a best-effort revocation of the stored Login Flow v2 app password on the server, closes every window, clears the web view's stored cookies and site data so no session for the old server lingers, disconnects the account via `AccountStore.disconnect()` (which deletes the account — cascading into its cached theme, version, apps, and shortcuts — and forgets every cache and credential describing the old server), and presents a fresh `ServerAddressWindowController`.
+    /// `logOut()` performs a full app-level logout: fires off a best-effort revocation of the stored Login Flow v2 app password on the server, closes every window, clears the web view's stored cookies and site data so no session for the old server lingers, disconnects the account via `AccountStore.disconnect()` (which deletes the account — its cached theme and version, and through it the apps, conversations, notes and collectives — and forgets every cache and credential describing the old server, while the keyboard shortcuts and appearance settings, which belong to the device, stay), and presents a fresh `ServerAddressWindowController`.
     ///
-    /// Both `GeneralSettingsViewController.logOut(_:)` (the explicit Settings button) and `WebViewController+WKNavigationDelegate`'s detection of the web view navigating to the server's own logout or login page call this shared implementation, so both entry points behave identically and go through the same tracked window-presentation path as every other window `AppDelegate` creates.
+    /// Both `GeneralSettingsViewController.logOut(_:)` (the explicit Settings button) and `WebViewController+WKNavigationDelegate`'s detection of the web view navigating to the server's own sign-out link call this shared implementation, so both entry points behave identically and go through the same tracked window-presentation path as every other window `AppDelegate` creates.
     ///
     /// The credentialed `Server` for revocation is captured synchronously before anything else runs, then handed to an unawaited `Task` so a slow or unreachable server can never delay the window-closing, site-data-clearing, or sign-in-presenting steps below, matching Nextcloud's own fail-open guidance for this call. `Server` captures the app password by value at construction, and `ServerConnection.revokeAppPassword(using:)` never re-reads `Keychain`, so the `Task` remains free to complete the request even after `AccountStore.disconnect()` clears the same credential from `Keychain` further down in this method.
     func logOut() {
@@ -355,20 +421,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             logger.debug("No server address or stored credentials to revoke an app password for")
         }
 
-        // Stop tracking notifications and clear the Dock badge before the credentials it relies on are removed.
-        NotificationMonitor.shared.stop()
-
+        // Every window rather than only the web windows, the Settings window included, because what it shows
+        // describes the account being signed out of.
         for window in NSApplication.shared.windows {
             window.close()
         }
 
-        WKWebsiteDataStore.default().removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast) {
-            self.logger.debug("Cleared the web view's site data")
-        }
-
-        AccountStore.shared.disconnect()
-
-        presentWindow(withIdentifier: "ServerAddressWindowController")
+        signOutLocally()
+        presentSignInWindow()
     }
 
     /// `showDownloads(_:)` backs the "Downloads" menu item, opening the download history window or bringing it to the front when it is already open.
@@ -415,16 +475,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         openServerApp(app)
     }
 
-    /// `serverAppsDidChange()` rebuilds the View menu when `AccountStore` posts that the server apps or their shortcuts changed.
+    /// `serverAppsDidChange()` rebuilds the View menu when `AccountStore` posts that the server apps or the keyboard shortcuts changed, or `ServerConnection` that the apps' icons have landed.
+    ///
+    /// It observes `Notification.Name.keyboardShortcutsDidChange` as well as `Notification.Name.serverAppsDidChange` because recording, replacing or clearing a shortcut changes no app but does change the key equivalents the menu items carry. The Dock menu is built afresh each time it is opened and needs no rebuilding.
     @objc
     private func serverAppsDidChange() {
         logger.log("Server apps did change")
         rebuildServerAppsMenu()
     }
 
-    /// `rebuildServerAppsMenu()` replaces the dynamic server-app items in the View menu with the current `AccountStore.serverApps`, applying each app's configured shortcut.
+    /// `rebuildServerAppsMenu()` replaces the dynamic server-app items in the View menu with the current `AccountStore.serverApps`, applying the keyboard shortcut that reaches each app, if any.
     ///
-    /// It removes the items it previously inserted and inserts the current apps directly after `serverAppsSeparator`, which keeps them within the storyboard's bracketed section.
+    /// It removes the items it previously inserted and inserts the current apps directly after `serverAppsSeparator`, which keeps them within the storyboard's bracketed section. Only the apps the connected server offers get an item, so a shortcut recorded on this device for an app the server does not offer is applied to nothing until a refresh lists that app again.
     private func rebuildServerAppsMenu() {
         logger.log("Rebuilding server apps menu…")
 
@@ -451,7 +513,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     ///
-    /// `menuItem(for:)` builds a menu item that opens `app` via `performServerApp(_:)`, carrying the app's own icon and applying the user's configured keyboard shortcut for it when one exists.
+    /// `menuItem(for:)` builds a menu item that opens `app` via `performServerApp(_:)`, carrying the app's own icon and the keyboard shortcut that reaches it, when `AccountStore.shortcut(forAppID:)` answers one — a shortcut it suppresses as reserved or as another app's is left off.
     ///
     /// The icon is looked up rather than awaited, because this same factory builds the Dock menu, which AppKit asks for and draws immediately. A miss is ordinary — nothing has been downloaded on a first launch — and answers with the placeholder instead, so the list never mixes rows that have an image with rows that have none, which AppKit does not necessarily align to the same left edge.
     /// From macOS 27 on, AppKit decides for itself whether a menu item's image is drawn and hides most of them, so the item asks for its icon to be shown: in this list the icon is what tells one app from the next rather than a glyph restating a command, and leaving it to the default is how the View menu came to list bare names (issue #127). Every row asks, the placeholder included, which is what keeps the promise above.
@@ -479,13 +541,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// `icon(for:)` is the image a server app is listed with: its own, when one has been downloaded, and a generic placeholder when it has not.
     ///
-    /// Not private, because the Apps settings tab lists the same apps and has to reach the same answer; a second copy of this decision is how two lists of the same thing start looking different.
+    /// Not private, because the Speed Dials settings tab lists the same apps and has to reach the same answer; a second copy of this decision is how two lists of the same thing start looking different.
     static func icon(for app: ServerAppTransferObject) -> NSImage? {
         guard let serverAddress = AccountStore.shared.serverAddress else {
             return NSImage(systemSymbolName: "app.grid", accessibilityDescription: nil)
         }
 
         return NSImage.serverAppIcon(forAppID: app.id, serverAddress: serverAddress) ?? NSImage(systemSymbolName: "app.grid", accessibilityDescription: nil)
+    }
+
+    /// `isSignedIn` is `true` while credentials are stored for the configured server, which is what loading anything from it needs.
+    private var isSignedIn: Bool {
+        guard let serverAddress = AccountStore.shared.serverAddress else {
+            return false
+        }
+
+        return Keychain.credentials(for: serverAddress) != nil
+    }
+
+    /// `presentSignInWindow()` brings the sign-in window to the front, presenting one only when none is open.
+    private func presentSignInWindow() {
+        if let existing = windowControllers.first(where: { $0.contentViewController is ServerAddressViewController }) {
+            existing.window?.makeKeyAndOrderFront(nil)
+            NSApp.activate()
+            return
+        }
+
+        presentWindow(withIdentifier: "ServerAddressWindowController")
     }
 
     private func presentWindow(withIdentifier identifier: String) {

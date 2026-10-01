@@ -519,16 +519,22 @@ struct NextcloudView: View {
     }
 
     ///
-    /// Load one address on the connected server into the web view.
+    /// Load one address on the connected server into the web view, signed in as the account.
     ///
-    /// The address has already been proven to stay on that server, which is what `SameOriginURL` being the parameter type says: `ServerAccount.authenticatedRequest(for:)` attaches the account's app password to whatever it is handed, so the proof has to have happened before this is called rather than inside it.
+    /// The address arrives proven to stay on *a* server, which is what `SameOriginURL` being the parameter type says, but not necessarily on this account's: a request the App Intents layer latched before anybody was signed in was proven against whichever server the store remembered then, which need not be the one signed in to since.
+    /// `ServerAccount.authenticatedRequest(for:)` attaches the app password to whatever it is handed, so the proof is made again here against the account whose password is about to be attached, and a request that fails it is dropped rather than signed in.
     ///
     private func load(_ target: SameOriginURL) {
         guard let account = store.account else {
             return
         }
 
-        page.load(account.authenticatedRequest(for: target.url))
+        guard let proven = SameOriginURL(path: target.url.absoluteString, relativeTo: account.server) else {
+            Self.logger.error("A request for an address on another server than the connected one was dropped rather than signed in")
+            return
+        }
+
+        page.load(account.authenticatedRequest(for: proven.url))
     }
 }
 

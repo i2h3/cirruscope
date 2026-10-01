@@ -9,7 +9,7 @@ import SwiftData
 ///
 /// Every account suite holds one as a stored property, so Swift Testing's per-case instantiation gives each case a store nothing else can see: no case observes another's data, and none of them ever names `AccountStore.shared`, whose container lives in the shared App Group container and holds the developer's real account. The container is in-memory rather than a temporary file because nothing here tests file layout, and an in-memory store leaves no cleanup a failing case could skip.
 ///
-/// The stand-ins are plain closures because that is how the store takes them. `isReservedShortcut` is what this harness claims Cirruscope's own menu items occupy, replacing a lookup that would otherwise answer from the app's real menu bar; `notificationCount` counts the change announcements the store made, replacing a post the app's real `AppDelegate` listens for throughout the run. The count says *that* a mutator announced, not *when*: the production post hops to the next main-thread turn and this one deliberately does not, so a case can assert it synchronously.
+/// The stand-ins are plain closures because that is how the store takes them. `isReservedShortcut` is what this harness claims Cirruscope's own menu items occupy, replacing a lookup that would otherwise answer from the app's real menu bar; `notificationCount` counts the change announcements the store made, replacing posts the host app's own observers would otherwise act on — on the Mac, `AppDelegate` and the Spotlight indexers throughout the run, and any web view that happens to be open. The count says *that* a mutator announced, not *when*: the production post hops to the next main-thread turn and this one deliberately does not, so a case can assert it synchronously.
 ///
 /// It lives here rather than beside the macOS suites because the store does: `Cirruscope/` is compiled into both apps, so a suite over it belongs in the folder both test targets list and runs against two SDKs rather than one. That is why the reserved-shortcut stand-in arrives as a closure instead of as a list of shortcuts this type compares itself — comparing them is `ShortcutMatching`, which is AppKit and stayed behind with the menu bar it describes. `macOSTests/Account/ReservedShortcuts.swift` builds the closure that does it.
 @MainActor
@@ -24,7 +24,7 @@ final class AccountStoreHarness {
 
     /// `notificationCount` is how many times `store` has announced that something changed, whatever it was.
     ///
-    /// A total rather than a tally per name, because what the suites assert is that a mutator announced *at all* and that a read announced nothing. `announcements` is there for a case that needs to know which domain.
+    /// A total rather than a tally per name, because what the suites assert is that a mutator announced *at all* and that a read announced nothing. `announcements` is there for a case that needs to know which name was announced.
     private(set) var notificationCount = 0
 
     /// `announcements` are the names `store` has announced, in order.

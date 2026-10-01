@@ -7,7 +7,7 @@ import os
 
 /// `ServerAppIndexer` keeps Spotlight and Siri in step with the connected server's app list, donating each `ServerAppEntity` to the on-device Spotlight index and refreshing the App Shortcut parameters when the apps change.
 ///
-/// It is a main-actor observer of `Notification.Name.serverAppsDidChange` — the same signal `AppDelegate` and `ServerAppsViewController` react to — so `AccountStore` itself never imports App Intents or Core Spotlight; donation is just one more subscriber to the store's existing write-then-notify contract. `AppDelegate.applicationDidFinishLaunching(_:)` calls `start()` once, which indexes the apps already persisted from a previous run and then keeps the index current on every change, including clearing it when `AccountStore.disconnect()` empties the account.
+/// It is a main-actor observer of `Notification.Name.serverAppsDidChange` — the same signal `AppDelegate` and `ServerAppsViewController` react to — so `AccountStore` itself never imports App Intents or Core Spotlight; donation is just one more subscriber to the store's existing write-then-notify contract. It does not observe `Notification.Name.keyboardShortcutsDidChange`, which those two also react to: a keyboard shortcut is not part of anything donated. Each app calls `start()` as it comes up — `AppDelegate.applicationDidFinishLaunching(_:)` on macOS, `iOSApp` on every activation — which indexes the apps already persisted from a previous run and then keeps the index current on every change, including clearing it when `AccountStore.disconnect()` deletes the account.
 ///
 /// Indexing runs at most a handful of times per session, so each pass logs at `.notice` with the counts and app ids in the clear (`.public`), letting a log capture show exactly what was donated to or removed from Spotlight; failures log at `.error`.
 @MainActor
@@ -20,7 +20,7 @@ final class ServerAppIndexer: NSObject {
 
     /// `index` donates the apps and remembers what it has donated.
     ///
-    /// The bookkeeping of which identifiers are in the index, and the deletion of the ones that have gone, moved into `SpotlightIndex` when a second domain needed exactly the same thing. What stays here is what is this domain's alone: which notification to listen to, and the App Shortcut parameter refresh below.
+    /// The bookkeeping of which identifiers are in the index, and the deletion of the ones that have gone, is `SpotlightIndex`'s, every domain needing exactly the same thing. What stays here is what is this domain's alone: which notification to listen to, and the App Shortcut parameter refresh below.
     private let index = SpotlightIndex<ServerAppEntity>(label: "server apps")
 
     /// `hasStarted` records that `start()` has already run, so a second call registers no second observer.
@@ -43,7 +43,7 @@ final class ServerAppIndexer: NSObject {
         reindex(isInitial: true)
     }
 
-    /// `serverAppsDidChange()` reindexes when `AccountStore` reports the app list or a shortcut changed, deferring to the next main-thread turn so it never runs reentrantly inside the mutation that posted the notification — matching `ServerAppsViewController`.
+    /// `serverAppsDidChange()` reindexes when `AccountStore` reports that the app list or the account's server address changed, or `ServerConnection` that the apps' icons have landed, deferring to the next main-thread turn so it never runs reentrantly inside the mutation that posted the notification — matching `ServerAppsViewController`.
     @objc
     private func serverAppsDidChange() {
         logger.debug("Received serverAppsDidChange; scheduling a reindex")

@@ -7,7 +7,7 @@ import SwiftData
 
 /// `AccountStore`'s Talk conversations: reading them back as value snapshots, and writing what a refresh found.
 ///
-/// A file of its own rather than another section of the store, because that is how the store is meant to grow: its own documentation offers "methods here, or sibling stores", and sibling stores were declined — every record hangs off the single `Account` this store memoizes, and a second store over the same container would memoize it again and go stale. One type, one file per domain, is what that leaves.
+/// A file of its own rather than another section of the store, because that is how the store is meant to grow: a sibling store was declined, since every record describing the server hangs off the single `Account` this store memoizes, and a second store over the same container would memoize it again and go stale. One type, one file per domain, is what that leaves.
 ///
 /// The shape is `serverApps`' exactly, and deliberately so: an upsert keyed by the identity the server addresses the thing by, a deletion pass for what it no longer lists, a sort applied at the read rather than by each caller, and an announcement afterwards. Anything that diverges from that shape in a later domain should have a reason written next to it.
 extension AccountStore {

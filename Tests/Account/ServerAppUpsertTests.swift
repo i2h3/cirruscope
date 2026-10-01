@@ -4,9 +4,9 @@
 @testable import Cirruscope
 import Testing
 
-/// `ServerAppUpsertTests` covers `AccountStore.persist(serverApps:)` and the `serverApps` snapshot it feeds the menus and the Apps settings tab from.
+/// `ServerAppUpsertTests` covers `AccountStore.persist(serverApps:)` and the `serverApps` snapshot it feeds the menus and the Speed Dials settings tab from.
 ///
-/// The upsert is the half of the store whose whole point is what it does *not* destroy: an app list arrives on every launch and every reconnect, and matching by identifier is what keeps a user's recorded shortcut alive across those refreshes while still pruning one whose app the server stopped offering. Both of those are asserted here, along with the order the snapshot imposes, SwiftData preserving none of its own: that it is the names' rather than the positions the server assigned, that the comparison is the localized one and not `<` — the trap the sort exists to avoid, a plain string comparison reading a lowercase name and a trailing number wrongly — and that it is total, so a menu rebuild cannot reshuffle two apps sharing a name and, with them, which one a duplicate shortcut reaches (see `DuplicateShortcutSuppressionTests`).
+/// The upsert is the half of the store whose whole point is what it does *not* destroy: an app list arrives on every launch and every reconnect, and matching by identifier is what updates an app in place rather than replacing it, while still pruning one the server stopped offering. Both of those are asserted here, along with the order the snapshot imposes, SwiftData preserving none of its own: that it is the names' rather than the positions the server assigned, that the comparison is the localized one and not `<` — the trap the sort exists to avoid, a plain string comparison reading a lowercase name and a trailing number wrongly — and that it is total, so a menu rebuild cannot reshuffle two apps sharing a name and, with them, which one a duplicate shortcut reaches (see `DuplicateShortcutSuppressionTests`).
 ///
 /// Where a locale files a diacritic is deliberately not asserted. `localizedStandardCompare(_:)` answers in the user's own locale by design, and locales genuinely disagree — Swedish orders "Ä" after "Z", English with "A" — so pinning one answer would assert the test machine's locale rather than the store's behaviour.
 @MainActor

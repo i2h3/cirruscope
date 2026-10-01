@@ -196,7 +196,10 @@ So the rule is now uniform, and it has two halves.
 That second half is why freezing and succeeding are one change rather than two: the moment `SchemaV2` stopped naming the live models, something had to, or the container would have registered models no fetch could reach.
 
 `SchemaV3` is that one live schema.
-It was introduced to give the freeze of `SchemaV2` a successor to hand the live types to, and it also registers `TalkConversation`, `ServerNote`, `ServerCollective` and `ServerCollectivePage`; its migration stage is lightweight all the same, since adding an entity, and a relationship to it that defaults to empty, is a change SwiftData infers on its own.
+It was introduced to give the freeze of `SchemaV2` a successor to hand the live types to, and it also registers `TalkConversation`, `ServerNote`, `ServerCollective` and `ServerCollectivePage`, which SwiftData infers on its own.
+It moved the keyboard shortcuts and the appearance settings out of the account as well, which it cannot infer.
+That move goes through an intermediate schema, `SchemaV2_1`, frozen from the start: a lightweight step adds an empty `appID` column and an empty `DevicePreferences` entity, and a custom step writes each shortcut's app identifier and the appearance choices into them and saves, all before the schema change that drops the relationship and the account's attributes.
+The first stage's recipe, capturing in memory and recreating afterwards, would have held the one thing a user cannot get back only in a process that might die before writing it, and a failed open would have quarantined a store that no longer contained it.
 It is where the next model or property goes — until a build carrying it ships, at which point it is frozen and `SchemaV4` is created in the same change.
 
 The version identifier of `SchemaV2` was deliberately *not* bumped when it was frozen.
@@ -208,7 +211,7 @@ Freezing after the fact is only safe because that was checked rather than assume
 Because the run most worth recovering is the first one that failed, and overwriting destroyed exactly that.
 
 When `AppDatabase` cannot open the store it moves the files aside rather than deleting them, then rebuilds.
-That is the right shape: most of the store is reconstructible — the apps, the theming, the server version, and the conversations, notes and collectives all come back from the server once the app is talking to it again, which on the Mac takes a fresh sign-in, since the server address was in the store too and the Mac decides from the store whether it is signed in — so recovering beats crash-looping, while the user's keyboard shortcuts stay on disk.
+That is the right shape: most of the store is reconstructible — the apps, the theming, the server version, and the conversations, notes and collectives all come back from the server once the app is talking to it again, which on the Mac takes a fresh sign-in, since the server address was in the store too and the Mac decides from the store whether it is signed in — so recovering beats crash-looping, while what the user set up on the device, the keyboard shortcuts and the appearance settings, stays on disk.
 But the quarantined copy used one fixed name, and the move removed anything already sitting there.
 A store that failed to open twice therefore ended with the second failure's copy, made *after* the first rebuild had already replaced the user's data with an empty store — so the rescue copy was of nothing, and the real one was gone.
 
@@ -266,8 +269,9 @@ Because a window's size is a habit, not a property of what it shows.
 A user settles on one comfortable size for Nextcloud in a window and expects the next window to match it, whether that window is opened by ⌘N, from the View or Dock menu, from Spotlight or Siri, or by the web interface's own `window.open()`.
 `AppDelegate.presentWebViewWindow(targetURL:)` is where all of those converge, so applying one remembered size there covers every entry point at once, and none of them had to know the rule.
 
-The size lives in `UserDefaults.standard`, through AppKit's own `NSWindow.saveFrame(usingName:)`/`setFrameUsingName(_:)` pair, rather than on the `Account` record next to the appearance settings.
+The size lives in `UserDefaults.standard`, through AppKit's own `NSWindow.saveFrame(usingName:)`/`setFrameUsingName(_:)` pair, rather than in the store beside the appearance settings.
 Window geometry is this app's window chrome, not the connected account's data: it should survive a log out, and `AccountStore.disconnect()` deletes the account.
+The appearance settings survive one too, but as a record in the store, because they are a choice the user made and the store is what migrates and is quarantined as a whole; a window size is a measurement AppKit takes again the moment it is lost.
 It also must not depend on an entitlement, since anything reached during launch has to behave the same in an ad-hoc build as in a provisioned one — which is why the standard defaults domain is used and not the shared App Group suite.
 The framework pair carries the rest for free: it encodes the frame against the screen it was saved on and adjusts for a changed display configuration on the way back out.
 `setFrameAutosaveName(_:)` would have been the shorter spelling but is unusable here, because it refuses a name another live window already claimed, so with several web windows open only the first would ever autosave.
@@ -315,7 +319,7 @@ What that code *decides* is pulled out of it wherever it can be, and is then nat
 Whether an address is the connected server's to display or the system's to open, whether it is one of the server's sign-in or sign-out routes, and whether a lapsed session may still be retried silently are each answered by a value type that takes everything it needs as arguments, the time included, and the suites in [`Tests/WebView/`](./Tests/WebView/) cover all three against both app modules.
 
 Tests are therefore expected wherever logic is Swift-only and server-free, including a decision a web view acts on, and deliberately absent around the code that hands those decisions to WebKit — a deliberate scope, not a backlog.
-Two store methods sit on the hand-verified side of that line despite being persistence code: `disconnect()` empties the real caches, the widget's saved feed and the real Keychain, and `persist(theming:)` downloads over the network on every call, so both are verified by hand while the storage half of the first, `deleteAccount()`, is covered like everything else.
+Two store methods sit on the hand-verified side of that line despite being persistence code: the sign-out, `disconnect()`, empties the real caches, the widget's saved feed and the real Keychain and makes the real widget redraw, and `persist(theming:)` downloads over the network on every call, so both are verified by hand while the storage half of the first, `deleteAccount()`, is covered like everything else.
 
 One habit comes out of the same work and generalizes: where the app depends on undocumented framework behaviour, the test measures the framework rather than restating the belief, so [`KeyEquivalentMatchingOracleTests`](./macOSTests/KeyboardShortcuts/KeyEquivalentMatchingOracleTests.swift) asks a real `NSMenu` what it matches and holds [`ShortcutMatching`](./macOS/ShortcutMatching.swift) to that answer.
 The same shape reaches into WebKit where no server is needed: [`SafariUserAgentProbe`](./iOSTests/WebView/SafariUserAgentProbe.swift) loads `about:blank` into a real `WebPage` so that [`SafariUserAgentTests`](./iOSTests/WebView/SafariUserAgentTests.swift) can assert against the user agent WebKit actually reports.
@@ -391,7 +395,7 @@ Two enabled menu items sharing one key equivalent have no reliable, documented t
 Refusing in place keeps the menu bar unambiguous and puts the explanation where the user is already looking.
 Transferring was considered and rejected: a shortcut silently disappearing from another app's row is a worse surprise than a keystroke that visibly declines to take.
 
-Shortcuts stored before that check existed can still collide, and those are honoured for the first app in menu order while showing as unassigned for the other, rather than being deleted.
+Stored shortcuts can still collide — ones recorded before that check existed, and ones recorded for an app that returns to a server offering another app the same combination was recorded for meanwhile — and those are honoured for the first app in menu order while showing as unassigned for the other, rather than being deleted.
 A duplicate is something the user once entered deliberately, so the app declines to destroy it behind their back and merely stops applying it; clearing or re-recording the winner hands the combination back.
 See [`AccountStore.shortcut(forAppID:)`](./macOS/Persistence/AccountStore+KeyboardShortcuts.swift).
 
@@ -773,6 +777,29 @@ Both apps did, in different ways.
 The budget is therefore [one shared type](./Cirruscope/SilentRetryBudget.swift) keyed to the address being retried and released the moment the server answers it, with a one-minute window so a retry lost to a dropped connection cannot poison the next genuine expiry.
 Recognizing the routes is [shared too](./Cirruscope/NextcloudSessionRoute.swift), and anchored immediately below the instance's web root: matching on the last path component instead — which macOS did — means a file a user named `logout` revokes their app password.
 
+## Why do the keyboard shortcuts and appearance settings outlive a sign-out, when everything from the server does not?
+
+Because they are what the user set up on this Mac, and nothing about a session or a server is theirs to delete.
+
+A sign-out — the user's own Log Out, or the one the app performs when the server rejects its app password — deletes everything that came from the server: the account, its server apps, conversations, notes and collectives, the cached pictures, the widget's saved feed and the credentials.
+That includes the app list, which a sign-out has no business keeping: menus offering a server nobody is signed in to are a bug, not a convenience.
+The keyboard shortcuts and the two appearance choices are different in kind, and the same on every sign-in, so having to set them up again after each one is the cost a sign-out must not impose.
+
+They therefore belong to the device rather than to the account.
+A [`KeyboardShortcut`](./Cirruscope/Persistence/Models/KeyboardShortcut.swift) is keyed by the Nextcloud app identifier it opens — `files` → ⌘1 — with no relationship to an account, a server or an app record, and the appearance choices are a [`DevicePreferences`](./Cirruscope/Persistence/Models/DevicePreferences.swift) record of their own.
+Deleting the account at a sign-out leaves both alone, and there is one sign-out rather than two: the Mac's Log Out, the Mac's forced sign-out and both of iOS's run the same `AccountStore.disconnect()`.
+Both apps also finish a sign-out that did not complete, at launch: a store that still names a server while the Keychain says, for certain, that no credential is left for it is what `1.1.0`'s forced sign-out left behind, and the menus and Spotlight would otherwise go on offering a server nobody is signed in to.
+A Keychain that merely could not be read is not that, and asks for a sign-in without deleting anything.
+The reverse — a credential with no account, which a store rebuilt empty after a failed open leaves behind — is repaired rather than signed out: the Mac adopts the credential, as iOS always has.
+
+A shortcut applies wherever and whenever the connected server offers an app with its identifier, which is the point and also the accepted cost.
+Signing in to a different server inherits the shortcut for every app the two have in common, Files on one being Files on the other, which is what a user who set up ⌘1 for Files wants.
+While no server offers the app, its shortcut reaches nothing, takes part in no conflict and is named as nobody's occupant, and the Speed Dials tab, which lists only the offered apps, cannot show it either; it applies again the moment a refresh lists the app.
+That can produce a duplicate — the returning app's shortcut may since have been recorded for another app — and the rule for stored duplicates already in place decides it: the first app in menu order keeps the combination, and the other shows as unassigned rather than having anything deleted behind the user's back.
+
+They live in the same SwiftData store as the server's data, not in `UserDefaults`, because the store is what migrates and is quarantined as a whole, and a choice the user made should travel with it rather than beside it.
+Moving them out of the account is not something SwiftData can infer, so the store crosses into `SchemaV3` through an intermediate step that writes each shortcut's app identifier and the appearance choices into the store before the relationship and the account's attributes are dropped; the account itself survives the upgrade, which must not sign anybody out.
+
 ## Why do paths the app knows append to the server address instead of resolving from its root?
 
 Because the two kinds of path are not the same kind of thing, and treating them alike produces a link that works everywhere except where it matters.
@@ -1006,7 +1033,7 @@ That report, not a guess, is how the next server's markup gets established.
 ## Why does the widget fetch the activity from the server instead of reading what the app already stored?
 
 Because there is nothing to read.
-Both apps have the same store, and it holds the account with its theming and appearance settings, its server apps and their keyboard shortcuts, and its Talk conversations, notes, collectives and collective pages, but none of the activity.
+Both apps have the same store, and it holds the account with its theming, server apps, Talk conversations, notes, collectives and collective pages, and the keyboard shortcuts and appearance settings of the device, but none of the activity.
 Keeping activity there for the widget to read would also make the widget a second process opening that store, free to race `CirruscopeMigrationPlan` across a schema change, which is one reason the persistence layer sits in `Cirruscope/`, a folder the extension does not compile.
 
 And it would be the wrong source even if the widget could open it safely.
@@ -1048,7 +1075,10 @@ So a failed refresh keeps the rows it last had, dims them, and dates them — an
 
 `Core/Activity/ActivityFeedStore` is therefore a JSON snapshot in the shared App Group container, beside the cached assets.
 It does not contradict the decision above about not reading the app's store: this is the widget's own scratch copy of an answer it fetched itself, not domain data another target owns, so nothing migrates and nothing else depends on its shape.
-`AccountStore.disconnect()` deletes it along with the caches, because its rows name the files and the people of the server signed out of, and a later account whose server cannot be reached must not be shown them.
+Every sign-out deletes it along with the caches, because its rows name the files and the people of the server signed out of, and a later account whose server cannot be reached must not be shown them.
+The widget deletes it as well whenever the Keychain says nobody is signed in or the server rejects the stored app password, and checks again after saving whether the account it fetched for is still there, because a refresh already under way when the app signs out can save its rows after the app cleared them.
+The app clears the credentials before the feed, so a late save either lands before the app's own clear or finds the account gone, and it asks WidgetKit to redraw last, so that the widget finds out at once rather than at its next scheduled refresh.
+A Keychain the widget cannot read deletes nothing, since it says nothing about whether anybody is signed in.
 
 ## Why does a row name neither the verb nor the person?
 

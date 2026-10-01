@@ -5,14 +5,14 @@ import AppKit
 
 /// `StateOverlayStackView` is the vertical `NSStackView` `WebViewController` shows over the themed backdrop while a page loads or after a load fails, styled as a plain rounded card.
 ///
-/// It draws a filled `controlBackgroundColor` background with rounded corners and insets its arranged views by 16 points on every edge, unless `drawsBackground` has been cleared. The fill is applied in `updateLayer()` rather than once at setup so it re-resolves whenever the effective appearance changes — a raw `CGColor` set on the layer would otherwise keep the light- or dark-mode color it was first given. `WebViewController` toggles the visibility of the progress indicator, headline, explanation, and retry button it contains.
+/// It rounds its corners and insets its arranged views by at least 16 points on every edge, and fills itself with `controlBackgroundColor` unless `drawsBackground` has been cleared. The fill is applied in `updateLayer()` rather than once at setup so it re-resolves whenever the effective appearance changes — a raw `CGColor` set on the layer would otherwise keep the light- or dark-mode color it was first given. `WebViewController` toggles the visibility of the progress indicator, headline, explanation, and retry button it contains.
 class StateOverlayStackView: NSStackView {
     /// Interior padding, in points, between the card's edges and its content.
     private let padding: CGFloat = 16
 
     /// `drawsBackground` is `false` while the card should stay transparent so the host window's material shows through it instead of an opaque fill.
     ///
-    /// `WebViewController.updateStateOverlayBackground()` clears it whenever the account has enabled the translucent appearance, where an opaque card would hide the very material that setting exists to reveal — the rounded corners and the padding around the content stay in place either way. Assigning it marks the view for redisplay, so the change reaches the screen through `updateLayer()` and the card can be switched live, without a reload, while the loading or failure state is on screen.
+    /// `WebViewController.updateStateOverlayBackground()` clears it whenever the translucent appearance is enabled on this device, where an opaque card would hide the very material that setting exists to reveal — the rounded corners and the padding around the content stay in place either way. Assigning it marks the view for redisplay, so the change reaches the screen through `updateLayer()` and the card can be switched live, without a reload, while the loading or failure state is on screen.
     var drawsBackground = true {
         didSet {
             needsDisplay = true

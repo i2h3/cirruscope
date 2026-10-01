@@ -13,7 +13,7 @@ enum ServerAppFixture {
     /// `photos` is the second app in menu order, used wherever a case needs a second holder for a shortcut.
     static let photos = ServerAppTransferObject(id: "photos", order: 1, href: "/apps/photos/", name: "Photos")
 
-    /// `talk` is the third app in menu order.
+    /// `talk` is the third app in menu order, and the one a case leaves out of the list when it needs an app the server does not offer.
     static let talk = ServerAppTransferObject(id: "talk", order: 2, href: "/apps/spreed/", name: "Talk")
 
     /// `all` is the full three-app list a server offers, its names in the same sequence as the positions the server assigned them.
@@ -43,7 +43,7 @@ enum ServerAppFixture {
 
     /// `sameNameApps` are two apps one server offers under a single display name, listed with the alphabetically later identifier first.
     ///
-    /// The array order is deliberately the opposite of the identifier order, and so is the order the server assigned them, so a case asserting which of the two comes first — or which a shared shortcut belongs to — measures `serverApps`' `id` tie-break rather than either of those.
+    /// The array order is deliberately the opposite of the identifier order, and so is the order the server assigned them, so a case asserting which of the two comes first — or which of them a shared shortcut reaches — measures `serverApps`' `id` tie-break rather than either of those.
     static let sameNameApps = [
         ServerAppTransferObject(id: "notes-beta", order: 0, href: "/apps/notes-beta/", name: "Notes"),
         ServerAppTransferObject(id: "notes", order: 1, href: "/apps/notes/", name: "Notes"),

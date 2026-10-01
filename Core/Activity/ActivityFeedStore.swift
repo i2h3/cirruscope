@@ -63,9 +63,10 @@ enum ActivityFeedStore {
         return snapshot
     }
 
-    /// `clear()` forgets the saved feed, for a sign-out.
+    /// `clear()` forgets the saved feed.
     ///
-    /// It runs beside `AssetCache.clear()` when an account is disconnected, because these rows name the files and the people of the server being disconnected from.
+    /// Every sign-out runs it beside the caches describing the same server, because these rows name the files and the people of the server being signed out of.
+    /// The widget runs it too whenever the Keychain says nobody is signed in, the server rejects the stored app password, or the account it fetched for signed out while it was fetching, because a timeline already under way during a sign-out can save its rows after the app has cleared them.
     static func clear() {
         guard let fileURL else {
             return

@@ -5,8 +5,8 @@
 
 /*
  * Appearance is driven by boolean data attributes that WebViewController sets on
- * the <html> element from the account's appearance settings and from the macOS
- * appearance:
+ * the <html> element from the appearance settings chosen on this device and
+ * from the macOS appearance:
  *
  *   data-cirruscope-translucency  — let the macOS window material show through
  *   data-cirruscope-full-width    — expand content to the window edges
@@ -23,10 +23,10 @@
  *
  * One more value arrives the same way and on a different cadence:
  * --cirruscope-window-button-clearance is a fact about the host window rather
- * than about the account or the system, so it is resolved per window and
- * re-published on every leg of that window's fullscreen transition as well as
- * on every setting change. Unlike the accent color it has a :root value here to
- * fall back on, for the reason the Window Controls section below gives.
+ * than about the device's settings or the system, so it is resolved per window
+ * and re-published on every leg of that window's fullscreen transition as well
+ * as on every setting change. Unlike the accent color it has a :root value here
+ * to fall back on, for the reason the Window Controls section below gives.
  */
 
 /*

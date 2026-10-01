@@ -5,6 +5,7 @@ import AuthenticationServices
 import Cocoa
 import os
 import Rainmaker
+import WidgetKit
 
 /// `ServerAddressViewController` backs the storyboard scene that asks the user for the address of the Nextcloud server they want to connect to.
 ///
@@ -118,6 +119,10 @@ class ServerAddressViewController: NSViewController {
                         try Keychain.store(Credentials(user: result.name, appPassword: result.password), for: result.server)
                         AccountStore.shared.connect(to: result.server)
                         logger.info("Stored credentials and connected to \(result.server)")
+
+                        // The widget reads the credentials just stored, and would otherwise keep saying nobody is
+                        // signed in until its next scheduled refresh.
+                        WidgetCenter.shared.reloadAllTimelines()
                         (NSApp.delegate as? AppDelegate)?.presentWebViewWindow()
                         view.window?.close()
 

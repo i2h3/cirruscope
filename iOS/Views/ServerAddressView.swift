@@ -5,6 +5,7 @@ import AuthenticationServices
 import os
 import Rainmaker
 import SwiftUI
+import WidgetKit
 
 ///
 /// Asks for the address of the Nextcloud server to connect to, and signs in against it.
@@ -307,6 +308,10 @@ struct ServerAddressView: View {
                     // `AccountStore.serverAddress` stays `nil`, and a `ServerAppEntity` built for Spotlight or the
                     // Shortcuts app takes its no-server-address early return and ships with no artwork at all.
                     AccountStore.shared.connect(to: result.server)
+
+                    // The widget reads the credentials just stored, and would otherwise keep saying nobody is
+                    // signed in until its next scheduled refresh.
+                    WidgetCenter.shared.reloadAllTimelines()
 
                     store.account = ServerAccount(server: result.server, credentials: credentials)
 

@@ -125,7 +125,7 @@ final class ServerAppIcons: Sendable {
 
     /// `clear()` forgets every bitmap drawn so far.
     ///
-    /// The icons on disk are removed by `AssetCache.clear()`, which runs beside this when an account is disconnected; this is what stops the ones already drawn from outliving them in memory.
+    /// The icons on disk are removed by `AssetCache.clear()`, which runs beside this on every sign-out; this is what stops the ones already drawn from outliving them in memory.
     func clear() {
         rendered.withLock { $0.removeAll() }
     }

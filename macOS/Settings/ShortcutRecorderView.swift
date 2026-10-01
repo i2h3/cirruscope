@@ -177,7 +177,7 @@ class ShortcutRecorderView: NSTableCellView {
 
     /// `makeKeyDownHandler()` builds the local event monitor handler `startRecording()` installs.
     ///
-    /// It is `nonisolated` for the same reason as `LoginSession.makeAuthenticationCompletionHandler()`: `ShortcutRecorderView` is main-actor-isolated via `NSView`, so a closure written directly inside one of its methods would inherit that isolation too, even though its body only creates a `Task`. AppKit does not annotate `NSEvent.addLocalMonitorForEvents(matching:handler:)`'s handler as main-actor, so never assume the calling thread; the monitor's return value does not depend on `handle(_:)` completing first.
+    /// It is `nonisolated` for the same reason as `LoginSession.makeAuthenticationCompletionHandler()`: `ShortcutRecorderView` is main-actor-isolated via `NSView`, so a closure written directly inside one of its methods would inherit that isolation too, even though its body only creates a `Task`. AppKit does not annotate `NSEvent.addLocalMonitorForEvents(matching:handler:)`'s handler as main-actor, so never assume the calling thread; the monitor's return value does not depend on `handle(keyCode:modifierFlags:charactersIgnoringModifiers:)` completing first.
     ///
     /// Only the `Sendable` fields `handle(keyCode:modifierFlags:charactersIgnoringModifiers:)` needs cross into the `Task`, rather than `event` itself, since `NSEvent` is not `Sendable`.
     private nonisolated func makeKeyDownHandler() -> (NSEvent) -> NSEvent? {
@@ -334,16 +334,11 @@ class ShortcutRecorderView: NSTableCellView {
         }
     }
 
-    /// `functionRegionKeyNames` maps the Unicode Private Use Area scalars AppKit reserves for function-region keys
-    /// (e.g. `NSF4FunctionKey` at U+F707, `NSHomeFunctionKey` at U+F729) to a friendly name for `displayString(for:)`.
+    /// `functionRegionKeyNames` maps the Unicode Private Use Area scalars AppKit reserves for function-region keys (e.g. `NSF4FunctionKey` at U+F707, `NSHomeFunctionKey` at U+F729) to a friendly name for `displayString(for:)`.
     ///
-    /// `KeyboardShortcutTransferObject.keyEquivalent` stores these scalars unchanged for such keys, since that raw value is what
-    /// `NSMenuItem.keyEquivalent` needs; this mapping only affects what is displayed, never what is stored.
+    /// `KeyboardShortcutTransferObject.keyEquivalent` stores these scalars unchanged for such keys, since that raw value is what `NSMenuItem.keyEquivalent` needs; this mapping only affects what is displayed, never what is stored.
     ///
-    /// It names the scalars a user can actually record here, which is a subset of the Private Use Area region
-    /// `ShortcutMatching.isFunctionRegionKey(_:)` matches over — that predicate is what decides shortcut *identity*,
-    /// and it deliberately covers the whole region, so a scalar reaching this map without an entry still compares
-    /// correctly and only falls through to the raw-character branch of `displayString(for:)` for display.
+    /// It names the scalars a user can actually record here, which is a subset of the Private Use Area region `ShortcutMatching.isFunctionRegionKey(_:)` matches over. That predicate is what decides shortcut *identity*, and it deliberately covers the whole region, so a scalar reaching this map without an entry still compares correctly and only falls through to the raw-character branch of `displayString(for:)` for display.
     private static let functionRegionKeyNames: [Unicode.Scalar: String] = [
         Unicode.Scalar(0xF700)!: "↑",
         Unicode.Scalar(0xF701)!: "↓",

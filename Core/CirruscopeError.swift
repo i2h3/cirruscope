@@ -15,7 +15,7 @@ enum CirruscopeError: Error, LocalizedError {
     /// `unexpectedStatus` is thrown when a server returns an HTTP status that is neither a 2xx success nor 304 Not Modified.
     case unexpectedStatus(Int)
 
-    /// `keychainFailure` is thrown when the Keychain rejects a write performed by `Keychain`, carrying the underlying `OSStatus`.
+    /// `keychainFailure` is thrown when the Keychain rejects a write or an enumeration performed by `Keychain`, carrying the underlying `OSStatus`.
     case keychainFailure(OSStatus)
 
     /// `loginPresentationFailed` is thrown when the `ASWebAuthenticationSession` that drives Login Flow v2 cannot be presented.

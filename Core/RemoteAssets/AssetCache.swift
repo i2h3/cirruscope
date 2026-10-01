@@ -73,7 +73,7 @@ final class AssetCache: Sendable {
 
     /// `clear()` removes every cached payload and `ETag` sidecar stored by this cache.
     ///
-    /// `AccountStore.disconnect()` invokes this when the user disconnects from the server, so that nothing describing a server the app no longer talks to is left on disk — the branding it was themed with, and the icons of the apps it offered.
+    /// Every sign-out invokes this, so that nothing describing a server the app is no longer signed in to is left on disk: the branding it was themed with, the icons of the apps it offered, and the pictures of the people on it.
     /// It removes the files it owns rather than the directory holding them. `directory` is inside the shared App Group container by design, so that an app extension reaches the same copies, and removing the directory itself would take a subdirectory another writer had made with it. Everything loose in `Assets/` belongs to whichever account is connected and goes when that account goes; anything that ever needs to outlive one belongs in a subdirectory, which this now leaves standing.
     func clear() {
         let contents: [URL]

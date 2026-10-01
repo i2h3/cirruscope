@@ -9,6 +9,6 @@ import Foundation
 extension AccountStore {
     /// `shared` is the process-wide account store, over the app's on-disk container.
     ///
-    /// It is the only instance production code builds, and the only one that must ever be built over `AppDatabase.container`: each instance memoizes the single `Account` separately, so two of them over one container would each believe a stale answer. Being a `static let` it is created lazily, which is what keeps the real store closed during a test run that never names it.
+    /// It is the only instance production code builds, and the only one that must ever be built over `AppDatabase.container`: each instance memoizes the single `Account` and the single `DevicePreferences` separately, so two of them over one container would each believe a stale answer. Being a `static let` it is created lazily, the first time anything names it — at launch, by window restoration when AppKit restores a saved web window and otherwise when `AppDelegate` first builds the View menu, and so in every hosted test run as well, which is why no test may write through it.
     static let shared = AccountStore(container: AppDatabase.container, isReservedShortcut: { AppDelegate.reservedShortcutName(for: $0) != nil })
 }

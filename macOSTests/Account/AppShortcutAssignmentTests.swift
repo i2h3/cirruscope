@@ -7,6 +7,7 @@ import Testing
 /// `AppShortcutAssignmentTests` covers the plain round trip through `AccountStore.setShortcut(_:forAppID:)` and `shortcut(forAppID:)`: recording, replacing, and clearing one app's keyboard shortcut.
 ///
 /// `DuplicateShortcutSuppressionTests` covers which app a combination reaches when several could claim it; this suite covers the simpler contract underneath that, including the deliberate asymmetry that the store stores whatever it is given and leaves refusing an occupied combination to the recorder — visible here because a shortcut Cirruscope's own menu occupies is still stored, merely never applied.
+/// The store likewise keeps a shortcut for an app the connected server does not offer: it is recorded against the identifier and announced, reaches nothing and occupies nothing while the app is missing, and applies once a refresh lists it. Clearing a shortcut that was never recorded is the one call to `setShortcut(_:forAppID:)` that announces nothing.
 @MainActor
 @Suite(.serialized)
 struct AppShortcutAssignmentTests {
@@ -39,8 +40,9 @@ struct AppShortcutAssignmentTests {
 
         #expect(harness.store.shortcut(forAppID: "files") == ShortcutFixture.named("F5").shortcut)
 
-        // Asserted from the other side too, so a second record inserted alongside the first would be caught rather
-        // than hidden behind the app's own row reading correctly.
+        // Asserted from the other side too, through the read that walks every stored shortcut rather than the one
+        // fetching this app's, so the combination it replaced is shown to be free again rather than only no longer
+        // read back for Files.
         #expect(harness.store.nameOfApp(usingShortcut: commandOne, otherThanAppID: "photos") == nil)
     }
 
@@ -55,15 +57,31 @@ struct AppShortcutAssignmentTests {
     }
 
     @Test
-    func `Recording a shortcut for an unknown app does nothing`() {
+    func `A shortcut for an app the server does not offer is stored but reaches nothing until it does`() {
+        harness.store.persist(serverApps: [ServerAppFixture.files])
+
+        harness.store.setShortcut(commandOne, forAppID: "talk")
+
+        // Recorded against the identifier, the shortcut belonging to the device rather than to this server…
+        #expect(harness.store.storedShortcut(forAppID: "talk") == commandOne)
+        #expect(harness.announcements.last == .keyboardShortcutsDidChange)
+
+        // …but applied to nothing and occupying nothing while no app with that identifier is offered.
+        #expect(harness.store.shortcut(forAppID: "talk") == nil)
+        #expect(harness.store.nameOfApp(usingShortcut: commandOne, otherThanAppID: "files") == nil)
+
+        harness.store.persist(serverApps: [ServerAppFixture.files, ServerAppFixture.talk])
+        #expect(harness.store.shortcut(forAppID: "talk") == commandOne)
+    }
+
+    @Test
+    func `Clearing a shortcut that was never recorded announces nothing`() {
         harness.store.persist(serverApps: [ServerAppFixture.files])
         let announcementsBefore = harness.notificationCount
 
-        harness.store.setShortcut(commandOne, forAppID: "notes")
+        harness.store.setShortcut(nil, forAppID: "files")
 
-        // No announcement pins the early exit ahead of the save and the notification, rather than after them.
         #expect(harness.notificationCount == announcementsBefore)
-        #expect(harness.store.nameOfApp(usingShortcut: commandOne, otherThanAppID: "files") == nil)
     }
 
     @Test

@@ -233,7 +233,7 @@ extension WebViewController: WKNavigationDelegate {
         hasRevealedAfterInitialLoad = true
         revealLoadedContent()
 
-        // Re-assert the appearance data attributes with the account's current values: the document-start seed script
+        // Re-assert the appearance data attributes with the current settings: the document-start seed script
         // re-runs on every full load carrying the values captured when the controller loaded, so a setting changed
         // since then (in a window that stayed open) would otherwise reappear stale after a reload.
         reapplyAppearance()

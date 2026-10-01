@@ -83,7 +83,7 @@ class Store {
     ///
     /// Keeps `apps` and `iconGeneration` in step with what `AccountStore` has persisted.
     ///
-    /// The store announces a change rather than being polled, and it announces twice per refresh — once when the list itself lands and again when the icons do — which is what lets a menu be drawn immediately and then redrawn with artwork. Reading the store from here rather than awaiting the refresh is what preserves that: awaiting it would hold the list back until the icons had been fetched.
+    /// The store announces a change rather than being polled, and a refresh is announced twice — by the store when the list itself lands and by `ServerConnection` again when the icons do — which is what lets a menu be drawn immediately and then redrawn with artwork. Reading the store from here rather than awaiting the refresh is what preserves that: awaiting it would hold the list back until the icons had been fetched.
     /// The closure is `@Sendable` by the parameter's own type, so it does not inherit this initializer's main-actor isolation and no dynamic isolation check is emitted at its entry point; the hop inside is therefore a real hop rather than the trap described in AGENTS.md → Concurrency. Nothing crosses it but the decision to re-read.
     /// The token is kept for the life of this object and never removed, which is deliberate rather than an omission. A `deinit` is `nonisolated` and so cannot read a main-actor property, and the alternatives — an unsafe opt-out, or making this an `NSObject` for the selector-based registration that does clean itself up — both cost more than the thing they buy: the app builds exactly one `Store` and keeps it for as long as it runs, and the observer holds `self` weakly, so the one belonging to a preview's discarded store fires into nothing.
     ///
@@ -124,7 +124,19 @@ class Store {
     /// The account is still read back out of the Keychain rather than from `AccountStore`: `Keychain.store(_:for:)` files every credential under the address it authenticates against, so one item already carries both halves of a `ServerAccount`, and reading it from there is what keeps launch from depending on the store opening at all. The store is told the same address at sign-in and is the authority on everything derived from it, the app list included — which is why the apps come from there and arrive already populated on a relaunch.
     ///
     static func restored() -> Store {
-        Store(account: Keychain.accounts().first, apps: AccountStore.shared.serverApps)
+        let stored = try? Keychain.storedAccounts()
+
+        // The store still names a server while the Keychain says, for certain, that no credential is left: a
+        // sign-out that did not finish, or a store carried to a device the credential, being this device's only,
+        // did not travel to. Finish it, so Spotlight stops offering that server's things and a request latched for
+        // one of them cannot be served once somebody signs in somewhere else. A Keychain that cannot be read says
+        // nothing either way and leaves the store alone.
+        if stored?.isEmpty == true, AccountStore.shared.serverAddress != nil {
+            Logger(for: Store.self).notice("The store names a server but no credential is stored; signing out what is left")
+            AccountStore.shared.disconnect()
+        }
+
+        return Store(account: stored?.first, apps: AccountStore.shared.serverApps)
     }
 
     ///
@@ -276,13 +288,13 @@ class Store {
             await AppIconBadge.apply(.clear)
         }
 
-        // The credentials, the persisted account and every cache go through the store's own sign-out, which the
-        // Mac's logout runs too, so the list of what a sign-out forgets cannot drift between them. What the store holds — the server address,
-        // the app list, and every other domain hanging off the same `Account` record — is no secret, but all of
-        // it describes a server this device is no longer signed in to, in a file that is not encrypted. Branding
-        // outliving a sign-out would only be untidy, but the avatar caches hold photographs of the people on that
-        // server and the widget's saved feed names their files, and those must not survive the account that was
-        // allowed to see them.
+        // The credentials, the persisted account and every cache go through the store's own sign-out, which every one of
+        // the Mac's sign-outs runs too, so the list of what a sign-out forgets cannot drift between them. What the
+        // store holds about the server — its address, the app list, and every other domain hanging off the same
+        // `Account` record — is no secret, but all of it describes a server this device is no longer signed in to,
+        // in a file that is not encrypted. Branding outliving a sign-out would only be untidy, but the avatar caches
+        // hold photographs of the people on that server and the widget's saved feed names their files, and those
+        // must not survive the account that was allowed to see them.
         AccountStore.shared.disconnect()
 
         apps = []

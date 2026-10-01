@@ -6,9 +6,11 @@ import SwiftData
 
 /// `Account` is the SwiftData root record for the Nextcloud account the user has connected to: the server address, its cached branding and version, and the account-scoped domain records that belong to it.
 ///
-/// It is the single anchor every other stored model relates back to, directly or through a parent: the server apps, Talk conversations, notes and collectives each have an `account` relationship here, an app's keyboard shortcut and a collective's pages hang off those, and a later domain model gains a relationship here the same way, so each is partitioned per account for free. `AccountStore` maintains at most one `Account` today; the schema already supports several, so multi-account support later needs no migration.
+/// It is the anchor every record describing the server relates back to, directly or through a parent: the server apps, Talk conversations, notes and collectives each have an `account` relationship here, a collective's pages hang off it, and a later domain model gains a relationship here the same way, so each is partitioned per account for free. `AccountStore` maintains at most one `Account` today; the schema already supports several, so multi-account support later needs no migration.
 ///
-/// `serverAddress` is optional because the Mac's sign-in persists the server's theming and version (via `ServerConnection.validateAndPersist(_:)`) before the validated address itself is stored: a freshly created `Account` therefore represents "connecting" until the address is filled in. Deleting the `Account` cascades to its apps, conversations, collectives and notes, and through them to the apps' shortcuts and the collectives' pages, which is how `AccountStore.disconnect()` clears everything the account owns in one step.
+/// What the user sets up on this device is deliberately not here: the keyboard shortcuts and the appearance settings are records of their own, `KeyboardShortcut` and `DevicePreferences`, with no relationship to an account, so deleting the account at a sign-out leaves them in place.
+///
+/// `serverAddress` is optional because the Mac's sign-in persists the server's theming and version (via `ServerConnection.validateAndPersist(_:)`) before the validated address itself is stored: a freshly created `Account` therefore represents "connecting" until the address is filled in. Deleting the `Account` cascades to its apps, conversations, collectives and notes, and through them to the collectives' pages, which is how `AccountStore.disconnect()` clears everything the server sent in one step.
 ///
 /// Credentials are deliberately not stored here — secrets stay in `Keychain`, keyed by `serverAddress`, so the shared, unencrypted SwiftData store never holds them.
 @Model
@@ -28,13 +30,7 @@ final class Account {
     /// `themeBackgroundPlain` is the `backgroundPlain` flag from the server's `Theming` capability, indicating whether the background is a plain color rather than an image.
     var themeBackgroundPlain: Bool?
 
-    /// `translucentAppearance` is the user's choice, from the Appearance settings tab, to let the macOS window material show through the web view instead of Nextcloud's own backgrounds; `nil` means the user has not chosen and the app default (off) applies.
-    var translucentAppearance: Bool?
-
-    /// `removeGaps` is the user's choice, from the Appearance settings tab, to expand Nextcloud's content to the window edges by removing the surrounding margins; `nil` means the user has not chosen and the app default (on) applies.
-    var removeGaps: Bool?
-
-    /// `apps` are the Nextcloud server apps offered by this account's server; deleting the account cascades to them and, through them, their shortcuts.
+    /// `apps` are the Nextcloud server apps offered by this account's server; deleting the account cascades to them.
     @Relationship(deleteRule: .cascade, inverse: \ServerApp.account)
     var apps: [ServerApp] = []
 
@@ -61,16 +57,12 @@ final class Account {
         serverVersion: String? = nil,
         themeBackground: String? = nil,
         themeLogo: URL? = nil,
-        themeBackgroundPlain: Bool? = nil,
-        translucentAppearance: Bool? = nil,
-        removeGaps: Bool? = nil
+        themeBackgroundPlain: Bool? = nil
     ) {
         self.serverAddress = serverAddress
         self.serverVersion = serverVersion
         self.themeBackground = themeBackground
         self.themeLogo = themeLogo
         self.themeBackgroundPlain = themeBackgroundPlain
-        self.translucentAppearance = translucentAppearance
-        self.removeGaps = removeGaps
     }
 }

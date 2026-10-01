@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Iva Horn
 // SPDX-License-Identifier: MIT
 
-// Mirrors the account's appearance settings, the app's effective accent color, and
+// Mirrors this device's appearance settings, the app's effective accent color, and
 // the host window's own chrome onto <html>: the two settings as the data attributes
 // Cirruscope.css scopes its translucency and full-width rules to, the accent color
 // as the --cirruscope-accent-color custom property the stylesheet re-derives
@@ -18,9 +18,9 @@
 // because correctness rests on the publication schedule, and there is exactly one
 // of those: every path that re-applies the appearance already re-applies this too,
 // so the two cannot get out of step. It is the one value here that is a fact about
-// a single window rather than about the account or the system, which is why
-// WebViewController resolves it from view.window and the fullscreen transitions
-// push it per window rather than broadcasting it.
+// a single window rather than about the device's settings or the system, which is
+// why WebViewController resolves it from view.window and the fullscreen
+// transitions push it per window rather than broadcasting it.
 //
 // The namespace is assigned rather than declared, and assigned idempotently, because
 // this script is re-evaluated at the top level of a page that already has one: a

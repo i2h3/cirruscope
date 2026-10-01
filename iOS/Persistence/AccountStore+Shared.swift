@@ -9,6 +9,6 @@ import Foundation
 extension AccountStore {
     /// `shared` is the process-wide account store, over the app's on-disk container.
     ///
-    /// It is the only instance production code builds, and the only one that must ever be built over `AppDatabase.container`: each instance memoizes the single `Account` separately, so two of them over one container would each believe a stale answer. Being a `static let` it is created lazily, which is what keeps the real store closed until something asks for persisted data — sign-in and the web view both come up from the Keychain alone.
+    /// It is the only instance production code builds, and the only one that must ever be built over `AppDatabase.container`: each instance memoizes the single `Account` and the single `DevicePreferences` separately, so two of them over one container would each believe a stale answer. Being a `static let` it is created lazily, the first time anything names it — at launch, when `Store.restored()` seeds the app list from it; the account itself is read back from the Keychain rather than from here.
     static let shared = AccountStore(container: AppDatabase.container)
 }

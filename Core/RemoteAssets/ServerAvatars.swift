@@ -101,7 +101,7 @@ final class ServerAvatars: Sendable {
 
     /// `clear()` drops every decoded bitmap and every remembered absence, for a sign-out.
     ///
-    /// The cached files themselves are removed by `AssetCache.clear()`, which runs beside this when an account is disconnected; this is what stops the ones already decoded from outliving them in memory, exactly as `ServerAppIcons.clear()` does.
+    /// The cached files themselves are removed by `AssetCache.clear()`, which runs beside this on every sign-out; this is what stops the ones already decoded from outliving them in memory, exactly as `ServerAppIcons.clear()` does.
     func clear() {
         decoded.withLock { $0.removeAll() }
         withoutPhotograph.withLock { $0.removeAll() }

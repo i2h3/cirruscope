@@ -73,7 +73,7 @@ extension ServerConnection {
         }
 
         // Posted on the main actor, not from here. `NotificationCenter` delivers synchronously on the
-        // posting thread, and every observer of this — `AppDelegate.rebuildServerAppsMenu()`, the Apps
+        // posting thread, and every observer of this — `AppDelegate.rebuildServerAppsMenu()`, the Speed Dials
         // settings tab, `ServerAppIndexer` — is main-actor-isolated, so posting from this task's own
         // executor trips Swift's isolation check and takes the process down. The store's own announcements,
         // made through `AccountStore.post(_:)`, are delivered on the main thread as well.

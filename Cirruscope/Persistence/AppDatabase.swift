@@ -24,7 +24,7 @@ enum AppDatabase {
 
     /// `container` is the shared model container, built on first access, opened with `CirruscopeMigrationPlan` so a store written by an earlier shipped schema is migrated forward in place.
     ///
-    /// Three locations are tried in order. First the App Group container, which is where a properly signed build always ends up. If opening it fails — a genuinely corrupt file, or a migration that could not complete — the store files are moved aside to `.quarantine` siblings (never deleted) and it is tried once more: the store is largely reconstructible (what came from the server is fetched from it again; only the user's own choices — keyboard shortcuts and the appearance settings — are authored locally), so recovering beats crash-looping on launch, and quarantining rather than deleting means a failed migration never destroys those choices — the files stay on disk for recovery. If that fails too, the store is opened in the app's own container instead, because the likeliest remaining cause is not corruption at all but a build with no App Group entitlement to reach the shared container with — an ad-hoc build, which is what a fresh clone, a fork, and CI all produce, and which the sandbox then denies write access to that path. Only a failure there as well is unrecoverable.
+    /// Three locations are tried in order. First the App Group container, which is where a properly signed build always ends up. If opening it fails — a genuinely corrupt file, or a migration that could not complete — the store files are moved aside to `.quarantine` siblings (never deleted) and it is tried once more: the store is largely reconstructible (what came from the server is fetched from it again; only the user's own choices — keyboard shortcuts and the appearance settings — are authored locally), so recovering beats crash-looping on launch, and quarantining rather than deleting means a store that will not open is set aside with whatever it still holds rather than destroyed — the files stay on disk for recovery. If that fails too, the store is opened in the app's own container instead, because the likeliest remaining cause is not corruption at all but a build with no App Group entitlement to reach the shared container with — an ad-hoc build, which is what a fresh clone, a fork, and CI all produce, and which the sandbox then denies write access to that path. Only a failure there as well is unrecoverable.
     ///
     /// Falling back rather than trapping is what lets such a build actually run, and it is deliberately the *last* resort: an entitled build that lands there would silently be reading an empty store instead of the user's data, so the switch is logged at a level that persists to the system log.
     ///
@@ -62,7 +62,7 @@ enum AppDatabase {
             logger.notice("Opened the SwiftData store in the App Group container at \(sharedConfiguration.url.path, privacy: .public)")
             return container
         } catch {
-            logger.error("Could not open the SwiftData store in the App Group container; quarantining it and retrying: \(error.localizedDescription, privacy: .public)")
+            logger.error("Could not open the SwiftData store in the App Group container; quarantining it and retrying: \(String(describing: error), privacy: .public)")
         }
 
         quarantineStore(at: sharedConfiguration.url)
@@ -72,7 +72,7 @@ enum AppDatabase {
             logger.notice("Rebuilt the SwiftData store in the App Group container after quarantining the previous one")
             return container
         } catch {
-            logger.error("Could not open the rebuilt SwiftData store in the App Group container; falling back to this build's own container: \(error.localizedDescription, privacy: .public)")
+            logger.error("Could not open the rebuilt SwiftData store in the App Group container; falling back to this build's own container: \(String(describing: error), privacy: .public)")
         }
 
         return ownContainer(for: schema)
@@ -94,7 +94,7 @@ enum AppDatabase {
             logger.notice("Opened the SwiftData store in this build's own container at \(configuration.url.path, privacy: .public); it is not reading the shared store")
             return container
         } catch {
-            logger.fault("Could not open the SwiftData store in the App Group container or in this build's own container: \(error.localizedDescription, privacy: .public)")
+            logger.fault("Could not open the SwiftData store in the App Group container or in this build's own container: \(String(describing: error), privacy: .public)")
             preconditionFailure("Could not open the SwiftData store in the App Group container or in this build's own container: \(error.localizedDescription)")
         }
     }
