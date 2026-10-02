@@ -24,7 +24,7 @@ enum AppDatabase {
 
     /// `container` is the shared model container, built on first access, opened with `CirruscopeMigrationPlan` so a store written by an earlier shipped schema is migrated forward in place.
     ///
-    /// It lives in the App Group container and nowhere else. If opening it fails — a genuinely corrupt file, or a migration that could not complete — the store files are moved aside to `.quarantine` siblings (never deleted) and it is tried once more: the store is largely reconstructible (what came from the server is fetched from it again; only the user's own choices — keyboard shortcuts and the appearance settings — are authored locally), so recovering beats crash-looping on launch, and quarantining rather than deleting means a store that will not open is set aside with whatever it still holds rather than destroyed — the files stay on disk for recovery.
+    /// It lives in the App Group container and nowhere else. A store that a build without the App Group entitlement left in the app's own container is moved there first, once, by `importStore(from:into:)`. If opening it fails — a genuinely corrupt file, or a migration that could not complete — the store files are moved aside to `.quarantine` siblings (never deleted) and it is tried once more: the store is largely reconstructible (what came from the server is fetched from it again; only the user's own choices — keyboard shortcuts and the appearance settings — are authored locally), so recovering beats crash-looping on launch, and quarantining rather than deleting means a store that will not open is set aside with whatever it still holds rather than destroyed — the files stay on disk for recovery.
     ///
     /// A failure after that is unrecoverable and traps. There is deliberately no store private to this build to open instead: one would be empty, so a build landing there would silently show the user none of their data, and a build that cannot reach the shared container is one whose signing was overridden — see AGENTS.md → Building and Signing.
     ///
@@ -45,6 +45,17 @@ enum AppDatabase {
             groupContainer: .identifier(AppGroup.identifier),
             cloudKitDatabase: .none
         )
+
+        // Where every build without the App Group entitlement kept the store, `1.1.0` as the App Store shipped it
+        // included. Only the URL is read; the configuration is never opened.
+        let ownConfiguration = ModelConfiguration(
+            storeName,
+            schema: schema,
+            groupContainer: .none,
+            cloudKitDatabase: .none
+        )
+
+        importStore(from: ownConfiguration.url, into: sharedConfiguration.url)
 
         logger.notice("Opening SwiftData store \"\(storeName, privacy: .public)\" in App Group \(AppGroup.identifier, privacy: .public) with schema v\(SchemaV3.versionIdentifier.description, privacy: .public) and the migration plan")
 
@@ -67,6 +78,74 @@ enum AppDatabase {
             preconditionFailure("Could not open the SwiftData store in the App Group container, even after quarantining it: \(error.localizedDescription)")
         }
     }()
+
+    /// `importStore(from:into:)` moves the store at `ownStoreURL`, which a build without the App Group entitlement wrote into the app's own container, to `sharedStoreURL` in the App Group container, so the first entitled launch carries the user's data across instead of leaving it behind.
+    ///
+    /// Every release up to and including `1.1.0` reached the App Store without the entitlement and kept its store in the app's own container, and so did the TestFlight builds of `1.2.0` before its signing was fixed. For anybody updating from one of them that store, not the App Group's, is the one holding their keyboard shortcuts and appearance choices, which nothing can fetch again.
+    /// Whatever the App Group container already holds under the store's name is quarantined first rather than overwritten: on a Mac that ran an entitled build in between, it is the store that build created, and it stays on disk beside its replacement. Moving rather than copying is what makes this happen once, since the next launch finds nothing left to import.
+    /// The store file moves before its sidecars, and nothing moves at all unless the App Group container is clear of every file of that name, so a failure leaves the store where it was to be tried again on the next launch rather than pairing it with somebody else's write-ahead log.
+    /// One case it resolves the wrong way on purpose: going back to a build without the entitlement and forward again moves the store that build wrote over the shared one, which is quarantined rather than lost.
+    static func importStore(from ownStoreURL: URL, into sharedStoreURL: URL) {
+        let fileManager = FileManager.default
+        let ownDirectory = ownStoreURL.deletingLastPathComponent()
+        let ownName = ownStoreURL.lastPathComponent
+        let sharedDirectory = sharedStoreURL.deletingLastPathComponent()
+        let sharedName = sharedStoreURL.lastPathComponent
+
+        guard fileManager.fileExists(atPath: ownStoreURL.path) else {
+            logger.debug("No store in this build's own container; nothing to import")
+            return
+        }
+
+        logger.notice("Found a store in this build's own container at \(ownStoreURL.path, privacy: .public), written by a build without the App Group entitlement; moving it into the App Group container")
+
+        do {
+            try fileManager.createDirectory(at: sharedDirectory, withIntermediateDirectories: true)
+        } catch {
+            logger.error("Could not create \(sharedDirectory.path, privacy: .public) to import the store into; leaving it in this build's own container: \(error.localizedDescription, privacy: .public)")
+            return
+        }
+
+        let sharedFileExists = {
+            storeFileSuffixes.contains { suffix in
+                fileManager.fileExists(atPath: sharedDirectory.appending(path: sharedName + suffix).path)
+            }
+        }
+
+        if sharedFileExists() {
+            quarantineStore(at: sharedStoreURL)
+        }
+
+        guard sharedFileExists() == false else {
+            logger.error("The store already in the App Group container could not be set aside; leaving the one in this build's own container to try again on the next launch")
+            return
+        }
+
+        for suffix in storeFileSuffixes {
+            let source = ownDirectory.appending(path: ownName + suffix)
+
+            guard fileManager.fileExists(atPath: source.path) else {
+                continue
+            }
+
+            let destination = sharedDirectory.appending(path: sharedName + suffix)
+
+            do {
+                try fileManager.moveItem(at: source, to: destination)
+                logger.notice("Moved \"\(ownName + suffix, privacy: .public)\" into the App Group container")
+            } catch {
+                logger.error("Could not move \"\(ownName + suffix, privacy: .public)\" into the App Group container: \(error.localizedDescription, privacy: .public)")
+
+                // The store file is the first to move, so failing on it leaves everything in place to be tried again.
+                // A sidecar failing after it cannot be put right from here, and is what the error above records.
+                guard suffix.isEmpty == false else {
+                    return
+                }
+            }
+        }
+
+        logger.notice("Imported the store from this build's own container into the App Group container")
+    }
 
     /// `storeFileSuffixes` are the store file itself and the three sidecars SQLite may have written beside it, which have to be set aside together for either the quarantined copy or what replaces it to be readable.
     private static let storeFileSuffixes = ["", "-wal", "-shm", "-journal"]

@@ -224,12 +224,12 @@ Because the apps and the widget extension share their data through the App Group
 
 The project used to sign ad-hoc by default, so that a fresh clone, a fork and a GitHub runner could build with no Apple Developer account, and treated the unreachable container as a degraded state, opening the store and the asset cache in the app's own container instead.
 That fallback hid exactly the failure it should have exposed.
-The entitlements were named only in the gitignored `Local.xcconfig`: the maintainer's Mac has one and archived `1.1.0` correctly entitled, Xcode Cloud's clean clone has none, and so build 50 of `1.2.0` reached TestFlight with neither the App Group nor the Keychain access group in the app or the extension.
-It launched, quietly opened an empty store of its own, and to anybody updating from `1.1.0` the keyboard shortcuts and appearance settings looked gone, though both were intact in the App Group container all along.
+The entitlements were named only in the gitignored `Local.xcconfig`, which a clean clone does not have, so build 50 of `1.2.0` reached TestFlight with neither the App Group nor the Keychain access group in the app or the extension.
+So, it turned out, had `1.1.0` reached the App Store, and so every `1.1.0` user's keyboard shortcuts and appearance choices are in a store in the app's own container, which no build had ever reported as anything but normal.
 
 Every build — Debug, the tests and Release alike — therefore signs automatically with a real team, the two apps and the widget extension always carry the entitlements, and nothing falls back.
 The tracked configuration names the maintainer's team, which is no secret, being in every binary it signs.
-The stores that ad-hoc builds and build 50 left in the app's own container are abandoned rather than migrated, since the user's data never left the App Group container.
+The store such a build left in the app's own container is moved into the App Group container on the first entitled launch, once, quarantining whatever was there under its name, because for everybody updating from `1.1.0` it is the store holding the only things nothing can fetch again.
 
 The costs are accepted because each is smaller than shipping that again.
 A contributor needs an Apple ID signed in to Xcode, though not a paid membership: a free Apple Developer account provisions every capability the app uses, the App Group included, even if a profile it makes for a physical iPhone expires after about a week.
