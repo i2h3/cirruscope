@@ -12,7 +12,7 @@ import SwiftData
 ///
 /// **This is the one schema that may still change.** The rule the frozen schemas record is that the newest schema stays live until a build carrying it ships, and is frozen — into nested copies, like theirs — the moment it does, with a successor created in the same change. Until then, a new model or a new property belongs here.
 ///
-/// Changing it in place has a cost on a developer's own machine: staged migration matches a store by its model's checksum, not by the version identifier, so a store an earlier shape of this schema wrote matches no schema in the plan, and `AppDatabase` quarantines it and starts empty. Test with `CIRRUSCOPE_BASE_BUNDLE_IDENTIFIER=de.i2h3.cirruscope.citest` to keep a real store out of it.
+/// Changing it in place has a cost on a developer's own machine: staged migration matches a store by its model's checksum, not by the version identifier, so a store an earlier shape of this schema wrote matches no schema in the plan, and `AppDatabase` quarantines it and starts empty. Test with `CIRRUSCOPE_BASE_BUNDLE_IDENTIFIER=de.i2h3.cirruscope.citest -allowProvisioningUpdates` to keep a real store out of it.
 enum SchemaV3: VersionedSchema {
     static var versionIdentifier: Schema.Version {
         Schema.Version(3, 0, 0)

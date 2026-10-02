@@ -6,7 +6,9 @@
 
 #include "../Cirruscope.xcconfig"
 
+CODE_SIGN_ENTITLEMENTS = Cirruscope/Cirruscope.entitlements
 PRODUCT_BUNDLE_IDENTIFIER = $(CIRRUSCOPE_BASE_BUNDLE_IDENTIFIER)
 PRODUCT_NAME = $(CIRRUSCOPE_BUNDLE_NAME)
+REGISTER_APP_GROUPS = YES
 
 #include? "Local.xcconfig"

@@ -7,7 +7,7 @@ import os
 ///
 /// `Keychain` stores the `Credentials` obtained from Login Flow v2, keyed by the address of the server they authenticate against.
 ///
-/// Items use the default Keychain access group, which the `keychain-access-groups` entitlement in `Cirruscope.entitlements` sets to the base bundle identifier for every bundle that carries it. Two apps alone would need no entitlement at all — the default group is each app's own — but the widget extension does: its own identifier is `…cirruscope.widgets`, and that entitlement is what puts its items in the same group as the apps'.
+/// Items use the default Keychain access group, which the `keychain-access-groups` entitlement in `Cirruscope.entitlements` sets to the base bundle identifier for every bundle that carries it. Two apps alone would need no entitlement at all — the default group is each app's own — but the widget extension does: its own identifier is `…cirruscope.widgets`, and that entitlement is what puts its items in the same group as the apps'. That holds for iOS's data-protection Keychain only: these queries deliberately do not set `kSecUseDataProtectionKeychain` (see `accounts()`), so on macOS the items live in the file-based Keychain, where an item's access control list rather than the access group decides who may read it, and whether the macOS widget extension can read what the app stored is unverified — see AGENTS.md → Building and Signing.
 ///
 enum Keychain {
     /// `service` is the constant `kSecAttrService` value under which every credential item is filed, so the items can be enumerated and cleared as a group.

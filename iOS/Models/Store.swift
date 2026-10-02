@@ -121,7 +121,7 @@ class Store {
     ///
     /// Build a store around the account this device already holds credentials for, if it holds any.
     ///
-    /// The account is still read back out of the Keychain rather than from `AccountStore`: `Keychain.store(_:for:)` files every credential under the address it authenticates against, so one item already carries both halves of a `ServerAccount`, and reading it from there is what keeps launch from depending on the store opening at all. The store is told the same address at sign-in and is the authority on everything derived from it, the app list included — which is why the apps come from there and arrive already populated on a relaunch.
+    /// The account is still read back out of the Keychain rather than from `AccountStore`: `Keychain.store(_:for:)` files every credential under the address it authenticates against, so one item already carries both halves of a `ServerAccount`, and reading it from there is what keeps restoring the account from depending on what the store holds. The store is told the same address at sign-in and is the authority on everything derived from it, the app list included — which is why the apps come from there and arrive already populated on a relaunch.
     ///
     static func restored() -> Store {
         let stored = try? Keychain.storedAccounts()

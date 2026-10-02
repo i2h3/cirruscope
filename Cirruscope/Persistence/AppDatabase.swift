@@ -7,14 +7,14 @@ import SwiftData
 
 /// `AppDatabase` owns the single, process-wide SwiftData `ModelContainer` backing Cirruscope's account store.
 ///
-/// The container is configured with `groupContainer: .identifier(AppGroup.identifier)` so the store lives in the shared App Group container — under `Library/Application Support/`, disjoint from `AssetCache`'s `Library/Caches/` subtree — where a future app extension carrying the same entitlement can also open it. The store is local only (`cloudKitDatabase: .none`); secrets never go in it (they stay in `Keychain`).
+/// The container is configured with `groupContainer: .identifier(AppGroup.identifier)` so the store lives in the shared App Group container — under `Library/Application Support/`, disjoint from `AssetCache`'s `Library/Caches/` subtree — where any extension carrying the same entitlement can also open it. The store is local only (`cloudKitDatabase: .none`); secrets never go in it (they stay in `Keychain`).
 ///
-/// `ModelContainer` is `Sendable`, so exposing it as a `static let` mirrors the existing `AppGroup` / `AssetCache.shared` singleton conventions. Access the main-actor context through `AccountStore`, which is the only type that touches it. Opening the store — including running `CirruscopeMigrationPlan` and any quarantine or container fallback — logs at `.notice`/`.error`/`.fault` so the whole startup path is reconstructable from a log capture in a release build.
+/// `ModelContainer` is `Sendable`, so exposing it as a `static let` mirrors the existing `AppGroup` / `AssetCache.shared` singleton conventions. Access the main-actor context through `AccountStore`, which is the only type that touches it. Opening the store — including running `CirruscopeMigrationPlan` and any quarantine — logs at `.notice`/`.error`/`.fault` so the whole startup path is reconstructable from a log capture in a release build.
 enum AppDatabase {
     /// `logger` records store setup and recovery under the `AppDatabase` category.
     private static let logger = Logger(for: AppDatabase.self)
 
-    /// `storeName` is the fixed configuration name that pins the store's filename, so every target — the app and any future extension — opens the very same file rather than a differently-named default.
+    /// `storeName` is the fixed configuration name that pins the store's filename, so every target that opens the store — both apps — opens the very same file rather than a differently-named default.
     private static let storeName = "Cirruscope"
 
     /// `schema` is the app's current SwiftData schema.
@@ -24,29 +24,20 @@ enum AppDatabase {
 
     /// `container` is the shared model container, built on first access, opened with `CirruscopeMigrationPlan` so a store written by an earlier shipped schema is migrated forward in place.
     ///
-    /// Three locations are tried in order. First the App Group container, which is where a properly signed build always ends up. If opening it fails — a genuinely corrupt file, or a migration that could not complete — the store files are moved aside to `.quarantine` siblings (never deleted) and it is tried once more: the store is largely reconstructible (what came from the server is fetched from it again; only the user's own choices — keyboard shortcuts and the appearance settings — are authored locally), so recovering beats crash-looping on launch, and quarantining rather than deleting means a store that will not open is set aside with whatever it still holds rather than destroyed — the files stay on disk for recovery. If that fails too, the store is opened in the app's own container instead, because the likeliest remaining cause is not corruption at all but a build with no App Group entitlement to reach the shared container with — an ad-hoc build, which is what a fresh clone, a fork, and CI all produce, and which the sandbox then denies write access to that path. Only a failure there as well is unrecoverable.
+    /// It lives in the App Group container and nowhere else. If opening it fails — a genuinely corrupt file, or a migration that could not complete — the store files are moved aside to `.quarantine` siblings (never deleted) and it is tried once more: the store is largely reconstructible (what came from the server is fetched from it again; only the user's own choices — keyboard shortcuts and the appearance settings — are authored locally), so recovering beats crash-looping on launch, and quarantining rather than deleting means a store that will not open is set aside with whatever it still holds rather than destroyed — the files stay on disk for recovery.
     ///
-    /// Falling back rather than trapping is what lets such a build actually run, and it is deliberately the *last* resort: an entitled build that lands there would silently be reading an empty store instead of the user's data, so the switch is logged at a level that persists to the system log.
+    /// A failure after that is unrecoverable and traps. There is deliberately no store private to this build to open instead: one would be empty, so a build landing there would silently show the user none of their data, and a build that cannot reach the shared container is one whose signing was overridden — see AGENTS.md → Building and Signing.
     ///
     /// Being a `static let`, it is opened only once something actually asks for it, which is what lets the account store's tests run entirely on their own in-memory container: nothing in them reaches `AccountStore.shared`, so this store is never opened on their behalf — and it must stay that way, since the recovery path above moves the developer's real store files aside.
     static let container: ModelContainer = {
         let schema = Self.schema
 
-        // Asked before a group-container `ModelConfiguration` is so much as constructed, because constructing one
-        // an app is not entitled to reach does not fail — it traps. SwiftData resolves the container inside the
-        // initializer and calls `fatalError` when the lookup is refused: "Unable to find App Group Container in
-        // Entitlements", from `SwiftData/DataUtilities.swift`, with `containermanager` logging "client is not
-        // entitled" immediately before it. There is no `try` to write and nothing to catch.
-        // That is fatal at launch rather than merely inconvenient. This is a `static let` reached from
-        // `Store.restored()` in `iOSApp.init()`, so an iOS build with no entitlements — every fresh clone, every
-        // fork, every CI run — died before its first screen. It was measured on a simulator by installing such a
-        // build and reading its log, after two earlier guesses at the trap's location proved wrong.
-        // `AppGroup.containerURL` asks the same question of the same subsystem and answers `nil` instead of
-        // trapping, which is the whole reason it exists.
-        guard AppGroup.containerURL != nil else {
-            logger.notice("This build has no App Group entitlement, so the shared container is unreachable; opening the store in the build's own container instead")
-            return ownContainer(for: schema)
-        }
+        // Resolved before a group-container `ModelConfiguration` is so much as constructed, because constructing one
+        // an app is not entitled to reach does not fail — it traps inside SwiftData, with "Unable to find App Group
+        // Container in Entitlements" from `SwiftData/DataUtilities.swift` and nothing to catch. `AppGroup.containerURL`
+        // traps first on iOS, with a message that names the cause; on macOS it resolves regardless, and the open
+        // below fails instead.
+        _ = AppGroup.containerURL
 
         let sharedConfiguration = ModelConfiguration(
             storeName,
@@ -72,32 +63,10 @@ enum AppDatabase {
             logger.notice("Rebuilt the SwiftData store in the App Group container after quarantining the previous one")
             return container
         } catch {
-            logger.error("Could not open the rebuilt SwiftData store in the App Group container; falling back to this build's own container: \(String(describing: error), privacy: .public)")
+            logger.fault("Could not open the SwiftData store in the App Group container, even after quarantining it: \(String(describing: error), privacy: .public)")
+            preconditionFailure("Could not open the SwiftData store in the App Group container, even after quarantining it: \(error.localizedDescription)")
         }
-
-        return ownContainer(for: schema)
     }()
-
-    /// `ownContainer(for:)` opens the store in the container this build has to itself, which is where a build that cannot reach the App Group's keeps its data.
-    ///
-    /// Reached two ways, and they mean different things. A build with no App Group entitlement comes straight here, having never had a shared container to use; a build that has one comes here only after its shared store failed to open twice and was quarantined. Both end up with a store that works and is private to this build, which is what lets a fresh clone and a CI run launch at all — see "Building and Signing" in `AGENTS.md`.
-    private static func ownContainer(for schema: Schema) -> ModelContainer {
-        let configuration = ModelConfiguration(
-            storeName,
-            schema: schema,
-            groupContainer: .none,
-            cloudKitDatabase: .none
-        )
-
-        do {
-            let container = try ModelContainer(for: schema, migrationPlan: CirruscopeMigrationPlan.self, configurations: configuration)
-            logger.notice("Opened the SwiftData store in this build's own container at \(configuration.url.path, privacy: .public); it is not reading the shared store")
-            return container
-        } catch {
-            logger.fault("Could not open the SwiftData store in the App Group container or in this build's own container: \(String(describing: error), privacy: .public)")
-            preconditionFailure("Could not open the SwiftData store in the App Group container or in this build's own container: \(error.localizedDescription)")
-        }
-    }
 
     /// `storeFileSuffixes` are the store file itself and the three sidecars SQLite may have written beside it, which have to be set aside together for either the quarantined copy or what replaces it to be readable.
     private static let storeFileSuffixes = ["", "-wal", "-shm", "-journal"]

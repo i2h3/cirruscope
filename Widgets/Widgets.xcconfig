@@ -14,8 +14,11 @@ LD_RUNPATH_SEARCH_PATHS[sdk=iphone*] = $(inherited) @executable_path/Frameworks 
 LD_RUNPATH_SEARCH_PATHS[sdk=macosx*] = $(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks
 PRODUCT_BUNDLE_IDENTIFIER = $(CIRRUSCOPE_BASE_BUNDLE_IDENTIFIER).widgets
 
-PROVISIONING_PROFILE_SPECIFIER[sdk=iphone*] = Cirruscope Widgets for iOS
-PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*] = Cirruscope Widgets
+// The same entitlements as the apps: the App Group is what the extension reaches the apps' data through, and on iOS
+// the Keychain access group is what it reads their credentials through. Whether it does on macOS, where the
+// file-based Keychain ignores access groups, is unverified (see AGENTS.md → Building and Signing).
+CODE_SIGN_ENTITLEMENTS = Cirruscope/Cirruscope.entitlements
+REGISTER_APP_GROUPS = YES
 
 // `auto` is what lets a single extension target serve both apps: the SDK follows whichever platform is being built,
 // instead of the project-wide `macosx`. The platform and device family lists are trimmed from the template's

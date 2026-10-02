@@ -31,7 +31,7 @@ final class StoreFileHarness {
 
     /// `configuration(for:)` is a configuration over this harness' store file, carrying `schema`.
     ///
-    /// The URL is given explicitly rather than through a `groupContainer`, so nothing about what this resolves to depends on which entitlements the test bundle's host happens to carry — which is the difference between a suite that means the same thing on a developer's provisioned Mac and on an ad-hoc CI runner.
+    /// The URL is given explicitly rather than through a `groupContainer`, so nothing about what this resolves to depends on the App Group the test bundle's host is signed with, whose container holds the developer's real store.
     func configuration(for schema: Schema) -> ModelConfiguration {
         ModelConfiguration(schema: schema, url: storeURL)
     }

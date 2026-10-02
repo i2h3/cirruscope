@@ -26,12 +26,16 @@ enum AppGroup {
         return stringValue
     }
 
-    /// `containerURL` is the on-disk location of the shared App Group container, or `nil` when this build cannot reach it.
+    /// `containerURL` is the on-disk location of the shared App Group container, which every bundle of the app reaches and which is required rather than optional.
     ///
-    /// A build signed with a real, provisioned certificate always resolves it. An ad-hoc build cannot: ad-hoc signing embeds no entitlements (see AGENTS.md → Building and Signing), so the app runs sandboxed without membership in the group, and the container is out of reach even though the sandbox itself is active. That is the state a fresh clone, a fork, and CI all run in, so it is a legitimate degraded state to tolerate — trapping here instead, as an earlier version did, made an app that everyone could build but only the maintainer could actually launch.
+    /// The apps and the widget extension share their data through it — the store, the cached assets and the widget's last good feed — so a build that is not entitled to it is not a working build of the app, and there is deliberately no location private to one bundle to fall back on. Every target that carries `Cirruscope.entitlements` is signed with it by the checked-in configuration (see AGENTS.md → Building and Signing), so reaching this trap means that configuration was overridden.
     ///
-    /// Being unreachable is not always visible as a `nil`, either: the container path can resolve while the sandbox still refuses to create anything under it. Callers therefore treat a non-`nil` value as a candidate rather than a guarantee, and fall back on a location private to the build — `AssetCache.assetsDirectory()` for cached assets, `AppDatabase.container` for the store.
-    ///
-    /// The `Widgets` extension is no exception on either platform: `Widgets/Widgets.xcconfig` names a provisioning profile for each, under `[sdk=macosx*]` and `[sdk=iphone*]`, so once a `Local.xcconfig` is in place the extension is signed with the App Group just as the app embedding it is.
-    static let containerURL: URL? = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: identifier)
+    /// Only iOS reports a missing entitlement here. macOS answers a URL of the expected form even for a build that is not entitled, and the sandbox then refuses whatever is opened under it, which is where such a build stops instead: `AppDatabase.container` traps once the store cannot be opened. The widget extension opens no store, so on macOS an unentitled one does not stop at all: `AssetCache` logs a fault and `ActivityFeedStore` writes nothing.
+    static let containerURL: URL = {
+        guard let url = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: identifier) else {
+            preconditionFailure("This build is not entitled to the App Group \"\(identifier)\"; every build must be signed with Cirruscope.entitlements, see AGENTS.md → Building and Signing.")
+        }
+
+        return url
+    }()
 }

@@ -39,7 +39,7 @@ enum NotificationRefreshTask {
     /// The identifier both the property list and `BGTaskScheduler` know this task by.
     ///
     /// Read from the property list rather than hardcoded for the same reason `AppGroup.identifier` is: it derives from the bundle identifier, which is a brandable value differing between builds. The property list names it twice — here, and in `BGTaskSchedulerPermittedIdentifiers` — from one build setting, because a disagreement between those two is invisible at build time and surfaces only much later, as a submission failing with a permission error nobody was watching for.
-    /// Trapping on a missing entry is deliberate and matches the house pattern. This is read while the scene is being built, so a build configured without it fails during launch, and the iOS test action launches the app — which turns a misconfiguration into a test failure here rather than into a fork's crash later.
+    /// Trapping on a missing entry is deliberate and matches the house pattern. This is read while the scene is being built, so a build configured without it fails during launch, and the iOS test action launches the app — which turns a misconfiguration into a test failure here rather than into a crash on somebody's device later.
     ///
     static let identifier: String = {
         guard let value = Bundle.main.object(forInfoDictionaryKey: InfoPlistKey.identifier) else {

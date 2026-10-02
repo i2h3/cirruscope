@@ -45,8 +45,8 @@ The other three — `macOS/`, `iOS/`, and `Widgets/` — hold what each target n
 Each of the five targets carries its own `.xcconfig`, all of them chaining up to the root `Cirruscope.xcconfig`.
 
 - `Cirruscope.xcconfig` is the root build configuration: the project's own base configuration, and the file every target's own `.xcconfig` includes, directly or through `Cirruscope/Cirruscope.xcconfig`.
-  It sets the base bundle identifier and bundle name, version, deployment targets, language mode, concurrency, the ad-hoc signing defaults (see "Building and Signing" below), and the Keychain service identifier, minimum supported Nextcloud version and privacy-policy and support URLs the `Info.plist` files pass on to the code.
-  No development team is set in it, in any target's `.xcconfig`, or in `project.pbxproj`; a local build takes its team from `Local.xcconfig`.
+  It sets the base bundle identifier and bundle name, version, deployment targets, language mode, concurrency, automatic signing with the project's development team (see "Building and Signing" below), and the Keychain service identifier, minimum supported Nextcloud version and privacy-policy and support URLs the `Info.plist` files pass on to the code.
+  It is the only file that names a team — no target's `.xcconfig` does, and `project.pbxproj` must not — and a contributor's `Local.xcconfig` overrides it; the entitlements are assigned a level below, by `Cirruscope/Cirruscope.xcconfig` for both apps and by `Widgets/Widgets.xcconfig` for the extension, so the two test bundles carry none.
 - `.swiftformat` and `biome.jsonc` are the two formatter configurations, and both sit at the repository root rather than beside the code they govern.
   That is not only tidiness: `Cirruscope/`, `Core/`, `macOS/`, `iOS/`, and `Widgets/` are synchronized folders, so anything placed inside one of them is compiled or copied into the built products of every target listing it, with no project-file change and no review step to notice.
   A tool whose configuration — or whose installed dependencies — lived in one of those folders would ship inside the app, which is also why the JavaScript tooling is a single Homebrew binary rather than an npm package.
@@ -55,12 +55,12 @@ Each of the five targets carries its own `.xcconfig`, all of them chaining up to
 - The repository root also holds the Xcode project and the project's own documentation, licensing and repository configuration.
   `Cirruscope.xcodeproj/` is the Xcode project: `project.pbxproj` declares the five targets, the synchronized folders each one lists and the Rainmaker package the three product targets link, `project.xcworkspace/xcshareddata/swiftpm/Package.resolved` pins Rainmaker and its dependencies at the versions last resolved, `xcshareddata/xcschemes/` holds the two shared schemes `Cirruscope for macOS` and `Cirruscope for iOS`, and `xcshareddata/xcodecloud/manifest.json` is the Xcode Cloud manifest naming the target Xcode Cloud builds, written by Xcode rather than by hand.
   The project's main group also references `.github/` and `AppStore/` as synchronized folders, only so they can be browsed in Xcode: no target lists either, which is what keeps both out of every built product, and that must stay so.
-  `README.md` is the developer landing page, with the workflow status badges, a pointer to the website and the unofficial-app disclaimer; `CONTRIBUTING.md` is the contribution workflow, from sign-off and AI-assistance disclosure to local code signing and the checks to run; `CODE_OF_CONDUCT.md` is the conduct standard and the address to raise a concern with; and `GOVERNANCE.md` explains how the single-maintainer project is run and how feature requests are decided.
+  `README.md` is the developer landing page, with the workflow status badges, a pointer to the website and the unofficial-app disclaimer; `CONTRIBUTING.md` is the contribution workflow, from sign-off and AI-assistance disclosure to the code-signing setup and the checks to run; `CODE_OF_CONDUCT.md` is the conduct standard and the address to raise a concern with; and `GOVERNANCE.md` explains how the single-maintainer project is run and how feature requests are decided.
   `LICENSE` is the MIT license text the documents link to, `LICENSES/MIT.txt` is the same text where REUSE looks it up by its SPDX identifier, and `REUSE.toml` carries the licensing annotations for every file that takes no inline header (see "REUSE Compliance" below).
-  `Local.xcconfig.example` is the template for the gitignored `Local.xcconfig` that signs a local build with a real team (see "Building and Signing" below).
+  `Local.xcconfig.example` is the template for the gitignored `Local.xcconfig` through which a contributor signs with their own team and bundle identifier, which the maintainer's own builds do without (see "Building and Signing" below).
   `.gitattributes` forces LF line endings on Swift, JavaScript and its tooling configuration, Xcode project and scheme files, xcconfigs, String Catalogs, shell scripts and plain-text files; `.gitignore` keeps build products, per-user Xcode data, `.DS_Store` and `Local.xcconfig` out of the repository; and `.swift-version` is the Swift version SwiftFormat reads.
 - `Cirruscope/` contains the bundle identity, configuration and code the macOS and iOS app targets share, and is a member of both but not of the widget extension.
-  `AppIcon.icon` is the app icon bundle (Icon Composer, gated to render on both platforms), `Bundle+name.swift` reads `CFBundleName` at run time, `Cirruscope.entitlements` declares the App Group and Keychain-sharing capabilities, `Cirruscope.xcconfig` carries the bundle identity both apps share, and `PrivacyInfo.xcprivacy` is the privacy manifest both apps carry, declaring the UserDefaults and file-timestamp APIs their code and Rainmaker use.
+  `AppIcon.icon` is the app icon bundle (Icon Composer, gated to render on both platforms), `Bundle+name.swift` reads `CFBundleName` at run time, `Cirruscope.entitlements` declares the App Group and Keychain-sharing capabilities, `Cirruscope.xcconfig` carries the bundle identity both apps share and assigns both of them those entitlements, and `PrivacyInfo.xcprivacy` is the privacy manifest both apps carry, declaring the UserDefaults and file-timestamp APIs their code and Rainmaker use.
   It also holds the sign-in code both apps run and the extension must not: `LoginSession.swift` drives Nextcloud's Login Flow v2 in an `ASWebAuthenticationSession`, taking the window to anchor the grant sheet to from its caller, and `ServerAddress/` holds the address-sanitation pair the sign-in screens share — `ServerAddress`, the pure value type that normalizes typed or pasted input into the one canonical address the app connects to and displays, and `ServerAddressError`, the closed set of reasons an input cannot be one.
   `LoginSession` could not live in `Core/` at all, `ASPresentationAnchor` being `NSWindow`/`UIWindow`; the address pair could, and sits here anyway because only a sign-in screen normalizes an address somebody typed.
   `PageTitle.swift` shortens the title a Nextcloud page gives itself by dropping the instance's name from it, for the surfaces that fall back to a page title when they cannot name the app instead; it is here rather than in `Core/` for the same reason the scripts below are.
@@ -124,7 +124,7 @@ Each of the five targets carries its own `.xcconfig`, all of them chaining up to
   `ServerAppTransferObject.swift` is the value snapshot of one app both apps list in their menus, with `ServerAppTransferObject+Sorting.swift` holding the one order they are ever listed in and `ServerAppTransferObject+Resolution.swift` the one rule for deciding which of them a loaded page belongs to — the Mac reuses a window by it, the iPhone titles its navigation bar by it.
   `ServerAppPath.swift` is what that rests on: it reduces a URL to the path it addresses within one instance, shedding the `index.php` segment an instance without pretty URLs serves everything under and the web root an instance installed in a subdirectory writes into every path it names, so two spellings of one page compare equal; it also carries the short table of routes an app registers at the server's own root rather than under its own prefix, Talk's `/call/<token>` conversation route being the one such route a current server has that belongs to an app the navigation endpoint offers.
   Six files stay at the top level because they belong to no one domain and are used across several.
-  `AppGroup.swift` resolves the shared App Group container identifier from the target's `Info.plist`, and answers `nil` rather than trapping when the container cannot be reached — see "Building and Signing" for why that is a degraded state rather than an error.
+  `AppGroup.swift` resolves the shared App Group container identifier from the target's `Info.plist`, and the container itself, trapping rather than answering `nil` when the system reports the build is not entitled to it — see "Building and Signing" for why a build without the App Group is an error rather than a state to degrade into.
   `InfoPlist.swift` reads the statically configured values every target needs out of its own `Info.plist` — the minimum supported Nextcloud major version, the application name, the Keychain service identifier, and the privacy-policy and support URLs.
   `Logging.swift` adds the `Logger(for:)` convenience initializer that every behavioural type uses to build its own `os` logger, with the running bundle's identifier as subsystem and the type's name as category.
   `CirruscopeError.swift` is the shared error type thrown by app-level facilities.
@@ -231,7 +231,8 @@ Each of the five targets carries its own `.xcconfig`, all of them chaining up to
 - `.github/CODEOWNERS` names `@i2h3` as the owner of every path, so GitHub requests that account's review on every pull request.
 - `.github/ISSUE_TEMPLATE/` contains the GitHub issue forms for feature requests and bug reports, and `config.yml`, which keeps blank issues enabled and links the website from the issue chooser.
 - `.github/PULL_REQUEST_TEMPLATE.md` pre-fills a new pull request's description with a prompt for what it does and why, and a checklist of sign-off, AI-tool disclosure, formatting, REUSE and test steps; it carries no inline SPDX header, for the reason given under "REUSE Compliance".
-- `.github/workflows/` contains the GitHub Actions workflows used for DCO checks (`dco.yml`), Swift formatting (`swiftformat.yml`, on the macOS image that ships SwiftFormat), JavaScript formatting and linting (`biome.yml`, which installs Biome on `ubuntu-latest` because no runner image carries it), deploying the website (`website.yml`), REUSE compliance (`reuse.yml`), unit tests and CI builds (`test.yml`, which runs the test action of each app, the iOS one on an iPhone Simulator it resolves at run time, and builds each in Release), release SBOM generation (`sbom.yml`), and closing inactive pull requests and inactive issues labelled `question` (`stale.yml`, which marks them stale after seven days and closes them seven days later).
+- `.github/workflows/` contains the GitHub Actions workflows used for DCO checks (`dco.yml`), Swift formatting (`swiftformat.yml`, on the macOS image that ships SwiftFormat), JavaScript formatting and linting (`biome.yml`, which installs Biome on `ubuntu-latest` because no runner image carries it), deploying the website (`website.yml`), REUSE compliance (`reuse.yml`), release SBOM generation (`sbom.yml`), and closing inactive pull requests and inactive issues labelled `question` (`stale.yml`, which marks them stale after seven days and closes them seven days later).
+  None of them compiles anything: building and testing is Xcode Cloud's (see "Building and Signing").
 - `DECISIONS.md` is the project's design-decisions FAQ: a plain-language record of why key architecture and product choices were made, maintained per the "Design Decisions" instructions below.
 
 ## Code Style
@@ -249,7 +250,7 @@ Each of the five targets carries its own `.xcconfig`, all of them chaining up to
 - Instead of declaring multiple values in a single guard-let statement, write one dedicated guard-let statement per value.
 - Always run `swiftformat .` in the project root directory after applying changes.
 - Always run `biome check --write --error-on-warnings .` in the project root directory after changing any JavaScript (install via `brew install biome` if missing), and never hand-format a `.js` file against it.
-  The flag is what makes the command agree with CI: several recommended rules report at warning level, and without it such a diagnostic passes locally while `biome.yml` still rejects it.
+  The flag is what makes the command agree with `biome.yml`: several recommended rules report at warning level, and without it such a diagnostic passes locally while that workflow still rejects it.
 - Everything the app calls into the page from Swift hangs off one `window.Cirruscope` namespace, assigned idempotently (`window.Cirruscope = window.Cirruscope || {};`) by each script that contributes a member, because injection order is not something a script should have to assume.
   What scripts tell *each other* stays on `<html>` attributes instead: a `window` global is visible only in the content world that defined it, and whether an evaluated script and a user script share a world fails silently when it is wrong.
   The namespace holds what Swift calls; the DOM holds what scripts tell each other.
@@ -259,37 +260,66 @@ Each of the five targets carries its own `.xcconfig`, all of them chaining up to
 
 **Xcode 27 or newer is required to build.**
 Not a preference for something current: the `IndexedEntityQuery` conformances in `Cirruscope/AppEntities/*+Indexed.swift` name `CSSearchableIndexDescription`, which does not exist in the SDK Xcode 26.6 ships, and `@available` cannot conjure a symbol the SDK has never heard of — an older toolchain fails with "Cannot find type … in scope" before availability is ever consulted.
-`test.yml` therefore runs on the `xcode-27` runner image rather than `macos-26`; that image is in public preview and arm64-only, and if it is withdrawn the fallback is `macos-26` plus dropping those conformances until a generally available image carries the SDK.
-Every other workflow compiles nothing and so runs on a generally available image: `swiftformat.yml` on `macos-26`, which ships SwiftFormat, and the rest on `ubuntu-latest`.
 
-- Code signing defaults to ad-hoc: `Cirruscope.xcconfig` sets `CODE_SIGN_IDENTITY = -` and `CODE_SIGN_STYLE = Automatic`, no checked-in `.xcconfig` or `project.pbxproj` names a `DEVELOPMENT_TEAM` (a team belongs in `Local.xcconfig` alone), and none of them sets `CODE_SIGN_ENTITLEMENTS` — so a fresh clone, a fork, or CI (`.github/workflows/test.yml`) builds, tests, and links with no Apple Developer account, certificate, or provisioning profile installed at all.
-  This is deliberate (since commit `707dd04`): the project used to require the maintainer's own real credentials for every build, which is exactly why CI itself couldn't build.
-  The targets name provisioning profiles nonetheless: `Cirruscope` in `macOS/macOS.xcconfig`, `Cirruscope Tests` in `macOSTests/macOSTests.xcconfig`, `Cirruscope for iOS` in `iOS/iOS.xcconfig`, and in `Widgets/Widgets.xcconfig` both `Cirruscope Widgets` under `[sdk=macosx*]` and `Cirruscope Widgets for iOS` under `[sdk=iphone*]`, which leaves `iOSTests` the one target naming none.
-  All five are inert under ad-hoc signing and need no local counterpart, which every CI run confirms by building and testing both schemes from a clone with no `Local.xcconfig` present.
-  The extension is where a missing name bites first: `Local.xcconfig` hands every target `CODE_SIGN_ENTITLEMENTS`, and an app extension carrying entitlements under manual signing needs a profile made for it, so a locally signed build fails to sign the extension unless `Widgets/Widgets.xcconfig` names one for the platform being built — while the ad-hoc default build never asks.
-  Without that name the extension takes whatever `Local.xcconfig` sets: with no profile there, the build reports `"Widgets" requires a provisioning profile`, and with the `Cirruscope` that `Local.xcconfig.example` sets, the extension is signed against the app's profile, which was made for the app rather than for the extension.
-- `Cirruscope/Cirruscope.entitlements`' App Group and Keychain-sharing capabilities need a real, provisioned certificate to sign — ad-hoc signing cannot embed them — so the default/CI build carries none of them and cannot verify that those capabilities work end to end.
-  It does verify that both apps **run** without them, because each of `test.yml`'s two test actions launches its own: a build without the App Group entitlement is refused the shared container (on macOS by the App Sandbox, which stays active in an ad-hoc build because it comes from `ENABLE_APP_SANDBOX` rather than from the entitlements file, and in the iOS Simulator, the only place an ad-hoc iOS build runs, by `containermanager`'s entitlement check), so the shared App Group container is unreachable, and each of its three users degrades rather than trapping — `AppDatabase.container` opens the store in the app's own container, `AssetCache` caches into its own caches directory, and `ActivityFeedStore`, which only the widget extension uses, keeps no last good feed, so the widget has no stale state to show.
-  Keychain items need no entitlement of their own either way; they use the app's default access group.
-  On iOS that holds only for a build that is actually signed: a build made with `CODE_SIGNING_ALLOWED=NO` carries no entitlements at all, `application-identifier` included, and every Keychain write then fails with `errSecMissingEntitlement` (-34018), which takes sign-in down with it.
-  Compile-check the iOS app with signing off; never run it that way.
+**Every build signs for real, with a team and the entitlements.**
+Debug, a test run and Release alike: there is no ad-hoc configuration, and no runtime fallback for a build that lacks the entitlements.
+The apps and the widget extension share their data through the App Group container — the store, the cached assets and the widget's last good feed — so a build that cannot reach it is not a degraded build of the app but a broken one.
+This is not theoretical: TestFlight build 1.2.0 (50), archived by Xcode Cloud while the entitlements were set only in the gitignored `Local.xcconfig` and the tracked configuration signed ad-hoc, shipped with neither the App Group nor the Keychain access group, in the app or in the extension.
+The fallbacks the code then had hid it: the app silently opened an empty store in its own container instead of the shared one, so 1.1.0 users found their keyboard shortcuts and appearance settings gone, although they sat intact in the App Group container and return with a correctly signed build.
+The stores such builds left in an app's own container are abandoned, not migrated.
+
+- `Cirruscope.xcconfig` sets `CODE_SIGN_STYLE = Automatic` and `DEVELOPMENT_TEAM`, the maintainer's team, above its trailing `#include? "Local.xcconfig"`, so a contributor's `Local.xcconfig` overrides it.
+  It is the only file naming a team: no target's `.xcconfig` does, and `project.pbxproj` must not either.
+  The team ID is no secret, every binary signed with it carrying it.
+- `CODE_SIGN_ENTITLEMENTS = Cirruscope/Cirruscope.entitlements` is assigned a level below, by `Cirruscope/Cirruscope.xcconfig` for both apps and by `Widgets/Widgets.xcconfig` for the extension, each after its include of the root.
+  The two test bundles, which include only the root, therefore carry no entitlements, and a root `Local.xcconfig` cannot reassign them for the three products, which is intended.
+  `REGISTER_APP_GROUPS = YES` sits beside it in the same two files rather than in `project.pbxproj`; it is a macOS-only build setting, letting automatic signing register the App Group the entitlements name when it signs for the Mac.
+- No target names a provisioning profile.
+  Automatic signing rejects a `PROVISIONING_PROFILE_SPECIFIER` once a team is set, so leave the profile to it rather than naming one again.
+- From the command line, automatic signing registers identifiers and creates or downloads profiles only when it is allowed to: pass `-allowProvisioningUpdates` to every `xcodebuild` that builds, as the commands under "Testing" do.
+  Xcode does the same on its own for the Apple ID signed in to its Accounts settings.
+- **Nothing at build time checks for the entitlements, and nothing has to.**
+  With the team and the entitlements in the tracked configuration, Xcode either embeds them or fails while signing.
+  Only a deliberate override gets around that — `CODE_SIGNING_ALLOWED=NO` or `CODE_SIGN_IDENTITY=-` on the command line or in a `Local.xcconfig`, or `CODE_SIGN_ENTITLEMENTS=` on the command line or in a `Local.xcconfig` inside a target folder (see below) — and the project supports no build made that way, an unsigned iOS compile check included.
+- **A build without the entitlements traps at launch, by design.**
+  `AppGroup.containerURL` traps when `FileManager.containerURL(forSecurityApplicationGroupIdentifier:)` answers `nil`, which is how iOS reports a missing entitlement.
+  macOS answers a URL of the expected form even for a build that is not entitled, and the App Sandbox then refuses whatever is opened under it, so there the failure surfaces in `AppDatabase.container`: the open fails, is retried once after quarantining the store — moving it to `.quarantine` siblings, never deleting it — and a second failure is logged as a fault and traps.
+  `AssetCache` caches in the App Group's `Library/Caches/Assets` or not at all, logging a fault when that directory cannot be created, and `ActivityFeedStore` has no location but the container either.
+  The macOS widget extension opens no store, so an unentitled build of it does not trap at all: it shows only as `AssetCache`'s fault and `ActivityFeedStore`'s failed writes.
+  The trap is the point: it is what a build that would otherwise show its user none of their data looks like before anyone ships it.
 - **A `ModelConfiguration` naming an App Group traps rather than throwing when the build is not entitled to it.**
   `ModelConfiguration(groupContainer: .identifier(…))` resolves the container inside its *initializer*, and a refused lookup is `fatalError("Unable to find App Group Container in Entitlements: …")` from `SwiftData/DataUtilities.swift` — `containermanager` logs `client is not entitled` immediately before it.
   There is no `try` to write and nothing to catch, so no amount of `do`/`catch` around the `ModelContainer` below it helps.
-  `AppDatabase.container` therefore asks `AppGroup.containerURL` *before* constructing any group configuration; that accessor puts the same question to the same subsystem and answers `nil`.
-  This killed the iOS app at launch on every unentitled build — the store is a `static let` reached from `Store.restored()` in `iOSApp.init()` — and it was diagnosed only by installing such a build on a simulator and reading its log, two guesses from the crash stack alone having been wrong.
-- Because of that, anything new that makes *launch* depend on an entitlement now fails CI as a test failure rather than surfacing later as a fork's crash.
-  This is not theoretical: the store previously called `preconditionFailure` when it could not open in the App Group container, so an ad-hoc build built fine and then trapped during `applicationDidFinishLaunching(_:)` — reproducible locally by testing with a group container that does not exist yet, `xcodebuild test … CIRRUSCOPE_BASE_BUNDLE_IDENTIFIER=de.i2h3.cirruscope.citest`, which is the closest thing to a fresh runner.
-  Reach for that command when a change touches the App Group, the sandbox, or anything opened at launch.
-- To build and run with those capabilities, and with a real "Apple Development" identity, copy `Local.xcconfig.example` to `Local.xcconfig` next to it (gitignored, never committed — this is where the maintainer's own team ID lives, not in the tracked xcconfig files) and fill in your own team.
-  `Cirruscope.xcconfig` includes it last (`#include? "Local.xcconfig"`), so its `CODE_SIGN_IDENTITY`, `CODE_SIGN_STYLE`, `DEVELOPMENT_TEAM`, and `CODE_SIGN_ENTITLEMENTS` assignments override the ad-hoc defaults above for local builds only.
-  `PROVISIONING_PROFILE_SPECIFIER` is the exception: each per-target file includes the root, directly or through `Cirruscope/Cirruscope.xcconfig`, before its own assignments, so a target that names its own profile wins over one set there.
+  `AppDatabase.container` therefore resolves `AppGroup.containerURL` *before* constructing any group configuration, so that an unentitled iOS build stops at a trap whose message names the cause rather than inside SwiftData.
+  The store is a `static let` reached from `Store.restored()` in `iOSApp.init()`, so either trap fires at launch.
+  SwiftData's own was diagnosed only by installing such a build on a simulator and reading its log, two guesses from the crash stack alone having been wrong.
+- **Whether the macOS widget can read the app's credentials is unverified.**
+  The `keychain-access-groups` entitlement puts the widget extension in the apps' Keychain access group, which on iOS is what lets it read the item the app wrote.
+  On macOS, though, the credentials live in the file-based Keychain, where access to an item is governed by its access control list rather than by `keychain-access-groups`, so do not assume the extension there reads the item the app wrote.
+- **A contributor signs with their own team and their own identifiers.**
+  Copy `Local.xcconfig.example` to `Local.xcconfig` next to it (gitignored, never committed) and fill in both of its values, `DEVELOPMENT_TEAM` and `CIRRUSCOPE_BASE_BUNDLE_IDENTIFIER`; the maintainer needs no `Local.xcconfig` at all.
+  The identifier has to change along with the team because the shipping identifiers and `group.de.i2h3.cirruscope` are registered to the maintainer's team, and no other team can claim them; every identifier the project uses — the apps', the extension's `.widgets`, the test bundles' `.tests`, the App Group, the Keychain service and the iOS background task — derives from the base one.
+  An Apple ID signed in to Xcode is enough: according to Apple's capability tables, a free Apple Developer account, without the paid membership, supports App Groups, Keychain Sharing, the App Sandbox and Background Modes on macOS and iOS alike.
+  What it costs is on a physical iPhone, where a free account's provisioning profile expires after about a week; the Mac and the Simulator are unaffected.
+- A `Local.xcconfig` made from the earlier template — Manual signing, a `PROVISIONING_PROFILE_SPECIFIER` and `CODE_SIGN_ENTITLEMENTS` at the root — must be replaced rather than kept.
+  With no target naming a profile of its own any more, those assignments now reach the widget extension and both test bundles as well, which signs them against a profile made for something else.
+- **Never pick a team in a target's Signing & Capabilities tab.**
+  Xcode writes the choice into `project.pbxproj` as a target-level `DEVELOPMENT_TEAM`, which overrides `Local.xcconfig` and the root alike and ends up committed.
+- `Cirruscope.xcconfig` includes `Local.xcconfig` last (`#include? "Local.xcconfig"`), so what it sets overrides the root's own assignments, the team included.
   `Cirruscope/Cirruscope.xcconfig` and every per-target `.xcconfig` end with the same `#include? "Local.xcconfig"`, resolved, like every include, relative to the file making it (as `#include "../Cirruscope.xcconfig"` shows), so each of them also reads a `Local.xcconfig` in its own folder, such as `macOS/Local.xcconfig`, which the `.gitignore` entry ignores at any depth.
-  Such a file is read after its folder's own assignments, so what it sets overrides them, a target's own profile included.
+  Such a file is read after its folder's own assignments, so what it sets overrides them, the entitlements included, which is why it counts among the overrides above.
   Keep `Local.xcconfig` at the repository root all the same: every folder holding one of those `.xcconfig` files is synchronized, so a `Local.xcconfig` placed in it is copied into the built product of every target listing that folder, and ignoring it in git does nothing to stop that.
   The `.xcconfig` files themselves stay out of the products only because each is named in its folder's `membershipExceptions` in `project.pbxproj`, so a new `.xcconfig` in a synchronized folder needs an exception of its own.
-- If a build fails with a signing error, that means a `Local.xcconfig` is present and pointing at a team, profile, or certificate this machine doesn't actually have installed — fix it there, or remove the file to fall back to the ad-hoc default.
-  Either way, that is not something to fix by editing `Cirruscope.xcconfig`/`Cirruscope/Cirruscope.xcconfig`'s checked-in defaults, which must stay ad-hoc so everyone else (including CI) keeps building.
+- **To keep the developer's real store out of a run**, build or test under a base identifier of its own: `xcodebuild test … CIRRUSCOPE_BASE_BUNDLE_IDENTIFIER=de.i2h3.cirruscope.citest -allowProvisioningUpdates`, or a contributor's own base identifier with `.citest` appended.
+  Automatic signing registers that identifier and its App Group under the team, so the run gets an App Group container, a store and a Keychain service of its own, the store starting empty.
+  Reach for it when a change touches the App Group, the sandbox, the live schema, or anything opened at launch.
+- **Xcode Cloud is the CI that builds and tests.**
+  It builds from a clean clone and signs with the tracked team and entitlements, so what it checks is the configuration that ships rather than one of its own; its manifest is `Cirruscope.xcodeproj/xcshareddata/xcodecloud/manifest.json`.
+  Building in Release, whose whole-module optimization can fail where a Debug build succeeds, is its job too.
+  The GitHub workflows compile nothing — `swiftformat.yml` runs on `macos-26`, which ships SwiftFormat, and the rest on `ubuntu-latest` — so a pull request from a fork gets no automatic build or test on GitHub, and the maintainer runs Xcode Cloud on it before merging; that is the trade-off accepted for a CI that signs like the shipping build.
+- **If a build fails while signing**, the cause is the machine's signing setup, not the checked-in configuration.
+  The usual ones are no Apple ID in Xcode's Accounts settings, an `xcodebuild` without `-allowProvisioningUpdates`, no `Local.xcconfig` on a machine whose Apple ID is not on the maintainer's team, or a `Local.xcconfig` naming a team that Apple ID is not a member of, a base identifier another team has registered, or the earlier template's assignments.
+  Fix it there — never by taking the team or the entitlements out of `Cirruscope.xcconfig`, `Cirruscope/Cirruscope.xcconfig` or `Widgets/Widgets.xcconfig`, or by signing ad-hoc, which produces exactly the build that traps at launch.
 
 ## Testing
 
@@ -298,7 +328,7 @@ It is hosted by the app (`TEST_HOST`/`BUNDLE_LOADER`), so tests reach the app's 
 `Cirruscope for macOS.xcscheme` and `Cirruscope for iOS.xcscheme` are both committed in `Cirruscope.xcodeproj/xcshareddata/xcschemes/`, so each scheme's test action is the same everywhere rather than depending on the per-user schemes Xcode autocreates (`xcuserdata` is gitignored).
 
 ```bash
-xcodebuild test -project Cirruscope.xcodeproj -scheme 'Cirruscope for macOS' -configuration Debug -destination 'platform=macOS'
+xcodebuild test -project Cirruscope.xcodeproj -scheme 'Cirruscope for macOS' -configuration Debug -destination 'platform=macOS' -allowProvisioningUpdates
 ```
 
 `iOSTests` holds the suites for what only iOS does, written with Swift Testing and hosted by the iOS app in the same way: the web view's insets and its user agent in `iOSTests/WebView/`, and the background refresh's property-list configuration in `iOSTests/Notifications/`.
@@ -309,22 +339,15 @@ Both targets have a test action; run whichever the change touches, and both when
 The iOS suites run the same way, but need a *concrete* Simulator rather than the generic destination a build takes, because a test action has to run somewhere:
 
 ```bash
-xcodebuild test -project Cirruscope.xcodeproj -scheme 'Cirruscope for iOS' -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17'
+xcodebuild test -project Cirruscope.xcodeproj -scheme 'Cirruscope for iOS' -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -allowProvisioningUpdates
 ```
 
 Substitute whatever device is installed.
-CI does not write a name down at all — `test.yml` resolves an available iPhone on the newest installed runtime first, since the runner image's device list changes with every update.
 
-Note the absence of `CODE_SIGNING_ALLOWED=NO` there.
-It belongs on an iOS *compile check* and must not appear on anything that runs:
+Both commands carry `-allowProvisioningUpdates` because a test run signs for real like every other build, and automatic signing may register identifiers and fetch profiles from the command line only when it is allowed to — see "Building and Signing".
+Never strip signing from a run, or from a build of either app, with `CODE_SIGNING_ALLOWED=NO` or an empty `CODE_SIGN_ENTITLEMENTS`: what that produces is an unentitled build, which traps at launch.
 
-```bash
-xcodebuild -project Cirruscope.xcodeproj -scheme 'Cirruscope for iOS' -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
-```
-
-See "Building and Signing" for why an unsigned iOS build takes sign-in down with `errSecMissingEntitlement`.
-
-In Xcode, Product ▸ Test (⌘U) runs exactly the same suites as the scheme selected; the two test commands above are what CI runs, and all three are what to use from a terminal session.
+In Xcode, Product ▸ Test (⌘U) runs exactly the same suites as the scheme selected; the two commands above are what to use from a terminal session, and Xcode Cloud, the project's CI, builds and tests from the same shared schemes.
 Debug is not incidental either way: `@testable import` needs the testability that the Release configuration does not enable.
 
 **What to test.**
@@ -374,7 +397,7 @@ The store's two reaches outside itself are injected through its initializer as p
 
 `AccountStore.persist(serverApps:)` takes the app's own `ServerAppTransferObject`, not `Rainmaker.NavigationItem`; the mapping lives in `ServerConnection.refreshNavigationApps(using:)`.
 Keep it that way — it is what lets a test seed an app list without linking Rainmaker, which neither test target does.
-Note also that each host app opens a store of its own during every test run regardless (`applicationDidFinishLaunching(_:)` → `rebuildServerAppsMenu()` → `AccountStore.shared.serverApps` on macOS, `iOSApp.init()` → `Store.restored()` → `AccountStore.shared.serverApps` on iOS) — the developer's real one on a provisioned machine, the per-build fallback under ad-hoc signing on CI; that is expected, not a regression.
+Note also that each host app opens a store of its own during every test run regardless (`applicationDidFinishLaunching(_:)` → `rebuildServerAppsMenu()` → `AccountStore.shared.serverApps` on macOS, `iOSApp.init()` → `Store.restored()` → `AccountStore.shared.serverApps` on iOS) — the real one in the App Group container, which on a developer's machine holds their own account unless the run was given a base identifier of its own (see "Building and Signing"); that is expected, not a regression.
 What matters is that no test *writes* through it, which a run confirms by leaving the store file's modification time untouched.
 
 **Deliberately untested in the store.**
@@ -407,7 +430,7 @@ This project is checked for [REUSE](https://reuse.software/) Specification 3.3 c
 - **A file can carry a correct header and still be reported as missing one.**
   `reuse` 6.2.0 failed to see the header on `Core/Collectives/CollectivePageWebRoute.swift` while the byte-identical header on its sibling was read without complaint; the trigger was a single 346-character documentation line containing two em dashes around a backtick-quoted token, and removing *either* the em dashes or the backticks made the file pass.
   It is not file size, not the leading comment block, and not the header.
-  This is worth knowing because the project's own style — one sentence per line, long prose comments, em dashes and backticks throughout — produces exactly that shape routinely, and the failure surfaces as CI reporting a licensing problem on a file whose licensing is fine.
+  This is worth knowing because the project's own style — one sentence per line, long prose comments, em dashes and backticks throughout — produces exactly that shape routinely, and the failure surfaces as `reuse.yml` reporting a licensing problem on a file whose licensing is fine.
   If it happens, split the sentence rather than hunting for a header bug.
 
 ## Documentation Instructions
@@ -554,15 +577,18 @@ Their languages are App Store Connect's localizations of the app — English, Ge
 - Name every macOS feature by Apple's own term in that language — Mitteilungszentrale, centre de notifications, Centro de notificaciones — rather than the website's, which is wrong in places.
   Write the Spanish for Spain in a way that also reads naturally in Latin America, since those storefronts show the same text.
 - A translation runs longer than its English, so an English text close to its field's limit leaves the translations no room; keep the English well below it.
+- No emoji, however well it would fit: App Store Connect rejects a text containing one as having an invalid character.
 
 Check every file against its field's limit, and every language against English, after any change to `AppStore/`:
 
 ```bash
 python3 - <<'EOF'
 import pathlib
+import re
 import sys
 
 limits = {"Description.txt": 4000, "WhatsNew.txt": 4000, "WhatToTest.txt": 4000, "Keywords.txt": 100, "Subtitle.txt": 30}
+emoji = re.compile("[\U0001F000-\U0001FAFF☀-➿⬀-⯿️‍]")
 problems = []
 
 for platform in sorted(p for p in pathlib.Path("AppStore").glob("*/*") if p.is_dir()):
@@ -580,6 +606,8 @@ for platform in sorted(p for p in pathlib.Path("AppStore").glob("*/*") if p.is_d
                 problems.append(f"{file}: {length} characters, over the limit of {limits[file.name]}")
             if not text.endswith("\n") or text.endswith("\n\n"):
                 problems.append(f"{file}: must end with exactly one newline")
+            if emoji.search(text):
+                problems.append(f"{file}: contains an emoji, which App Store Connect rejects")
 
 if problems:
     sys.exit("\n".join(problems))

@@ -5,7 +5,7 @@ import CryptoKit
 import Foundation
 import os
 
-/// `AssetCache` downloads remote assets into a caches directory, normally the shared App Group container's, and avoids redundant downloads by revalidating cached copies with the server using their HTTP `ETag`.
+/// `AssetCache` downloads remote assets into a caches directory, the shared App Group container's for `shared`, and avoids redundant downloads by revalidating cached copies with the server using their HTTP `ETag`.
 ///
 /// `AccountStore.persist(theming:)` uses the `shared` instance to keep local copies of the Nextcloud server's branding assets up to date so they can be displayed without re-fetching them every launch.
 /// Cached files are addressed by the SHA-256 digest of their absolute URL so that distinct remote URLs map to distinct local files.
@@ -40,35 +40,21 @@ final class AssetCache: Sendable {
 
     /// `assetsDirectory()` is the directory cached payloads and their `ETag` sidecars live in, created if it does not exist yet.
     ///
-    /// It is the `Assets` subdirectory of the shared App Group container's `Library/Caches`, so a future app extension sharing the same App Group reaches the same cached assets. A build that cannot reach that container — an ad-hoc one, which carries no App Group entitlement and is what a fresh clone, a fork, and CI produce — falls back to the app's own caches directory instead, so branding assets still cache for it rather than the whole feature failing. The fallback is chosen by *attempting* the shared location rather than by inspecting `AppGroup.containerURL`, because the container path can resolve while the sandbox still refuses to create anything under it, and only the attempt tells those two apart.
+    /// It is the `Assets` subdirectory of the shared App Group container's `Library/Caches`, so the apps and the widget extension reach the same cached assets, and it is that directory or none: a copy cached somewhere only one bundle can reach would be a copy the others silently do without. A failure to create it is logged as a fault and not worked around, since in a build entitled to the container it is an I/O failure rather than a signing state; every later write into it then fails and is logged on its own.
     private static func assetsDirectory() -> URL {
         let logger = Logger(for: AssetCache.self)
-        let sharedDirectory = AppGroup.containerURL?
+        let directory = AppGroup.containerURL
             .appending(path: "Library/Caches", directoryHint: .isDirectory)
             .appending(component: "Assets", directoryHint: .isDirectory)
 
-        if let sharedDirectory {
-            do {
-                try FileManager.default.createDirectory(at: sharedDirectory, withIntermediateDirectories: true)
-                logger.debug("Cache directory ready in the App Group container")
-                return sharedDirectory
-            } catch {
-                logger.error("Could not create the cache directory in the App Group container; falling back to this build's own: \(error.localizedDescription)")
-            }
-        } else {
-            logger.notice("No App Group container resolved; caching assets in this build's own container")
-        }
-
-        let ownDirectory = URL.cachesDirectory.appending(component: "Assets", directoryHint: .isDirectory)
-
         do {
-            try FileManager.default.createDirectory(at: ownDirectory, withIntermediateDirectories: true)
-            logger.debug("Cache directory ready in this build's own container")
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            logger.debug("Cache directory ready in the App Group container")
         } catch {
-            logger.error("Could not create the cache directory: \(error.localizedDescription)")
+            logger.fault("Could not create the cache directory in the App Group container: \(error.localizedDescription, privacy: .public)")
         }
 
-        return ownDirectory
+        return directory
     }
 
     /// `clear()` removes every cached payload and `ETag` sidecar stored by this cache.

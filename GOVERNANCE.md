@@ -57,4 +57,4 @@ I mention this genuinely, not dismissively.
 
 Contributions are welcome.
 Before you invest real time in a change beyond a small fix, please open an issue first so we can check it against the scope above — that way effort doesn't go into a pull request I'd have to decline as out of scope.
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for the mechanics (sign-off, code style, CI).
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for the mechanics (sign-off, code signing, code style, checks).

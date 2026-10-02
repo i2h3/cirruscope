@@ -111,7 +111,7 @@ Being a side product does not make it a placeholder: it has to build, behave cor
 The iOS app target also exists for two reasons of its own, neither of which depends on what the app does.
 Xcode cannot render a widget extension in its Previews canvas from a macOS target — Apple's own documentation says previews support iOS and watchOS widgets and points macOS widgets at the debugger instead — so designing widgets at all needs an active iOS target, and widgets are wanted on the Mac.
 And having a second target compile the same folders is the only thing that keeps `Core/` and `Cirruscope/` honest about what is genuinely platform-neutral; without it, "shared" is an assertion nothing checks.
-CI tests it and builds it for the Simulator on every pull request for exactly that reason.
+That is why a change to either shared folder is built and tested against the iOS app as well as the Mac app.
 
 What the app does today is sign in through Nextcloud's Login Flow v2, restore its account from the Keychain at launch, and present the web interface signed in, signing back in silently when the browser session behind it lapses and revoking the app password on the server when the user signs out.
 It lists the server apps as the navigation bar's title menu and, on an iPad, in the View menu of the menu bar, badges its icon with the unread-notification count from both the foreground and a background refresh, and gives a call in Talk the camera and the microphone.
@@ -120,8 +120,7 @@ The consequence for the codebase is the part that carries design weight, and it 
 None of this changes the public story, and deliberately so: the [FAQ on the website](./Website/support.html) and its German, French and Spanish translations still answer "Will there be an iOS or iPadOS version?" with "Not right now", because this entry describes how the work is organized, not what has been promised.
 
 That the two apps share one bundle identifier is deliberate too, and is what App Store Connect requires to offer them as a single app record rather than two unrelated listings.
-Provisioning profiles are per platform even so, which is why each app and the extension name one for every platform they are built for: `Cirruscope` for the macOS app, `Cirruscope for iOS` for the iOS app, and `Cirruscope Widgets` and `Cirruscope Widgets for iOS` for the extension, behind `[sdk=macosx*]` and `[sdk=iphone*]` qualifiers; the macOS test bundle names `Cirruscope Tests`.
-The checked-in ad-hoc build consults none of them; they come into play only once a `Local.xcconfig` switches signing to a real identity.
+Provisioning profiles are per platform even so, and no target names one: automatic signing creates and selects a profile for each platform a target is built for, the widget extension's two included, and refuses a profile named by hand once a team is set.
 
 ## Why one widget extension for both platforms, and not one per platform?
 
@@ -134,7 +133,7 @@ Xcode writes its template's build settings into each target rather than into an 
 The iOS app target had drifted on five settings within days of being created, one of which would have failed App Store validation.
 
 The trade-off accepted is that genuine platform differences now live inside one target instead of being separated by construction: `[sdk=…]`-qualified assignments in `Widgets/Widgets.xcconfig` for build settings, and `#if os(…)` in source for anything WidgetKit exposes on only one platform.
-That is a smaller cost than it looks, because those differences are rare — so far the runpath search paths, the provisioning profile, and one `#if os(macOS)` choosing the scale the widget's header is drawn at — and a qualified assignment states the difference in one place, where a duplicated target leaves it implicit in two.
+That is a smaller cost than it looks, because those differences are rare — so far the runpath search paths and one `#if os(macOS)` choosing the scale the widget's header is drawn at — and a qualified assignment states the difference in one place, where a duplicated target leaves it implicit in two.
 
 ## Why is there a `Core/` folder as well as `Cirruscope/`?
 
@@ -219,19 +218,30 @@ Later passes now land on `.quarantine-2`, `.quarantine-3`, and so on.
 The plain `.quarantine` is kept for the first pass because that is the case that essentially always happens.
 The search is bounded at ten: more quarantined copies of one store is not a state worth generating, and stopping there is what keeps this from becoming an unbounded loop on a directory the app cannot write to anyway.
 
-## Why ad-hoc code signing by default?
+## Why must every build be signed with a real team and the App Group?
 
-The checked-in build signs ad-hoc (`CODE_SIGN_IDENTITY = -`, with no development team set anywhere) so that a fresh clone, a fork, or CI can build and link with no Apple Developer account installed at all.
-The per-target xcconfigs do name provisioning profiles, but an ad-hoc build never consults them.
-The project previously required the maintainer's own real credentials for every build, which is exactly why CI itself could not build.
-A real "Apple Development" identity, and the entitlement-backed capabilities that need it, are opted into locally through a gitignored `Local.xcconfig`.
+Because the apps and the widget extension share their data through the App Group container — the store, the cached assets and the widget's last good feed — and a build that cannot reach it is not the product.
+
+The project used to sign ad-hoc by default, so that a fresh clone, a fork and a GitHub runner could build with no Apple Developer account, and treated the unreachable container as a degraded state, opening the store and the asset cache in the app's own container instead.
+That fallback hid exactly the failure it should have exposed.
+The entitlements were named only in the gitignored `Local.xcconfig`: the maintainer's Mac has one and archived `1.1.0` correctly entitled, Xcode Cloud's clean clone has none, and so build 50 of `1.2.0` reached TestFlight with neither the App Group nor the Keychain access group in the app or the extension.
+It launched, quietly opened an empty store of its own, and to anybody updating from `1.1.0` the keyboard shortcuts and appearance settings looked gone, though both were intact in the App Group container all along.
+
+Every build — Debug, the tests and Release alike — therefore signs automatically with a real team, the two apps and the widget extension always carry the entitlements, and nothing falls back.
+The tracked configuration names the maintainer's team, which is no secret, being in every binary it signs.
+The stores that ad-hoc builds and build 50 left in the app's own container are abandoned rather than migrated, since the user's data never left the App Group container.
+
+The costs are accepted because each is smaller than shipping that again.
+A contributor needs an Apple ID signed in to Xcode, though not a paid membership: a free Apple Developer account provisions every capability the app uses, the App Group included, even if a profile it makes for a physical iPhone expires after about a week.
+They set their own team and base bundle identifier in `Local.xcconfig`, because the shipping identifiers and the App Group derived from them are registered to the maintainer's team.
+And a pull request from a fork no longer gets a build or test run on GitHub, whose runner has no team and could make only the build the project no longer supports; Xcode Cloud, which builds from a clean clone with the tracked team and entitlements, is the CI, and the maintainer runs it before merging.
+
+There is deliberately no build-time script checking that the entitlements were embedded.
+With the team and the entitlements in the tracked configuration, Xcode either embeds them or fails while signing, so a script would only repeat that check.
+Getting past it takes a deliberate override — `CODE_SIGNING_ALLOWED=NO` or `CODE_SIGN_IDENTITY=-` on the command line or in a `Local.xcconfig`, or an empty `CODE_SIGN_ENTITLEMENTS` on the command line or in a `Local.xcconfig` inside a target folder — and such a build of either app now traps at launch rather than running degraded, which nobody can mistake for success.
+
+One thing signing does not settle: on the Mac the credentials live in the file-based Keychain, where an item's access control list rather than the Keychain access group decides who may read it, so whether the widget there can read what the app stored is still unverified.
 See [AGENTS.md → Building and Signing](./AGENTS.md#building-and-signing) for the mechanics.
-
-That commitment now extends from building to *running*, which is a second decision rather than a detail of the first.
-Ad-hoc signing embeds no entitlements while the App Sandbox stays active, so an ad-hoc build cannot reach the shared App Group container at all — and the code used to treat that as a provisioning error worth trapping on, which meant the app built for everyone but only launched for whoever held the maintainer's certificate.
-It is treated as a degraded state instead: [`AppDatabase`](./Cirruscope/Persistence/AppDatabase.swift) opens its store in the app's own container when the shared one cannot be opened, and [`AssetCache`](./Core/RemoteAssets/AssetCache.swift) caches into its own caches directory.
-Falling back is deliberately the last resort and is logged where the system log keeps it, because a *provisioned* build reaching it would be quietly reading an empty store rather than the user's data.
-The payoff beyond forks is that CI launches both apps on every pull request, so a change that makes launch depend on an entitlement now shows up as a failing test instead of as somebody else's crash.
 
 ## Why is App Transport Security disabled (arbitrary loads allowed)?
 
@@ -272,7 +282,7 @@ A user settles on one comfortable size for Nextcloud in a window and expects the
 The size lives in `UserDefaults.standard`, through AppKit's own `NSWindow.saveFrame(usingName:)`/`setFrameUsingName(_:)` pair, rather than in the store beside the appearance settings.
 Window geometry is this app's window chrome, not the connected account's data: it should survive a log out, and `AccountStore.disconnect()` deletes the account.
 The appearance settings survive one too, but as a record in the store, because they are a choice the user made and the store is what migrates and is quarantined as a whole; a window size is a measurement AppKit takes again the moment it is lost.
-It also must not depend on an entitlement, since anything reached during launch has to behave the same in an ad-hoc build as in a provisioned one — which is why the standard defaults domain is used and not the shared App Group suite.
+And it is the standard defaults domain rather than the shared App Group suite because nothing but the app's own windows reads it: no extension has a window to size.
 The framework pair carries the rest for free: it encodes the frame against the screen it was saved on and adjusts for a changed display configuration on the way back out.
 `setFrameAutosaveName(_:)` would have been the shorter spelling but is unusable here, because it refuses a name another live window already claimed, so with several web windows open only the first would ever autosave.
 
@@ -292,7 +302,7 @@ So the height is read where it is actually true.
 [`HeaderHeight.js`](./macOS/Scripts/HeaderHeight.js) measures the header element's own bounding rect — what rendered, rather than a property that has to be parsed — once per document and again through a `ResizeObserver`, and reports it over a script message.
 [`NextcloudHeaderHeight`](./macOS/Web/NextcloudHeaderHeight.swift) believes a reported height only within the range a real header falls in, so a header caught collapsed or mid-animation cannot place the buttons somewhere unreachable.
 
-It is kept in `UserDefaults.standard` for the same three reasons the remembered window size above is: it is the app's own window chrome rather than the account's data, so it should survive a log out that deletes the account; it is read during the first layout pass of the first window, before any page has loaded, so it must not depend on an entitlement an ad-hoc build cannot carry; and one value serves every window, all of them showing the same server.
+It is kept in `UserDefaults.standard` for the same three reasons the remembered window size above is: it is the app's own window chrome rather than the account's data, so it should survive a log out that deletes the account; nothing but the app's own windows reads it, so it has no business in the shared App Group suite; and one value serves every window, all of them showing the same server.
 A height recorded against one server is simply corrected by the first page load against the next.
 
 The trade-off accepted is a visible one, and the alternative was worse.

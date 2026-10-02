@@ -1,20 +1,26 @@
 // SPDX-FileCopyrightText: 2026 Iva Horn
 // SPDX-License-Identifier: MIT
 
-// Copy this file to Local.xcconfig (gitignored, next to this one) and fill in your own team to build and run
-// Cirruscope on-device with a real "Apple Development" signing identity instead of the project's ad-hoc default.
-// Cirruscope.xcconfig includes Local.xcconfig last, so whatever you set here overrides its ad-hoc defaults.
+// Copy this file to Local.xcconfig (gitignored, next to this one) and fill in both values to build Cirruscope with
+// your own team. An Apple ID signed in to Xcode is enough: a free Apple Developer account provisions everything the
+// app uses, the App Group included. The maintainer's own builds need no Local.xcconfig at all.
+//
+// Both values are needed because the shipping bundle identifiers, and the App Group derived from them, are registered
+// to the maintainer's team, and no other team can claim them. Every identifier the project uses — the apps', the
+// widget extension's, the App Group's, the Keychain service's and the background task's — derives from the base one.
+//
+// A Local.xcconfig made from an earlier version of this file, which switched signing to Manual and named a
+// provisioning profile and the entitlements file, must be replaced rather than kept: those assignments now reach
+// the widget extension and both test bundles as well, which signs them against a profile made for something else.
+// Do not pick a team in a target's Signing & Capabilities tab either. That writes DEVELOPMENT_TEAM into
+// project.pbxproj at target level, where it overrides this file and ends up committed.
+//
+// Cirruscope.xcconfig includes Local.xcconfig last, so whatever you set here overrides its defaults.
 // Cirruscope/Cirruscope.xcconfig and every per-target .xcconfig end with the same #include? "Local.xcconfig",
 // resolved relative to each file, so a Local.xcconfig in one of their folders would be read as well. Keep it at
 // the repository root all the same: every folder holding one of those files is synchronized, so a Local.xcconfig
 // placed there is copied into the built product of every target listing that folder, and ignoring it in git does
 // not stop that.
 
-CODE_SIGN_IDENTITY = Apple Development
-CODE_SIGN_STYLE = Manual
 DEVELOPMENT_TEAM = <your team ID>
-PROVISIONING_PROFILE_SPECIFIER = Cirruscope
-
-// The App Group and Keychain-sharing entitlements need a real certificate to sign, so the default/CI build
-// carries none at all; set this to restore them for a real, fully-functional local build.
-CODE_SIGN_ENTITLEMENTS = Cirruscope/Cirruscope.entitlements
+CIRRUSCOPE_BASE_BUNDLE_IDENTIFIER = <a reverse-DNS prefix of your own>.cirruscope
