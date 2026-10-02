@@ -16,6 +16,11 @@ enum ActivityFeedStore {
 
         /// `fetchedAt` is when the fetch returned, which the stale state renders as how long ago the rows were true.
         let fetchedAt: Date
+
+        /// `serverAddress` is the server the rows were fetched from, which the avatars beside them were cached under, or `nil` for a snapshot saved before it was recorded.
+        ///
+        /// It is optional so that such a snapshot still decodes: a missing key decodes as `nil`, and the rows then draw their monograms until the next fetch records it.
+        let serverAddress: URL?
     }
 
     /// `logger` records reads and writes under the `ActivityFeedStore` category.
@@ -29,12 +34,12 @@ enum ActivityFeedStore {
         AppGroup.containerURL.appending(component: fileName, directoryHint: .notDirectory)
     }
 
-    /// `save(rows:fetchedAt:)` records a successful fetch, replacing whatever was there.
+    /// `save(rows:fetchedAt:serverAddress:)` records a successful fetch from the server at `serverAddress`, replacing whatever was there.
     ///
     /// Failures are logged and swallowed. Nothing a widget draws is worth failing a refresh over, and the consequence of not writing is only that a later failure has no rows to fall back on.
-    static func save(rows: [ActivityRow], fetchedAt: Date) {
+    static func save(rows: [ActivityRow], fetchedAt: Date, serverAddress: URL) {
         do {
-            try JSONEncoder().encode(Snapshot(rows: rows, fetchedAt: fetchedAt)).write(to: fileURL, options: .atomic)
+            try JSONEncoder().encode(Snapshot(rows: rows, fetchedAt: fetchedAt, serverAddress: serverAddress)).write(to: fileURL, options: .atomic)
             logger.debug("Saved \(rows.count, privacy: .public) activity row(s)")
         } catch {
             logger.error("Could not save the activity feed: \(error.localizedDescription)")

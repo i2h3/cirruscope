@@ -90,7 +90,7 @@ struct ActivityWidgetView: View {
     @ViewBuilder
     private func feedRow(_ rows: [ActivityRow], at index: Int, style: ActivityStyle) -> some View {
         if index < rows.count {
-            ActivityRowView(row: rows[index], layout: rowLayout, showsTime: showsTime, style: style)
+            ActivityRowView(row: rows[index], layout: rowLayout, showsTime: showsTime, style: style, serverAddress: entry.serverAddress)
         } else {
             Color.clear
         }

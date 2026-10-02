@@ -42,7 +42,7 @@ struct ActivityTimelineProvider: TimelineProvider {
             return
         }
 
-        completion(ActivityEntry(date: .now, content: Self.content(for: snapshot.rows), fetchedAt: snapshot.fetchedAt))
+        completion(ActivityEntry(date: .now, content: Self.content(for: snapshot.rows), fetchedAt: snapshot.fetchedAt, serverAddress: snapshot.serverAddress))
     }
 
     /// `getTimeline(in:completion:)` fetches the newest activity and hands WidgetKit one entry plus when to come back.
@@ -70,8 +70,8 @@ struct ActivityTimelineProvider: TimelineProvider {
                 let visible = Array(rows.prefix(rowLimit))
                 let fetchedAt = Date.now
 
-                await refreshAvatars(for: visible)
-                ActivityFeedStore.save(rows: visible, fetchedAt: fetchedAt)
+                await refreshAvatars(for: visible, of: account)
+                ActivityFeedStore.save(rows: visible, fetchedAt: fetchedAt, serverAddress: account.server)
 
                 // The account may have signed out while this was fetching, in the app's process rather than this one.
                 // Checked after saving rather than before, so the two processes cannot interleave between the check
@@ -89,7 +89,8 @@ struct ActivityTimelineProvider: TimelineProvider {
                 return ActivityEntry(
                     date: .now,
                     content: content(for: visible),
-                    fetchedAt: fetchedAt
+                    fetchedAt: fetchedAt,
+                    serverAddress: account.server
                 )
 
             case .noAccount:
@@ -113,25 +114,24 @@ struct ActivityTimelineProvider: TimelineProvider {
                     return ActivityEntry(date: .now, content: .redacted)
                 }
 
-                return ActivityEntry(date: .now, content: content(for: snapshot.rows), fetchedAt: snapshot.fetchedAt, isStale: true)
+                return ActivityEntry(date: .now, content: content(for: snapshot.rows), fetchedAt: snapshot.fetchedAt, isStale: true, serverAddress: snapshot.serverAddress)
         }
     }
 
-    /// `refreshAvatars(for:)` fetches the profile photograph of everybody the new rows name, so the next draw has them.
+    /// `refreshAvatars(for:of:)` fetches the profile photograph of everybody the new rows name from `account`'s server, so the next draw has them.
     ///
     /// It runs before the entry is handed over rather than lazily from the views, because a widget's views cannot await anything: whatever is not on disk by the time the entry is returned is a monogram until the next refresh. Only actors are asked for — a row without one is the signed-in user, whose own circle the design never fills.
     /// Failures are silent by construction. `ServerAvatars.refresh(userIDs:on:)` throws nothing, and a photograph that could not be fetched draws as the monogram the design falls back to anyway.
-    private static func refreshAvatars(for rows: [ActivityRow]) async {
+    private static func refreshAvatars(for rows: [ActivityRow], of account: ServerAccount) async {
         let userIDs = Set(rows.compactMap(\.actorID))
 
         guard userIDs.isEmpty == false else {
             return
         }
 
-        guard let account = Keychain.accounts().first, let server = ServerConnection.authenticated(address: account.server) else {
-            return
-        }
-
-        await ServerAvatars.shared.refresh(userIDs: userIDs, on: server)
+        // The account the rows were fetched as, rather than the Keychain asked again: the photographs belong to the
+        // server the rows came from, and every further read is one more trip through the Keychain for an answer the
+        // fetch already had.
+        await ServerAvatars.shared.refresh(userIDs: userIDs, on: ServerConnection.authenticated(account))
     }
 }

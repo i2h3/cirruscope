@@ -29,10 +29,13 @@ struct ActivityRowView: View {
     /// `style` is the resolved appearance to draw in.
     let style: ActivityStyle
 
+    /// `serverAddress` is the server the row came from, which its avatar's photograph was cached under, or `nil` when that is not known.
+    let serverAddress: URL?
+
     /// `body` draws the row.
     var body: some View {
         HStack(spacing: layout == .compact ? 7 : 9) {
-            ActivityAvatarView(row: row, diameter: avatarDiameter, style: style)
+            ActivityAvatarView(row: row, diameter: avatarDiameter, style: style, serverAddress: serverAddress)
 
             VStack(alignment: .leading, spacing: 0) {
                 row.fileText

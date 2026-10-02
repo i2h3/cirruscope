@@ -42,6 +42,13 @@ enum ServerConnection {
         return Server(address: address, password: credentials.appPassword, user: credentials.user, userAgent: userAgent)
     }
 
+    /// `authenticated(_:)` builds a `Server` for `account`, carrying the credentials it already holds rather than reading them from the Keychain again.
+    ///
+    /// The widget extension uses it for everything a fetch does after it has resolved its account, which is what keeps a refresh to the one Keychain read that resolved it.
+    static func authenticated(_ account: ServerAccount) -> Server {
+        Server(address: account.server, password: account.credentials.appPassword, user: account.credentials.user, userAgent: userAgent)
+    }
+
     /// `validate(_:)` fetches `server`'s capabilities and reports whether its major version meets `InfoPlist.minimumSupportedServerMajorVersion`.
     ///
     /// It rethrows any error raised while fetching the capabilities so callers can distinguish an unreachable or unauthorized server from an unsupported one.

@@ -19,6 +19,11 @@ struct ActivityAvatarView: View {
     /// `style` is the resolved appearance to draw in.
     let style: ActivityStyle
 
+    /// `serverAddress` is the server the row came from, which the cached photograph is stored under, or `nil` when that is not known, which draws the monogram.
+    ///
+    /// It is handed in by the timeline entry rather than looked up here. A view's properties are evaluated on every render and once for each row, and this one used to ask the Keychain each time, which made a single refresh read the Keychain dozens of times for an answer that never changes within it.
+    let serverAddress: URL?
+
     /// `renderingMode` is how the system is drawing the widget: full colour on a plain Home Screen, and an accented or vibrant template on a tinted or clear one and on the Lock Screen.
     @Environment(\.widgetRenderingMode)
     private var renderingMode
@@ -61,7 +66,7 @@ struct ActivityAvatarView: View {
     /// `circle` is the photograph when one is cached, and the monogram when none is.
     @ViewBuilder
     private var circle: some View {
-        if let actorID = row.actorID, let image = ServerAvatars.shared.image(forUserID: actorID, serverAddress: serverAddress) {
+        if let actorID = row.actorID, let serverAddress, let image = ServerAvatars.shared.image(forUserID: actorID, serverAddress: serverAddress) {
             Image(decorative: image, scale: 1)
                 .resizable()
                 // Left alone, an accented rendering would flatten the photograph to a solid white disc. Desaturating it
@@ -126,13 +131,6 @@ struct ActivityAvatarView: View {
                 }
                 .frame(width: badgeDiameter, height: badgeDiameter)
         }
-    }
-
-    /// `serverAddress` is the instance the cached photograph would have been stored under, or a placeholder when no account is configured.
-    ///
-    /// A widget drawing rows always has an account, those rows having come from one. The fallback exists because this is a view and cannot fail: with no account there is also no cached photograph, so it resolves to the monogram either way.
-    private var serverAddress: URL {
-        Keychain.accounts().first?.server ?? URL(string: "https://localhost")!
     }
 }
 

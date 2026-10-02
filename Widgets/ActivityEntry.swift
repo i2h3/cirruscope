@@ -40,11 +40,17 @@ struct ActivityEntry: TimelineEntry {
     /// It is kept separate from `content` rather than made a case of it so that the feed is drawn by one piece of code either way, dimmed and footnoted rather than re-laid-out. The design asks for exactly that: the same rows, at reduced opacity, under a line saying when they were true.
     let isStale: Bool
 
-    /// `init(date:content:fetchedAt:isStale:)` builds an entry, defaulting the two things only a feed ever carries.
-    init(date: Date, content: Content, fetchedAt: Date? = nil, isStale: Bool = false) {
+    /// `serverAddress` is the server the rows in `content` came from, which their avatars were cached under, or `nil` where there are no rows or nothing recorded where they came from.
+    ///
+    /// The entry carries it so that no view has to ask the Keychain: a view is evaluated on every render, once for each row, and a Keychain read each time was most of what a refresh spent.
+    let serverAddress: URL?
+
+    /// `init(date:content:fetchedAt:isStale:serverAddress:)` builds an entry, defaulting the three things only a feed ever carries.
+    init(date: Date, content: Content, fetchedAt: Date? = nil, isStale: Bool = false, serverAddress: URL? = nil) {
         self.date = date
         self.content = content
         self.fetchedAt = fetchedAt
         self.isStale = isStale
+        self.serverAddress = serverAddress
     }
 }
