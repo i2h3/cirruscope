@@ -14,9 +14,9 @@ LD_RUNPATH_SEARCH_PATHS[sdk=iphone*] = $(inherited) @executable_path/Frameworks 
 LD_RUNPATH_SEARCH_PATHS[sdk=macosx*] = $(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks
 PRODUCT_BUNDLE_IDENTIFIER = $(CIRRUSCOPE_BASE_BUNDLE_IDENTIFIER).widgets
 
-// The same entitlements as the apps: the App Group is what the extension reaches the apps' data through, and on iOS
-// the Keychain access group is what it reads their credentials through. Whether it does on macOS, where the
-// file-based Keychain ignores access groups, is unverified (see AGENTS.md → Building and Signing).
+// The same entitlements as the apps: the App Group is what the extension reaches the apps' data through, and the
+// Keychain access group is what it reads their credentials through, on both platforms, because the credentials are in
+// the data-protection Keychain on macOS as well, the one Keychain where an access group decides who may read an item.
 CODE_SIGN_ENTITLEMENTS = Cirruscope/Cirruscope.entitlements
 REGISTER_APP_GROUPS = YES
 

@@ -72,7 +72,7 @@ The tracked configuration in [Cirruscope.xcconfig](./Cirruscope.xcconfig) signs 
    - `DEVELOPMENT_TEAM` is your own team ID, which takes the place of the maintainer's.
    - `CIRRUSCOPE_BASE_BUNDLE_IDENTIFIER` is a reverse-DNS prefix of your own followed by `.cirruscope`.
      The shipping bundle identifiers and the App Group `group.de.i2h3.cirruscope` are registered to the maintainer's team, and no other team can claim them.
-     Every identifier the project uses derives from this one, from both apps, the widget extension and the test bundles to the App Group, the Keychain service and the iOS background task, so setting it moves them all.
+     Every identifier the project uses derives from this one, from both apps, the widget extension and the test bundles to the App Group, the Keychain service, the Keychain access group and the iOS background task, so setting it moves them all.
 
    Keep the file at the repository root rather than in a target's folder.
    Those folders are synchronized, so a `Local.xcconfig` placed in one would be copied into the built product of every target that lists it.

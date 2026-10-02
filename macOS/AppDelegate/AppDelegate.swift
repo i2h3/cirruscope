@@ -5,6 +5,7 @@ import Cocoa
 import os
 import Rainmaker
 import WebKit
+import WidgetKit
 
 /// `AppDelegate` is the application delegate of Cirruscope and owns the lifecycle of every window the app shows.
 ///
@@ -33,6 +34,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// `logger` records launch and window-management activity under the `AppDelegate` category; it is not `private` so `AppDelegate`'s extensions in other files can log through it.
     let logger = Logger(for: AppDelegate.self)
+
+    func applicationWillFinishLaunching(_: Notification) {
+        // Before anything reads a credential: window restoration does, and it runs between this and
+        // `applicationDidFinishLaunching(_:)`. The widget extension reads its credentials only from the data-protection Keychain, so a
+        // timeline it drew before the move is redrawn now that the credentials are where it looks.
+        if Keychain.moveFileBasedItems() > 0 {
+            WidgetCenter.shared.reloadAllTimelines()
+        }
+    }
 
     func applicationDidFinishLaunching(_: Notification) {
         logger.notice("Application finished launching")
@@ -154,7 +164,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// `presentInitialWindow(forLaunch:)` validates the configured server and presents the window the app should show: a `WebViewWindowController` when a supported server is reachable or merely unreachable — in which case the web view shows its own "Server unreachable" retry UI — and a `ServerAddressWindowController` when no server is configured, no credentials are stored for it, the stored credentials were revoked, or the server runs an unsupported major version.
-    /// A configured server with no stored credentials is a sign-out that did not finish, so that case completes it through `AccountStore.disconnect()` before asking for a sign-in; a revoked credential goes through `requireSignIn()`, which signs out the same way.
+    /// A configured server with no stored credentials is a sign-out that did not finish, so that case completes it through `AccountStore.disconnect()` before asking for a sign-in — unless the credentials are still in macOS's file-based Keychain, which the move at launch could not carry across, and which asks for a sign-in without signing anything out. A revoked credential goes through `requireSignIn()`, which signs out the same way.
     ///
     /// `applicationDidFinishLaunching(_:)` calls it with `forLaunch` set to coordinate with AppKit window restoration: it opens a fresh web window only when none was restored. When the server reports an unsupported version or revoked credentials it closes any restored web windows so none lingers on a server the app can no longer use; an unreachable server is treated as transient, so restored windows are left in place to show their retry UI. `newWindow(_:)` and `applicationShouldHandleReopen(_:hasVisibleWindows:)` call it with `forLaunch` cleared, which always opens a new web window and leaves any already-open windows untouched unless validation reports the server unusable.
     ///
@@ -183,6 +193,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         guard credentials != nil else {
+            // Credentials the move in `applicationWillFinishLaunching(_:)` could not carry across, a TestFlight build
+            // whose prompt was denied among them, are still in the file-based Keychain. That is a move to try again on
+            // the next launch rather than a sign-out that did not finish, and signing out would delete them.
+            guard Keychain.holdsFileBasedItems() == false else {
+                logger.error("Server configured but its credentials are still in the file-based Keychain; requiring sign-in without signing out")
+                presentSignInWindow()
+                return
+            }
+
             // The address is configured but the Keychain holds no credentials for it, so the user must sign in
             // again — and what the store still holds about that server is a sign-out that did not finish, which
             // `1.1.0` left behind whenever the server rejected its app password. Finish it, so the menus and
@@ -195,8 +214,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         guard let server = ServerConnection.authenticated(address: serverAddress) else {
             // Building the server reads the Keychain again, and that read failing where the one above found the
-            // credentials is a refusal rather than a sign-out: the macOS Keychain can ask on every read when the item
-            // was created by a differently signed build, and a denial must not delete what it was asked about.
+            // credentials is a refusal rather than a sign-out, a locked Keychain or an access check failing for a
+            // moment, and a refusal must not delete what it was asked about.
             logger.error("The stored credentials could not be read a second time; requiring sign-in without signing out")
             presentSignInWindow()
             return

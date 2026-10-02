@@ -7,7 +7,8 @@
 //
 // Both values are needed because the shipping bundle identifiers, and the App Group derived from them, are registered
 // to the maintainer's team, and no other team can claim them. Every identifier the project uses — the apps', the
-// widget extension's, the App Group's, the Keychain service's and the background task's — derives from the base one.
+// widget extension's, the App Group's, the Keychain service's, the Keychain access group's and the background task's —
+// derives from the base one.
 //
 // A Local.xcconfig made from an earlier version of this file, which switched signing to Manual and named a
 // provisioning profile and the entitlements file, must be replaced rather than kept: those assignments now reach

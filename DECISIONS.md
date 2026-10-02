@@ -240,8 +240,53 @@ There is deliberately no build-time script checking that the entitlements were e
 With the team and the entitlements in the tracked configuration, Xcode either embeds them or fails while signing, so a script would only repeat that check.
 Getting past it takes a deliberate override — `CODE_SIGNING_ALLOWED=NO` or `CODE_SIGN_IDENTITY=-` on the command line or in a `Local.xcconfig`, or an empty `CODE_SIGN_ENTITLEMENTS` on the command line or in a `Local.xcconfig` inside a target folder — and such a build of either app now traps at launch rather than running degraded, which nobody can mistake for success.
 
-One thing signing does not settle: on the Mac the credentials live in the file-based Keychain, where an item's access control list rather than the Keychain access group decides who may read it, so whether the widget there can read what the app stored is still unverified.
+Carrying the entitlements is also what lets the Mac keep its credentials where the widget can read them, which the next entry explains.
 See [AGENTS.md → Building and Signing](./AGENTS.md#building-and-signing) for the mechanics.
+
+## Why are the credentials in the data-protection Keychain on the Mac as well?
+
+Because the file-based Keychain, where the Mac kept them before, asks before it lets the widget read them, and asks again after every sign-in.
+
+Updating a Mac from the App Store's `1.1.0` to TestFlight's `1.2.0` showed two Keychain prompts, one for the app and one for the widget extension inside it.
+The file-based Keychain, which Keychain Access shows as the login keychain, gives every item a list of the programs trusted to read it.
+The app creates the item, so the list names the app alone, and the widget extension is a program of its own with a signature of its own, so it is met with a prompt.
+A sign-in replaces the item, so the prompt would have come back after every one, for every App Store user who adds the widget, and a Deny leaves the widget unable to read the credentials at all.
+The Keychain access group the app and the widget share does not help there, because the file-based Keychain ignores `keychain-access-groups`.
+The app's own prompt was TestFlight's alone: the `1.1.0` item names the app by a requirement that only an App Store or Developer ID signature meets.
+
+Every query over the credentials in the data-protection Keychain therefore sets `kSecUseDataProtectionKeychain` to `true`, on both platforms.
+[`Keychain`](./Core/Account/Keychain.swift) builds its own in one place, and the move out of the file-based Keychain sets the flag to `true` on its two as well, so none leaves it out.
+iOS has no other Keychain, so nothing changes there.
+In the data-protection Keychain, who may read an item is decided by the access group in the entitlements, and the apps and the widget extension name the same group, so the widget reads what the app stored without anybody being asked.
+That depends on every build carrying its entitlements, which is why it could not be done while a build could ship without them.
+
+On the Mac the flag is set one way or the other and never left out, because leaving it out does not mean the file-based Keychain.
+Measured in an entitled process, a query that leaves it out searches both Keychains, and a deletion that leaves it out deletes from both.
+Setting it to `false` addresses the file-based Keychain alone, and setting it to `true` the data-protection Keychain alone.
+A first version of the move left the flag out, and so deleted the copy it had just made.
+[`FileBasedKeychainMoveTests`](./macOSTests/Account/FileBasedKeychainMoveTests.swift) now measures that fact rather than leaving it to belief.
+Every query that addresses the file-based Keychain on purpose therefore sets the flag to `false` explicitly: the question whether it still holds anything, a sign-out's second deletion, and every query the move makes of the file-based Keychain.
+The move's own two queries over the data-protection Keychain, whether it already holds a credential and the write of each copy, set it to `true`.
+
+The credentials already stored are moved across by the Mac app, which is the one program the old items trust.
+[`Keychain+FileBasedKeychain`](./macOS/Persistence/Keychain+FileBasedKeychain.swift) does it at launch, before window restoration or anything else reads a credential.
+The credential itself is the same before and after, so a move that succeeds leaves the account signed in.
+An item is deleted from the file-based Keychain only once its copy is in place, so a launch that cannot move it leaves it where it was.
+The app then asks for a sign-in without signing out, deleting nothing, and the next launch tries the move again.
+Once the data-protection Keychain holds any credential at all, every file-based item is deleted without being copied, whichever server it names.
+The credential there is the newer one, and copying another server's leftover beside it would leave two accounts where the app supports one.
+An App Store update moves the credentials without a prompt.
+A TestFlight build is asked during the move, because its signature is not the one the item's list names.
+Allowed, that is the only prompt; denied, it leaves the credential where it was, and the next launch asks again.
+
+Until the app has moved the credentials, the widget finds the data-protection Keychain empty, and it does not take that for a sign-out, which would forget the rows it last drew.
+It asks the file-based Keychain whether it still holds anything, for the attributes alone, which that Keychain hands out without a prompt.
+If it does, the widget draws its stale state instead, or its redacted placeholder where no feed was ever saved (every Mac updating from `1.1.0`, which had no widget).
+The app asks WidgetKit to redraw as soon as it has moved anything, so the widget then finds the credentials where it looks.
+
+A sign-out deletes from both Keychains, so that a credential the app has not moved yet cannot be moved on the next launch and sign the account straight back in.
+
+The cost accepted is that the credentials no longer appear in the login keychain in Keychain Access.
 
 ## Why is App Transport Security disabled (arbitrary loads allowed)?
 
@@ -820,6 +865,7 @@ A [`KeyboardShortcut`](./Cirruscope/Persistence/Models/KeyboardShortcut.swift) i
 Deleting the account at a sign-out leaves both alone, and there is one sign-out rather than two: the Mac's Log Out, the Mac's forced sign-out and both of iOS's run the same `AccountStore.disconnect()`.
 Both apps also finish a sign-out that did not complete, at launch: a store that still names a server while the Keychain says, for certain, that no credential is left for it is what `1.1.0`'s forced sign-out left behind, and the menus and Spotlight would otherwise go on offering a server nobody is signed in to.
 A Keychain that merely could not be read is not that, and asks for a sign-in without deleting anything.
+Nor is a credential still waiting in the Mac's file-based Keychain, which the move at launch could not carry across: that asks for a sign-in the same way, and the next launch tries the move again (see "Why are the credentials in the data-protection Keychain on the Mac as well?").
 The reverse — a credential with no account, which a store rebuilt empty after a failed open leaves behind — is repaired rather than signed out: the Mac adopts the credential, as iOS always has.
 
 A shortcut applies wherever and whenever the connected server offers an app with its identifier, which is the point and also the accepted cost.
@@ -1138,6 +1184,7 @@ The widget deletes it as well whenever the Keychain says nobody is signed in or 
 That check compares the credentials as well as the server, since signing out and back in to the same server stores new ones under the same address, and when it fails the widget also removes the photographs it fetched for those rows, which can have landed after the app emptied the cache.
 The app clears the credentials before the feed, so a late save either lands before the app's own clear or finds the account gone, and it asks WidgetKit to redraw last, so that the widget finds out at once rather than at its next scheduled refresh.
 A Keychain the widget cannot read deletes nothing, since it says nothing about whether anybody is signed in.
+Nor does an empty one on a Mac whose credentials are still in the file-based Keychain, waiting for the app to move them (see "Why are the credentials in the data-protection Keychain on the Mac as well?").
 
 ## Why does a row name neither the verb nor the person?
 

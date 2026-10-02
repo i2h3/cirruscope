@@ -20,7 +20,7 @@ enum RecentActivity {
 
         /// `noAccount` reports that the Keychain holds no usable credentials, so there is no server to ask.
         ///
-        /// A Keychain that could not be read is not this, but `unreachable`: nothing has been learned about whether anybody is signed in.
+        /// A Keychain that could not be read is not this, but `unreachable`: nothing has been learned about whether anybody is signed in. Nor are credentials still in macOS's file-based Keychain, which the macOS app has not moved yet.
         case noAccount
 
         /// `endpointUnavailable` reports that the instance offers no file activity: either the activity app answered `404`, or it is enabled but publishes no `files` filter.
@@ -64,6 +64,14 @@ enum RecentActivity {
         }
 
         guard let account = accounts.first else {
+            // The credentials may still be in macOS's file-based Keychain, where the macOS app moves them from on its
+            // next launch. Until it has, nothing is known about whether anybody is signed in, so this is not
+            // `noAccount`, which would forget the rows the widget last drew.
+            guard Keychain.holdsFileBasedItems() == false else {
+                logger.notice("The credentials are still in the file-based Keychain, which the app has not moved them out of yet (\(reason))")
+                return .unreachable
+            }
+
             logger.notice("No account is configured, so there is nothing to fetch (\(reason))")
             return .noAccount
         }
