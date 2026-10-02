@@ -1,0 +1,15 @@
+• Novedad: widget Actividad con los cambios recientes en los archivos de tu servidor Nextcloud
+• Novedad: apertura de conversaciones de Talk, notas, colectivos y páginas de colectivos desde Spotlight
+• Novedad: acciones de Atajos para abrir una conversación de Talk, una nota, un colectivo o una página de colectivo
+• Novedad: iconos de las aplicaciones del servidor Nextcloud en el menú Vista, en la pestaña Marcaciones rápidas de los ajustes, en Spotlight y en la app Atajos
+• Ahora abre los enlaces de correo electrónico y de teléfono en la app que los gestiona, como Mail o FaceTime
+• Ahora conserva tus atajos de teclado y tus ajustes de apariencia al cerrar sesión
+• Ahora elimina las notificaciones de Cirruscope del centro de notificaciones al cerrar sesión
+• Corregido un cierre inesperado de la app cuando se perdía la conexión de notificaciones en tiempo real con tu servidor
+• Corregidos los cierres de sesión inesperados tras expirar la sesión del navegador en el servidor
+• Corregido un cierre de sesión incompleto cuando tu servidor rechaza la contraseña de aplicación de Cirruscope
+• Corregida la reaparición de las aplicaciones y notificaciones de la cuenta anterior tras cerrar sesión mientras Cirruscope aún se estaba cargando
+• Corregidos los botones de la ventana que aparecían descentrados en la barra superior de Nextcloud, sobre todo en Nextcloud 35
+• Corregido un hueco en la barra superior de Nextcloud en pantalla completa
+• Corregida la apertura de una ventana duplicada de Talk mientras muestra una conversación, y de cualquier aplicación en un servidor instalado en un subdirectorio
+• Corregida la pestaña General de los ajustes, que mostraba una dirección de servidor desactualizada o texto sin traducir

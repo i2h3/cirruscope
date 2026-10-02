@@ -375,6 +375,26 @@ The rule applies to every Markdown file in the repository, and deliberately not 
 The cost accepted is that the raw files have ragged line lengths and rely on an editor's soft wrap.
 See [AGENTS.md → Documentation Instructions](./AGENTS.md#documentation-instructions).
 
+## Why are the App Store texts kept in the repository, one folder per version?
+
+Because App Store Connect shows them to no one but whoever is signed in to it.
+The description, the keywords and the release notes are what users read about the app, yet git cannot compare two versions of them, a review cannot see a change to them, and an agent drafting the next release cannot read what the last one said.
+Kept in [`AppStore/`](./AppStore/) as plain text, they are diffed, reviewed and translated like the website is.
+
+The layout follows App Store Connect's own model rather than inventing one.
+The description, the keywords and "What's New" are fields of each version there, so each version has a folder, and a folder for a version not yet submitted is simply its draft — written while the changes it describes land, rather than reconstructed from the git log on release day.
+Languages are App Store Connect's own names for its localizations, not locale codes, so that a file maps onto a field without anyone translating `es` into whichever Spanish App Store Connect means.
+Files are named after the fields they are pasted into, for the same reason.
+
+The texts address the reader informally in every language, as the website does, so the public story keeps one voice wherever it is told; the app's own strings are older and still formal.
+English is the source of truth and every other language is translated from it, as with the app's String Catalogs.
+
+The folder is referenced by the Xcode project's main group for browsing and listed by no target, so nothing in it ships in a product, and `REUSE.toml` annotates it as a whole because a header written into a file would be pasted into App Store Connect along with the text.
+
+The costs accepted are that a text unchanged from one version to the next is copied into the new folder rather than shared, so comparing two versions means `git diff --no-index` across two folders rather than one file's history, and that the folder is synchronized with App Store Connect by hand.
+Nothing here uploads it — no `fastlane`, no App Store Connect API key — because either would mean a credential in or beside the repository for a task done a few times a year.
+See [AGENTS.md → Repository Structure](./AGENTS.md#repository-structure) and [AGENTS.md → Localization Instructions](./AGENTS.md#localization-instructions).
+
 ## Why does the account store take its SwiftData container instead of reaching for the app's?
 
 Because otherwise its logic cannot be exercised without writing to the developer's own account.

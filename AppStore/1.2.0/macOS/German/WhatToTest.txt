@@ -1,0 +1,31 @@
+ZUERST AKTUALISIEREN
+
+Installiere über Version 1.1.0, in der du angemeldet bist. Du solltest angemeldet bleiben, und deine Tastaturkurzbefehle unter „Kurzwahlen“ und deine Einstellungen unter „Darstellung“ sollten erhalten bleiben.
+
+NEU
+
+- Widget „Aktivität“: Rechtsklick auf den Schreibtisch > Widgets bearbeiten … und „Aktivität“ hinzufügen (braucht die App „Aktivität“ auf deinem Server).
+- Spotlight findet Talk-Unterhaltungen, Notizen, Kollektive und ihre Seiten.
+- Aktionen in der App „Kurzbefehle“ öffnen eine Talk-Unterhaltung, eine Notiz, ein Kollektiv oder eine Kollektivseite.
+- Nextcloud-Apps zeigen ihr eigenes Symbol im Menü „Darstellung“ und unter Einstellungen… > Kurzwahlen.
+
+VERBESSERT UND BEHOBEN
+
+- Beim Abmelden verschwindet dein Konto aus den Menüs, aus Spotlight, dem Widget und den Mitteilungen, deine Tastaturkurzbefehle unter „Kurzwahlen“ und deine Einstellungen unter „Darstellung“ bleiben aber erhalten.
+- Die Fenstertasten sitzen mittig in der Nextcloud-Kopfleiste.
+- Keine Lücke mehr in der Kopfleiste im Vollbildmodus.
+- Wählst du eine bereits geöffnete App, kommt ihr Fenster nach vorn – auch bei Talk, während dort eine Unterhaltung angezeigt wird.
+- Abgelaufene Serversitzungen melden dich nicht mehr ab.
+- E-Mail- und Telefonlinks öffnen sich in der dafür zuständigen App, etwa Mail oder FaceTime.
+- Absturz bei Live-Benachrichtigungen behoben.
+
+BITTE AUCH PRÜFEN
+
+- Anmelden, auch mit einer Adresse, hinter der kein Server steht.
+- „Liquid-Glass-Darstellung“ und „Abstände um den Inhalt entfernen“ unter Einstellungen… > Darstellung.
+- Seitenleiste ein- und ausblenden, Fenster an der Nextcloud-Kopfleiste verschieben, auf Mitteilungen klicken.
+- Kamera und Mikrofon bei Talk-Anrufen.
+- Downloads (Fenster > Downloads).
+- Server ohne Talk, Notes oder Collectives.
+
+Feedback über TestFlight ist herzlich willkommen! Bitte nenne dabei deine Nextcloud-Serverversion.

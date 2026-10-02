@@ -168,6 +168,11 @@
 			path = macOSTests;
 			sourceTree = "<group>";
 		};
+		AA4464EF306F739600CCD54D /* AppStore */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = AppStore;
+			sourceTree = "<group>";
+		};
 		AA45EF073042D2410092ABFD /* Tests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Tests;
@@ -281,6 +286,7 @@
 				AAE675CF301CEB20007853C0 /* REUSE.toml */,
 				AA8A9A90300522C20098151F /* Cirruscope.xcconfig */,
 				AAE70077303DB197001A7B02 /* .github */,
+				AA4464EF306F739600CCD54D /* AppStore */,
 				AA059CA52FE407A700DE3094 /* Cirruscope */,
 				AA89BB01303ECC0000C5D5D9 /* Core */,
 				AA45EF073042D2410092ABFD /* Tests */,

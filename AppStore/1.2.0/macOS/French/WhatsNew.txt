@@ -1,0 +1,15 @@
+• Nouveau : widget Activité qui affiche les modifications récentes des fichiers de ton serveur Nextcloud
+• Nouveau : ouverture des conversations Talk, des notes, des collectifs et des pages de collectif depuis Spotlight
+• Nouveau : actions Raccourcis pour ouvrir une conversation Talk, une note, un collectif ou une page de collectif
+• Nouveau : icônes des applications du serveur Nextcloud dans le menu Présentation, les réglages Numéros abrégés, Spotlight et l’app Raccourcis
+• Ouvre désormais les liens d’e-mail et de téléphone dans l’app qui les prend en charge, comme Mail ou FaceTime
+• Conserve désormais tes raccourcis clavier et tes réglages d’apparence quand tu te déconnectes
+• Retire désormais les notifications de Cirruscope du centre de notifications quand tu te déconnectes
+• Correction d’un plantage en cas de coupure de la connexion qui relaie en direct les notifications de ton serveur
+• Correction de déconnexions inattendues après l’expiration de la session web sur le serveur
+• Correction d’une déconnexion incomplète lorsque ton serveur refuse le mot de passe d’application de Cirruscope
+• Correction de la réapparition des applications et des notifications du compte précédent après une déconnexion effectuée pendant que Cirruscope se chargeait encore
+• Correction des boutons de fenêtre mal centrés dans l’en-tête de Nextcloud, notamment avec Nextcloud 35
+• Correction d’un espace vide dans l’en-tête de Nextcloud en mode plein écran
+• Correction de l’ouverture d’une fenêtre en double pour Talk lorsqu’une conversation y est affichée, ainsi que pour toute application d’un serveur installé dans un sous-répertoire
+• Correction de l’affichage d’une adresse de serveur obsolète ou d’un texte non traduit dans les réglages Général

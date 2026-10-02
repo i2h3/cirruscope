@@ -1,0 +1,31 @@
+ACTUALIZA PRIMERO
+
+Instálala sobre la 1.1.0 con la sesión iniciada. Deberías seguir con la sesión iniciada y conservar tus atajos de Marcaciones rápidas y tus ajustes de Apariencia.
+
+NOVEDADES
+
+- Widget Actividad: haz clic derecho en el escritorio > Editar widgets… y añade “Actividad” (requiere la app Actividad en tu servidor).
+- Spotlight encuentra conversaciones de Talk, notas, colectivos y sus páginas.
+- Las acciones de Atajos abren una conversación de Talk, una nota, un colectivo o una página de colectivo.
+- Las apps de Nextcloud muestran su propio icono en el menú Vista y en Ajustes… > Marcaciones rápidas.
+
+MEJORAS Y CORRECCIONES
+
+- Al cerrar sesión, tu cuenta desaparece de los menús, de Spotlight, del widget y de las notificaciones, pero se conservan tus atajos de Marcaciones rápidas y tus ajustes de Apariencia.
+- Los botones de la ventana están centrados en la barra superior de Nextcloud.
+- Ya no hay un hueco en la barra superior en pantalla completa.
+- Al elegir una app que ya está abierta, su ventana pasa al frente, también con Talk mientras muestra una conversación.
+- Las sesiones caducadas del servidor ya no cierran tu sesión.
+- Los enlaces de correo electrónico y de teléfono se abren en la app que los gestiona, como Mail o FaceTime.
+- Corregido un cierre inesperado con las notificaciones en tiempo real.
+
+REVISA TAMBIÉN
+
+- El inicio de sesión, también en una dirección donde no hay ningún servidor.
+- “Apariencia Liquid Glass” y “Eliminar los espacios alrededor del contenido” en Ajustes… > Apariencia.
+- Mostrar y ocultar la barra lateral, arrastrar ventanas por la barra superior de Nextcloud y hacer clic en las notificaciones.
+- La cámara y el micrófono en las llamadas de Talk.
+- Las descargas (Ventana > Descargas).
+- Los servidores sin Talk, Notes o Collectives.
+
+¡Tus comentarios a través de TestFlight son bienvenidos! Indica la versión de tu servidor Nextcloud.

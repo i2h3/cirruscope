@@ -1,0 +1,31 @@
+MISE À JOUR D’ABORD
+
+Installe-la par-dessus une 1.1.0 où tu es connecté. Tu devrais rester connecté, avec tes raccourcis Numéros abrégés et tes réglages Apparence intacts.
+
+NOUVEAUTÉS
+
+- Widget Activité : clic droit sur le bureau > Modifier les widgets…, puis ajoute « Activité » (app Activité requise sur ton serveur).
+- Spotlight trouve les conversations Talk, les notes, les collectifs et leurs pages.
+- Des actions Raccourcis ouvrent une conversation Talk, une note, un collectif ou une page de collectif.
+- Les apps Nextcloud ont leur propre icône dans le menu Présentation et dans Réglages… > Numéros abrégés.
+
+AMÉLIORATIONS ET CORRECTIONS
+
+- La déconnexion retire ton compte des menus, de Spotlight, du widget et des notifications, mais conserve tes raccourcis Numéros abrégés et tes réglages Apparence.
+- Les boutons de la fenêtre sont centrés dans l’en-tête de Nextcloud.
+- Plus aucun espace vide dans l’en-tête en plein écran.
+- Choisir une app déjà ouverte ramène sa fenêtre au premier plan, y compris Talk quand il affiche une conversation.
+- Une session expirée sur le serveur ne te déconnecte plus.
+- Les liens d’e-mail et de téléphone s’ouvrent dans l’app qui les prend en charge, comme Mail ou FaceTime.
+- Correction d’un plantage lié aux notifications en direct.
+
+À VÉRIFIER AUSSI
+
+- La connexion, y compris à une adresse sans serveur.
+- « Apparence Liquid Glass » et « Supprimer les espaces autour du contenu » dans Réglages… > Apparence.
+- Afficher et masquer la barre latérale, déplacer les fenêtres par l’en-tête de Nextcloud, cliquer sur les notifications.
+- La caméra et le micro pendant les appels Talk.
+- Les téléchargements (Fenêtre > Téléchargements).
+- Les serveurs sans Talk, Notes ou Collectives.
+
+Tes retours via TestFlight sont les bienvenus ! Merci d’indiquer la version de ton serveur Nextcloud.

@@ -1,0 +1,22 @@
+Cirruscope lleva Nextcloud a tu Mac como una aplicación de verdad, no como otra pestaña más del navegador.
+
+FUNCIONES
+
+• Sin barra de título ni barra de herramientas: tu interfaz de Nextcloud ocupa toda la ventana, de borde a borde
+• Mueve la ventana desde la barra superior de Nextcloud
+• Muestra u oculta la barra lateral en cualquier momento desde el menú de la app, cuando quieras más espacio
+• Abre tus aplicaciones del servidor Nextcloud favoritas al instante desde la barra de menús y el Dock, con tus propios atajos de teclado
+• Abre una aplicación del servidor Nextcloud directamente desde Spotlight o mediante una acción de Atajos, sin necesidad de abrir antes Cirruscope
+• Estilo de ventana translúcido opcional, por si lo prefieres al aspecto sólido predeterminado
+• Las ventanas se abren de nuevo en la misma posición y con el mismo tamaño tras reiniciar la app
+• Las descargas van directamente a tu carpeta Descargas, con una ventana de progreso y una notificación al finalizar
+
+PRIVACIDAD
+
+Cirruscope no recopila nada. Sin análisis, sin seguimiento: la única conexión de red que realiza es con tu propio servidor Nextcloud.
+
+GRATIS Y DE CÓDIGO ABIERTO
+
+Cirruscope es gratuito y se desarrolla completamente en abierto, así que puedes revisar cada línea de su código fuente.
+
+Cirruscope es una aplicación no oficial, desarrollada de forma independiente por la comunidad de Nextcloud. No está asociada ni respaldada por Nextcloud GmbH.

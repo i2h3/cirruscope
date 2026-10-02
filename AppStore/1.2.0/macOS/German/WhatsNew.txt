@@ -1,0 +1,15 @@
+• Neu: Widget „Aktivität“ mit den neuesten Änderungen an den Dateien auf deinem Nextcloud-Server
+• Neu: Talk-Unterhaltungen, Notizen, Kollektive und Kollektivseiten aus Spotlight öffnen
+• Neu: Aktionen in der App „Kurzbefehle“ zum Öffnen einer Talk-Unterhaltung, einer Notiz, eines Kollektivs oder einer Kollektivseite
+• Neu: Symbole der Nextcloud-Server-Apps im Menü „Darstellung“, in den Einstellungen unter „Kurzwahlen“, in Spotlight und in der App „Kurzbefehle“
+• Öffnet E-Mail- und Telefonlinks jetzt in der dafür zuständigen App, etwa Mail oder FaceTime
+• Behält jetzt deine Tastaturkurzbefehle und Einstellungen unter „Darstellung“, wenn du dich abmeldest
+• Entfernt jetzt die Mitteilungen von Cirruscope aus der Mitteilungszentrale, wenn du dich abmeldest
+• Absturz behoben, der auftrat, wenn die Live-Verbindung für Benachrichtigungen zu deinem Server abbrach
+• Unerwartete Abmeldungen nach Ablauf der Browsersitzung auf dem Server behoben
+• Behoben, dass die Abmeldung unvollständig blieb, wenn dein Server das App-Passwort von Cirruscope ablehnte
+• Behoben, dass Apps und Benachrichtigungen des vorherigen Kontos wieder auftauchten, wenn du dich abgemeldet hattest, während Cirruscope noch lud
+• Nicht mittig ausgerichtete Fenstertasten in der Nextcloud-Kopfleiste korrigiert, insbesondere unter Nextcloud 35
+• Lücke in der Nextcloud-Kopfleiste im Vollbildmodus beseitigt
+• Behoben, dass sich ein zweites Fenster öffnete – für Talk, während dort eine Unterhaltung angezeigt wurde, und für jede App auf einem Server, der in einem Unterverzeichnis installiert ist
+• Behoben, dass die Einstellungen unter „Allgemein“ eine veraltete Serveradresse oder nicht übersetzten Text anzeigten

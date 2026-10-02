@@ -139,3 +139,11 @@ path = ".github/PULL_REQUEST_TEMPLATE.md"
 precedence = "override"
 SPDX-FileCopyrightText = "2026 Iva Horn"
 SPDX-License-Identifier = "MIT"
+
+# App Store Connect and TestFlight texts: each file is pasted verbatim into a
+# field there, so an inline header would be published along with it.
+[[annotations]]
+path = "AppStore/**"
+precedence = "override"
+SPDX-FileCopyrightText = "2026 Iva Horn"
+SPDX-License-Identifier = "MIT"

@@ -19,3 +19,6 @@
 
 # Shell scripts: force LF
 *.sh text eol=lf
+
+# Plain text (App Store Connect texts, license texts, robots.txt): force LF
+*.txt text eol=lf

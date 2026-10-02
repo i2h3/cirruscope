@@ -34,6 +34,7 @@ The worked example is in the tree: `Core/ServerConnection.swift` builds and vali
 
 **None of this changes what the project says publicly.**
 `Website/support.html` — and its `de/`, `es/`, and `fr/` translations — still answer "Will there be an iOS or iPadOS version?" as they do today, and that answer is deliberately not revised to match this section.
+The App Store texts in `AppStore/` likewise describe the Mac app alone.
 This is how the work is organized, not what has been promised.
 
 ## Repository Structure
@@ -53,10 +54,11 @@ Each of the five targets carries its own `.xcconfig`, all of them chaining up to
   Biome governs the JavaScript in `Cirruscope/Scripts/`, `macOS/Scripts/`, `iOS/Scripts/`, and `Website/js/`, and nothing else: its `files.includes` is an allowlist pinned to `*.js`, because Biome would otherwise format the stylesheets and the Xcode-owned JSON that `REUSE.toml` annotates precisely because it must never be hand-edited.
 - The repository root also holds the Xcode project and the project's own documentation, licensing and repository configuration.
   `Cirruscope.xcodeproj/` is the Xcode project: `project.pbxproj` declares the five targets, the synchronized folders each one lists and the Rainmaker package the three product targets link, `project.xcworkspace/xcshareddata/swiftpm/Package.resolved` pins Rainmaker and its dependencies at the versions last resolved, `xcshareddata/xcschemes/` holds the two shared schemes `Cirruscope for macOS` and `Cirruscope for iOS`, and `xcshareddata/xcodecloud/manifest.json` is the Xcode Cloud manifest naming the target Xcode Cloud builds, written by Xcode rather than by hand.
+  The project's main group also references `.github/` and `AppStore/` as synchronized folders, only so they can be browsed in Xcode: no target lists either, which is what keeps both out of every built product, and that must stay so.
   `README.md` is the developer landing page, with the workflow status badges, a pointer to the website and the unofficial-app disclaimer; `CONTRIBUTING.md` is the contribution workflow, from sign-off and AI-assistance disclosure to local code signing and the checks to run; `CODE_OF_CONDUCT.md` is the conduct standard and the address to raise a concern with; and `GOVERNANCE.md` explains how the single-maintainer project is run and how feature requests are decided.
   `LICENSE` is the MIT license text the documents link to, `LICENSES/MIT.txt` is the same text where REUSE looks it up by its SPDX identifier, and `REUSE.toml` carries the licensing annotations for every file that takes no inline header (see "REUSE Compliance" below).
   `Local.xcconfig.example` is the template for the gitignored `Local.xcconfig` that signs a local build with a real team (see "Building and Signing" below).
-  `.gitattributes` forces LF line endings on Swift, JavaScript and its tooling configuration, Xcode project and scheme files, xcconfigs, String Catalogs and shell scripts; `.gitignore` keeps build products, per-user Xcode data, `.DS_Store` and `Local.xcconfig` out of the repository; and `.swift-version` is the Swift version SwiftFormat reads.
+  `.gitattributes` forces LF line endings on Swift, JavaScript and its tooling configuration, Xcode project and scheme files, xcconfigs, String Catalogs, shell scripts and plain-text files; `.gitignore` keeps build products, per-user Xcode data, `.DS_Store` and `Local.xcconfig` out of the repository; and `.swift-version` is the Swift version SwiftFormat reads.
 - `Cirruscope/` contains the bundle identity, configuration and code the macOS and iOS app targets share, and is a member of both but not of the widget extension.
   `AppIcon.icon` is the app icon bundle (Icon Composer, gated to render on both platforms), `Bundle+name.swift` reads `CFBundleName` at run time, `Cirruscope.entitlements` declares the App Group and Keychain-sharing capabilities, `Cirruscope.xcconfig` carries the bundle identity both apps share, and `PrivacyInfo.xcprivacy` is the privacy manifest both apps carry, declaring the UserDefaults and file-timestamp APIs their code and Rainmaker use.
   It also holds the sign-in code both apps run and the extension must not: `LoginSession.swift` drives Nextcloud's Login Flow v2 in an `ASWebAuthenticationSession`, taking the window to anchor the grant sheet to from its caller, and `ServerAddress/` holds the address-sanitation pair the sign-in screens share — `ServerAddress`, the pure value type that normalizes typed or pasted input into the one canonical address the app connects to and displays, and `ServerAddressError`, the closed set of reasons an input cannot be one.
@@ -211,6 +213,21 @@ Each of the five targets carries its own `.xcconfig`, all of them chaining up to
   `PrivacyInfo.xcprivacy` is the extension's own privacy manifest, since the extension is a bundle of its own and the apps' copy in `Cirruscope/` does not reach it: it declares the file-timestamp APIs that `Core/` and Rainmaker compile into the extension as well.
 - `Website/` contains the project's public website, deployed to GitHub Pages by `.github/workflows/website.yml`.
   It carries the polished, user-facing counterpart of the decisions recorded in `DECISIONS.md`.
+- `AppStore/` holds the texts entered into App Store Connect and TestFlight, which nothing else in the repository would otherwise show — not git, not a review, not an agent.
+  Each text is one file at `AppStore/<marketing version>/<platform>/<language>/<field>.txt`.
+  `<marketing version>` is the `MARKETING_VERSION` the texts were or will be submitted with.
+  A folder for a release still to come is that release's draft; a folder whose version has a git tag of the same name was published and is a record of what was published, not edited afterwards.
+  `<platform>` is `macOS` alone: an `iOS` folder is added only once an iOS release is planned, which, per "Platform Scope", it is not.
+  `<language>` is App Store Connect's own English name for one of the app's localizations — `English`, `German`, `French` and `Spanish` — rather than a locale code.
+  `<field>` names the field the file is pasted into, and each has a limit counted in characters, without the trailing newline every file ends with:
+    - `Description.txt` is the App Store description and also TestFlight's Beta App Description (4000);
+    - `WhatsNew.txt` is "What's New in This Version" (4000);
+    - `Keywords.txt` is the comma-separated keywords (100);
+    - `Subtitle.txt` is the subtitle below the app's name (30);
+    - `WhatToTest.txt` is TestFlight's "What to Test" for that version's builds, holding the latest build's text, the earlier ones being in git history (4000).
+  A field without a file is one whose text was never recorded, as 1.1.0's "What to Test" was not.
+  The files are plain text pasted verbatim, so their line breaks are part of the text: neither the one-sentence-per-line rule nor an inline SPDX header applies to them, and `REUSE.toml` covers them as `AppStore/**`.
+  How the translations are derived is under "Localization Instructions", and when the texts must change is under "Documentation Instructions".
 - `.github/CODEOWNERS` names `@i2h3` as the owner of every path, so GitHub requests that account's review on every pull request.
 - `.github/ISSUE_TEMPLATE/` contains the GitHub issue forms for feature requests and bug reports, and `config.yml`, which keeps blank issues enabled and links the website from the issue chooser.
 - `.github/PULL_REQUEST_TEMPLATE.md` pre-fills a new pull request's description with a prompt for what it does and why, and a checklist of sign-off, AI-tool disclosure, formatting, REUSE and test steps; it carries no inline SPDX header, for the reason given under "REUSE Compliance".
@@ -383,7 +400,8 @@ This project is checked for [REUSE](https://reuse.software/) Specification 3.3 c
 - Files that cannot safely hold an inline comment — binaries, pure JSON, or anything Xcode/SwiftPM/Icon Composer regenerates or rewrites through its own GUI or tooling (the asset catalog, the `AppIcon.icon` bundle, `project.pbxproj`, `contents.xcworkspacedata`, `Package.resolved`, `Main.storyboard`, `Info.plist`, `PrivacyInfo.xcprivacy`, `Localizable.xcstrings`, `.swift-version`) — are covered by a `[[annotations]]` entry in `REUSE.toml` instead.
   Add new files of these kinds to an existing matching `path` glob there only if its year already matches, or a new annotation block otherwise; never hand-edit an SPDX comment into them.
 - `.github/PULL_REQUEST_TEMPLATE.md` is one exception: GitHub pre-fills a new pull request's description textarea with this file's raw, unrendered content, so an inline HTML comment header would show up as literal visible clutter for every contributor opening a PR — it is covered by a `REUSE.toml` entry instead, even though Markdown normally takes an inline header.
-- `Website/` is the other: a single `Website/**` annotation in `REUSE.toml` covers everything under it, which is why none of its HTML, CSS, or JavaScript carries an inline header.
+- `Website/` is another: a single `Website/**` annotation in `REUSE.toml` covers everything under it, which is why none of its HTML, CSS, or JavaScript carries an inline header.
+- `AppStore/` is the third: every file there is pasted verbatim into App Store Connect, where a header would be published along with the text, so a single `AppStore/**` annotation covers them.
 - Whenever a change adds a new file, give it SPDX coverage immediately — an inline header or a `REUSE.toml` entry — rather than leaving it for later.
 - Always run `reuse lint` in the project root directory after applying changes (install via `brew install reuse` if missing), and confirm it reports "Congratulations! Your project is compliant with version 3.3 of the REUSE Specification" before considering the change complete.
 - **A file can carry a correct header and still be reported as missing one.**
@@ -398,6 +416,7 @@ This project is checked for [REUSE](https://reuse.software/) Specification 3.3 c
   A single line break inside a paragraph renders as a space, so the rendered page is unchanged, while a diff then shows only the sentences a change touched rather than the whole paragraph around it.
   This applies to every Markdown file in the repository, and it is the same principle the documentation-comment rule under "Code Style" states.
   Commit messages and pull request descriptions are the exception: GitHub shows their line breaks as written, so those stay one paragraph per line.
+  The texts in `AppStore/` are not Markdown at all, and keep exactly the line breaks App Store Connect is to show.
   See `DECISIONS.md` → "Why does every sentence in the Markdown files start on its own line?".
 - Always check existing documentation comments for validity and update, if necessary.
 - Whenever the files and folders within the repository change, update the "Repository Structure" section of this document accordingly.
@@ -407,6 +426,12 @@ This project is checked for [REUSE](https://reuse.software/) Specification 3.3 c
   Adding a data type is therefore normally a change with no website edit in it at all.
   Where the specifics are worth publishing they belong somewhere written for that — release notes, or a page of its own — rather than in copy that has to stay true indefinitely.
   Edit these cells when a capability genuinely changes shape, not when it grows.
+- **Keep the upcoming release's "What's New" current, without being asked.**
+  A change a Mac user would notice — a feature, a visible fix, a change in behaviour — adds or edits a line in `AppStore/<MARKETING_VERSION>/macOS/English/WhatsNew.txt`, in the style of the published versions, and carries it into the German, French and Spanish files in the same change.
+  When that version's folder does not exist yet, create it: copy `Description.txt`, `Keywords.txt` and `Subtitle.txt` of the newest version, which carry over until something changes them, and start `WhatsNew.txt` afresh.
+  If `MARKETING_VERSION` names a version already tagged, it has been published and its folder is not edited; the line waits until the version is raised.
+  `Description.txt` follows the rule of the website's feature copy above: it changes when a capability changes shape, not when it grows.
+  Changes only iOS, a test or the documentation sees add nothing there.
 
 ## Design Decisions
 
@@ -514,6 +539,52 @@ Whenever a change adds, renames, or removes a user-facing string — in Swift, i
 - Match the established scope: the standard AppKit menu titles Xcode emits into the storyboard catalog are left untranslated by convention, so do not translate every entry — only the app's own user-facing strings.
 - Never localize developer-facing text: `os` log messages stay in English (see "Logging and Diagnostics").
 - Confirm both apps still build so every string catalog compiles.
+
+### App Store texts
+
+The texts in `AppStore/` (see "Repository Structure") are localized outside the String Catalogs and outside `knownRegions`.
+Their languages are App Store Connect's localizations of the app — English, German, French and Spanish — which match the app's own today but are a list of their own.
+
+- English is the source of truth.
+  Every other language is translated from it rather than written on its own, and a change to an English file is carried into the same file of every other language in the same change.
+- Every language folder of a version holds the same set of files as its `English/` folder.
+- They address the reader informally — "du" in German, "tu" in French, "tú" in Spanish — as the website does, even though the app's own strings say "Sie" and "vous".
+  A UI label they quote is still the app's own localized label, word for word, as is a system label Apple's localization of macOS shows.
+  The published 1.1.0 French texts predate this rule and say "vous"; being published, they stay as they are.
+- Name every macOS feature by Apple's own term in that language — Mitteilungszentrale, centre de notifications, Centro de notificaciones — rather than the website's, which is wrong in places.
+  Write the Spanish for Spain in a way that also reads naturally in Latin America, since those storefronts show the same text.
+- A translation runs longer than its English, so an English text close to its field's limit leaves the translations no room; keep the English well below it.
+
+Check every file against its field's limit, and every language against English, after any change to `AppStore/`:
+
+```bash
+python3 - <<'EOF'
+import pathlib
+import sys
+
+limits = {"Description.txt": 4000, "WhatsNew.txt": 4000, "WhatToTest.txt": 4000, "Keywords.txt": 100, "Subtitle.txt": 30}
+problems = []
+
+for platform in sorted(p for p in pathlib.Path("AppStore").glob("*/*") if p.is_dir()):
+    english = {f.name for f in (platform / "English").glob("*.txt")}
+    for language in sorted(p for p in platform.iterdir() if p.is_dir()):
+        names = {f.name for f in language.glob("*.txt")}
+        if names != english:
+            problems.append(f"{language}: missing {sorted(english - names)}, extra {sorted(names - english)} compared with English")
+        for file in sorted(language.glob("*.txt")):
+            text = file.read_text()
+            length = len(text.removesuffix("\n"))
+            if file.name not in limits:
+                problems.append(f"{file}: not a field this project records")
+            elif length > limits[file.name]:
+                problems.append(f"{file}: {length} characters, over the limit of {limits[file.name]}")
+            if not text.endswith("\n") or text.endswith("\n\n"):
+                problems.append(f"{file}: must end with exactly one newline")
+
+if problems:
+    sys.exit("\n".join(problems))
+EOF
+```
 
 ## Concurrency
 

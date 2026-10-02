@@ -1,0 +1,1 @@
+nextcloud,self-hosted,private cloud,file sync,talk,mail,calendar,contacts,tasks,notes,photos,client

@@ -1,0 +1,12 @@
+• Neu: Kurzbefehle-Aktion zum Öffnen einer Nextcloud-Server-App in Cirruscope
+• Neu: Spotlight-Integration zum direkten Öffnen einer Nextcloud-Server-App per Namenssuche aus Spotlight
+• Neu: Transluzentes App-Design als zusätzliche Option
+• Merkt sich jetzt die zuletzt verwendete Fenstergröße
+• Kleinere Fenster jetzt möglich
+• Verbesserte Eingabe der Serveradresse
+• Deutlich schnelleres Öffnen neuer Fenster
+• Alphabetische Sortierung der Nextcloud-Server-Apps überall, wo sie aufgelistet werden
+• Aktualisiertes App-Icon
+• Überarbeitetes Design des Serveradressen-Fensters
+• Vollbildmodus repariert
+• Positionierung des Nextcloud-Viewers korrigiert

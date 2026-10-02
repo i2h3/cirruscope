@@ -1,0 +1,12 @@
+• Novedad: acción de Atajos para abrir una aplicación del servidor Nextcloud en Cirruscope
+• Novedad: integración con Spotlight para abrir una aplicación del servidor Nextcloud directamente por su nombre desde Spotlight
+• Novedad: diseño translúcido de la app como opción adicional
+• Ahora recuerda el último tamaño de ventana utilizado
+• Ahora se pueden usar ventanas más pequeñas
+• Mejora en la introducción de la dirección del servidor
+• Apertura de nuevas ventanas mucho más rápida
+• Orden alfabético de las aplicaciones del servidor Nextcloud en todos los listados
+• Icono de la app actualizado
+• Diseño renovado de la ventana de dirección del servidor
+• Corregido el soporte de pantalla completa
+• Corregida la posición del visor de Nextcloud

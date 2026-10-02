@@ -1,0 +1,31 @@
+UPGRADE FIRST
+
+Install over a signed-in 1.1.0. You should stay signed in, with your Speed Dial shortcuts and Appearance settings intact.
+
+NEW
+
+- Activity widget: right-click the desktop > Edit Widgets… and add "Activity" (needs the Activity app on your server).
+- Spotlight finds Talk conversations, notes, collectives and their pages.
+- Shortcuts actions open a Talk conversation, note, collective or collective page.
+- Nextcloud apps show their own icons in the View menu and in Settings… > Speed Dials.
+
+IMPROVED AND FIXED
+
+- Logging out removes your account from the menus, Spotlight, the widget and notifications, but keeps your Speed Dial shortcuts and Appearance settings.
+- Window buttons are centered in the Nextcloud header.
+- No gap in the header in full screen.
+- Choosing an app that is already open brings its window forward, also Talk while it shows a conversation.
+- Expired server sessions no longer sign you out.
+- Email and phone links open in the app that handles them, such as Mail or FaceTime.
+- Fixed a crash with live notifications.
+
+PLEASE ALSO CHECK
+
+- Signing in, also to an address with no server behind it.
+- "Liquid Glass appearance" and "Remove gaps around content" in Settings… > Appearance.
+- Showing and hiding the sidebar, dragging windows by the Nextcloud header, clicking notifications.
+- Camera and microphone in Talk calls.
+- Downloads (Window > Downloads).
+- Servers without Talk, Notes or Collectives.
+
+Feedback via TestFlight welcome! Please mention your Nextcloud server version.

@@ -1,0 +1,15 @@
+• Introduced an Activity widget showing recent changes to the files on your Nextcloud server
+• Introduced opening Talk conversations, notes, collectives and collective pages from Spotlight
+• Introduced Shortcuts actions to open a Talk conversation, note, collective or collective page
+• Introduced Nextcloud server app icons in the View menu, Speed Dials, Spotlight and Shortcuts
+• Now opening email and phone links in the app that handles them, such as Mail or FaceTime
+• Now keeping your keyboard shortcuts and appearance settings when you log out
+• Now removing Cirruscope’s notifications from Notification Center when you log out
+• Fixed a crash when the live notification connection to your server dropped
+• Fixed unexpected sign-outs after the server’s browser session expired
+• Fixed an incomplete sign-out when your server rejects Cirruscope’s app password
+• Fixed the previous account’s apps and notifications coming back after logging out while Cirruscope was still loading
+• Fixed off-center window buttons in the Nextcloud header, notably on Nextcloud 35
+• Fixed an empty gap in the Nextcloud header in full screen
+• Fixed a duplicate window opening for Talk while it shows a conversation, and for any app on a server installed in a subdirectory
+• Fixed the General settings showing an outdated server address or untranslated text
