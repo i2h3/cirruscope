@@ -18,6 +18,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/favicon-16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
 
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Cirruscope">
@@ -161,6 +162,20 @@
           <p class="faq__answer" id="faq-answer-4" hidden>Cirruscope est disponible sur le <a href="https://apps.apple.com/fr/app/cirruscope/id6790750584" target="_blank" rel="noopener">Mac App Store</a> – gratuitement, comme tout le projet. Si tu veux essayer les prochaines versions en avance, rejoins le groupe de test Community sur <a href="https://testflight.apple.com/join/sJ72uzhS" target="_blank" rel="noopener">TestFlight</a>.</p>
         </div>
         <div class="faq__item">
+          <button class="faq__question" type="button" aria-expanded="false" aria-controls="faq-answer-10">
+            <span>Comment ajouter le widget Activité ?</span>
+            <span class="faq__sign" aria-hidden="true">+</span>
+          </button>
+          <p class="faq__answer" id="faq-answer-10" hidden>Fais un clic droit sur ton bureau, choisis Modifier les widgets…, puis ajoute le widget Activité de Cirruscope sur ton bureau ou dans le centre de notifications. Il affiche les modifications récentes des fichiers de ton serveur Nextcloud, sur lequel l'app Activité doit être activée : « Activité indisponible » signifie qu'elle ne l'est pas. Si le widget affiche « Non connecté », ouvre Cirruscope et connecte-toi. Des barres grises à la place du contenu signifient qu'il n'a encore rien chargé ; si elles restent après l'ajout du widget, ouvre Cirruscope une fois, et si elles sont toujours là, le widget n'a pas pu joindre ton serveur et réessaiera tout seul.</p>
+        </div>
+        <div class="faq__item">
+          <button class="faq__question" type="button" aria-expanded="false" aria-controls="faq-answer-11">
+            <span>Que se passe-t-il quand je me déconnecte ?</span>
+            <span class="faq__sign" aria-hidden="true">+</span>
+          </button>
+          <p class="faq__answer" id="faq-answer-11" hidden>Quand tu te déconnectes dans Réglages… &gt; Général, Cirruscope demande à ton serveur de révoquer son mot de passe d'application, puis retire de ton Mac ce qu'il conserve de ton serveur, notamment ta connexion, ses résultats dans Spotlight, le contenu du widget Activité et ses notifications dans le centre de notifications. Les fichiers téléchargés restent dans ton dossier Téléchargements. Tes raccourcis clavier et tes réglages d'apparence restent sur ton Mac, prêts pour ta prochaine connexion.</p>
+        </div>
+        <div class="faq__item">
           <button class="faq__question" type="button" aria-expanded="false" aria-controls="faq-answer-5">
             <span>Y aura-t-il une version iOS ou iPadOS ?</span>
             <span class="faq__sign" aria-hidden="true">+</span>
@@ -237,6 +252,7 @@
           <li class="app-chip">Office</li>
           <li class="app-chip">Text</li>
         </ul>
+        <p class="compat__apps-lede compat__apps-lede--after">Les fonctions qui reposent sur l'une de ces applications, comme le widget Activité, ne fonctionnent que si cette application est activée sur ton serveur.</p>
       </div>
 
       <div class="compat__note">
@@ -248,7 +264,7 @@
     <section class="cta cta--spaced">
       <div class="cta__box cta__box--wide">
         <h3 class="cta__title">Besoin d'aide supplémentaire ?</h3>
-        <p class="cta__text">Tu ne trouves pas ce que tu cherches ? Envoie-nous un e-mail, on te répond rapidement.</p>
+        <p class="cta__text">Tu ne trouves pas ce que tu cherches ? Envoie-nous un e-mail et on te répondra.</p>
         <a class="cta__link" href="mailto:contact@cirruscope.app">contact@cirruscope.app</a>
       </div>
     </section>

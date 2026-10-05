@@ -18,6 +18,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
 
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Cirruscope">
@@ -161,6 +162,20 @@
           <p class="faq__answer" id="faq-answer-4" hidden>Cirruscope is out on the <a href="https://apps.apple.com/us/app/cirruscope/id6790750584" target="_blank" rel="noopener">Mac App Store</a> — free, like the rest of the project. If you want to try upcoming versions early, join the Community test group on <a href="https://testflight.apple.com/join/sJ72uzhS" target="_blank" rel="noopener">TestFlight</a>.</p>
         </div>
         <div class="faq__item">
+          <button class="faq__question" type="button" aria-expanded="false" aria-controls="faq-answer-10">
+            <span>How do I add the Activity widget?</span>
+            <span class="faq__sign" aria-hidden="true">+</span>
+          </button>
+          <p class="faq__answer" id="faq-answer-10" hidden>Right-click your desktop, choose Edit Widgets…, and add Cirruscope's Activity widget to your desktop or to Notification Center. It shows recent changes to the files on your Nextcloud server, which needs its Activity app switched on: “Activity unavailable” means it isn't. If the widget says “Not signed in”, open Cirruscope and sign in. Gray placeholder bars mean it hasn't loaded anything yet; if they stay after you've added it, open Cirruscope once, and if they still stay, the widget couldn't reach your server and will try again on its own.</p>
+        </div>
+        <div class="faq__item">
+          <button class="faq__question" type="button" aria-expanded="false" aria-controls="faq-answer-11">
+            <span>What happens when I log out?</span>
+            <span class="faq__sign" aria-hidden="true">+</span>
+          </button>
+          <p class="faq__answer" id="faq-answer-11" hidden>Logging out in Settings… &gt; General asks your server to revoke Cirruscope's app password, then removes from your Mac what Cirruscope keeps from your server, including your sign-in, its Spotlight results, the Activity widget's contents and its notifications in Notification Center. Downloaded files stay in your Downloads folder. Your keyboard shortcuts and appearance settings stay on your Mac, ready for your next sign-in.</p>
+        </div>
+        <div class="faq__item">
           <button class="faq__question" type="button" aria-expanded="false" aria-controls="faq-answer-5">
             <span>Will there be an iOS or iPadOS version?</span>
             <span class="faq__sign" aria-hidden="true">+</span>
@@ -237,6 +252,7 @@
           <li class="app-chip">Office</li>
           <li class="app-chip">Text</li>
         </ul>
+        <p class="compat__apps-lede compat__apps-lede--after">Features built on one of these apps, such as the Activity widget, work only when that app is enabled on your server.</p>
       </div>
 
       <div class="compat__note">

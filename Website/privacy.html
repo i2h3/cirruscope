@@ -18,6 +18,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
 
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Cirruscope">
@@ -97,20 +98,28 @@
   <main>
     <article class="doc">
       <h1 class="doc__title">Privacy Policy</h1>
-      <p class="doc__meta">Last updated July 16, 2026</p>
+      <p class="doc__meta">Last updated October 5, 2026</p>
       <p class="doc__intro">Cirruscope does not collect any data. Not usage analytics, not crash reports, not your files, nothing — full stop.</p>
       <div class="doc__sections">
         <div>
           <h2 class="doc__heading">What Cirruscope does on your Mac</h2>
-          <p class="doc__text">Cirruscope connects directly to the Nextcloud server you choose. Your sign-in session is stored securely in the macOS Keychain, on your device only. Cirruscope contains no analytics, tracking, or crash-reporting code, and it never sends any data to us or anyone else.</p>
+          <p class="doc__text">Cirruscope connects only to the Nextcloud server you choose and to services your server points it to, such as one for office documents or calls. Your login credentials are stored securely in the macOS Keychain, on your Mac only. Cirruscope contains no analytics, tracking, or crash-reporting code, and it never sends any data to us.</p>
+        </div>
+        <div>
+          <h2 class="doc__heading">What Cirruscope keeps on your Mac</h2>
+          <p class="doc__text">So that your Nextcloud content can appear in Cirruscope's menus, in Spotlight, in the Shortcuts app and in the widget, Cirruscope keeps some details from your server on your Mac — such as the names of your Nextcloud apps and conversations, the titles of your notes, recent changes to your files and who made them, and profile pictures — but never the text of your notes. All of this stays on your Mac and is deleted when you log out. Only what you set up on this Mac, such as your keyboard shortcuts and appearance settings, is kept.</p>
+        </div>
+        <div>
+          <h2 class="doc__heading">Camera, microphone and notifications</h2>
+          <p class="doc__text">Pages from the Nextcloud server you connect to can use your camera and microphone, for example for calls in Nextcloud Talk; anything else has to ask you first. On top of that, macOS asks you once for each before Cirruscope can use them at all, and you can change your answer any time in System Settings &gt; Privacy &amp; Security. Cirruscope gets your Nextcloud notifications from your server itself, not through a push service from Apple or anyone else, and removes its notifications from Notification Center when you log out.</p>
         </div>
         <div>
           <h2 class="doc__heading">Your Nextcloud server</h2>
-          <p class="doc__text">The files, messages, and other content you access through Cirruscope live on the Nextcloud server you connect to — your own server, or one run by a provider you chose. That server's own privacy policy governs how it handles your data; this policy only covers the Cirruscope app itself.</p>
+          <p class="doc__text">The files, messages, and other content you access through Cirruscope live on the Nextcloud server you connect to — your own server, or one run by a provider you chose. That server's own privacy policy, and those of any services it points Cirruscope to, govern how they handle your data; this policy only covers the Cirruscope app itself.</p>
         </div>
         <div>
           <h2 class="doc__heading">Third parties</h2>
-          <p class="doc__text">Cirruscope doesn't use analytics providers, advertising networks, or third-party SDKs of any kind.</p>
+          <p class="doc__text">Cirruscope doesn't use analytics providers, advertising networks, or third-party SDKs of any kind. Apart from Apple's own frameworks, the only library it includes is <a href="https://github.com/i2h3/rainmaker" target="_blank" rel="noopener">Rainmaker</a>, an open-source Nextcloud client library we maintain ourselves.</p>
         </div>
         <div>
           <h2 class="doc__heading">Children's privacy</h2>
@@ -122,11 +131,11 @@
         </div>
         <div>
           <h2 class="doc__heading">See for yourself</h2>
-          <p class="doc__text">Cirruscope is open source. If you'd like to verify any of this, the full source code is on GitHub.</p>
+          <p class="doc__text">Cirruscope is open source. If you'd like to verify any of this, the full source code is <a href="https://github.com/i2h3/cirruscope" target="_blank" rel="noopener">on GitHub</a>.</p>
         </div>
         <div>
           <h2 class="doc__heading">Contact</h2>
-          <p class="doc__text">Questions about this policy? Email contact@cirruscope.app.</p>
+          <p class="doc__text">Questions about this policy? Email <a href="mailto:contact@cirruscope.app">contact@cirruscope.app</a>.</p>
         </div>
       </div>
     </article>

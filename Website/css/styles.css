@@ -891,6 +891,10 @@ h3 {
   margin: 0 0 18px;
 }
 
+.compat__apps-lede--after {
+  margin: 18px 0 0;
+}
+
 .app-chips {
   display: flex;
   flex-wrap: wrap;
