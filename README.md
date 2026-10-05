@@ -29,5 +29,4 @@ See [LICENSE](./LICENSE).
 
 ## Disclaimer
 
-This is an unofficial third-party app.
-It is not associated with or endorsed by Nextcloud GmbH.
+Cirruscope is an independent project from the Nextcloud community. It is not affiliated with Nextcloud GmbH.

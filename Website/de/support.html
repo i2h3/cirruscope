@@ -18,6 +18,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/favicon-16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
 
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Cirruscope">
@@ -137,7 +138,7 @@
             <span>Mit welchen Nextcloud-Servern funktioniert es?</span>
             <span class="faq__sign" aria-hidden="true">+</span>
           </button>
-          <p class="faq__answer" id="faq-answer-2" hidden>Mit jeder Nextcloud-Instanz – deinem eigenen gehosteten Server oder dem eines Anbieters. Cirruscope ist an keinen bestimmten Anbieter gebunden.</p>
+          <p class="faq__answer" id="faq-answer-2" hidden>Mit jeder Nextcloud-Instanz – deinem selbst gehosteten Server oder dem eines Hosting-Anbieters. Cirruscope ist an keinen bestimmten Anbieter gebunden.</p>
         </div>
         <div class="faq__item">
           <button class="faq__question" type="button" aria-expanded="false" aria-controls="faq-answer-9">
@@ -159,6 +160,20 @@
             <span class="faq__sign" aria-hidden="true">+</span>
           </button>
           <p class="faq__answer" id="faq-answer-4" hidden>Cirruscope ist im <a href="https://apps.apple.com/de/app/cirruscope/id6790750584" target="_blank" rel="noopener">Mac App Store</a> – kostenlos, wie das ganze Projekt. Wenn du kommende Versionen früh ausprobieren willst, tritt der Community-Testgruppe auf <a href="https://testflight.apple.com/join/sJ72uzhS" target="_blank" rel="noopener">TestFlight</a> bei.</p>
+        </div>
+        <div class="faq__item">
+          <button class="faq__question" type="button" aria-expanded="false" aria-controls="faq-answer-10">
+            <span>Wie füge ich das Widget „Aktivität“ hinzu?</span>
+            <span class="faq__sign" aria-hidden="true">+</span>
+          </button>
+          <p class="faq__answer" id="faq-answer-10" hidden>Klicke mit der rechten Maustaste auf den Schreibtisch, wähle „Widgets bearbeiten&nbsp;…“ und füge das Widget „Aktivität“ von Cirruscope zum Schreibtisch oder zur Mitteilungszentrale hinzu. Es zeigt die neuesten Änderungen an den Dateien auf deinem Nextcloud-Server; dafür muss dort die App „Aktivität“ aktiviert sein – „Aktivität nicht verfügbar“ heißt, dass sie es nicht ist. Zeigt das Widget „Nicht angemeldet“, öffne Cirruscope und melde dich an. Graue Platzhalterbalken bedeuten, dass es noch nichts geladen hat; bleiben sie, nachdem du es hinzugefügt hast, öffne Cirruscope einmal, und bleiben sie dann immer noch, konnte das Widget deinen Server nicht erreichen und versucht es von selbst erneut.</p>
+        </div>
+        <div class="faq__item">
+          <button class="faq__question" type="button" aria-expanded="false" aria-controls="faq-answer-11">
+            <span>Was passiert, wenn ich mich abmelde?</span>
+            <span class="faq__sign" aria-hidden="true">+</span>
+          </button>
+          <p class="faq__answer" id="faq-answer-11" hidden>Wenn du dich unter Einstellungen… &gt; Allgemein abmeldest, bittet Cirruscope deinen Server, sein App-Passwort zu widerrufen, und entfernt dann von deinem Mac, was es von deinem Server speichert, darunter deine Anmeldung, seine Ergebnisse in Spotlight, den Inhalt des Widgets „Aktivität“ und seine Mitteilungen in der Mitteilungszentrale. Heruntergeladene Dateien bleiben in deinem Ordner „Downloads“. Deine Tastaturkurzbefehle und Einstellungen unter „Darstellung“ bleiben auf deinem Mac, bereit für deine nächste Anmeldung.</p>
         </div>
         <div class="faq__item">
           <button class="faq__question" type="button" aria-expanded="false" aria-controls="faq-answer-5">
@@ -237,6 +252,7 @@
           <li class="app-chip">Office</li>
           <li class="app-chip">Text</li>
         </ul>
+        <p class="compat__apps-lede compat__apps-lede--after">Was auf einer dieser Apps aufbaut, etwa das Widget „Aktivität“, funktioniert nur, wenn diese App auf deinem Server aktiviert ist.</p>
       </div>
 
       <div class="compat__note">

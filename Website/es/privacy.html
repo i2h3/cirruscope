@@ -18,6 +18,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/favicon-16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
 
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Cirruscope">
@@ -57,7 +58,7 @@
       </nav>
 
       <div class="header-actions">
-        <a class="header-cta" href="https://apps.apple.com/es/app/cirruscope/id6790750584" target="_blank" rel="noopener" aria-label="Descargar Cirruscope en la Mac App Store">
+        <a class="header-cta" href="https://apps.apple.com/es/app/cirruscope/id6790750584" target="_blank" rel="noopener" aria-label="Descargar Cirruscope en el Mac App Store">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v10 M8 9.5l4 4 4-4 M4.5 17.5h15"></path></svg>
           <span class="header-cta__label">Mac App Store</span>
         </a>
@@ -89,7 +90,7 @@
       <a href="index.html">Inicio</a>
       <a href="business.html">Empresas</a>
       <a href="support.html">Soporte</a>
-      <a class="mobile-nav__cta" href="https://apps.apple.com/es/app/cirruscope/id6790750584" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v10 M8 9.5l4 4 4-4 M4.5 17.5h15"></path></svg><span>Descargar en la Mac App Store</span></a>
+      <a class="mobile-nav__cta" href="https://apps.apple.com/es/app/cirruscope/id6790750584" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v10 M8 9.5l4 4 4-4 M4.5 17.5h15"></path></svg><span>Descargar en el Mac App Store</span></a>
       <a class="mobile-nav__beta" href="https://testflight.apple.com/join/sJ72uzhS" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3h4 M10.5 3v6L5.5 18a2 2 0 0 0 1.8 3h9.4a2 2 0 0 0 1.8-3l-5-9V3 M8.2 14h7.6"></path></svg><span>Unirse a TestFlight</span></a>
     </nav>
   </header>
@@ -97,20 +98,28 @@
   <main>
     <article class="doc">
       <h1 class="doc__title">Política de privacidad</h1>
-      <p class="doc__meta">Última actualización: 16 de julio de 2026</p>
+      <p class="doc__meta">Última actualización: 5 de octubre de 2026</p>
       <p class="doc__intro">Cirruscope no recopila ningún dato. Ni estadísticas de uso, ni informes de errores, ni tus archivos, nada de nada — punto.</p>
       <div class="doc__sections">
         <div>
           <h2 class="doc__heading">Qué hace Cirruscope en tu Mac</h2>
-          <p class="doc__text">Cirruscope se conecta directamente al servidor de Nextcloud que elijas. Tu sesión de inicio se guarda de forma segura en el Llavero de macOS, solo en tu dispositivo. Cirruscope no contiene código de analítica, seguimiento ni informes de errores, y nunca envía ningún dato ni a nosotros ni a nadie más.</p>
+          <p class="doc__text">Cirruscope solo se conecta al servidor de Nextcloud que elijas y a los servicios que tu servidor le indique, por ejemplo para documentos de ofimática o llamadas. Tus credenciales de inicio de sesión se guardan de forma segura en el llavero de macOS, solo en tu Mac. Cirruscope no contiene código de analítica, seguimiento ni informes de errores, y nunca nos envía ningún dato.</p>
+        </div>
+        <div>
+          <h2 class="doc__heading">Qué guarda Cirruscope en tu Mac</h2>
+          <p class="doc__text">Para que tu contenido de Nextcloud pueda aparecer en los menús de Cirruscope, en Spotlight, en la app Atajos y en el widget, Cirruscope guarda en tu Mac algunos datos de tu servidor —como los nombres de tus apps de Nextcloud y de tus conversaciones, los títulos de tus notas, los cambios recientes en tus archivos y quién los hizo, y fotos de perfil—, pero nunca el texto de tus notas. Todo ello se queda en tu Mac y se elimina al cerrar sesión. Solo se conserva lo que hayas configurado en este Mac, como tus atajos de teclado y tus ajustes de apariencia.</p>
+        </div>
+        <div>
+          <h2 class="doc__heading">Cámara, micrófono y notificaciones</h2>
+          <p class="doc__text">Las páginas del servidor de Nextcloud al que te conectas pueden usar tu cámara y tu micrófono, por ejemplo para las llamadas de Nextcloud Talk; las demás tienen que preguntarte primero. Además, macOS te pregunta una vez por cada uno antes de que Cirruscope pueda siquiera usarlos, y puedes cambiar tu respuesta cuando quieras en Ajustes del Sistema &gt; Privacidad y seguridad. Cirruscope obtiene tus notificaciones de Nextcloud directamente de tu servidor, no a través de un servicio push de Apple ni de nadie más, y elimina sus notificaciones del centro de notificaciones al cerrar sesión.</p>
         </div>
         <div>
           <h2 class="doc__heading">Tu servidor de Nextcloud</h2>
-          <p class="doc__text">Los archivos, mensajes y demás contenido al que accedes a través de Cirruscope residen en el servidor de Nextcloud al que te conectas: tu propio servidor o el de un proveedor que hayas elegido. La política de privacidad de ese servidor rige cómo se trata tu información; esta política solo cubre la app Cirruscope en sí.</p>
+          <p class="doc__text">Los archivos, mensajes y demás contenido al que accedes a través de Cirruscope residen en el servidor de Nextcloud al que te conectas: tu propio servidor o el de un proveedor que hayas elegido. La política de privacidad de ese servidor, y las de los servicios que le indique a Cirruscope, rigen cómo se trata tu información; esta política solo cubre la app Cirruscope en sí.</p>
         </div>
         <div>
           <h2 class="doc__heading">Terceros</h2>
-          <p class="doc__text">Cirruscope no utiliza proveedores de analítica, redes publicitarias ni SDKs de terceros de ningún tipo.</p>
+          <p class="doc__text">Cirruscope no utiliza proveedores de analítica, redes publicitarias ni SDK de terceros de ningún tipo. Aparte de los propios frameworks de Apple, la única biblioteca que incluye es <a href="https://github.com/i2h3/rainmaker" target="_blank" rel="noopener">Rainmaker</a>, una biblioteca cliente de Nextcloud de código abierto que mantenemos por nuestra cuenta.</p>
         </div>
         <div>
           <h2 class="doc__heading">Privacidad de menores</h2>
@@ -121,12 +130,12 @@
           <p class="doc__text">Si esta política cambia alguna vez, actualizaremos esta página y la fecha que aparece arriba.</p>
         </div>
         <div>
-          <h2 class="doc__heading">Compruébalo tú mismo</h2>
-          <p class="doc__text">Cirruscope es de código abierto. Si quieres comprobar todo esto, el código fuente completo está en GitHub.</p>
+          <h2 class="doc__heading">Compruébalo por tu cuenta</h2>
+          <p class="doc__text">Cirruscope es de código abierto. Si quieres comprobar todo esto, el código fuente completo está <a href="https://github.com/i2h3/cirruscope" target="_blank" rel="noopener">en GitHub</a>.</p>
         </div>
         <div>
           <h2 class="doc__heading">Contacto</h2>
-          <p class="doc__text">¿Tienes preguntas sobre esta política? Escríbenos a contact@cirruscope.app.</p>
+          <p class="doc__text">¿Tienes preguntas sobre esta política? Escríbenos a <a href="mailto:contact@cirruscope.app">contact@cirruscope.app</a>.</p>
         </div>
       </div>
     </article>
@@ -163,7 +172,7 @@
     </div>
 
     <div class="container site-footer__legal">
-      <p class="site-footer__disclaimer">Cirruscope es un proyecto independiente y de código abierto. No está afiliado ni respaldado por Nextcloud GmbH, ni asociado con ella.</p>
+      <p class="site-footer__disclaimer">Cirruscope es un proyecto independiente y de código abierto. No está afiliado a Nextcloud GmbH, ni respaldado por ella, ni asociado con ella.</p>
       <p>© 2026 Cirruscope. Código abierto bajo licencia MIT.</p>
     </div>
   </footer>

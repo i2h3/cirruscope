@@ -18,6 +18,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/favicon-16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
 
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Cirruscope">
@@ -97,20 +98,28 @@
   <main>
     <article class="doc">
       <h1 class="doc__title">Politique de confidentialité</h1>
-      <p class="doc__meta">Dernière mise à jour : 16 juillet 2026</p>
+      <p class="doc__meta">Dernière mise à jour : 5 octobre 2026</p>
       <p class="doc__intro">Cirruscope ne collecte aucune donnée. Ni statistiques d'usage, ni rapports de plantage, ni tes fichiers, rien du tout – point final.</p>
       <div class="doc__sections">
         <div>
           <h2 class="doc__heading">Ce que Cirruscope fait sur ton Mac</h2>
-          <p class="doc__text">Cirruscope se connecte directement au serveur Nextcloud que tu choisis. Ta session de connexion est stockée en sécurité dans le Trousseau macOS, uniquement sur ton appareil. Cirruscope ne contient aucun code d'analyse, de suivi ou de rapport de plantage, et n'envoie jamais aucune donnée, ni à nous ni à personne d'autre.</p>
+          <p class="doc__text">Cirruscope se connecte uniquement au serveur Nextcloud que tu choisis et aux services que ton serveur lui indique, par exemple pour les documents bureautiques ou les appels. Tes identifiants de connexion sont stockés en sécurité dans le trousseau de macOS, uniquement sur ton Mac. Cirruscope ne contient aucun code d'analyse, de suivi ou de rapport de plantage, et ne nous envoie jamais aucune donnée.</p>
+        </div>
+        <div>
+          <h2 class="doc__heading">Ce que Cirruscope conserve sur ton Mac</h2>
+          <p class="doc__text">Pour que ton contenu Nextcloud puisse apparaître dans les menus de Cirruscope, dans Spotlight, dans l'app Raccourcis et dans le widget, Cirruscope conserve sur ton Mac quelques informations provenant de ton serveur – comme les noms de tes apps Nextcloud et de tes conversations, les titres de tes notes, les modifications récentes de tes fichiers et qui les a faites, ainsi que des photos de profil – mais jamais le texte de tes notes. Tout cela reste sur ton Mac et est supprimé quand tu te déconnectes. Seul ce que tu as configuré sur ce Mac, comme tes raccourcis clavier et tes réglages d'apparence, est conservé.</p>
+        </div>
+        <div>
+          <h2 class="doc__heading">Caméra, micro et notifications</h2>
+          <p class="doc__text">Les pages du serveur Nextcloud auquel tu te connectes peuvent utiliser ta caméra et ton micro, par exemple pour les appels dans Nextcloud Talk ; tout le reste doit d'abord te le demander. En plus de cela, macOS te demande une fois, pour chacun d'eux, l'autorisation sans laquelle Cirruscope ne peut pas du tout les utiliser, et tu peux changer ta réponse à tout moment dans Réglages Système &gt; Confidentialité et sécurité. Cirruscope récupère tes notifications Nextcloud directement auprès de ton serveur, et non via un service de notifications push d'Apple ou de qui que ce soit d'autre, et retire ses notifications du centre de notifications quand tu te déconnectes.</p>
         </div>
         <div>
           <h2 class="doc__heading">Ton serveur Nextcloud</h2>
-          <p class="doc__text">Les fichiers, messages et autres contenus auxquels tu accèdes via Cirruscope se trouvent sur le serveur Nextcloud auquel tu te connectes – ton propre serveur, ou celui d'un hébergeur que tu as choisi. C'est la politique de confidentialité de ce serveur qui régit le traitement de tes données ; celle-ci ne couvre que l'application Cirruscope elle-même.</p>
+          <p class="doc__text">Les fichiers, messages et autres contenus auxquels tu accèdes via Cirruscope se trouvent sur le serveur Nextcloud auquel tu te connectes – ton propre serveur, ou celui d'un hébergeur que tu as choisi. Ce sont les politiques de confidentialité de ce serveur et des éventuels services qu'il indique à Cirruscope qui régissent la façon dont ils traitent tes données ; la présente politique ne couvre que l'application Cirruscope elle-même.</p>
         </div>
         <div>
           <h2 class="doc__heading">Tiers</h2>
-          <p class="doc__text">Cirruscope n'utilise aucun fournisseur d'analyse, réseau publicitaire ou SDK tiers, quel qu'il soit.</p>
+          <p class="doc__text">Cirruscope n'utilise aucun fournisseur d'analyse, réseau publicitaire ou SDK tiers, quel qu'il soit. Hormis les frameworks d'Apple, la seule bibliothèque qu'il inclut est <a href="https://github.com/i2h3/rainmaker" target="_blank" rel="noopener">Rainmaker</a>, une bibliothèque cliente Nextcloud open source que nous maintenons nous-mêmes.</p>
         </div>
         <div>
           <h2 class="doc__heading">Confidentialité des enfants</h2>
@@ -118,15 +127,15 @@
         </div>
         <div>
           <h2 class="doc__heading">Modifications de cette politique</h2>
-          <p class="doc__text">Si cette politique venait à changer, nous mettrons à jour cette page et la date en haut.</p>
+          <p class="doc__text">Si cette politique venait à changer, nous mettrions à jour cette page et la date indiquée en haut.</p>
         </div>
         <div>
           <h2 class="doc__heading">Vérifie par toi-même</h2>
-          <p class="doc__text">Cirruscope est open source. Si tu veux vérifier tout ça, le code source complet est disponible sur GitHub.</p>
+          <p class="doc__text">Cirruscope est open source. Si tu veux vérifier tout ça, le code source complet est disponible <a href="https://github.com/i2h3/cirruscope" target="_blank" rel="noopener">sur GitHub</a>.</p>
         </div>
         <div>
           <h2 class="doc__heading">Contact</h2>
-          <p class="doc__text">Des questions sur cette politique ? Écris-nous à contact@cirruscope.app.</p>
+          <p class="doc__text">Des questions sur cette politique ? Écris-nous à <a href="mailto:contact@cirruscope.app">contact@cirruscope.app</a>.</p>
         </div>
       </div>
     </article>
