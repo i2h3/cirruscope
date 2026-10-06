@@ -99,6 +99,24 @@ Keeping it current is the reason for [`AccentColorMonitor`](./macOS/AccentColorM
 `NSColor.systemColorsDidChangeNotification` reports accent-color changes and is posted *after* AppKit has invalidated its own color caches, so `NSColor.controlAccentColor` already answers with the new value; key-value observing `NSApplication.effectiveAppearance` reports light/dark, which the color notification does not reliably cover.
 The distributed `AppleColorPreferencesChangedNotification` is the path this deliberately avoids: it is receivable under the App Sandbox, but it arrives before that in-process cache is invalidated, so an observer of it reads the previous color, and it stopped reporting accent changes reliably on macOS 26.
 
+Under "Multicolor" nothing is forwarded at all; see the next entry.
+
+## Why does Nextcloud keep its own primary color while the macOS accent color is "Multicolor"?
+
+Because "Multicolor" is the user leaving the accent color to each app, and for the Nextcloud interface the one that decides is the server's theming, not Cirruscope's brand.
+
+AppKit answers `NSColor.controlAccentColor` with the app's own `AccentColor` asset under "Multicolor", so forwarding it painted Cirruscope's cobalt over the primary color the user or the administrator chose on the server ([#93](https://github.com/i2h3/cirruscope/issues/93)).
+A chosen system accent color is still forwarded, because there the user has said what they want, and the translucent appearance exists to make Nextcloud look native.
+Native AppKit chrome keeps the cobalt under "Multicolor", which is what the Human Interface Guidelines intend an app's accent color for.
+Withholding needs nothing new in the page: the accent argument is `null`, the stylesheet's gate stays closed, and Nextcloud's own primary color family stays in force, exactly as for a color that cannot be expressed in sRGB.
+
+"Multicolor" is recognized in [`WebAccentColor`](./macOS/Web/WebAccentColor.swift) by comparing `controlAccentColor` with the asset `NSAccentColorName` names, both resolved in the same appearance at the eight-bit precision the page receives, rather than by reading the global `AppleAccentColor` default.
+That key is undocumented, its values have already grown beyond the eight colors, and reading what the system wrote falls outside the `CA92.1` reason the privacy manifest declares for reading user defaults.
+The comparison also asks the exact question that matters: is the color AppKit hands back the app's own?
+`MulticolorAccentColorOracleTests` reads the key all the same, as an oracle the app never consults, to measure that AppKit answers with the asset under "Multicolor".
+
+The trade-offs accepted are that a custom accent color identical to the brand color at that precision counts as "Multicolor", and that an increased-contrast adjustment AppKit might make to the app's own color would defeat the comparison and forward the brand color, as 1.1.0 and 1.2.0 did.
+
 ## Why is macOS the product and iOS a side product?
 
 Focus.

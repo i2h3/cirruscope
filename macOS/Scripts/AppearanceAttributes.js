@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Iva Horn
 // SPDX-License-Identifier: MIT
 
-// Mirrors this device's appearance settings, the app's effective accent color, and
+// Mirrors this device's appearance settings, the macOS accent color the user chose, and
 // the host window's own chrome onto <html>: the two settings as the data attributes
 // Cirruscope.css scopes its translucency and full-width rules to, the accent color
 // as the --cirruscope-accent-color custom property the stylesheet re-derives
@@ -34,11 +34,12 @@
 // reference to an unset custom property is invalid at computed-value time, so
 // --color-primary-element would compute to nothing at all and every primary button
 // on the page would lose its color instead of keeping Nextcloud's own. accentColor
-// is null when Swift could not express the color in sRGB, and the attribute then
-// reads "false" so the server's theme stays untouched. windowButtonClearance is
-// null whenever Swift cannot answer yet — before the view is in a window, above all
-// — and the property is then removed rather than set, so the stylesheet's own
-// fallback stays in force instead of a guess.
+// is null while the macOS accent color is Multicolor, when AppKit would answer with
+// the app's own brand color, and when Swift could not express the color in sRGB;
+// the attribute then reads "false" so the server's theme stays untouched.
+// windowButtonClearance is null whenever Swift cannot answer yet — before the view
+// is in a window, above all — and the property is then removed rather than set, so
+// the stylesheet's own fallback stays in force instead of a guess.
 //
 // The attributes go on <html> deliberately. Nextcloud puts its own data-theme-*
 // attributes on <body> and rewrites them as the user switches themes, so <html> is

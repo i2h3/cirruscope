@@ -1,2 +1,3 @@
 • Now hiding “Open locally” in Nextcloud Files, since it only works with the Nextcloud desktop app installed
 • Fixed a rounded top-left corner of the Nextcloud content in the Liquid Glass appearance with “Remove gaps around content” turned on, which now also sets the header apart with a thin line
+• Fixed Cirruscope’s own blue replacing your Nextcloud color in the Liquid Glass appearance while the macOS accent color is Multicolor

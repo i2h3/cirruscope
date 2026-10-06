@@ -10,7 +10,7 @@
  *
  *   data-cirruscope-translucency  — let the macOS window material show through
  *   data-cirruscope-full-width    — expand content to the window edges
- *   data-cirruscope-accent        — an app accent color is available to apply
+ *   data-cirruscope-accent        — a chosen macOS accent color is available to apply
  *   data-cirruscope-accent-bright — that accent color takes black text, not white
  *
  * Rules that follow a setting are scoped to the matching attribute so they can
@@ -198,10 +198,13 @@ html[data-cirruscope-full-width="true"] #app-content-vue {
 /*
  * - MARK: Accent Color
  *
- * WebViewController resolves NSColor.controlAccentColor — the app's own
- * AccentColor asset while the user's macOS accent is "Multicolor", the chosen
- * system accent otherwise — for the appearance its window draws with, and hands it
- * over as --cirruscope-accent-color plus the brightness flag.
+ * WebViewController resolves NSColor.controlAccentColor for the appearance its
+ * window draws with and hands it over as --cirruscope-accent-color plus the
+ * brightness flag, but only when it is an accent color the user chose in System
+ * Settings. While the macOS accent color is "Multicolor", AppKit answers with the
+ * app's own AccentColor asset instead, and that is withheld: the page keeps the
+ * primary color chosen on the server rather than having Cirruscope's brand color
+ * forced onto it (issue #93).
  *
  * All of it is scoped to the translucent appearance. Recoloring the interface is
  * only appropriate once the page has already given up its own backgrounds to the
@@ -242,7 +245,8 @@ html[data-cirruscope-full-width="true"] #app-content-vue {
  * property is set, and a var() reference to an unset one is invalid at
  * computed-value time — --color-primary-element would compute to nothing at all
  * and every primary button would lose its color, which is far worse than leaving
- * Nextcloud's own color alone.
+ * Nextcloud's own color alone. It reads "false" both while the macOS accent color
+ * is Multicolor and when the color could not be expressed in sRGB.
  */
 html[data-cirruscope-translucency="true"][data-cirruscope-accent="true"],
 html[data-cirruscope-translucency="true"][data-cirruscope-accent="true"] body {
