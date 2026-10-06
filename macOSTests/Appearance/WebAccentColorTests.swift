@@ -7,11 +7,11 @@ import Testing
 
 /// `WebAccentColorTests` covers `WebAccentColor(resolving:)`, the color arithmetic that turns an `NSColor` into the hex string and brightness verdict Cirruscope forwards into the Nextcloud web interface.
 ///
-/// It is pure input-to-value logic with no web view and no server involved, which is what makes it testable at all — `WebAccentColor.effective(in:)` deliberately is not covered, because the color it reads is whichever accent the machine running the tests happens to have chosen in System Settings, so a test over it would measure the developer's preferences rather than the app.
+/// It is pure input-to-value logic with no web view and no server involved, which is what makes it testable at all — `WebAccentColor.effective(in:)` is not covered by value here, because the color it reads is whichever accent the machine running the tests happens to have chosen in System Settings, so a test over it would measure the developer's preferences rather than the app; `WebAccentColorForwardingTests` pins the decision it makes, and `MulticolorAccentColorOracleTests` measures it by agreement instead.
 /// Two properties are worth pinning. The first is a safety invariant, not a cosmetic one: `WebViewController.appearanceAttributeScript()` interpolates `hexString` into a JavaScript string literal without escaping anything, which is only sound because the value can contain nothing but `#` and six hexadecimal digits. The second is the brightness gate, whose threshold decides whether text on a primary element is black or white — it is a port of Nextcloud's `Util::invertTextColor()`, so a case sitting one eight-bit step either side of the boundary is the only way to catch the two implementations drifting apart.
 struct WebAccentColorTests {
     @Test(arguments: [
-        // The two variants of the app's own AccentColor asset, pinned here so the shipped values exist somewhere executable.
+        // The two variants of the app's own AccentColor asset, which `WebAccentColor.effective(in:)` withholds while the macOS accent color is Multicolor.
         (NSColor(srgbRed: 46 / 255, green: 106 / 255, blue: 240 / 255, alpha: 1), "#2E6AF0", false),
         (NSColor(srgbRed: 90 / 255, green: 141 / 255, blue: 255 / 255, alpha: 1), "#5A8DFF", true),
         // The endpoints.

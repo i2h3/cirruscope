@@ -78,7 +78,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         ConversationIndexer.shared.start()
         NoteIndexer.shared.start()
         CollectiveIndexer.shared.start()
-        // Watch the macOS accent color and appearance so open web views keep matching the app's own accent.
+        // Watch the macOS accent color and appearance so open web views keep following the accent color chosen in System Settings.
         AccentColorMonitor.shared.start()
         presentInitialWindow(forLaunch: true)
     }

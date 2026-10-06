@@ -3782,31 +3782,31 @@
       }
     },
     "TgD-Ie-mez.title" : {
-      "comment" : "Class = \"NSTextFieldCell\"; title = \"Let your desktop show through the window instead of Nextcloud's background colors and images. The app's accent color is applied as well, as long as System Settings leaves the choice to apps.\"; ObjectID = \"TgD-Ie-mez\";",
+      "comment" : "Class = \"NSTextFieldCell\"; title = \"Let your desktop show through the window instead of Nextcloud's background colors and images. The accent color chosen in System Settings is applied as well, unless it is Multicolor.\"; ObjectID = \"TgD-Ie-mez\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lässt den Schreibtisch durch das Fenster durchscheinen, statt die Hintergrundfarben und -bilder von Nextcloud anzuzeigen. Die Akzentfarbe der App wird ebenfalls übernommen, solange die Systemeinstellungen die Wahl den Apps überlassen."
+            "value" : "Lässt den Schreibtisch durch das Fenster durchscheinen, statt die Hintergrundfarben und -bilder von Nextcloud anzuzeigen. Die in den Systemeinstellungen gewählte Akzentfarbe wird ebenfalls übernommen, sofern sie nicht „Mehrfarbig“ ist."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Let your desktop show through the window instead of Nextcloud's background colors and images. The app's accent color is applied as well, as long as System Settings leaves the choice to apps."
+            "value" : "Let your desktop show through the window instead of Nextcloud's background colors and images. The accent color chosen in System Settings is applied as well, unless it is Multicolor."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deja que tu escritorio se vea a través de la ventana en lugar de los colores e imágenes de fondo de Nextcloud. También se aplica el color de acento de la app, siempre que Ajustes del Sistema deje la elección a las apps."
+            "value" : "Deja que tu escritorio se vea a través de la ventana en lugar de los colores e imágenes de fondo de Nextcloud. También se aplica el color de acento elegido en Ajustes del Sistema, salvo si es “Multicolor”."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Laisse votre bureau transparaître à travers la fenêtre au lieu des couleurs et images d'arrière-plan de Nextcloud. La couleur d'accentuation de l'app est également appliquée, tant que Réglages Système laisse le choix aux apps."
+            "value" : "Laisse votre bureau transparaître à travers la fenêtre au lieu des couleurs et images d'arrière-plan de Nextcloud. La couleur d'accentuation choisie dans Réglages Système est également appliquée, sauf si elle est « Multicolore »."
           }
         }
       }
