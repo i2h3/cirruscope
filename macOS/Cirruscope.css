@@ -339,6 +339,27 @@ html[data-cirruscope-translucency="true"] #app-dashboard h2 {
 }
 
 /*
+ * MARK: - Files
+ *
+ * Hide "Open locally", which Nextcloud called "Edit locally" up to version 31, from the actions menu of a file or folder in Nextcloud Files.
+ * The action asks the server for a short-lived token, points the page at an nc://open/… address that only the Nextcloud desktop client claims, and then shows a dialog saying the file should now be open on this device, because the page cannot tell whether anything happened.
+ * Cirruscope cannot open a file locally itself, and whether the desktop client is installed and has this account set up is a question about the Mac that no page can answer: without it, nothing on the Mac claims the address, and the navigation is left to WebKit to fail.
+ * The entry belongs back once Cirruscope can open files locally on its own, which is issue #1.
+ *
+ * Both selectors key on the action's identifier, edit-locally, which stayed the same when the label changed from "Edit locally" to "Open locally".
+ * FileEntryActions.vue writes it into a class and into a data attribute of the menu item, and the two are independent probes, so that losing either one alone does not bring the entry back.
+ * Neither is scoped to the file row, because NcActions moves its open menu out of the row and into the file list, and neither needs scoping to .app-files, the class built from the identifier being specific enough on its own.
+ * The same component draws the row's "…" menu, its context menu and the grid view's menu, so all three lose the entry; the bulk actions of a selection and the details sidebar never offered it.
+ *
+ * Hidden is not removed: NcActions still counts the hidden button when the arrow keys move through the menu, so one key press passes over it without visibly moving the focus.
+ */
+
+.files-list__row-action-edit-locally,
+[data-cy-files-list-row-action="edit-locally"] {
+    display: none !important;
+}
+
+/*
  * MARK: - Mail
  *
  * Minor overrides for issues which surface in translucent appearance.

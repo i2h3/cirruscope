@@ -237,6 +237,20 @@ body {
     margin-inline-start: var(--app-navigation-padding, 4px) !important;
 }
 
+/*
+ * "Open locally" ("Edit locally" up to Nextcloud 31) points the page at an
+ * nc://open/… address that only the Nextcloud desktop client claims, and then
+ * says the file should now be open on this device. There is no desktop client
+ * on iOS at all (the Nextcloud iOS app claims nextcloud:, not nc:), so the
+ * entry can never work here. macOS/Cirruscope.css hides it too, and its Files
+ * section explains why the selectors are the action's identifier rather than
+ * its label, and why they are not scoped to the file row.
+ */
+.files-list__row-action-edit-locally,
+[data-cy-files-list-row-action="edit-locally"] {
+    display: none !important;
+}
+
 /* MARK: - Talk App */
 
 .app-spreed .top-bar {
