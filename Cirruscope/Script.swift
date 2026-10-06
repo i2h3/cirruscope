@@ -8,7 +8,7 @@ import os
 /// `Script` enumerates the JavaScript both apps inject into their web view, and loads it from the bundle on demand.
 ///
 /// Each case's raw value is the name of the resource behind it, so the JavaScript and CSS stay standalone files that can be edited with their own tooling instead of being embedded as string literals in Swift source. Lookup is by name against the flat bundle, which is why moving those resources between source folders does not disturb either app.
-/// It lives here rather than in `Core/` because only the two apps drive a web view; the widget extension has none. macOS's own `macOSScript` enumerates the five scripts that are macOS-only — window dragging, the ⌃⌘S claim, the appearance attributes, the notification bridge, and the header measurement — and this holds what turned out to be the same job on both platforms.
+/// It lives here rather than in `Core/` because only the two apps drive a web view; the widget extension has none. macOS's own `macOSScript` enumerates the five scripts that are macOS-only — window dragging, the ⌃⌘S claim, the appearance attributes, the notification bridge, and the header measurement — and this holds what turned out to be the same jobs on both platforms.
 ///
 enum Script: String {
     ///
@@ -24,6 +24,14 @@ enum Script: String {
     /// Both apps install it as a user script that runs at the end of every document load. Its `MutationObserver` is what carries it across Nextcloud's single-page navigations, which never reload the document and so never re-run the script itself.
     ///
     case sidebarToggleState = "SidebarToggleState"
+
+    ///
+    /// `pageLanguage` contributes `pageLanguage` to the page's `Cirruscope` namespace, answering the language the server rendered the document in for a signed-in user, or `null`.
+    ///
+    /// Both apps evaluate it as a function body once a page has finished loading, through `PageLanguage.query`, which appends the call to it.
+    /// A language changed in Nextcloud's personal settings only reloads the page, so this is how the change reaches the app list the native menus are built from.
+    ///
+    case pageLanguage = "PageLanguage"
 
     ///
     /// `styleSheet` appends the app's bundled `Cirruscope.css` to the document as a `<style>` element.
@@ -43,7 +51,7 @@ enum Script: String {
     ///
     private var resourceExtension: String {
         switch self {
-            case .sidebarToggle, .sidebarToggleState:
+            case .sidebarToggle, .sidebarToggleState, .pageLanguage:
                 "js"
 
             case .styleSheet:
@@ -62,7 +70,7 @@ enum Script: String {
         }
 
         switch self {
-            case .sidebarToggle, .sidebarToggleState:
+            case .sidebarToggle, .sidebarToggleState, .pageLanguage:
                 return contents
 
             case .styleSheet:

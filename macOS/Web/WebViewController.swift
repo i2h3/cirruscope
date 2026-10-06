@@ -650,6 +650,27 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         reapplyAppearance()
     }
 
+    // MARK: - Page Language
+
+    /// `reportPageLanguage()` asks the page that has just finished loading which language the server rendered it in, and hands the answer to `ServerConnection.pageFinishedLoading(in:)`, which refreshes the app list when it changed.
+    ///
+    /// `WebViewController+WKNavigationDelegate`'s `didFinish` calls it after every main-frame load.
+    /// A failure is logged and otherwise costs nothing but the refresh, the list then keeping the names it had.
+    func reportPageLanguage() {
+        guard let query = PageLanguage.query else {
+            return
+        }
+
+        Task {
+            do {
+                let language = try await webView.callAsyncJavaScript(query, contentWorld: .page) as? String
+                await ServerConnection.pageFinishedLoading(in: language)
+            } catch {
+                logger.error("Could not read the page's language: \(error.localizedDescription, privacy: .public) (WebViewController \(self.logID))")
+            }
+        }
+    }
+
     // MARK: - Script Bridge
 
     /// `ScriptMessageName` is the central list of script-message names that the injected user scripts post back to `userContentController(_:didReceive:)`.
