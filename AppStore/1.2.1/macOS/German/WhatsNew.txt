@@ -2,3 +2,4 @@
 • Abgerundete Ecke oben links am Nextcloud-Inhalt in der Liquid-Glass-Darstellung mit „Abstände um den Inhalt entfernen“ behoben, wobei sich die Kopfzeile jetzt außerdem durch eine feine Linie abhebt
 • Behoben, dass in der Liquid-Glass-Darstellung das Blau von Cirruscope deine Nextcloud-Farbe ersetzte, während die Akzentfarbe von macOS auf „Mehrfarbig“ stand
 • Behoben, dass Fenster beim Laden einen leeren Hintergrund statt deiner Nextcloud-Hintergrundfarbe zeigten
+• Behoben, dass das Menü „Darstellung“, das Dock-Menü, die Einstellungen unter „Kurzwahlen“, Spotlight und die App „Kurzbefehle“ die Nextcloud-Apps nach einem Wechsel deiner Nextcloud-Sprache weiter in der vorherigen Sprache anzeigten

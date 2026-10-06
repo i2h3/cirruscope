@@ -8,7 +8,7 @@ import Rainmaker
 /// `ServerConnection`'s app half: the parts of talking to a server that also write what was learned to `AccountStore`.
 ///
 /// `ServerConnection` itself lives in `Core/` and is compiled into the widget extension as well as both apps, so it can depend on nothing the extension does not compile — and `AccountStore` is a main-actor SwiftData store only the apps have. This extension is where that dependency is allowed to exist, which is why it sits in `Cirruscope/` rather than beside the type it extends.
-/// Both apps call it. macOS refreshes the app list from `AppDelegate` and `ServerAddressViewController`, and iOS from `Store.updateApps()`, so the list every menu on either platform draws is persisted the same way; `validateAndPersist(_:)` and `isStillSignedIn(_:)` are the parts only macOS calls.
+/// Both apps call it. macOS refreshes the app list from `AppDelegate` and `ServerAddressViewController`, and iOS from `Store.updateApps()`, and both again through `pageFinishedLoading(in:)` when a page arrives in another language, so the list every menu on either platform draws is persisted the same way; `validateAndPersist(_:)` and `isStillSignedIn(_:)` are the parts only macOS calls.
 /// It is also where every refresh, its per-domain siblings' included, has its writes admitted: `record(_:fetchedFrom:as:requiringStoredAccount:_:)` asks `RefreshAdmission` whether the account a refresh fetched as is still the one signed in, in the same main-actor turn as the write it allows.
 extension ServerConnection {
     /// `validateAndPersist(_:)` validates `server` and records what the validation found: its theming, and — when the version is supported — its version string.
@@ -110,6 +110,39 @@ extension ServerConnection {
         } catch {
             logger.notice("Could not refresh navigation apps; keeping the previous list: \(error.localizedDescription, privacy: .public)")
         }
+    }
+
+    /// `pageLanguage` is the language the connected server last rendered a signed-in page in, across every web view the app has open.
+    ///
+    /// One record serves every window and scene, so two of them finishing a page in the new language at once still refresh the list once: the first to report it changes the record on the main actor before the second is asked.
+    @MainActor
+    private static var pageLanguage = PageLanguage()
+
+    /// `pageFinishedLoading(in:)` refreshes the app list when a page that has just finished loading was rendered in another language than the one before it, which is how a language changed in Nextcloud's personal settings, or on another device, reaches the menus, the Speed Dials, Spotlight and the Shortcuts app (issue #138).
+    ///
+    /// Both web views call it with what `PageLanguage.query` answered, `nil` included.
+    /// The Keychain is read only once a change has been seen, and the refresh admits its writes like any other, so a sign-out it races cannot be undone by it.
+    @MainActor
+    static func pageFinishedLoading(in language: String?) async {
+        let previous = pageLanguage.current
+
+        guard pageLanguage.adopt(language) else {
+            logger.debug("A page finished loading in \(language ?? "no account language", privacy: .public), no change from \(previous ?? "none seen yet", privacy: .public); the app list is left as it is")
+            return
+        }
+
+        guard let address = AccountStore.shared.serverAddress else {
+            logger.notice("A page arrived rendered in \(language ?? "", privacy: .public) rather than \(previous ?? "", privacy: .public), but no server address is recorded; the app list is left as it is")
+            return
+        }
+
+        guard let server = authenticated(address: address) else {
+            logger.notice("A page arrived rendered in \(language ?? "", privacy: .public) rather than \(previous ?? "", privacy: .public), but no credentials are stored for the server; the app list is left as it is")
+            return
+        }
+
+        logger.notice("A page arrived rendered in \(language ?? "", privacy: .public) rather than \(previous ?? "", privacy: .public); refreshing the app list so every surface names the apps in it")
+        await refreshNavigationApps(using: server)
     }
 
     /// `refreshServerAppIcons(from:using:)` downloads the icon of every app the server just listed, and announces the app list again once they have landed.

@@ -328,7 +328,7 @@ struct NextcloudView: View {
             EntityOpening.shared.uninstall(for: page)
         }
         .task {
-            await republishInsetsOnNavigation()
+            await followNavigations()
         }
         // Tells the View menu of an iPad's menu bar which page to load a server app into while this window is in
         // front. Withheld until the first measurement for the reason the first load is: nothing may load before the
@@ -442,16 +442,48 @@ struct NextcloudView: View {
     }
 
     ///
-    /// Publishes the current measurement again each time a new document commits, for as long as this screen is on display.
+    /// Asks the page that has just finished loading which language the server rendered it in, and hands the answer to `ServerConnection.pageFinishedLoading(in:)`, which refreshes the app list when it changed.
     ///
-    /// A backstop, not the mechanism: the user script has already set the properties by the time this runs. It is here for the case where a document commits carrying a seed that predates the last measurement, and it costs nothing when it has nothing to correct. `.committed` rather than `.finished` because the document exists from that point on, well before the page has finished loading and painting.
-    /// The subscription is re-entered after a failure rather than abandoned, because `WebPage.navigations` reports a failed navigation by throwing, which ends the sequence — and a cancelled one counts as failed. `NextcloudNavigationDecider` cancels every sign-in redirect it intercepts, so a single expired browser session would otherwise retire this backstop for the rest of the screen's life. The loop ends when the task is cancelled, which is when the screen goes away.
+    /// The same query backs the Mac's web windows, so both apps notice a language change the same way.
+    /// A failure is logged and otherwise costs nothing but the refresh, the list then keeping the names it had.
     ///
-    private func republishInsetsOnNavigation() async {
+    private func reportPageLanguage() {
+        guard let query = PageLanguage.query else {
+            return
+        }
+
+        Task {
+            do {
+                let language = try await page.callJavaScript(query) as? String
+                await ServerConnection.pageFinishedLoading(in: language)
+            } catch {
+                Self.logger.error("Could not read the page's language: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+    }
+
+    ///
+    /// Follows this screen's navigations for as long as it is on display: publishing the current measurement again each time a new document commits, and reporting the language each finished page was rendered in.
+    ///
+    /// Publishing is a backstop, not the mechanism: the user script has already set the properties by the time this runs. It is here for the case where a document commits carrying a seed that predates the last measurement, and it costs nothing when it has nothing to correct. `.committed` rather than `.finished` because the document exists from that point on, well before the page has finished loading and painting.
+    /// The language is reported on `.finished`, once `<html lang>` is certain to have been parsed, because a language changed in Nextcloud's personal settings only reloads the page and this is where the reload is seen arriving in it.
+    /// One loop serves both so that `page.navigations` has a single consumer.
+    /// The subscription is re-entered after a failure rather than abandoned, because `WebPage.navigations` reports a failed navigation by throwing, which ends the sequence — and a cancelled one counts as failed. `NextcloudNavigationDecider` cancels every sign-in redirect it intercepts, so a single expired browser session would otherwise retire both for the rest of the screen's life. The loop ends when the task is cancelled, which is when the screen goes away.
+    ///
+    private func followNavigations() async {
         while Task.isCancelled == false {
             do {
-                for try await event in page.navigations where event == .committed {
-                    publishInsets()
+                for try await event in page.navigations {
+                    switch event {
+                        case .committed:
+                            publishInsets()
+
+                        case .finished:
+                            reportPageLanguage()
+
+                        default:
+                            break
+                    }
                 }
 
                 return

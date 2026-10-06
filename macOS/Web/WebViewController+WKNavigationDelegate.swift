@@ -220,8 +220,11 @@ extension WebViewController: WKNavigationDelegate {
         reapplyAppearance()
     }
 
+    /// `webView(_:didFinish:)` reveals the web view once a main-frame navigation has finished, re-applies the appearance, and reports the language the page was rendered in.
+    ///
+    /// The language is reported here rather than on commit because `<html lang>` is only certain to be there once the document has been parsed, and it is how a language changed in Nextcloud's personal settings, which only reloads the page, reaches the app list.
     func webView(_: WKWebView, didFinish _: WKNavigation!) {
-        logger.debug("Navigation finished; revealing web view (WebViewController \(self.logID))")
+        logger.debug("Navigation finished; revealing web view and reporting the page's language (WebViewController \(self.logID))")
 
         // Re-save the window's restorable state after every navigation so a relaunch reopens the page now shown,
         // not the one the window started on. `WebWindow.encodeRestorableState(with:)` reads the current URL.
@@ -237,6 +240,10 @@ extension WebViewController: WKNavigationDelegate {
         // re-runs on every full load carrying the values captured when the controller loaded, so a setting changed
         // since then (in a window that stayed open) would otherwise reappear stale after a reload.
         reapplyAppearance()
+
+        // Ask which language the server rendered this page in: a language changed in Nextcloud's personal settings
+        // only reloads the page, and this is the one place that sees the reload arrive in the new language.
+        reportPageLanguage()
     }
 
     func webView(_: WKWebView, didFail _: WKNavigation!, withError error: any Error) {

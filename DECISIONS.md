@@ -557,6 +557,21 @@ The collation is `localizedStandardCompare(_:)`, the one Finder sorts names with
 
 The server's position is still recorded on every refresh rather than discarded, so offering it back — as a preference, say — needs no schema change.
 
+## Why does a page arriving in another language refresh the app list, rather than a timer or the app coming forward?
+
+Because a page is the one thing that knows the language the server names the apps in, and a language change produces exactly one.
+Nextcloud translates the names in its navigation into the account's language, and changing that language in its personal settings saves it and reloads the page, nothing more, so the app list both apps persist kept the previous language's names until the next launch ([#138](https://github.com/i2h3/cirruscope/issues/138)).
+
+The server writes `<html lang>` from the same lookup that translates those names, so once a page has finished loading both web views ask it, through [`PageLanguage.js`](./Cirruscope/Scripts/PageLanguage.js), and [`PageLanguage`](./Cirruscope/PageLanguage.swift) decides whether that is a change.
+Every finished page is asked, but only one the server marks as a signed-in user's answers: the sign-in form has no user session and is in the browser's language, and a public share's layout never carries the mark.
+The first language seen is a baseline, on the assumption that the session which loaded the first page fetched the list as it started, and one record serves every window, so two windows reloading together refresh once.
+The same check also notices a language changed on another device, at the next full page load after that baseline.
+A report that is stale costs a redundant fetch or two, a page restored from the back-forward cache counting once as it arrives and again as the next fresh page does, but their names are the server's own and their writes are admitted like any refresh's.
+
+Refreshing whenever the app comes forward was rejected, because it misses the reported case outright: the language is changed inside the app, which never stops being active.
+Refreshing on every finished page, or on a timer, was rejected because each refresh also asks the server about every app's icon, and a rate limit tight enough to matter would usually swallow the very reload that carries the new language.
+Watching the settings page's own request was rejected as the most fragile of all, tying the app to one form's network traffic.
+
 ## Why are Talk conversations listed by activity when the server apps are listed alphabetically?
 
 Because the two lists answer different questions.
