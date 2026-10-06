@@ -1,0 +1,1 @@
+• Fixed a rounded top-left corner of the Nextcloud content in the Liquid Glass appearance with “Remove gaps around content” turned on, which now also sets the header apart with a thin line

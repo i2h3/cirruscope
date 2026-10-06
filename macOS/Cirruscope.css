@@ -147,6 +147,11 @@ html[data-cirruscope-translucency="true"] .content:fullscreen {
  * prefers-color-scheme: dark icons on the light material, light icons on the
  * dark one. (When translucency is off, Nextcloud's own white-on-primary
  * default is left untouched.)
+ *
+ * In full width, a bottom border separates the header from the content below,
+ * which then meets it without a margin, in the same contrasting color at a
+ * tenth of its strength. It is declared once and follows the appearance through
+ * the custom property, which is resolved on #header itself.
  */
 html[data-cirruscope-translucency="true"] #header {
     --color-background-plain-text: #000;
@@ -158,11 +163,19 @@ html[data-cirruscope-translucency="true"] #header {
     }
 }
 
+html[data-cirruscope-full-width="true"][data-cirruscope-translucency="true"] #header {
+    border-bottom: 1px solid color-mix(in srgb, var(--color-background-plain-text) 10%, transparent);
+}
+
 /*
  * - MARK: Full Width
  *
- * Remove the margins and rounded corners Nextcloud puts around the content area
- * so it reaches the window edges.
+ * Remove the margins and rounded corners Nextcloud puts around the content area so it reaches the window edges.
+ *
+ * #content and #content-vue are the outer containers, the server's own and NcContent's, nested one inside the other in an app that mounts into #content, as Talk does.
+ * Once they fill the window every one of their corners lies on a window edge, so all four go, in either appearance.
+ * A corner left rounded on either is not merely cosmetic: both clip what they contain to their border (overflow: clip on #content, overflow: hidden on #content-vue), so it is cut into whatever reaches it.
+ * The top-left one used to be kept, and once the app navigation was hidden the opaque app content slid to the leading edge underneath it and the window material showed through the cut (issue #139).
  */
 html[data-cirruscope-full-width="true"] #content,
 html[data-cirruscope-full-width="true"] #content-vue {
@@ -171,19 +184,14 @@ html[data-cirruscope-full-width="true"] #content-vue {
     margin-left: 0 !important;
     margin-right: 0 !important;
     width: 100% !important;
+    border-radius: 0 !important;
 }
 
-html[data-cirruscope-full-width="true"][data-cirruscope-translucency="true"] #content,
-html[data-cirruscope-full-width="true"][data-cirruscope-translucency="true"] #content-vue,
-html[data-cirruscope-full-width="true"][data-cirruscope-translucency="true"] #app-content-vue {
-    border-top-right-radius: 0 !important;
-    border-bottom-right-radius: 0 !important;
-    border-bottom-left-radius: 0 !important;
-}
-
-html[data-cirruscope-full-width="true"][data-cirruscope-translucency="false"] #content,
-html[data-cirruscope-full-width="true"][data-cirruscope-translucency="false"] #content-vue,
-html[data-cirruscope-full-width="true"][data-cirruscope-translucency="false"] #app-content-vue {
+/*
+ * The app content loses all four corners as well, in either appearance.
+ * Leaving its top inner corner to Nextcloud did not hold up: in Talk it stayed rounded at the leading edge of #content-vue whether the app navigation was open or hidden.
+ */
+html[data-cirruscope-full-width="true"] #app-content-vue {
     border-radius: 0 !important;
 }
 
