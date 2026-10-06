@@ -20,7 +20,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Erlauben Sie den Zugriff auf Ihre Kamera, um sich während Videoanrufen zu zeigen."
+            "value" : "Erlaube den Zugriff auf deine Kamera, um dich während Videoanrufen zu zeigen."
           }
         },
         "en" : {
@@ -38,7 +38,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Autorisez l'accès à votre caméra pour vous montrer pendant les appels vidéo."
+            "value" : "Autorise l'accès à ta caméra pour te montrer pendant les appels vidéo."
           }
         }
       }
@@ -62,7 +62,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Erlauben Sie den Zugriff, um Verbindungen zu Servern in Ihrem lokalen Netzwerk herzustellen."
+            "value" : "Erlaube den Zugriff, um Verbindungen zu Servern in deinem lokalen Netzwerk herzustellen."
           }
         },
         "en" : {
@@ -80,7 +80,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Autorisez l'accès afin de permettre les connexions aux serveurs de votre réseau local."
+            "value" : "Autorise l'accès afin de permettre les connexions aux serveurs de ton réseau local."
           }
         }
       }
@@ -91,7 +91,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Erlauben Sie den Zugriff auf Ihr Mikrofon, um während Videoanrufen frei zu sprechen."
+            "value" : "Erlaube den Zugriff auf dein Mikrofon, um während Videoanrufen frei zu sprechen."
           }
         },
         "en" : {
@@ -109,7 +109,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Autorisez l'accès à votre microphone pour parler librement pendant les appels vidéo."
+            "value" : "Autorise l'accès à ton microphone pour parler librement pendant les appels vidéo."
           }
         }
       }

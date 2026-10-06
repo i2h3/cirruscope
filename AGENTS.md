@@ -519,6 +519,10 @@ It complements this document, which covers *how* to work in the codebase, and is
 English is the app's base (development) language, and the project is additionally localized into a set of languages configured in the Xcode project.
 Do not hardcode or assume that set — detect the enabled localizations programmatically so this workflow keeps working as languages are added or removed.
 
+Every translation addresses the user informally — "du" in German, written lowercase, "tu" in French, "tú" in Spanish — in the app's own strings, on the website and in the App Store texts alike, so the product speaks with one voice wherever it is read; see `DECISIONS.md`.
+A string that addresses nobody, such as a menu command or an error stating a fact, stays as neutral as it is.
+The App Shortcut phrases are the exception that only looks like one: they are what the user says, so their imperative is the user's own.
+
 The localization stores are String Catalogs, so there are no per-locale `.lproj` resource folders to enumerate for this (only `macOS/Base.lproj`, the storyboard source, and `macOS/mul.lproj` — "multiple languages" — which holds the storyboard's catalog file itself, not a per-language folder).
 The canonical, and only, source for the enabled locales is `knownRegions` in the project file; read it directly, filtering out `en` and `Base`, which are not translation targets:
 
@@ -618,7 +622,7 @@ Their languages are App Store Connect's localizations of the app — English, Ge
 - English is the source of truth.
   Every other language is translated from it rather than written on its own, and a change to an English file is carried into the same file of every other language in the same change.
 - Every language folder of a version holds the same set of files as its `English/` folder.
-- They address the reader informally — "du" in German, "tu" in French, "tú" in Spanish — as the website does, even though the app's own strings say "Sie" and "vous".
+- They address the reader informally — "du" in German, "tu" in French, "tú" in Spanish — as the website and the app's own strings do.
   A UI label they quote is still the app's own localized label, word for word, as is a system label Apple's localization of macOS shows.
   The published 1.1.0 French texts predate this rule and say "vous"; being published, they stay as they are.
 - Name every macOS feature by Apple's own term in that language — Mitteilungszentrale, centre de notifications, Centro de notificaciones — rather than the website's, which is wrong in places.

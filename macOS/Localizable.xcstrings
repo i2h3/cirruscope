@@ -122,7 +122,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "“%@” ist kein gültiger Servername. Bitte überprüfen Sie die Adresse und versuchen Sie es erneut."
+            "value" : "“%@” ist kein gültiger Servername. Bitte überprüfe die Adresse und versuche es erneut."
           }
         },
         "es" : {
@@ -134,7 +134,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "“%@” n'est pas un nom de serveur valide. Veuillez vérifier l'adresse et réessayer."
+            "value" : "“%@” n'est pas un nom de serveur valide. Vérifie l'adresse et réessaie."
           }
         }
       }
@@ -145,7 +145,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "“%@” ist keine gültige URL. Bitte überprüfen Sie die Adresse und versuchen Sie es erneut."
+            "value" : "“%@” ist keine gültige URL. Bitte überprüfe die Adresse und versuche es erneut."
           }
         },
         "es" : {
@@ -157,7 +157,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "“%@” n'est pas une URL valide. Veuillez vérifier l'adresse et réessayer."
+            "value" : "“%@” n'est pas une URL valide. Vérifie l'adresse et réessaie."
           }
         }
       }
@@ -168,7 +168,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "“%lld” ist keine gültige Portnummer. Bitte geben Sie einen Port zwischen 1 und 65535 ein."
+            "value" : "“%lld” ist keine gültige Portnummer. Bitte gib einen Port zwischen 1 und 65535 ein."
           }
         },
         "es" : {
@@ -180,7 +180,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "“%lld” n'est pas un numéro de port valide. Veuillez saisir un port compris entre 1 et 65535."
+            "value" : "“%lld” n'est pas un numéro de port valide. Saisis un port compris entre 1 et 65535."
           }
         }
       }
@@ -560,7 +560,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Überprüfen Sie Ihre Internetverbindung und stellen Sie sicher, dass der Server online ist. Versuchen Sie es dann erneut."
+            "value" : "Überprüfe deine Internetverbindung und stelle sicher, dass der Server online ist. Versuche es dann erneut."
           }
         },
         "es" : {
@@ -572,7 +572,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vérifiez votre connexion Internet et assurez-vous que le serveur est en ligne, puis réessayez."
+            "value" : "Vérifie ta connexion Internet et assure-toi que le serveur est en ligne, puis réessaie."
           }
         }
       }
@@ -1392,7 +1392,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bitte geben Sie die Adresse Ihres Nextcloud-Servers ein."
+            "value" : "Bitte gib die Adresse deines Nextcloud-Servers ein."
           }
         },
         "es" : {
@@ -1404,7 +1404,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Veuillez saisir l'adresse de votre serveur Nextcloud."
+            "value" : "Saisis l'adresse de ton serveur Nextcloud."
           }
         }
       }
@@ -1415,7 +1415,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bitte geben Sie die Serveradresse ohne Benutzernamen und Passwort ein. Die Anmeldung erfolgt im nächsten Schritt."
+            "value" : "Bitte gib die Serveradresse ohne Benutzernamen und Passwort ein. Die Anmeldung erfolgt im nächsten Schritt."
           }
         },
         "es" : {
@@ -1427,7 +1427,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Veuillez saisir l'adresse du serveur sans nom d'utilisateur ni mot de passe. La connexion a lieu à l'étape suivante."
+            "value" : "Saisis l'adresse du serveur sans nom d'utilisateur ni mot de passe. La connexion a lieu à l'étape suivante."
           }
         }
       }
@@ -1450,7 +1450,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Appuyez maintenant"
+            "value" : "Appuie maintenant"
           }
         }
       }
@@ -1576,7 +1576,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Die Adresse enthält Zeichen, die in einer Webadresse nicht erlaubt sind. Bitte überprüfen Sie die Adresse und versuchen Sie es erneut."
+            "value" : "Die Adresse enthält Zeichen, die in einer Webadresse nicht erlaubt sind. Bitte überprüfe die Adresse und versuche es erneut."
           }
         },
         "es" : {
@@ -1588,7 +1588,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "L'adresse contient des caractères qui ne sont pas autorisés dans une adresse web. Veuillez vérifier l'adresse et réessayer."
+            "value" : "L'adresse contient des caractères qui ne sont pas autorisés dans une adresse web. Vérifie l'adresse et réessaie."
           }
         }
       }
@@ -1599,7 +1599,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "In der Adresse fehlt der Servername. Bitte geben Sie eine Adresse wie https://cloud.example.com ein."
+            "value" : "In der Adresse fehlt der Servername. Bitte gib eine Adresse wie https://cloud.example.com ein."
           }
         },
         "es" : {
@@ -1611,7 +1611,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Le nom du serveur est absent de l'adresse. Veuillez saisir une adresse telle que https://cloud.example.com."
+            "value" : "Le nom du serveur est absent de l'adresse. Saisis une adresse telle que https://cloud.example.com."
           }
         }
       }
@@ -1622,7 +1622,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Die Adresse ist zu lang. Bitte geben Sie nur die Adresse Ihres Nextcloud-Servers ein."
+            "value" : "Die Adresse ist zu lang. Bitte gib nur die Adresse deines Nextcloud-Servers ein."
           }
         },
         "es" : {
@@ -1634,7 +1634,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "L'adresse est trop longue. Veuillez saisir uniquement l'adresse de votre serveur Nextcloud."
+            "value" : "L'adresse est trop longue. Saisis uniquement l'adresse de ton serveur Nextcloud."
           }
         }
       }
@@ -1668,7 +1668,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Die Anmeldung ist abgelaufen, bevor sie abgeschlossen wurde. Bitte versuchen Sie es erneut."
+            "value" : "Die Anmeldung ist abgelaufen, bevor sie abgeschlossen wurde. Bitte versuche es erneut."
           }
         },
         "es" : {
@@ -1680,7 +1680,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La connexion a expiré avant d'être terminée. Veuillez réessayer."
+            "value" : "La connexion a expiré avant d'être terminée. Réessaie."
           }
         }
       }
@@ -1944,7 +1944,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ihre Nextcloud-Anmeldedaten sind nicht mehr gültig, daher hat Cirruscope Sie abgemeldet. Melden Sie sich erneut an, um fortzufahren."
+            "value" : "Deine Nextcloud-Anmeldedaten sind nicht mehr gültig, daher hat Cirruscope dich abgemeldet. Melde dich erneut an, um fortzufahren."
           }
         },
         "es" : {
@@ -1956,7 +1956,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vos identifiants Nextcloud ne sont plus valides, Cirruscope vous a donc déconnecté. Connectez-vous à nouveau pour continuer."
+            "value" : "Tes identifiants Nextcloud ne sont plus valides, Cirruscope t'a donc déconnecté. Connecte-toi à nouveau pour continuer."
           }
         }
       }
