@@ -18,9 +18,11 @@ struct ServerAppEntity: IndexedEntity {
     /// `typeDisplayRepresentation` is the human-readable name of this entity type, shown wherever the Shortcuts app names the kind of value.
     ///
     /// The `numericFormat` is not decoration: every entity and enum Apple's sample uses as an App Shortcut phrase parameter supplies one. `synonyms` widen what a spoken phrase may call the type; a bare "app" is deliberately not among them, being too generic to match on without dragging in unrelated utterances.
+    /// The name is in title case and its numeric form is not, as in Apple's own entity types ("Checklist Item", "%lld checklist items"): the Shortcuts app shows the name as a name, the kind of value a parameter takes and the subject of the Find action it generates for this type, beside action titles in the same case, while the numeric form is a count read inside a sentence.
+    /// See `DECISIONS.md`.
     static var typeDisplayRepresentation: TypeDisplayRepresentation {
         TypeDisplayRepresentation(
-            name: "Nextcloud server app",
+            name: "Nextcloud Server App",
             numericFormat: "\(placeholder: .int) Nextcloud server apps",
             synonyms: ["Nextcloud app", "server app"]
         )

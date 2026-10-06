@@ -3,3 +3,4 @@
 • Corregido el azul de Cirruscope, que sustituía el color de tu Nextcloud con la apariencia Liquid Glass cuando el color de acento de macOS era «Multicolor»
 • Corregido el fondo vacío que mostraban las ventanas durante la carga en lugar del color de fondo de tu Nextcloud
 • Corregidos los nombres de las aplicaciones de Nextcloud, que seguían en el idioma anterior en el menú Vista, el menú del Dock, la pestaña Marcaciones rápidas de los ajustes, Spotlight y la app Atajos tras cambiar el idioma de Nextcloud
+• Corregido el uso incoherente de mayúsculas en las acciones de Atajos

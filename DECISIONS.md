@@ -524,7 +524,7 @@ Because the two product names are easy to confuse, and each surface differs in h
 What the user opens is a *Nextcloud* app — Files, Notes, Talk — presented *by* Cirruscope, so neither name alone is right everywhere.
 The rule the strings follow: name the server product only where nothing else identifies what the entry is, and never call these "Cirruscope apps", which would be plainly wrong since the apps belong to the server.
 
-Named, because the surface has no other context: the entity's type name and its numeric form (`Nextcloud server app`, the kind of value the Shortcuts app shows for the parameter), the Spotlight subtitle, the Spotlight keywords, and the action's title and description, which are also how someone searching the Shortcuts action list for "Nextcloud" finds it at all.
+Named, because the surface has no other context: the entity's type name and its numeric form (`Nextcloud Server App`, the kind of value the Shortcuts app shows for the parameter), the Spotlight subtitle, the Spotlight keywords, and the action's title and description, which are also how someone searching the Shortcuts action list for "Nextcloud" finds it at all.
 
 The subtitles follow one pattern, *`<what it is>` in Nextcloud `<the app it lives in>`* — "Note in Nextcloud Notes", "Conversation in Nextcloud Talk", "Collective in Nextcloud Collectives", "Page in Nextcloud Collectives".
 Naming the app alone was tried first and read badly on a live account: a row titled with a colleague's name under "Nextcloud Talk" says where the thing came from and leaves what it is to be guessed, Talk holding calls and messages as well as conversations.
@@ -540,6 +540,19 @@ Left out, because the context carries it: the intent's parameter is simply `App`
 Every phrase must interpolate the application name, so naming the server product there too would put both products in one spoken sentence and imply they are the same thing.
 A bare "app" is likewise not among the entity type's `synonyms`: too generic to match on without pulling in unrelated utterances.
 See [`ServerAppEntity`](./Cirruscope/AppEntities/ServerAppEntity.swift) and [`ServerAppShortcuts`](./Cirruscope/AppIntents/ServerAppShortcuts.swift).
+
+## Why are the App Intents type names in title case when their counts are not?
+
+Because the Shortcuts app shows a type name as a name, and Apple's own types are cased that way: "Checklist Item" counted as "%lld checklist items", "Smart Mailbox" opened by "Open Smart Mailbox".
+Anything the Shortcuts app shows as a name is therefore in title case: the action titles, the App Shortcut tile, the parameter titles and the five entity type names, "Nextcloud Server App", "Nextcloud Note", "Nextcloud Talk Conversation", "Nextcloud Collective" and "Nextcloud Collective Page".
+Descriptions, prompts, Spotlight subtitles, spoken phrases and the numeric forms are sentences, and are in sentence case.
+
+The type names are where it matters most, and where 1.2.0 got it wrong ([#136](https://github.com/i2h3/cirruscope/issues/136)).
+Each query lets the Shortcuts app enumerate its entities, so it generates a Find action for each type and titles it with the type name, beside actions titled in title case; and in sentence case, "Nextcloud note" and "Nextcloud collective" read as the apps Nextcloud Notes and Nextcloud Collectives with their names miswritten.
+
+German capitalizes nouns regardless.
+French and Spanish type names start with a capital and are otherwise in sentence case, product names keeping theirs, as Apple's own are ("Boîte aux lettres intelligente", "Buzón inteligente").
+Synonyms are matched against what someone says rather than shown, so they stay lowercase.
 
 ## Why are the server apps listed alphabetically instead of in the server's own order?
 

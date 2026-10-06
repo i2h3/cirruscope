@@ -3,3 +3,4 @@
 • Fixed Cirruscope’s own blue replacing your Nextcloud color in the Liquid Glass appearance while the macOS accent color is Multicolor
 • Fixed windows showing a blank background instead of your Nextcloud background color while loading
 • Fixed the View menu, the Dock menu, Speed Dials, Spotlight and Shortcuts listing your Nextcloud apps in the previous language after you change your Nextcloud language
+• Fixed inconsistent capitalization in Shortcuts actions
