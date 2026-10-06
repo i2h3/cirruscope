@@ -1,3 +1,4 @@
 • Blendet jetzt „Lokal öffnen“ in der Nextcloud-App „Dateien“ aus, da es nur mit installierter Nextcloud-Desktop-App funktioniert
 • Abgerundete Ecke oben links am Nextcloud-Inhalt in der Liquid-Glass-Darstellung mit „Abstände um den Inhalt entfernen“ behoben, wobei sich die Kopfzeile jetzt außerdem durch eine feine Linie abhebt
 • Behoben, dass in der Liquid-Glass-Darstellung das Blau von Cirruscope deine Nextcloud-Farbe ersetzte, während die Akzentfarbe von macOS auf „Mehrfarbig“ stand
+• Behoben, dass Fenster beim Laden einen leeren Hintergrund statt deiner Nextcloud-Hintergrundfarbe zeigten

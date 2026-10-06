@@ -3,11 +3,25 @@
 
 import AppKit
 
-/// `BackgroundImageView` is an `NSImageView` that renders its image scaled to fill its bounds and center-cropped, matching the CSS `background-size: cover` of Nextcloud's own background rather than the aspect-fit scaling `NSImageView` offers.
+/// `BackgroundImageView` is an `NSImageView` that paints the themed backdrop: a plain color filling its bounds, and over it an image scaled to fill them and center-cropped, matching the CSS `background-color` and `background-size: cover` of Nextcloud's own background rather than the aspect-fit scaling `NSImageView` offers.
 ///
-/// `WebViewController` uses it for the themed backdrop shown behind the web view during the initial page load; with no image assigned it draws nothing, letting the window background show through.
+/// `WebViewController` uses it for the backdrop shown behind the web view during the initial page load; with neither a color nor an image assigned it draws nothing, letting the window material show through.
 class BackgroundImageView: NSImageView {
+    /// `backdropColor` is the plain color filled behind the image, or `nil` to fill nothing.
+    ///
+    /// It is a fixed color rather than a dynamic one because Nextcloud paints a plain background identically in its light and dark themes.
+    var backdropColor: NSColor? {
+        didSet {
+            needsDisplay = true
+        }
+    }
+
     override func draw(_: NSRect) {
+        if let backdropColor {
+            backdropColor.setFill()
+            bounds.fill()
+        }
+
         guard let image, image.size.width > 0, image.size.height > 0 else {
             return
         }

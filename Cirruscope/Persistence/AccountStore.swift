@@ -322,7 +322,7 @@ final class AccountStore {
         return preferences
     }
 
-    /// `translucentAppearance` is the user's choice to let the macOS window material show through the web view, or `nil` when the user has not chosen — in which case callers apply the app default (off). `WebViewController` reads it to drive both the injected stylesheet and the native background image's visibility.
+    /// `translucentAppearance` is the user's choice to let the macOS window material show through the web view, or `nil` when the user has not chosen — in which case callers apply the app default (off). `WebViewController` reads it to drive both the injected stylesheet and the native backdrop's visibility.
     var translucentAppearance: Bool? {
         currentPreferences(createIfNeeded: false)?.translucentAppearance
     }

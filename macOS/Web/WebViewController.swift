@@ -13,11 +13,9 @@ import WebKit
 class WebViewController: NSViewController, WKScriptMessageHandler {
     // MARK: - Outlets
 
-    ///
-    /// Show the cached web user interface background image (if any available).
-    ///
+    /// `backgroundImageView` is the themed backdrop behind the web view, the server's plain background color or its cached background image or neither, shown while a page loads or after a load fails.
     @IBOutlet
-    var backgroundImageView: NSImageView!
+    var backgroundImageView: BackgroundImageView!
 
     /// `stateOverlay` is the rounded card shown over the themed backdrop while a page loads or after a load fails, holding `progressIndicator`, `headline`, `explanation`, and `retry`.
     ///
@@ -166,7 +164,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         installNotificationBridge()
         observeAppearanceSettings()
         observeAccentColor()
-        updateBackgroundImage()
+        updateBackdrop()
         updateStateOverlayBackground()
 
         showLoadingState()
@@ -195,7 +193,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         explanation.isHidden = true
         retry.isHidden = true
         webView.isHidden = true
-        updateBackgroundImageVisibility()
+        updateBackdropVisibility()
         stateOverlay.isHidden = false
     }
 
@@ -227,7 +225,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         explanation.isHidden = false
         retry.isHidden = false
         webView.isHidden = true
-        updateBackgroundImageVisibility()
+        updateBackdropVisibility()
         stateOverlay.isHidden = false
     }
 
@@ -238,7 +236,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         progressIndicator.stopAnimation(self)
         stateOverlay.isHidden = true
         webView.isHidden = false
-        updateBackgroundImageVisibility()
+        updateBackdropVisibility()
         view.window?.makeFirstResponder(webView)
     }
 
@@ -258,11 +256,36 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
 
     // MARK: - Background
 
-    /// `updateBackgroundImage()` shows the server's cached theming background behind the web view, or nothing when no background image is available so the window background shows through.
+    /// `updateBackdrop()` paints the server's theming background behind the web view, its plain color or the cached copy of its image, or nothing when neither is available so the window material shows through.
     ///
-    /// `viewDidLoad()` calls it. The image is the cached copy of the theming background, downloaded by `AccountStore.persist(theming:)` via `AssetCache`. Both paths that produce the *first* web window — `AppDelegate.presentInitialWindow(forLaunch:)` at launch and `ServerAddressViewController` after sign-in — await `ServerConnection.validateAndPersist(_:)`, and so that download, before presenting it, which is what puts the asset on disk. A window opened later by ⌘N deliberately does not wait for that validation, and simply reads the copy those paths already cached; a miss is not an error state but the ordinary "no background available" case `cachedBackgroundImage()` returns `nil` for, leaving the window background to show through.
-    private func updateBackgroundImage() {
+    /// `viewDidLoad()` calls it.
+    /// The color is read back out of what `AccountStore.persist(theming:)` recorded, and the image is the cached copy of the theming background that it downloaded via `AssetCache`.
+    /// Both paths that produce the *first* web window — `AppDelegate.presentInitialWindow(forLaunch:)` at launch and `ServerAddressViewController` after sign-in — await `ServerConnection.validateAndPersist(_:)`, and so that recording and download, before presenting it, which is what puts both in place.
+    /// A window opened later by ⌘N deliberately does not wait for that validation, and simply reads what those paths already recorded; a miss is not an error state but the ordinary "no background available" case `cachedBackgroundColor()` and `cachedBackgroundImage()` return `nil` for, leaving the window material to show through.
+    private func updateBackdrop() {
+        backgroundImageView.backdropColor = cachedBackgroundColor()
         backgroundImageView.image = cachedBackgroundImage()
+    }
+
+    /// `cachedBackgroundColor()` returns the server's plain theming background color, or `nil` when the server publishes an image, no theming has been recorded yet, or the recorded value is not a color.
+    ///
+    /// The color needs no record of its own: whenever `themeBackgroundPlain` is set, `AccountStore.themeBackground` holds the capability's `background` as the server sent it, which is then the color Nextcloud paints behind its pages (issue #58).
+    /// It is drawn as a fixed sRGB color, because Nextcloud paints a plain background identically in its light and dark themes.
+    private func cachedBackgroundColor() -> NSColor? {
+        guard AccountStore.shared.themeBackgroundPlain == true else {
+            return nil
+        }
+
+        guard let background = AccountStore.shared.themeBackground else {
+            return nil
+        }
+
+        guard let color = ThemeColor(hexString: background) else {
+            logger.error("Theming background is plain but not a hex color, so the backdrop stays empty (WebViewController \(self.logID))")
+            return nil
+        }
+
+        return NSColor(srgbRed: CGFloat(color.red) / 255, green: CGFloat(color.green) / 255, blue: CGFloat(color.blue) / 255, alpha: 1)
     }
 
     /// `cachedBackgroundImage()` returns the cached theming background image, or `nil` when the server publishes a plain color, the background is not an `http`/`https` image URL, or no cached copy exists yet.
@@ -553,7 +576,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         reapplyAppearance()
     }
 
-    /// `reapplyAppearance(windowIsFullScreen:)` re-applies this device's appearance settings, the macOS accent color, and this window's button clearance to the live web view: it rewrites the `<html>` data attributes and the two custom properties the stylesheet keys off — switching translucency, full-width, the accent color, and the header's leading inset without a reload — and updates the native background image's visibility.
+    /// `reapplyAppearance(windowIsFullScreen:)` re-applies this device's appearance settings, the macOS accent color, and this window's button clearance to the live web view: it rewrites the `<html>` data attributes and the two custom properties the stylesheet keys off — switching translucency, full-width, the accent color, and the header's leading inset without a reload — and updates the native backdrop's visibility.
     ///
     /// It runs when the settings change (`appearanceSettingsDidChange`), when macOS changes the appearance or the accent-color preference (`accentColorDidChange`, posted by `AccentColorMonitor`), as every document commits and again once it has finished (`WebViewController+WKNavigationDelegate`'s `didCommit` and `didFinish`), and on every leg of the window's own fullscreen transition (`WebWindowController`'s `NSWindowDelegate` conformance), because the document-start seed carries the values captured when the controller loaded and a change made afterwards would otherwise reappear on the next full reload.
     /// `windowIsFullScreen` is passed only by those transition hooks, which know where the window is heading before AppKit has finished taking it there; everywhere else it is `nil` and the window's own style mask is read instead, which is correct at every moment no transition is in flight. Nothing is stored between calls, so there is no remembered state to go stale.
@@ -562,7 +585,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
             webView.evaluateJavaScript(source)
         }
 
-        updateBackgroundImageVisibility()
+        updateBackdropVisibility()
         updateStateOverlayBackground()
     }
 
@@ -599,14 +622,14 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         return window.windowButtonClearance(isFullScreen: windowIsFullScreen ?? window.styleMask.contains(.fullScreen))
     }
 
-    /// `updateBackgroundImageVisibility()` hides the cached theming background whenever the translucent appearance is enabled — so the window material shows through instead of the server's background image — or once the web view has been revealed, leaving it visible only behind the loading and failure overlays when translucency is off.
-    private func updateBackgroundImageVisibility() {
+    /// `updateBackdropVisibility()` hides the themed backdrop, color and image alike, whenever the translucent appearance is enabled — so the window material shows through instead of the server's background — or once the web view has been revealed, leaving it visible only behind the loading and failure overlays when translucency is off.
+    private func updateBackdropVisibility() {
         backgroundImageView.isHidden = prefersTranslucentAppearance || webView.isHidden == false
     }
 
     /// `updateStateOverlayBackground()` drops the loading and failure card's opaque fill whenever the translucent appearance is enabled, so the window material shows through it as well.
     ///
-    /// `viewDidLoad()` calls it for the initial state and `reapplyAppearance()` again whenever the setting changes, which is enough: the card's fill follows the translucency setting alone, not the load state that `updateBackgroundImageVisibility()` also tracks.
+    /// `viewDidLoad()` calls it for the initial state and `reapplyAppearance()` again whenever the setting changes, which is enough: the card's fill follows the translucency setting alone, not the load state that `updateBackdropVisibility()` also tracks.
     /// The card keeps its rounded corners and its padding either way — only the fill goes, because an opaque card sitting on the material would hide exactly what the setting exists to reveal.
     private func updateStateOverlayBackground() {
         stateOverlay.drawsBackground = prefersTranslucentAppearance == false
