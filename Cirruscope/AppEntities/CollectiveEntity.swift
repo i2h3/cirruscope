@@ -16,10 +16,14 @@ struct CollectiveEntity: IndexedEntity {
 
     /// `typeDisplayRepresentation` is the human-readable name of this entity type, shown wherever the Shortcuts app names the kind of value.
     ///
-    /// "Nextcloud collective" rather than naming the Collectives app as well: a Nextcloud has one thing called a collective, so the app's name would be the product's name twice. The synonym is there for someone who thinks of it by the app instead. A bare "collective" is deliberately not among them, for the reason a bare "app" is not among `ServerAppEntity`'s.
+    /// "Nextcloud Collective" rather than naming the Collectives app as well: a Nextcloud has one thing called a collective, so the app's name would be the product's name twice.
+    /// The synonym is there for someone who thinks of it by the app instead.
+    /// A bare "collective" is deliberately not among them, for the reason a bare "app" is not among `ServerAppEntity`'s.
+    /// The name is in title case and its numeric form is not, as in Apple's own entity types ("Checklist Item", "%lld checklist items"): the Shortcuts app shows the name as a name, the kind of value a parameter takes and the subject of the Find action it generates for this type, beside action titles in the same case, while the numeric form is a count read inside a sentence.
+    /// See `DECISIONS.md`.
     static var typeDisplayRepresentation: TypeDisplayRepresentation {
         TypeDisplayRepresentation(
-            name: "Nextcloud collective",
+            name: "Nextcloud Collective",
             numericFormat: "\(placeholder: .int) Nextcloud collectives",
             synonyms: ["Nextcloud Collectives collective"]
         )

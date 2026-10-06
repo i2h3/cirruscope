@@ -23,7 +23,7 @@ struct OpenConversationIntent: OpenIntent {
 
     /// `target` is the conversation to open, chosen from `ConversationEntity.defaultQuery`.
     ///
-    /// `OpenIntent` requires exactly this name. The title is bare rather than naming the server product, following the rule the App Intents strings already keep: the surrounding context carries it, and a parameter reading "Nextcloud conversation" beside an action already named for Nextcloud says it twice.
+    /// `OpenIntent` requires exactly this name. The title is bare rather than naming the server product, following the rule the App Intents strings already keep: the surrounding context carries it, and a parameter reading "Nextcloud Conversation" beside an action already named for Nextcloud says it twice.
     @Parameter(title: "Conversation", requestValueDialog: "Which conversation?")
     var target: ConversationEntity
 

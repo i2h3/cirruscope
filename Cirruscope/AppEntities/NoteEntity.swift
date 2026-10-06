@@ -18,11 +18,15 @@ struct NoteEntity: IndexedEntity {
 
     /// `typeDisplayRepresentation` is the human-readable name of this entity type, shown wherever the Shortcuts app names the kind of value.
     ///
-    /// "Nextcloud note" rather than "Nextcloud Notes note". The rule the App Intents strings keep is to say as much as the surface needs and no more, and a Nextcloud has exactly one thing called a note — unlike its several ways of talking to people, which is why the conversation entity has to name Talk. Saying the app as well would be the product name twice in three words.
+    /// "Nextcloud Note" rather than "Nextcloud Notes Note".
+    /// The rule the App Intents strings keep is to say as much as the surface needs and no more, and a Nextcloud has exactly one thing called a note — unlike its several ways of talking to people, which is why the conversation entity has to name Talk.
+    /// Saying the app as well would be the product name twice in three words.
     /// The synonym is there for someone who thinks of it by the app rather than by the thing. A bare "note" is deliberately not among them, for the same reason a bare "app" is not among `ServerAppEntity`'s: too generic to match on without dragging in utterances that have nothing to do with this app.
+    /// The name is in title case and its numeric form is not, as in Apple's own entity types ("Checklist Item", "%lld checklist items"): the Shortcuts app shows the name as a name, the kind of value a parameter takes and the subject of the Find action it generates for this type, beside action titles in the same case, while the numeric form is a count read inside a sentence.
+    /// See `DECISIONS.md`.
     static var typeDisplayRepresentation: TypeDisplayRepresentation {
         TypeDisplayRepresentation(
-            name: "Nextcloud note",
+            name: "Nextcloud Note",
             numericFormat: "\(placeholder: .int) Nextcloud notes",
             synonyms: ["Nextcloud Notes note"]
         )

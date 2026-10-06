@@ -903,7 +903,7 @@
         }
       }
     },
-    "Nextcloud collective" : {
+    "Nextcloud Collective" : {
       "comment" : "Name of the Nextcloud-collective entity type, shown wherever the Shortcuts app names the kind of value.",
       "localizations" : {
         "de" : {
@@ -915,18 +915,18 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "colectivo de Nextcloud"
+            "value" : "Colectivo de Nextcloud"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "collectif Nextcloud"
+            "value" : "Collectif Nextcloud"
           }
         }
       }
     },
-    "Nextcloud collective page" : {
+    "Nextcloud Collective Page" : {
       "comment" : "Name of the collective-page entity type, shown wherever the Shortcuts app names the kind of value.",
       "localizations" : {
         "de" : {
@@ -938,13 +938,13 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "página de colectivo de Nextcloud"
+            "value" : "Página de colectivo de Nextcloud"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "page de collectif Nextcloud"
+            "value" : "Page de collectif Nextcloud"
           }
         }
       }
@@ -995,7 +995,7 @@
         }
       }
     },
-    "Nextcloud note" : {
+    "Nextcloud Note" : {
       "comment" : "Name of the Nextcloud-note entity type, shown wherever the Shortcuts app names the kind of value.",
       "localizations" : {
         "de" : {
@@ -1007,13 +1007,13 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "nota de Nextcloud"
+            "value" : "Nota de Nextcloud"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "note Nextcloud"
+            "value" : "Note Nextcloud"
           }
         }
       }
@@ -1041,7 +1041,7 @@
         }
       }
     },
-    "Nextcloud server app" : {
+    "Nextcloud Server App" : {
       "comment" : "Display name of the Nextcloud-server-app entity type shown in Spotlight, Siri, and the Shortcuts app.",
       "localizations" : {
         "de" : {
@@ -1064,7 +1064,7 @@
         }
       }
     },
-    "Nextcloud Talk conversation" : {
+    "Nextcloud Talk Conversation" : {
       "comment" : "Name of the Nextcloud-Talk-conversation entity type, shown wherever the Shortcuts app names the kind of value.",
       "localizations" : {
         "de" : {
@@ -1076,13 +1076,13 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "conversación de Nextcloud Talk"
+            "value" : "Conversación de Nextcloud Talk"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "conversation Nextcloud Talk"
+            "value" : "Conversation Nextcloud Talk"
           }
         }
       }
@@ -1185,7 +1185,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eine Nextcloud-Server-App öffnen."
+            "value" : "Öffnet eine Nextcloud-Server-App."
           }
         },
         "es" : {
@@ -1197,7 +1197,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ouvrir une application du serveur Nextcloud."
+            "value" : "Ouvre une application du serveur Nextcloud."
           }
         }
       }

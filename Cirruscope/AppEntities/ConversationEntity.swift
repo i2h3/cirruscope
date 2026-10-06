@@ -18,12 +18,14 @@ struct ConversationEntity: IndexedEntity {
 
     /// `typeDisplayRepresentation` is the human-readable name of this entity type, shown wherever the Shortcuts app names the kind of value.
     ///
-    /// It names the server app and not only the server product, because that is the whole of what the surface has to go on: the Shortcuts app shows this where a parameter's type goes, and "Nextcloud conversation" would leave a reader to guess which of a Nextcloud's several ways of talking to people is meant. The app is called Talk and the thing is called a conversation, so the type is what the user would call it.
-    /// The numeric form says the same thing, and has to: it is the plural of this name rather than a phrase of its own, and a type shown as "Nextcloud Talk conversation" that counts itself as "3 Nextcloud conversations" is a surface disagreeing with itself.
+    /// It names the server app and not only the server product, because that is the whole of what the surface has to go on: the Shortcuts app shows this where a parameter's type goes, and "Nextcloud Conversation" would leave a reader to guess which of a Nextcloud's several ways of talking to people is meant. The app is called Talk and the thing is called a conversation, so the type is what the user would call it.
+    /// The numeric form says the same thing, and has to: it is the plural of this name rather than a phrase of its own, and a type shown as "Nextcloud Talk Conversation" that counts itself as "3 Nextcloud conversations" is a surface disagreeing with itself.
     /// The synonyms widen what a spoken phrase may call the type. "Nextcloud conversation" is among them precisely because it is what the type used to be called and remains a reasonable thing to say; a bare "conversation" is deliberately not, for the same reason a bare "app" is not among `ServerAppEntity`'s — too generic to match on without dragging in utterances that have nothing to do with this app.
+    /// The name is in title case and its numeric form is not, as in Apple's own entity types ("Checklist Item", "%lld checklist items"): the Shortcuts app shows the name as a name, the kind of value a parameter takes and the subject of the Find action it generates for this type, beside action titles in the same case, while the numeric form is a count read inside a sentence.
+    /// See `DECISIONS.md`.
     static var typeDisplayRepresentation: TypeDisplayRepresentation {
         TypeDisplayRepresentation(
-            name: "Nextcloud Talk conversation",
+            name: "Nextcloud Talk Conversation",
             numericFormat: "\(placeholder: .int) Nextcloud Talk conversations",
             synonyms: ["Talk conversation", "Nextcloud conversation"]
         )
