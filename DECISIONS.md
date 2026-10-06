@@ -935,6 +935,24 @@ A `tel:` or `mailto:` link is not the server's, so it goes to the system, which 
 The exceptions are the schemes a document uses on itself — `about:`, `blob:`, `data:`, `javascript:`, `file:` — which mean nothing outside WebKit and stay there.
 Nothing guesses which schemes the machine can open: macOS asks Launch Services and iOS asks SwiftUI's `openURL` and reads its answer, and anything the system declines is handed back to the web view rather than silently swallowed.
 
+## Why does Cirruscope hide "Open locally" in Nextcloud Files?
+
+Because it promises to open a file on the device, which Cirruscope cannot do, and hands that promise to an app nothing guarantees is there.
+
+Nextcloud Files offers "Open locally" ("Edit locally" before Nextcloud 32) for a single file or folder the user may change.
+It asks the server for a short-lived token, points the page at an `nc://open/…` address, and then shows a dialog saying the file should now be open on the device, because the page cannot tell whether anything happened.
+Only the Nextcloud desktop client claims `nc:`, and only for an account it has set up itself.
+On the Mac the address is offered to Launch Services like any other address that is not the server's, so the entry worked with the desktop client installed and failed without it.
+On iOS it can never work, the Nextcloud iOS app claiming `nextcloud:` rather than `nc:`.
+Cirruscope keeps no local copy of the account's files, so it has nothing to open the file with until it integrates the account into the file system ([#1](https://github.com/i2h3/cirruscope/issues/1)), and that is when the entry comes back.
+
+Both stylesheets therefore hide the menu item, keyed on the action's identifier `edit-locally`, which stayed the same when the label changed.
+Refusing `nc:` navigations in [`WebViewDestination`](./Cirruscope/WebViewDestination.swift) instead was rejected: that rule deliberately never guesses what the machine can open, and Nextcloud's dialog would claim success all the same.
+Since Nextcloud 35 an administrator can switch the action off for the whole server (`local_client_integration` in the files app's configuration), but that is the server's decision for every client, not the app's.
+
+The cost accepted is that someone who runs the desktop client beside Cirruscope loses a shortcut that worked for them on the Mac, which a browser still offers.
+And because a stylesheet can hide an entry but not remove it, the arrow keys still step onto the hidden one, with one key press that seems to do nothing.
+
 ## Why does a Spotlight tap resolve what it opens by entity *type*, and refuse a selection that carries no type?
 
 Because an identifier is unique within a type and not across them, and reading one without its type is how four of the five kinds of result came to open nothing at all.
