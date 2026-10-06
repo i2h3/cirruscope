@@ -78,7 +78,7 @@
  *
  * Drop the Nextcloud backgrounds so the native window material behind the web
  * view shows through. When off, Nextcloud paints its own opaque background and
- * hides the material (WebViewController also hides its native background image
+ * hides the material (WebViewController also hides its native backdrop
  * only while translucency is on).
  */
 html[data-cirruscope-translucency="true"],
