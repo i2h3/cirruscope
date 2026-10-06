@@ -6,11 +6,13 @@ import AppIntents
 import Foundation
 import Testing
 
-/// `ShortcutsNameTests` covers how the names the Shortcuts app shows for this app's entity types are cased, in English and in every localization the bundle ships.
+/// `ShortcutsNameTests` covers the names the Shortcuts app lists for this app, its action titles and entity type names: that each is translated in every localization the bundle ships, and that the type names are cased as names.
 ///
+/// A translation present in the bundle is the half of a Shortcuts action showing in the wrong language that the app answers for.
+/// When this passes and the action still shows in English, the cause is the system's own action index, which `DECISIONS.md` explains how to tell apart (issue #137).
 /// The Shortcuts app titles the Find action it generates for each type with the type name, beside actions titled in title case, so a type name in sentence case reads as an app's name miswritten: "Nextcloud note" beside Nextcloud Notes (issue #136).
 /// The names are read from the declarations themselves rather than restated, so a key that drifts from its catalog entry fails here too, and each localization is looked up the way the system resolves it, by the resource's own key and table in that language's `.lproj`.
-/// Only the first letter is asserted for the translations, because French and Spanish type names are otherwise in sentence case, as Apple's own are; see `DECISIONS.md`.
+/// Of a translated type name's casing, only the first letter is asserted, because French and Spanish type names are otherwise in sentence case, as Apple's own are; see `DECISIONS.md`.
 struct ShortcutsNameTests {
     /// `typeNames` are the names of the five entity types, as the declarations give them.
     static let typeNames: [LocalizedStringResource] = [
@@ -21,11 +23,29 @@ struct ShortcutsNameTests {
         CollectivePageEntity.typeDisplayRepresentation.name,
     ]
 
+    /// `actionTitles` are the titles of the five actions, as the intents declare them.
+    static let actionTitles: [LocalizedStringResource] = [
+        OpenServerAppIntent.title,
+        OpenNoteIntent.title,
+        OpenConversationIntent.title,
+        OpenCollectiveIntent.title,
+        OpenCollectivePageIntent.title,
+    ]
+
     /// `missing` is what a lookup answers for a key its table lacks, chosen so that no translation can be it, because the key itself, the lookup's own default, already starts with a capital.
     static let missing = "\u{FFFD} missing \u{FFFD}"
 
     /// `localizations` are the languages the host bundle ships besides English, detected rather than listed so a language added later is covered without touching this suite.
     static let localizations = Bundle.main.localizations.filter { $0 != "en" && $0 != "Base" }
+
+    @Test(arguments: actionTitles + typeNames, localizations)
+    func `Every name the Shortcuts app lists is translated in every shipped localization`(name: LocalizedStringResource, localization: String) throws {
+        let path = try #require(Bundle.main.path(forResource: localization, ofType: "lproj"))
+        let bundle = try #require(Bundle(path: path))
+        let translated = bundle.localizedString(forKey: name.key, value: nil, table: name.table)
+
+        #expect(translated != name.key, "\(name.key) is not translated into \(localization)")
+    }
 
     @Test(arguments: typeNames)
     func `Every word of a type name starts with a capital in English`(name: LocalizedStringResource) {
