@@ -667,6 +667,83 @@ h3 {
   line-height: 1.6;
 }
 
+/* Testimonials ---------------------------------------------------------- */
+/* Speech bubbles rather than a second bento grid, so the quotes cannot be
+   mistaken for more features straight beneath the twelve, and the bubble is
+   also why they carry no quotation marks of their own. Each figure is a
+   subgrid spanning a bubble row and a name row, so two bubbles sharing a row
+   stay the same height even when only one of their names wraps; the figure's
+   bottom margin is what separates one row of names from the next row of
+   bubbles. */
+.testimonials__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 24px;
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+@media (max-width: 700px) {
+  .testimonials__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.testimonial {
+  display: grid;
+  grid-row: span 2;
+  grid-template-rows: subgrid;
+  margin: 0 0 26px;
+}
+
+.testimonial__quote {
+  position: relative;
+  margin: 0;
+  padding: 24px 28px;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+}
+
+/* The tail is a square turned onto its corner, filled like the bubble so its
+   upper half hides the stretch of border it crosses, and bordered on the two
+   sides that end up pointing down at the name. */
+.testimonial__quote::after {
+  content: "";
+  position: absolute;
+  left: 28px;
+  bottom: -7px;
+  width: 12px;
+  height: 12px;
+  background: var(--card);
+  border-right: 1px solid var(--card-border);
+  border-bottom: 1px solid var(--card-border);
+  transform: rotate(45deg);
+}
+
+.testimonial__quote p {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--text);
+  text-wrap: pretty;
+}
+
+.testimonial__source {
+  padding: 0 28px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--text-2);
+}
+
+.testimonials__note {
+  margin: 22px 0 0;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--text-2);
+}
+
 /* Call-to-action box ---------------------------------------------------- */
 .cta {
   padding: 0 24px 160px;
