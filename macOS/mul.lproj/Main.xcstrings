@@ -938,7 +938,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Geben Sie Ihre Nextcloud-Serveradresse ein:"
+            "value" : "Gib deine Nextcloud-Serveradresse ein:"
           }
         },
         "en" : {
@@ -956,7 +956,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Saisissez l'adresse de votre serveur Nextcloud :"
+            "value" : "Saisis l'adresse de ton serveur Nextcloud :"
           }
         }
       }
@@ -1028,7 +1028,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wenn Sie sich hier abmelden, setzt Cirruscope den gewählten Server zurück und fragt nach einem neuen."
+            "value" : "Wenn du dich hier abmeldest, setzt Cirruscope den gewählten Server zurück und fragt nach einem neuen."
           }
         },
         "en" : {
@@ -1046,7 +1046,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Si vous vous déconnectez ici, Cirruscope réinitialisera le serveur choisi et en demandera un nouveau."
+            "value" : "Si tu te déconnectes ici, Cirruscope réinitialisera le serveur choisi et en demandera un nouveau."
           }
         }
       }
@@ -3338,7 +3338,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sie sind angemeldet bei:"
+            "value" : "Du bist angemeldet bei:"
           }
         },
         "en" : {
@@ -3356,7 +3356,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vous êtes connecté à :"
+            "value" : "Tu es connecté à :"
           }
         }
       }
@@ -3470,7 +3470,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Revisar ortografía mientras escribe"
+            "value" : "Revisar ortografía mientras se escribe"
           }
         },
         "fr" : {
@@ -3806,7 +3806,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Laisse votre bureau transparaître à travers la fenêtre au lieu des couleurs et images d'arrière-plan de Nextcloud. La couleur d'accentuation choisie dans Réglages Système est également appliquée, sauf si elle est « Multicolore »."
+            "value" : "Laisse ton bureau transparaître à travers la fenêtre au lieu des couleurs et images d'arrière-plan de Nextcloud. La couleur d'accentuation choisie dans Réglages Système est également appliquée, sauf si elle est « Multicolore »."
           }
         }
       }

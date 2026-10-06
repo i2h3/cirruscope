@@ -272,7 +272,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Öffnen Sie Cirruscope, um Ihren Nextcloud-Server hinzuzufügen."
+            "value" : "Öffne Cirruscope, um deinen Nextcloud-Server hinzuzufügen."
           }
         },
         "es" : {
@@ -284,7 +284,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ouvrez Cirruscope pour ajouter votre serveur Nextcloud."
+            "value" : "Ouvre Cirruscope pour ajouter ton serveur Nextcloud."
           }
         }
       }
@@ -295,7 +295,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Neueste Änderungen an den Dateien auf Ihrem Nextcloud-Server."
+            "value" : "Neueste Änderungen an den Dateien auf deinem Nextcloud-Server."
           }
         },
         "es" : {
@@ -307,7 +307,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Modifications récentes des fichiers de votre serveur Nextcloud."
+            "value" : "Modifications récentes des fichiers de ton serveur Nextcloud."
           }
         }
       }
@@ -387,7 +387,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Die Anmeldung ist abgelaufen, bevor sie abgeschlossen wurde. Bitte versuchen Sie es erneut."
+            "value" : "Die Anmeldung ist abgelaufen, bevor sie abgeschlossen wurde. Bitte versuche es erneut."
           }
         },
         "es" : {
@@ -399,7 +399,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La connexion a expiré avant d'être terminée. Veuillez réessayer."
+            "value" : "La connexion a expiré avant d'être terminée. Réessaie."
           }
         }
       }
@@ -525,7 +525,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sie"
+            "value" : "Du"
           }
         },
         "es" : {
@@ -537,7 +537,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vous"
+            "value" : "Toi"
           }
         }
       }

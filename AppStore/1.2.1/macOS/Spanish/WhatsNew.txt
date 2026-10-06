@@ -1,4 +1,5 @@
 • Ahora oculta “Abrir localmente” en la app Archivos de Nextcloud, ya que solo funciona con la app de escritorio de Nextcloud instalada
+• Ahora te trata de tú en todas las traducciones, como el sitio web
 • Corregida una esquina redondeada arriba a la izquierda del contenido de Nextcloud con la apariencia Liquid Glass y la opción «Eliminar los espacios alrededor del contenido», que ahora también separa el encabezado con una línea fina
 • Corregido el azul de Cirruscope, que sustituía el color de tu Nextcloud con la apariencia Liquid Glass cuando el color de acento de macOS era «Multicolor»
 • Corregido el fondo vacío que mostraban las ventanas durante la carga en lugar del color de fondo de tu Nextcloud

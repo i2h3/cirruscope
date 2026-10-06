@@ -448,6 +448,15 @@ The rule applies to every Markdown file in the repository, and deliberately not 
 The cost accepted is that the raw files have ragged line lengths and rely on an editor's soft wrap.
 See [AGENTS.md → Documentation Instructions](./AGENTS.md#documentation-instructions).
 
+## Why does Cirruscope address the user informally in every language?
+
+Because the app, the website and the App Store texts are one voice, and a reader who meets "du" on the website and in the release notes and then "Sie" in the app hears two.
+They had drifted apart: the website and the App Store texts said "du" and "tu" from the start, while the app's own German and French strings said "Sie" and "vous", its Spanish strings said "tú", and one German screen mixed both, a subtitle reading "Dein Nextcloud-Erlebnis" beneath a label reading "Geben Sie Ihre Nextcloud-Serveradresse ein" (fixed in 1.2.1).
+The informal address was kept rather than the formal one because it is what most of what Cirruscope publishes already used, and because it suits a personal tool someone installs for their own account.
+
+German writes the pronoun in lowercase, as the website does.
+A string that addresses nobody, a menu command or a stated fact, is left neutral rather than made personal.
+
 ## Why are the App Store texts kept in the repository, one folder per version?
 
 Because App Store Connect shows them to no one but whoever is signed in to it.
@@ -459,7 +468,7 @@ The description, the keywords and "What's New" are fields of each version there,
 Languages are App Store Connect's own names for its localizations, not locale codes, so that a file maps onto a field without anyone translating `es` into whichever Spanish App Store Connect means.
 Files are named after the fields they are pasted into, for the same reason.
 
-The texts address the reader informally in every language, as the website does, so the public story keeps one voice wherever it is told; the app's own strings are older and still formal.
+The texts address the reader informally in every language, as the website and the app do, so the public story keeps one voice wherever it is told.
 English is the source of truth and every other language is translated from it, as with the app's String Catalogs.
 
 The folder is referenced by the Xcode project's main group for browsing and listed by no target, so nothing in it ships in a product, and `REUSE.toml` annotates it as a whole because a header written into a file would be pasted into App Store Connect along with the text.
