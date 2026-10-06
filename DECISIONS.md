@@ -554,6 +554,19 @@ German capitalizes nouns regardless.
 French and Spanish type names start with a capital and are otherwise in sentence case, product names keeping theirs, as Apple's own are ("Boîte aux lettres intelligente", "Buzón inteligente").
 Synonyms are matched against what someone says rather than shown, so they stay lowercase.
 
+## Why can the Shortcuts actions appear in English on a Mac set to another language, when every catalog translates them?
+
+Because the Shortcuts app does not read an app's strings when it lists actions: it reads an index of its own, which the system builds for a set of languages, and asks it for English when the current language is not among them.
+That is what [#137](https://github.com/i2h3/cirruscope/issues/137) turned out to be, measured rather than assumed.
+On 2026-10-05 the Mac's index held `["nl", "fr", "hu", "de", "en"]`, and with the system set to `es-DE` the Shortcuts app queried it for `locale: en`, for Apple's own actions as much as for Cirruscope's, while in `fr-DE` it queried `locale: fr` and showed French.
+The bundle was never the problem: the shipped `es.lproj` translated every one of the names, and Apple's own resolver, `LNStaticDeferredLocalizedString`, answered Cirruscope's Spanish for `es`, `es_ES`, `es_DE`, `es_419`, `es_MX` and `es_US`.
+Spanish entered the index only after a restart and a full re-index.
+
+So when an action shows in the wrong language, check what the Shortcuts app asked for before touching a catalog.
+`/usr/bin/log show --last 10m --style compact --predicate 'process == "Shortcuts" AND category == "ToolKitDatabase"'` shows the `locale:` it queried, and `--predicate 'subsystem == "com.apple.shortcuts" AND eventMessage CONTAINS "indexLocaleIds"'` shows which languages the index holds.
+[`ShortcutsNameTests`](./Tests/AppIntents/ShortcutsNameTests.swift) covers the half the app answers for, that every action title and type name is translated in every shipped localization.
+Neither an `es-419` localization nor renamed keys would change any of this, and nothing the app can call asks the system to index another language.
+
 ## Why are the server apps listed alphabetically instead of in the server's own order?
 
 The server reports a position for each app, the one arranging the web interface's app menu, and Cirruscope ignores it for ordering and sorts by localized name instead.
