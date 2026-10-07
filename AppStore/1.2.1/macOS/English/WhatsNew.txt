@@ -1,7 +1,8 @@
 • Now hiding “Open locally” in Nextcloud Files, since it only works with the Nextcloud desktop app installed
 • Now addressing you informally throughout every translation, as the website does
+• Now calling the Speed Dials settings Keyboard Shortcuts, as macOS does
 • Fixed a rounded top-left corner of the Nextcloud content in the Liquid Glass appearance with “Remove gaps around content” turned on, which now also sets the header apart with a thin line
 • Fixed Cirruscope’s own blue replacing your Nextcloud color in the Liquid Glass appearance while the macOS accent color is Multicolor
 • Fixed windows showing a blank background instead of your Nextcloud background color while loading
-• Fixed the View menu, the Dock menu, Speed Dials, Spotlight and Shortcuts listing your Nextcloud apps in the previous language after you change your Nextcloud language
+• Fixed the View menu, the Dock menu, the Keyboard Shortcuts settings, Spotlight and Shortcuts listing your Nextcloud apps in the previous language after you change your Nextcloud language
 • Fixed inconsistent capitalization in Shortcuts actions

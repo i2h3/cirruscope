@@ -1,7 +1,8 @@
 • Masque désormais « Ouvrir localement » dans l’app Fichiers de Nextcloud, puisque cette action ne fonctionne qu’avec l’app de bureau Nextcloud installée
 • Te tutoie désormais dans toute l’app, comme sur le site web
+• Appelle désormais les réglages Numéros abrégés Raccourcis clavier, comme macOS
 • Correction d’un coin arrondi en haut à gauche du contenu de Nextcloud avec l’apparence Liquid Glass et l’option « Supprimer les espaces autour du contenu », qui sépare désormais aussi l’en-tête par un trait fin
 • Correction du bleu de Cirruscope qui remplaçait ta couleur Nextcloud avec l’apparence Liquid Glass lorsque la couleur d’accentuation de macOS était « Multicolore »
 • Correction de l’arrière-plan vide affiché par les fenêtres pendant le chargement à la place de la couleur d’arrière-plan de ton Nextcloud
-• Correction des noms des applications Nextcloud qui restaient dans la langue précédente dans le menu Présentation, le menu du Dock, les réglages Numéros abrégés, Spotlight et l’app Raccourcis après un changement de langue dans Nextcloud
+• Correction des noms des applications Nextcloud qui restaient dans la langue précédente dans le menu Présentation, le menu du Dock, les réglages Raccourcis clavier, Spotlight et l’app Raccourcis après un changement de langue dans Nextcloud
 • Correction de l’usage incohérent des majuscules dans les actions Raccourcis

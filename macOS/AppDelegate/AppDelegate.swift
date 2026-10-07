@@ -601,7 +601,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// `icon(for:)` is the image a server app is listed with: its own, when one has been downloaded, and a generic placeholder when it has not.
     ///
-    /// Not private, because the Speed Dials settings tab lists the same apps and has to reach the same answer; a second copy of this decision is how two lists of the same thing start looking different.
+    /// Not private, because the Keyboard Shortcuts settings tab lists the same apps and has to reach the same answer; a second copy of this decision is how two lists of the same thing start looking different.
     static func icon(for app: ServerAppTransferObject) -> NSImage? {
         guard let serverAddress = AccountStore.shared.serverAddress else {
             return NSImage(systemSymbolName: "app.grid", accessibilityDescription: nil)

@@ -4,7 +4,7 @@
 import Foundation
 import SwiftData
 
-/// `ServerApp` is the SwiftData record for a Nextcloud server app offered by an `Account`, persisted so the View and Dock menus, the Speed Dials settings tab and the App Intents entities survive relaunches.
+/// `ServerApp` is the SwiftData record for a Nextcloud server app offered by an `Account`, persisted so the View and Dock menus, the Keyboard Shortcuts settings tab and the App Intents entities survive relaunches.
 ///
 /// It is the persistent counterpart of the value-type `ServerAppTransferObject` DTO the app's UI passes around; `AccountStore` maps between the two so AppKit views never hold a managed object directly. `AccountStore.persist(serverApps:)` upserts these by `appID`, updating existing rows and deleting ones the server no longer offers. The keyboard shortcut a user records for an app is not part of this record: it is a `KeyboardShortcut` keyed by the same `appID`, which outlives the app being pruned and applies again when the server offers it.
 @Model
