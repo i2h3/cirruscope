@@ -93,13 +93,13 @@
         }
       }
     },
-    "“%@” already uses this shortcut." : {
+    "“%@” already uses this keyboard shortcut." : {
       "comment" : "Tooltip on the shortcut recorder explaining what the just-rejected shortcut is already used by: one of Cirruscope's own menu items, or another Nextcloud server app.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "“%@” verwendet diese Tastenkombination bereits."
+            "value" : "“%@” verwendet diesen Tastaturkurzbefehl bereits."
           }
         },
         "es" : {
@@ -1961,13 +1961,13 @@
         }
       }
     },
-    "Clear shortcut" : {
-      "comment" : "Accessibility label of the button in the Speed Dials settings tab that removes the keyboard shortcut recorded for a server app.",
+    "Clear keyboard shortcut" : {
+      "comment" : "Accessibility label of the button in the Keyboard Shortcuts settings tab that removes the keyboard shortcut recorded for a server app.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tastenkombination entfernen"
+            "value" : "Tastaturkurzbefehl löschen"
           }
         },
         "es" : {

@@ -118,7 +118,7 @@ extension ServerConnection {
     @MainActor
     private static var pageLanguage = PageLanguage()
 
-    /// `pageFinishedLoading(in:)` refreshes the app list when a page that has just finished loading was rendered in another language than the one before it, which is how a language changed in Nextcloud's personal settings, or on another device, reaches the menus, the Speed Dials, Spotlight and the Shortcuts app (issue #138).
+    /// `pageFinishedLoading(in:)` refreshes the app list when a page that has just finished loading was rendered in another language than the one before it, which is how a language changed in Nextcloud's personal settings, or on another device, reaches the menus, the Keyboard Shortcuts settings tab, Spotlight and the Shortcuts app (issue #138).
     ///
     /// Both web views call it with what `PageLanguage.query` answered, `nil` included.
     /// The Keychain is read only once a change has been seen, and the refresh admits its writes like any other, so a sign-out it races cannot be undone by it.
@@ -166,7 +166,7 @@ extension ServerConnection {
         }
 
         // Posted on the main actor, not from here. `NotificationCenter` delivers synchronously on the
-        // posting thread, and every observer of this — `AppDelegate.rebuildServerAppsMenu()`, the Speed Dials
+        // posting thread, and every observer of this — `AppDelegate.rebuildServerAppsMenu()`, the Keyboard Shortcuts
         // settings tab, `ServerAppIndexer` — is main-actor-isolated, so posting from this task's own
         // executor trips Swift's isolation check and takes the process down. The store's own announcements,
         // made through `AccountStore.post(_:)`, are delivered on the main thread as well.

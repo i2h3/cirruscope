@@ -85,7 +85,7 @@ class ShortcutRecorderView: NSTableCellView {
         displayField.font = .systemFont(ofSize: NSFont.systemFontSize)
         displayField.translatesAutoresizingMaskIntoConstraints = false
 
-        clearButton.image = NSImage(systemSymbolName: "xmark.circle.fill", accessibilityDescription: String(localized: "Clear shortcut", comment: "Accessibility label of the button in the Speed Dials settings tab that removes the keyboard shortcut recorded for a server app."))
+        clearButton.image = NSImage(systemSymbolName: "xmark.circle.fill", accessibilityDescription: String(localized: "Clear keyboard shortcut", comment: "Accessibility label of the button in the Keyboard Shortcuts settings tab that removes the keyboard shortcut recorded for a server app."))
         clearButton.imagePosition = .imageOnly
         clearButton.isBordered = false
         clearButton.setButtonType(.momentaryChange)
@@ -298,7 +298,7 @@ class ShortcutRecorderView: NSTableCellView {
 
         displayField.stringValue = String(localized: "Already Used", comment: "Shown briefly in the shortcut recorder when the just-pressed combination is already used by one of Cirruscope's own menu items or by another Nextcloud server app.")
         displayField.textColor = backgroundStyle == .emphasized ? .alternateSelectedControlTextColor : .systemRed
-        displayField.toolTip = String(localized: "“\(name)” already uses this shortcut.", comment: "Tooltip on the shortcut recorder explaining what the just-rejected shortcut is already used by: one of Cirruscope's own menu items, or another Nextcloud server app.")
+        displayField.toolTip = String(localized: "“\(name)” already uses this keyboard shortcut.", comment: "Tooltip on the shortcut recorder explaining what the just-rejected shortcut is already used by: one of Cirruscope's own menu items, or another Nextcloud server app.")
 
         conflictRevertTask?.cancel()
         conflictRevertTask = Task { [weak self] in

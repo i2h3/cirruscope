@@ -3362,31 +3362,31 @@
       }
     },
     "qmX-C4-sNh.headerCell.title" : {
-      "comment" : "Class = \"NSTableColumn\"; headerCell.title = \"Shortcut\"; ObjectID = \"qmX-C4-sNh\";",
+      "comment" : "Class = \"NSTableColumn\"; headerCell.title = \"Keyboard Shortcut\"; ObjectID = \"qmX-C4-sNh\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tastenkürzel"
+            "value" : "Tastaturkurzbefehl"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Shortcut"
+            "value" : "Keyboard Shortcut"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Atajo"
+            "value" : "Atajo de teclado"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Raccourci"
+            "value" : "Raccourci clavier"
           }
         }
       }
@@ -3572,31 +3572,31 @@
       }
     },
     "rJd-2U-O7V.label" : {
-      "comment" : "Class = \"NSTabViewItem\"; label = \"Speed Dials\"; ObjectID = \"rJd-2U-O7V\";",
+      "comment" : "Class = \"NSTabViewItem\"; label = \"Keyboard Shortcuts\"; ObjectID = \"rJd-2U-O7V\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kurzwahlen"
+            "value" : "Tastaturkurzbefehle"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Speed Dials"
+            "value" : "Keyboard Shortcuts"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Marcaciones rápidas"
+            "value" : "Atajos de teclado"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Numéros abrégés"
+            "value" : "Raccourcis clavier"
           }
         }
       }

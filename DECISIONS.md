@@ -457,6 +457,15 @@ The informal address was kept rather than the formal one because it is what most
 German writes the pronoun in lowercase, as the website does.
 A string that addresses nobody, a menu command or a stated fact, is left neutral rather than made personal.
 
+## Why is the settings tab for the server apps' keyboard shortcuts called "Keyboard Shortcuts"?
+
+Because that is what it holds, and what macOS calls it.
+Until 1.2.1 it was "Speed Dials" ("Kurzwahlen", "Numéros abrégés", "Marcaciones rápidas"), a metaphor nothing else in the app or on macOS uses, above a column headed "Shortcut" ("Tastenkürzel"), beside App Store texts saying "keyboard shortcuts" ("Tastaturkurzbefehle"), and under a website card promising files and folders the tab never offered ([#141](https://github.com/i2h3/cirruscope/issues/141)).
+Four names for one thing read as four things.
+
+The names now follow Apple's own, measured in the strings macOS ships for its Keyboard and Desktop & Dock settings: "Keyboard Shortcuts" and "Keyboard Shortcut", "Tastaturkurzbefehle" and "Tastaturkurzbefehl", "Raccourcis clavier" and "Raccourci clavier", "Atajos de teclado" and "Atajo de teclado", the same in Latin American Spanish.
+In every text a user reads, the app, the website and the App Store, the compound is used every time and the short form never, because Apple uses the bare "Shortcut", "Kurzbefehl", "Raccourci" and "Atajo" for a shortcut in the Shortcuts app, and Cirruscope offers actions there as well; inside the Shortcuts app Apple tells the two apart the same way.
+
 ## Why are the App Store texts kept in the repository, one folder per version?
 
 Because App Store Connect shows them to no one but whoever is signed in to it.
@@ -585,7 +594,7 @@ Nobody scans the View menu, the Dock menu, or the iOS app's title menu for the t
 Alphabetical is the only ordering a user can predict without having seen the list before, which is why the standard macOS lists that grow with the user's own data are sorted that way too.
 
 One rule serves every surface on both platforms.
-The comparison itself is [`sortedByName()`](./Core/ServerApps/ServerAppTransferObject+Sorting.swift), shared so the two apps cannot drift, and it is applied at the one read every surface on both platforms shares — [`AccountStore.serverApps`](./Cirruscope/Persistence/AccountStore.swift) — rather than in each of them: the View menu, the Dock menu, the Speed Dials settings tab, the Shortcuts and Siri lists, the Spotlight index, the iOS app's title menu, and the iPad's View menu therefore cannot disagree about where an app sits — which matters most in that settings tab, where the row a user assigns a shortcut to should be findable in the same place as the menu item it drives.
+The comparison itself is [`sortedByName()`](./Core/ServerApps/ServerAppTransferObject+Sorting.swift), shared so the two apps cannot drift, and it is applied at the one read every surface on both platforms shares — [`AccountStore.serverApps`](./Cirruscope/Persistence/AccountStore.swift) — rather than in each of them: the View menu, the Dock menu, the Keyboard Shortcuts settings tab, the Shortcuts and Siri lists, the Spotlight index, the iOS app's title menu, and the iPad's View menu therefore cannot disagree about where an app sits — which matters most in that settings tab, where the row a user assigns a shortcut to should be findable in the same place as the menu item it drives.
 That the App Intents surfaces list the apps this way without knowing the rule exists is the argument for where it sits: they read the same snapshot every other surface does.
 It also keeps the duplicate-shortcut rule above honest, since "the first app in menu order" now names the first app the user actually sees.
 The collation is `localizedStandardCompare(_:)`, the one Finder sorts names with, rather than `<`, which would file a lowercase name behind every uppercase one and read "Talk 10" as preceding "Talk 2".
@@ -874,7 +883,7 @@ Measured across all 44 navigation icons of a stock Nextcloud 34: 43 `<path>`, 7 
 [`Core/RemoteAssets/SVG/`](./Core/RemoteAssets/SVG) reads that much and the rest of SVG's basic shapes (`<circle>`, `<ellipse>`, `<polygon>`, `<polyline>` and `<line>`), with transforms and painting properties inherited down the tree.
 It keeps only the silhouette: a shape counts when it is filled or stroked with anything but `none`, and the document's own colours are dropped, because most places these icons appear want a template that takes the tint of whatever shows it.
 An element it does not know is skipped rather than failing the document, and a document is refused outright only when it is not XML, names no coordinate system, paints nothing, or carries a `d` attribute it cannot read, in which case the icon falls back to a placeholder.
-The whole of it is smaller than the API surface a general-purpose SVG library would add, and it needs no network, no view, and no main actor — which is what lets an icon be drawn where it is asked for synchronously, as the Speed Dials table rows and the App Intents entities both are.
+The whole of it is smaller than the API surface a general-purpose SVG library would add, and it needs no network, no view, and no main actor — which is what lets an icon be drawn where it is asked for synchronously, as the Keyboard Shortcuts table rows and the App Intents entities both are.
 
 The accepted limitation is that skipping is not refusing, so an icon drawn with more than that subset can come out as a wrong glyph rather than as a placeholder.
 A gradient fill is painted as solid ink, a shape inside `<defs>`, `<clipPath>` or `<mask>` is painted as though it were drawn directly, and a `<use>` or `<text>` element contributes nothing.
@@ -938,7 +947,7 @@ The reverse — a credential with no account, which a store rebuilt empty after 
 
 A shortcut applies wherever and whenever the connected server offers an app with its identifier, which is the point and also the accepted cost.
 Signing in to a different server inherits the shortcut for every app the two have in common, Files on one being Files on the other, which is what a user who set up ⌘1 for Files wants.
-While no server offers the app, its shortcut reaches nothing, takes part in no conflict and is named as nobody's occupant, and the Speed Dials tab, which lists only the offered apps, cannot show it either; it applies again the moment a refresh lists the app.
+While no server offers the app, its shortcut reaches nothing, takes part in no conflict and is named as nobody's occupant, and the Keyboard Shortcuts tab, which lists only the offered apps, cannot show it either; it applies again the moment a refresh lists the app.
 That can produce a duplicate — the returning app's shortcut may since have been recorded for another app — and the rule for stored duplicates already in place decides it: the first app in menu order keeps the combination, and the other shows as unassigned rather than having anything deleted behind the user's back.
 
 They live in the same SwiftData store as the server's data, not in `UserDefaults`, because the store is what migrates and is quarantined as a whole, and a choice the user made should travel with it rather than beside it.
@@ -1116,7 +1125,7 @@ Rainmaker states outright that the version alone is not enough — for a one-to-
 
 Because those two surfaces draw the same bytes in opposite ways, and only one of them will tint them.
 
-An icon in the View menu or the Speed Dials tab is an `NSImage` marked `isTemplate`, so AppKit reads only its alpha and colours it for the appearance it is drawn in — the glyph is black on a light menu and white on a dark one without the app doing anything.
+An icon in the View menu or the Keyboard Shortcuts tab is an `NSImage` marked `isTemplate`, so AppKit reads only its alpha and colours it for the appearance it is drawn in — the glyph is black on a light menu and white on a dark one without the app doing anything.
 An icon donated to Spotlight or the Shortcuts app is a PNG that leaves the process, and whatever composites it draws it literally.
 Handing the same black glyph to both meant Spotlight results were black on near-black in dark appearance and all but invisible, while light appearance looked perfect.
 
