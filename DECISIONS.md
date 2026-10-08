@@ -460,8 +460,8 @@ A string that addresses nobody, a menu command or a stated fact, is left neutral
 ## Why is the settings tab for the server apps' keyboard shortcuts called "Keyboard Shortcuts"?
 
 Because that is what it holds, and what macOS calls it.
-Until 1.2.1 it was "Speed Dials" ("Kurzwahlen", "Numéros abrégés", "Marcaciones rápidas"), a metaphor nothing else in the app or on macOS uses, above a column headed "Shortcut" ("Tastenkürzel"), beside App Store texts saying "keyboard shortcuts" ("Tastaturkurzbefehle"), and under a website card promising files and folders the tab never offered ([#141](https://github.com/i2h3/cirruscope/issues/141)).
-Four names for one thing read as four things.
+Until 1.2.1 it was "Speed Dials" ("Kurzwahlen", "Numéros abrégés", "Marcaciones rápidas"), a metaphor nothing else in the app or on macOS uses, above a column headed "Shortcut" ("Tastenkürzel"), and beside App Store texts saying "keyboard shortcuts" ("Tastaturkurzbefehle") ([#141](https://github.com/i2h3/cirruscope/issues/141)).
+Three names for one thing read as three things.
 
 The names now follow Apple's own, measured in the strings macOS ships for its Keyboard and Desktop & Dock settings: "Keyboard Shortcuts" and "Keyboard Shortcut", "Tastaturkurzbefehle" and "Tastaturkurzbefehl", "Raccourcis clavier" and "Raccourci clavier", "Atajos de teclado" and "Atajo de teclado", the same in Latin American Spanish.
 In every text a user reads, the app, the website and the App Store, the compound is used every time and the short form never, because Apple uses the bare "Shortcut", "Kurzbefehl", "Raccourci" and "Atajo" for a shortcut in the Shortcuts app, and Cirruscope offers actions there as well; inside the Shortcuts app Apple tells the two apart the same way.
