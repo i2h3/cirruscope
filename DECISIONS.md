@@ -934,41 +934,30 @@ Recognizing the routes is [shared too](./Cirruscope/NextcloudSessionRoute.swift)
 
 ## Why does the web view ask the server whether its app password still works before signing anyone out?
 
-Because all a web view can do on its own is infer that the app password was refused, and on 2026-10-09 that inference signed a user out of an account whose app password the server was still accepting.
+Because all a web view can do on its own is infer that the app password was refused, and on 2026-10-09 that inference signed a user out of an account whose app password the server still accepted.
 
-A page that is already on screen does not know that its browser session has lapsed.
-Its periodic requests start being answered with HTTP 401, and Nextcloud's own XHR interceptor, in `core/src/utils/xhr-request.js`, answers every one of them by navigating the page to `/login?redirect_url=…`.
-The web view cancels that navigation and re-requests the page with the app password, as the previous entry describes, but the stale page goes on running until the new one replaces it, and its next HTTP 401 navigates again.
-When that happens while the app's own load is still waiting for its navigation-policy decision, WebKit drops the app's load: the script's navigation enters `FrameLoader::changeLocation` and reaches `FrameLoader::loadWithDocumentLoader`, which stops the pending policy check through `PolicyChecker::stopCheck`, and no delegate method is told.
-The retry never reaches the network, and the script's next redirect to the form is indistinguishable from the retry having been refused.
-That window is normally as short as the policy decision itself, but on a Mac with its display off and the app under App Nap, a starved main thread stretched it to minutes.
+A page already on screen does not know that its browser session has lapsed: its periodic requests start being answered with HTTP 401, and Nextcloud's own page script answers each of them by navigating to the sign-in form.
+The web view cancels that navigation and re-requests the page with the app password, as the previous entry describes, but the stale page keeps running until the new one replaces it.
+If its script navigates again while the app's load is still waiting for its navigation-policy decision, WebKit drops the app's load without telling any delegate, and the script's next redirect looks exactly like the retry having been refused.
+A starved main thread, with the display off and the app under App Nap, stretched that window from a moment to minutes.
+That is what happened on 2026-10-09: the browser session lapsed during the night, and the Mac app signed the account out while its own requests with the same app password were still being answered with HTTP 200.
+iOS decided the same question the same way.
 
-That is what happened on 2026-10-09.
-The server had been upgraded to Nextcloud 35.0.2-RC1 earlier that night, and the browser session was gone from about 02:29.
-At 03:02:43 one of the script's redirects fell within the minute after a retry, and the Mac app signed the account out, while its own OCS requests, authenticated with the same app password, were still being answered with HTTP 200.
-iOS decided the same question the same way and was exposed just as much.
-
-The signal being read could only ever be wrong.
-Nextcloud answers a page request carrying an app password it refuses with HTTP 401, not with a redirect to the sign-in form, so a redirect after a retry means the retry was superseded, lost or not yet sent, and never that its credentials were refused.
-
+The signal could only ever be wrong, since Nextcloud answers a page request carrying refused credentials with HTTP 401, not with a redirect to the sign-in form.
 So the web view only suspects, and one authenticated request decides.
-`ServerConnection.verifyAppPassword(at:as:)` makes a single `GET /ocs/v2.php/core/navigation/apps` with the app password and without cookies, so the lapsed browser session cannot colour the answer, and only an HTTP 401 to it is an [`AppPasswordVerdict`](./Core/Account/AppPasswordVerdict.swift) of `rejected`.
-Anything else — a timeout, a captive portal, a server in maintenance — says nothing about the credential and keeps the account.
-A retried page that is itself answered with HTTP 401, which is how a refused app password really looks, asks the same question rather than signing out on the spot.
-Both web views also stop the stale page before re-requesting it, which narrows the window for a script to supersede the retry, but nothing rests on that narrowing.
-[`SilentRetryBudget`](./Cirruscope/SilentRetryBudget.swift) decides when to ask and what follows, answering every event with a [`SilentRetryStep`](./Cirruscope/SilentRetryStep.swift) both apps act on, and its suite holds it to the one invariant over arbitrary sequences of events: it answers `signOut` only after the server's answer was `rejected`.
-[`ScriptNavigationSupersessionTests`](./Tests/WebView/ScriptNavigationSupersessionTests.swift) measures the WebKit half with a real `WKWebView` through [`ScriptNavigationSupersessionProbe`](./Tests/WebView/ScriptNavigationSupersessionProbe.swift), asserting that a navigation the page's script starts supersedes an app-initiated load whose policy decision is still pending, so the fact this design rests on is pinned rather than restated.
+`ServerConnection.verifyAppPassword(at:as:)` asks the server's API once, with the app password and without cookies, and only an HTTP 401 to it is an [`AppPasswordVerdict`](./Core/Account/AppPasswordVerdict.swift) of `rejected`; a timeout, a captive portal or a server in maintenance keeps the account.
+A retried page that is itself answered with HTTP 401 asks the same question rather than signing out on the spot.
+[`SilentRetryBudget`](./Cirruscope/SilentRetryBudget.swift) decides when to ask and what follows, answering every event with a [`SilentRetryStep`](./Cirruscope/SilentRetryStep.swift) both apps act on, and its suite holds it over arbitrary sequences of events to the one invariant that only a `rejected` answer signs out.
+[`ScriptNavigationSupersessionTests`](./Tests/WebView/ScriptNavigationSupersessionTests.swift) measures the WebKit half with a real `WKWebView` through [`ScriptNavigationSupersessionProbe`](./Tests/WebView/ScriptNavigationSupersessionProbe.swift), so the fact this design rests on is pinned rather than restated.
 
 The cost accepted is that recovery is bounded by work rather than by patience.
-An episode re-requests its page at most three times and asks the server at most as often, one question at a time unless the one in flight has gone unanswered for two minutes, and when the server cannot be asked or the page cannot be restored it holds instead, the first hold lasting a minute and each one after it twice as long, up to half an hour.
-Nothing is signed out by running out of attempts, so a server that cannot be reached keeps the account for as long as it stays unreachable.
-That is the side to err on: a wrong sign-out costs the user a new sign-in through Login Flow v2 and everything the sign-out deletes, while an app password that really was revoked is caught by the first check that reaches the server.
+An episode re-requests its page at most three times and asks the server as often, one question at a time unless the one in flight has gone unanswered for two minutes, and when the server cannot be asked or the page cannot be restored it holds instead, from a minute doubling up to half an hour.
+Running out of attempts never signs anybody out: a wrong sign-out costs a new sign-in and everything it deletes, while an app password that really was revoked is caught by the first check that reaches the server.
 
-Four other answers were considered and rejected.
-Telling the script's navigation apart from the app's own was the first: `WKNavigationAction.mainFrameNavigation` names the navigation an action belongs to, but only from macOS 27, not at all through the SwiftUI `WebPage` the iOS app uses, and it would still be an inference about the app password rather than the server's word.
-Quarantining the stale page with a `WKContentRuleList` until the retry lands would block a live page as well whenever the guess was wrong, and removing the list at the right moment is a race of its own.
-Asking the `/cloud/capabilities` endpoint, as `validate(_:)` already does, proves nothing about the credentials, since it answers without any.
-And `/cloud/user`, the most direct question of all, needs Rainmaker 5, which the project has not adopted yet; it is the request to move to once it does.
+Three other answers were rejected.
+Telling the script's navigation from the app's own by navigation identity is offered only from macOS 27 and not at all by the SwiftUI `WebPage` the iOS app uses, and would still be an inference about the app password.
+Quarantining the stale page with a content rule list until the retry lands would block a live page whenever the guess was wrong.
+Asking the server's public capabilities, as `validate(_:)` does, proves nothing about the credentials, since they are answered without any; asking for the current user is more direct, and is the request to move to once Rainmaker 5 is adopted.
 
 ## Why does the iPhone sign out when the notifications endpoint refuses the app password, and only from the foreground?
 
