@@ -6,3 +6,4 @@
 • Fixed windows showing a blank background instead of your Nextcloud background color while loading
 • Fixed the View menu, the Dock menu, the Keyboard Shortcuts settings, Spotlight and Shortcuts listing your Nextcloud apps in the previous language after you change your Nextcloud language
 • Fixed inconsistent capitalization in Shortcuts actions
+• Fixed being signed out while your Mac was unattended, although your server still accepted Cirruscope’s app password

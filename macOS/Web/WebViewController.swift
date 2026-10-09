@@ -91,10 +91,11 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     /// `startInitialLoadIfNeeded()` seeds it with the initial target, `handleNavigationFailure(_:)` updates it to the URL that actually failed, and `retryLoad(_:)` reloads it — rather than calling `WKWebView.reload()`, which does nothing after a provisional failure that never committed a page.
     private var pendingRetryURL: URL?
 
-    /// `retryBudget` is the one silent retry this window is allowed while working through a lapsed browser session, so a second sign-in redirect for the same page is recognized as the credential itself being rejected rather than an ordinary expired cookie.
+    /// `retryBudget` decides how this window works through a lapsed browser session: when to re-request a page with the stored app password, when to ask the server whether it still accepts that password, when to hold off, and when to sign out, which it answers only once the server has refused the password with HTTP 401.
     ///
-    /// `webView(_:decidePolicyFor:decisionHandler:)` spends it before retrying and consults it to decide whether to retry again or fall back to `AppDelegate.requireSignIn()`; the response half of the same method releases it the moment the server answers the retry at all.
-    /// It replaced a plain flag cleared in `webView(_:didFinish:)`, which was wrong in a way that cost users their session: a retry that ended as a download, as an external redirect, or as a network failure never reached `didFinish`, so the flag stayed raised and the next perfectly ordinary expiry signed the account out. `SilentRetryBudget` is shared with iOS, the bookkeeping being the subtle half of this decision.
+    /// `webView(_:decidePolicyFor:decisionHandler:)` reports every redirect to the sign-in form and every main-frame response to it, `WebViewController+SilentRetry` reports what the server said about the app password and carries out each step it answers, and `retryLoad(_:)` resets it, a load the user asked for being a fresh start.
+    /// It used to be a single retry whose second redirect to the sign-in form signed the account out, and that cost a user their session on 2026-10-09: the stale page's own script, which navigates to the form on every HTTP 401 its polls receive, superseded the retry inside WebKit, and its next redirect was read as the server refusing a password it still accepted.
+    /// A redirect is therefore only ever a suspicion, and `SilentRetryBudget` is shared with iOS, the bookkeeping being the subtle half of this decision.
     var retryBudget = SilentRetryBudget()
 
     /// `webWindowController` is the `WebWindowController` hosting this controller, from which the `targetURL` to load is read once the view is in its window.
@@ -130,7 +131,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     /// `authenticatedRequest(for:)` builds the request that loads `url`, attaching HTTP Basic authentication derived from the `Credentials` stored for the connected server address when they are available.
     ///
     /// Nextcloud accepts the app password as Basic authentication and establishes a web session from it, so the embedded web view is signed in without a separate in-page login. When no credentials are stored the request is unauthenticated and the server presents its normal login page.
-    /// Not `private`: `WebViewController+WKNavigationDelegate` also calls this, to silently retry with the stored app password when the web view is redirected to the login page mid-session rather than at the initial load.
+    /// Not `private`: `WebViewController+SilentRetry` also calls this, to re-request a page with the stored app password once the browser session behind it has lapsed mid-session rather than at the initial load, and `WebViewController+WKNavigationDelegate` to authorize a download from the connected server.
     func authenticatedRequest(for url: URL) -> URLRequest {
         var request = URLRequest(url: url)
 
@@ -212,7 +213,14 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
             return
         }
 
-        pendingRetryURL = (nsError.userInfo[NSURLErrorFailingURLErrorKey] as? URL)
+        showFailureState(retrying: nsError.userInfo[NSURLErrorFailingURLErrorKey] as? URL)
+    }
+
+    /// `showFailureState(retrying:)` switches `stateOverlay` to its failure state and records `url` as what the retry button reloads, falling back to the page shown, the window's target or the server's address when `url` is `nil`.
+    ///
+    /// `handleNavigationFailure(_:)` calls it for a load that failed, and `WebViewController+SilentRetry` for a hold reached before any page was ever shown, where no stale page is left whose script could start the recovery again and the window would otherwise stay on its loading state for good.
+    func showFailureState(retrying url: URL?) {
+        pendingRetryURL = url
             ?? webView.url
             ?? webWindowController?.targetURL
             ?? AccountStore.shared.serverAddress
@@ -243,6 +251,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     /// `retryLoad(_:)` re-issues the failed navigation when the user taps the retry button, returning `stateOverlay` to its loading state until the load succeeds or fails again.
     ///
     /// It reloads `pendingRetryURL` rather than calling `WKWebView.reload()`, which would do nothing after a provisional failure that never committed a page.
+    /// It resets `retryBudget` first, because a load the user asked for starts over: a hold imposed while the server could not be reached would otherwise leave the user's own retry cancelled at the sign-in form with nothing happening.
     @IBAction
     func retryLoad(_: Any?) {
         guard let url = pendingRetryURL ?? webWindowController?.targetURL ?? AccountStore.shared.serverAddress else {
@@ -250,6 +259,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         }
 
         logger.info("Retrying navigation to \(url.absoluteString) (WebViewController \(self.logID))")
+        retryBudget.reset()
         showLoadingState()
         webView.load(authenticatedRequest(for: url))
     }

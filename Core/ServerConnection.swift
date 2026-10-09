@@ -7,7 +7,7 @@ import Rainmaker
 
 /// `ServerConnection` builds `Rainmaker.Server` instances and validates them, centralizing the connection logic both apps' sign-in paths share.
 ///
-/// `anonymous(address:)` is used before the user has authenticated and to initiate Login Flow v2, `authenticated(address:)` builds a credentialed server from `Keychain`, `validate(_:)` fetches capabilities and reports whether the server's version is supported, and `revokeAppPassword(using:)` invalidates a credential the app is about to discard.
+/// `anonymous(address:)` is used before the user has authenticated and to initiate Login Flow v2, `authenticated(address:)` builds a credentialed server from `Keychain`, `validate(_:)` fetches capabilities and reports whether the server's version is supported, `verifyAppPassword(at:as:)` asks whether the server still accepts an app password, and `revokeAppPassword(using:)` invalidates a credential the app is about to discard.
 /// Everything here is free of persistence on purpose: this type is compiled into the widget extension too, and `AccountStore` exists only in the two apps. The half that records what a server said lives beside that store in `ServerConnection+AccountStore` and its per-domain siblings, and both apps persist the app list, the Talk conversations, the notes and the collectives through it. Only macOS also records what a validation found, its theming and version, so it calls `validateAndPersist(_:)` where iOS calls `validate(_:)` as it stands.
 enum ServerConnection {
     /// `ValidationOutcome` reports the result of `validate(_:)`.
@@ -79,6 +79,36 @@ enum ServerConnection {
         } catch {
             logger.notice("Could not revoke the app password on the server; proceeding with local sign-out regardless: \(error.localizedDescription)")
         }
+    }
+
+    /// `verifyAppPassword(at:as:)` asks the server at `address` whether it still accepts `credentials`, by making one authenticated request with them and reading the answer.
+    ///
+    /// Both web views call it before they sign anybody out, because a web view on its own can only infer that the app password was refused, and that inference was wrong on 2026-10-09: the page's own script superseded the silent retry before it ever reached the network, and its next redirect to the sign-in form was counted against a password the server still accepted.
+    /// The request is `Server.navigation()`, `GET /ocs/v2.php/core/navigation/apps`, because it requires a login, depends on no optional app, and sends no cookies, so the web view's lapsed browser session cannot colour the answer. `validate(_:)` is no substitute: the capabilities endpoint answers without credentials, so its success proves nothing about them. Once Rainmaker 5 is adopted, `currentUser()` (`/ocs/v2.php/cloud/user`) is the more direct question.
+    /// Only HTTP 401 is `rejected`. `RainmakerError.credentialsRequired` is deliberately `undetermined`, unlike every other place that classifies a refusal: it is raised locally before anything is sent, so the server never answered.
+    /// It is nonisolated and builds its own `Server`, the way `UnreadNotifications.fetch(reason:)` does, so that nothing which is not `Sendable` crosses into or out of the caller's isolation.
+    static func verifyAppPassword(at address: URL, as credentials: Credentials) async -> AppPasswordVerdict {
+        let started = ContinuousClock.now
+        let server = Server(address: address, password: credentials.appPassword, user: credentials.user, userAgent: userAgent)
+
+        logger.notice("Asking the server whether it still accepts the stored app password")
+
+        do {
+            _ = try await server.navigation()
+            logger.notice("The server accepted the stored app password in \(Self.milliseconds(since: started), privacy: .public) ms")
+            return .accepted
+        } catch RainmakerError.unexpectedStatus(code: 401) {
+            logger.notice("The server rejected the stored app password with HTTP 401 in \(Self.milliseconds(since: started), privacy: .public) ms")
+            return .rejected
+        } catch {
+            logger.notice("Could not tell whether the server accepts the stored app password after \(Self.milliseconds(since: started), privacy: .public) ms: \(error.localizedDescription, privacy: .public)")
+            return .undetermined
+        }
+    }
+
+    /// `milliseconds(since:)` is how long ago `start` was, in whole milliseconds, for the durations `verifyAppPassword(at:as:)` logs.
+    private static func milliseconds(since start: ContinuousClock.Instant) -> Int {
+        Int(start.duration(to: .now) / .milliseconds(1))
     }
 
     /// `userAgent` is the HTTP user agent Cirruscope presents to the server, taken from `InfoPlist.applicationName`.

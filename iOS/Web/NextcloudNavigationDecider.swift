@@ -10,7 +10,10 @@ import WebKit
 /// Decides what `NextcloudView`'s web view is allowed to navigate to, which for the moment is one decision: a navigation to the connected server's sign-in form is cancelled, and the page behind it re-requested with the stored app password.
 ///
 /// It exists because of what a user sees without it. The web view's browser session is a cookie the server issues and expires on its own schedule, independently of the app password the app itself holds, so an app left alone for a few hours comes back to a first navigation that the server redirects to its sign-in form — and that form is a dead end here, since signing in happens natively through Login Flow v2 and not in the page. Re-requesting the redirected-from page with the app password attached signs the web view back in exactly the way the initial load does, and the user sees the page they left. macOS has done this since its own web view was written, in `WebViewController+WKNavigationDelegate`.
-/// One retry is allowed per episode. A retry that itself comes back to the sign-in form means the app password is no longer accepted rather than that a cookie lapsed, and that is a genuine sign-out — `Store.requireSignIn()` — instead of a loop.
+/// A redirect to the sign-in form soon after such a retry is only a suspicion that the app password was refused, never a verdict.
+/// The stale page's own script navigates to the sign-in form on every HTTP 401 its polls receive, and that navigation can supersede the retry before the retry ever reaches the network; reading the next such redirect as a refused password is how the Mac app signed out a user on 2026-10-09 whose app password the server still accepted, and this decider read it the same way.
+/// So the web view only suspects, and one authenticated request decides: the suspicion is put to the server through `ServerConnection.verifyAppPassword(at:as:)`, and only an HTTP 401 in answer to it leads to `Store.requireSignIn()`.
+/// Every other outcome keeps the account, retrying a bounded number of times while the server accepts the password and pausing the retries while it cannot be asked, each step as the shared `SilentRetryBudget` decides it.
 /// It is a class because `WebPage` takes its decider by value at initialization and holds it from then on, while the two things this needs — the page to reload through and the store to read the account from — only exist afterwards. That is the same shape, and the same reason, as `AppNavigationBridge` and `NotificationsPanelBridge`.
 ///
 @MainActor
@@ -37,8 +40,11 @@ final class NextcloudNavigationDecider: WebPage.NavigationDeciding {
     var openURL: OpenURLAction?
 
     ///
-    /// The one silent retry allowed while a lapsed browser session is being worked through, and whether it has been spent.
+    /// The bookkeeping of the silent retries made while a lapsed browser session is being worked through, which answers every sign-in redirect, every check of the app password and every navigation response with the step to take next.
     ///
+    /// `WebPage.NavigationResponse` cannot say whether it answers the main frame, so this platform hands the budget every response, sub-frames included, and what keeps an embedded frame's response out is that the budget acts only on one from the very address it is retrying or holding.
+    ///
+    /// It never answers a sign-out on its own inference, only once the server has refused the app password with HTTP 401 and that verdict has been reported back to it.
     /// Shared with macOS rather than reimplemented here, the bookkeeping being the subtle half of this whole decision and the half both apps previously got wrong in different ways.
     ///
     private var retryBudget = SilentRetryBudget()
@@ -110,19 +116,74 @@ final class NextcloudNavigationDecider: WebPage.NavigationDeciding {
         // checked against the connected server, the server's own root is somewhere to land that always exists.
         let target = NextcloudSessionRoute.redirectTarget(of: url, on: account.server) ?? account.server
 
-        guard retryBudget.isSpent(on: target) == false else {
-            logger.notice("Re-requesting \(target.absoluteString) with the stored app password already landed back on the sign-in form; the app password is no longer accepted, so requiring a new sign-in and returning .cancel")
-            retryBudget.release()
-            store.requireSignIn()
-
-            return .cancel
-        }
-
-        retryBudget.spend(on: target)
-        logger.notice("Navigation action targets the connected server's sign-in form; re-requesting \(target.absoluteString) with the stored app password instead of showing it, and returning .cancel")
-        page?.load(account.authenticatedRequest(for: target))
+        // Whatever is done about it, the form itself is never shown: signing in happens natively, so the navigation
+        // is cancelled in every case, and the budget only decides what happens instead of it.
+        let step = retryBudget.signInFormReached(redirectingTo: target)
+        logger.notice("Navigation action targets the connected server's sign-in form, which would return to \(target.absoluteString); acting on the silent retry's next step instead of showing it, and returning .cancel")
+        perform(step, for: account)
 
         return .cancel
+    }
+
+    ///
+    /// Carries out `step` on behalf of `account`, which is the one place a silent retry's step turns into something the page or the store does.
+    ///
+    /// A retry stops the stale page before re-requesting, which cancels the requests still in flight in it so that fewer of them can answer HTTP 401 and send it back to the sign-in form; it narrows the window for the page's script to supersede the retry without closing it, its timers still running, and a supersession that happens anyway only leads to the next redirect asking the server.
+    /// A check of the app password runs as a task of its own, because a navigation decision must not wait on the network, and reports back through `appPasswordCheckFinished(_:for:account:)`.
+    /// A hold does nothing but say so: the account is kept, and every sign-in redirect for the held page is cancelled until it ends.
+    ///
+    private func perform(_ step: SilentRetryStep, for account: ServerAccount) {
+        switch step {
+            case let .retry(target):
+                logger.notice("Stopping the stale page and re-requesting \(target.absoluteString) with the stored app password")
+                page?.stopLoading()
+                page?.load(account.authenticatedRequest(for: target))
+
+            case let .confirmAppPassword(target):
+                logger.notice("Asking the server whether it still accepts the stored app password before acting on the sign-in redirect for \(target.absoluteString)")
+
+                let pageAtCheck = page?.url
+
+                Task { [weak self] in
+                    let verdict = await ServerConnection.verifyAppPassword(at: account.server, as: account.credentials)
+                    self?.appPasswordCheckFinished(verdict, for: target, account: account, pageAtCheck: pageAtCheck)
+                }
+
+            case .wait:
+                logger.debug("Nothing to do beyond cancelling, the silent retry being under way, on hold, or not concerned")
+
+            case let .hold(target, duration):
+                logger.notice("Pausing silent retries of \(target.absoluteString) for \(duration.components.seconds, privacy: .public) s while keeping the account signed in")
+
+            case .signOut:
+                logger.notice("The server refused the stored app password with HTTP 401; requiring a new sign-in")
+                store?.requireSignIn()
+        }
+    }
+
+    ///
+    /// Hands the server's `verdict` on the app password, asked for on behalf of `target`, back to the budget and carries out whatever it answers.
+    ///
+    /// The answer is discarded when `account` is no longer the one signed in, since a verdict about credentials the app has already let go of says nothing about the ones it holds now, and the budget starts over with them.
+    /// An answer short of a refusal is also discarded once the page shows another address than `pageAtCheck`, the one it showed when the check was asked for, so that a check answered late cannot pull the user back from a page they went on to; a refusal is acted on regardless, being the server's own answer about the credential.
+    ///
+    private func appPasswordCheckFinished(_ verdict: AppPasswordVerdict, for target: URL, account: ServerAccount, pageAtCheck: URL?) {
+        guard store?.account == account else {
+            logger.notice("The account changed while the server was being asked about its app password; discarding the answer and starting the silent retry over")
+            retryBudget.reset()
+
+            return
+        }
+
+        guard verdict == .rejected || page?.url == pageAtCheck else {
+            logger.notice("The page moved on while the server was being asked about the app password; discarding the answer, which is \(String(describing: verdict), privacy: .public), and starting the silent retry over")
+            retryBudget.reset()
+
+            return
+        }
+
+        logger.debug("The server's answer about the stored app password for \(target.absoluteString) is \(String(describing: verdict), privacy: .public)")
+        perform(retryBudget.appPasswordChecked(verdict, for: target), for: account)
     }
 
     ///
@@ -147,11 +208,21 @@ final class NextcloudNavigationDecider: WebPage.NavigationDeciding {
     func decidePolicy(for response: WebPage.NavigationResponse) async -> WKNavigationResponsePolicy {
         logger.debug("Deciding policy for a navigation response from \(response.response.url?.absoluteString ?? "no URL")")
 
+        guard let account = store?.account else {
+            logger.debug("No account is configured; returning .allow")
+            return .allow
+        }
+
         // Nothing here decides anything about the response itself; it is where a retry is learned to have been
-        // answered. That cannot be read off the page's navigation events instead: cancelling the sign-in redirect
-        // fails it provisionally, and `WebPage.navigations` reports a failure by throwing, which ends the sequence —
-        // so the one signal that arrives reliably after an interception is this one.
-        retryBudget.releaseIfAnswered(by: response.response.url)
+        // answered, or refused with the HTTP 401 a page request carrying a refused app password receives. That cannot
+        // be read off the page's navigation events instead: cancelling the sign-in redirect fails it provisionally,
+        // and `WebPage.navigations` reports a failure by throwing, which ends the sequence — so the one signal that
+        // arrives reliably after an interception is this one.
+        // Unlike `WKNavigationResponse` on macOS, `WebPage.NavigationResponse` does not say whether it answers the
+        // main frame. What keeps a sub-frame's response from being taken for the retried page's is that the budget
+        // acts only on a response from the very address it is retrying or holding.
+        let statusCode = (response.response as? HTTPURLResponse)?.statusCode
+        perform(retryBudget.responseArrived(from: response.response.url, statusCode: statusCode), for: account)
 
         logger.debug("Returning .allow")
 

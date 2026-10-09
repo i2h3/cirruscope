@@ -389,13 +389,14 @@ The WebKit half is the opposite.
 The code that talks to WebKit and to the page — navigation handling, downloads, injected JavaScript, and notification bridging — only means anything against a live Nextcloud server in a real web view, so a test there buys little beyond "the delegate fired" while costing a server fixture, network flakiness, and permanent maintenance.
 Those paths are verified by hand against a real server, with the app's own `os` logging as the record.
 What that code *decides* is pulled out of it wherever it can be, and is then native logic like any other.
-Whether an address is the connected server's to display or the system's to open, whether it is one of the server's sign-in or sign-out routes, and whether a lapsed session may still be retried silently are each answered by a value type that takes everything it needs as arguments, the time included, and the suites in [`Tests/WebView/`](./Tests/WebView/) cover all three against both app modules.
+Whether an address is the connected server's to display or the system's to open, whether it is one of the server's sign-in or sign-out routes, and what a web view does next while it works through a lapsed session are each answered by a value type that takes everything it needs as arguments, the time included, and the suites in [`Tests/WebView/`](./Tests/WebView/) cover all three against both app modules.
 
 Tests are therefore expected wherever logic is Swift-only and server-free, including a decision a web view acts on, and deliberately absent around the code that hands those decisions to WebKit — a deliberate scope, not a backlog.
 Two store methods sit on the hand-verified side of that line despite being persistence code: the sign-out, `disconnect()`, empties the real caches, the widget's saved feed and the real Keychain and makes the real widget redraw, and `persist(theming:)` downloads over the network on every call, so both are verified by hand while the storage half of the first, `deleteAccount()`, is covered like everything else.
 
 One habit comes out of the same work and generalizes: where the app depends on undocumented framework behaviour, the test measures the framework rather than restating the belief, so [`KeyEquivalentMatchingOracleTests`](./macOSTests/KeyboardShortcuts/KeyEquivalentMatchingOracleTests.swift) asks a real `NSMenu` what it matches and holds [`ShortcutMatching`](./macOS/ShortcutMatching.swift) to that answer.
 The same shape reaches into WebKit where no server is needed: [`SafariUserAgentProbe`](./iOSTests/WebView/SafariUserAgentProbe.swift) loads `about:blank` into a real `WebPage` so that [`SafariUserAgentTests`](./iOSTests/WebView/SafariUserAgentTests.swift) can assert against the user agent WebKit actually reports.
+[`ScriptNavigationSupersessionProbe`](./Tests/WebView/ScriptNavigationSupersessionProbe.swift) likewise drives a real `WKWebView` so that [`ScriptNavigationSupersessionTests`](./Tests/WebView/ScriptNavigationSupersessionTests.swift) can assert that a page's own script navigation supersedes a load the app started, which is why a web view no longer decides on its own that an app password was refused.
 See [AGENTS.md → Testing](./AGENTS.md#testing) for the mechanics.
 
 ## Why does a Swift project carry a JavaScript linter?
@@ -923,11 +924,49 @@ Sign-out is the mirror image.
 Nextcloud's own "Log out" would end the browser session while leaving the app holding a perfectly good app password, so it is widened into an app-level sign-out.
 Because the navigation is cancelled, the server never processes the request, which is why the app has to revoke that password itself.
 
-The interesting part is what happens when the retry fails.
-A retry that lands back on the sign-in form means the app password is genuinely rejected, and the account is signed out — but *exactly one* retry may be outstanding, and getting that bookkeeping wrong signs people out of working accounts.
-Both apps did, in different ways.
-The budget is therefore [one shared type](./Cirruscope/SilentRetryBudget.swift) keyed to the address being retried and released the moment the server answers it, with a one-minute window so a retry lost to a dropped connection cannot poison the next genuine expiry.
+The interesting part is what happens when the retry does not seem to work.
+A second redirect to the sign-in form soon after the retry looks like the app password being refused, and both apps once read it that way, but it never is: Nextcloud answers a page request carrying credentials it refuses with HTTP 401, not with a redirect to the form.
+Such a redirect is only a reason to ask the server, and only the server's HTTP 401 signs the account out (see the next entry).
+Getting the bookkeeping around it wrong signs people out of working accounts, and both apps once did, each in its own way, which is why the decision lives in [one shared type](./Cirruscope/SilentRetryBudget.swift) that answers every event of a lapsed session with the step to take next, taking the time as an argument so its suite can state it.
 Recognizing the routes is [shared too](./Cirruscope/NextcloudSessionRoute.swift), and anchored immediately below the instance's web root: matching on the last path component instead — which macOS did — means a file a user named `logout` revokes their app password.
+
+## Why does the web view ask the server whether its app password still works before signing anyone out?
+
+Because all a web view can do on its own is infer that the app password was refused, and on 2026-10-09 that inference signed a user out of an account whose app password the server was still accepting.
+
+A page that is already on screen does not know that its browser session has lapsed.
+Its periodic requests start being answered with HTTP 401, and Nextcloud's own XHR interceptor, in `core/src/utils/xhr-request.js`, answers every one of them by navigating the page to `/login?redirect_url=…`.
+The web view cancels that navigation and re-requests the page with the app password, as the previous entry describes, but the stale page goes on running until the new one replaces it, and its next HTTP 401 navigates again.
+When that happens while the app's own load is still waiting for its navigation-policy decision, WebKit drops the app's load: the script's navigation enters `FrameLoader::changeLocation` and reaches `FrameLoader::loadWithDocumentLoader`, which stops the pending policy check through `PolicyChecker::stopCheck`, and no delegate method is told.
+The retry never reaches the network, and the script's next redirect to the form is indistinguishable from the retry having been refused.
+That window is normally as short as the policy decision itself, but on a Mac with its display off and the app under App Nap, a starved main thread stretched it to minutes.
+
+That is what happened on 2026-10-09.
+The server had been upgraded to Nextcloud 35.0.2-RC1 earlier that night, and the browser session was gone from about 02:29.
+At 03:02:43 one of the script's redirects fell within the minute after a retry, and the Mac app signed the account out, while its own OCS requests, authenticated with the same app password, were still being answered with HTTP 200.
+iOS decided the same question the same way and was exposed just as much.
+
+The signal being read could only ever be wrong.
+Nextcloud answers a page request carrying an app password it refuses with HTTP 401, not with a redirect to the sign-in form, so a redirect after a retry means the retry was superseded, lost or not yet sent, and never that its credentials were refused.
+
+So the web view only suspects, and one authenticated request decides.
+`ServerConnection.verifyAppPassword(at:as:)` makes a single `GET /ocs/v2.php/core/navigation/apps` with the app password and without cookies, so the lapsed browser session cannot colour the answer, and only an HTTP 401 to it is an [`AppPasswordVerdict`](./Core/Account/AppPasswordVerdict.swift) of `rejected`.
+Anything else — a timeout, a captive portal, a server in maintenance — says nothing about the credential and keeps the account.
+A retried page that is itself answered with HTTP 401, which is how a refused app password really looks, asks the same question rather than signing out on the spot.
+Both web views also stop the stale page before re-requesting it, which narrows the window for a script to supersede the retry, but nothing rests on that narrowing.
+[`SilentRetryBudget`](./Cirruscope/SilentRetryBudget.swift) decides when to ask and what follows, answering every event with a [`SilentRetryStep`](./Cirruscope/SilentRetryStep.swift) both apps act on, and its suite holds it to the one invariant over arbitrary sequences of events: it answers `signOut` only after the server's answer was `rejected`.
+[`ScriptNavigationSupersessionTests`](./Tests/WebView/ScriptNavigationSupersessionTests.swift) measures the WebKit half with a real `WKWebView` through [`ScriptNavigationSupersessionProbe`](./Tests/WebView/ScriptNavigationSupersessionProbe.swift), asserting that a navigation the page's script starts supersedes an app-initiated load whose policy decision is still pending, so the fact this design rests on is pinned rather than restated.
+
+The cost accepted is that recovery is bounded by work rather than by patience.
+An episode re-requests its page at most three times and asks the server at most as often, one question at a time unless the one in flight has gone unanswered for two minutes, and when the server cannot be asked or the page cannot be restored it holds instead, the first hold lasting a minute and each one after it twice as long, up to half an hour.
+Nothing is signed out by running out of attempts, so a server that cannot be reached keeps the account for as long as it stays unreachable.
+That is the side to err on: a wrong sign-out costs the user a new sign-in through Login Flow v2 and everything the sign-out deletes, while an app password that really was revoked is caught by the first check that reaches the server.
+
+Four other answers were considered and rejected.
+Telling the script's navigation apart from the app's own was the first: `WKNavigationAction.mainFrameNavigation` names the navigation an action belongs to, but only from macOS 27, not at all through the SwiftUI `WebPage` the iOS app uses, and it would still be an inference about the app password rather than the server's word.
+Quarantining the stale page with a `WKContentRuleList` until the retry lands would block a live page as well whenever the guess was wrong, and removing the list at the right moment is a race of its own.
+Asking the `/cloud/capabilities` endpoint, as `validate(_:)` already does, proves nothing about the credentials, since it answers without any.
+And `/cloud/user`, the most direct question of all, needs Rainmaker 5, which the project has not adopted yet; it is the request to move to once it does.
 
 ## Why do the keyboard shortcuts and appearance settings outlive a sign-out, when everything from the server does not?
 

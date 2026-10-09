@@ -6,3 +6,4 @@
 • Corregido el fondo vacío que mostraban las ventanas durante la carga en lugar del color de fondo de tu Nextcloud
 • Corregidos los nombres de las aplicaciones de Nextcloud, que seguían en el idioma anterior en el menú Vista, el menú del Dock, la pestaña Atajos de teclado de los ajustes, Spotlight y la app Atajos tras cambiar el idioma de Nextcloud
 • Corregido el uso incoherente de mayúsculas en las acciones de Atajos
+• Corregido un cierre de sesión que se producía mientras no estabas frente a tu Mac, aunque tu servidor seguía aceptando la contraseña de aplicación de Cirruscope

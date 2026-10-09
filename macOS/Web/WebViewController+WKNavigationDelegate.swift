@@ -5,9 +5,11 @@ import AppKit
 import os
 import WebKit
 
-/// `WebViewController`'s conformance to `WKNavigationDelegate` confines the embedded `WKWebView`'s main frame to the configured Nextcloud server, hands anything off that server's origin to the system via `NSWorkspace`, turns responses the web view cannot display or that arrive as attachments into downloads, reveals the storyboard-hidden web view once its initial page load has completed, treats the web view navigating to the server's own sign-out link as an app-level logout, and silently retries with the stored app password when the web view is instead redirected to the server's sign-in form, since that only means the browser session's cookie expired, not that the app's own stored credentials are invalid.
+/// `WebViewController`'s conformance to `WKNavigationDelegate` confines the embedded `WKWebView`'s main frame to the configured Nextcloud server, hands anything off that server's origin to the system via `NSWorkspace`, turns responses the web view cannot display or that arrive as attachments into downloads, reveals the storyboard-hidden web view once its initial page load has completed, treats the web view navigating to the server's own sign-out link as an app-level logout, and reports every redirect to the server's sign-in form and every main-frame response to `retryBudget`, whose answers `WebViewController+SilentRetry` carries out.
 ///
 /// Which of those an address is, is decided by `NextcloudSessionRoute` and `WebViewDestination` rather than here, so this and the iOS web view cannot come to different conclusions — they did, and the answers macOS reached on its own were wrong in three ways: it compared hosts where it meant origins, so a differently-ported service on the same machine counted as the server; it matched the sign-in and sign-out routes by last path component, so a file a user named "logout" revoked their app password; and it resolved the `redirect_url` it re-requests without checking where it pointed.
+/// A redirect to the sign-in form nearly always means only that the browser session's cookie expired, so the page is re-requested with the stored app password rather than the user being asked to sign in.
+/// Nothing a navigation reports here is ever taken as the app password having been refused, not even a second redirect right after that retry: such a redirect is only a suspicion, the server is asked with one authenticated request, and only its HTTP 401 signs the account out.
 ///
 /// Any navigation that becomes a download is handed to `DownloadManager.shared`, which takes over as the transfer's delegate so it continues even if this web window closes.
 /// It is also where every new document picks up what the document-start seed script could not know: `didCommit` re-applies the appearance before the new document's first paint, and `didFinish` again once it has settled.
@@ -75,30 +77,31 @@ extension WebViewController: WKNavigationDelegate {
                 return
 
             case .signIn:
-                // Landing on the sign-in form by itself is NOT treated as a sign-out: the web view's browser-session
-                // cookie and the app's own stored Login Flow v2 app password are independent, and the browser
-                // session alone expires routinely — Nextcloud redirects an already-authenticated request to
-                // `/login?redirect_url=…` whenever that cookie has lapsed, which says nothing about whether the
-                // stored app password is still valid. So instead of forcing the user to sign in again, the
-                // originally-requested page is silently reloaded with that password attached, the same way the
-                // initial page load signs the web view in with no visible login step. Only when that retry itself
-                // lands back on the form is the password treated as genuinely rejected, at which point
-                // `AppDelegate.requireSignIn()` takes over: the softer sign-out that, unlike `logOut()`, does not
-                // try to revoke an already-invalid credential and alerts the user why they were signed out.
+                // Landing on the sign-in form is NOT a sign-out, and neither is landing on it again right after a
+                // retry. The web view's browser-session cookie and the app's own Login Flow v2 app password are
+                // independent: Nextcloud redirects a request to `/login?redirect_url=…` whenever that cookie has
+                // lapsed, which says nothing about the app password, so the page is re-requested with the password
+                // attached, the way the initial page load signs the web view in with no visible login step.
+                //
+                // A second redirect soon after that retry is only a suspicion that the password was refused, never
+                // a verdict. The stale page's own script navigates to the form on every HTTP 401 its polls receive
+                // (Nextcloud's `core/src/utils/xhr-request.js`), and WebKit drops an app-initiated load whose policy
+                // decision is still pending when that script navigates, so a retry can be superseded before it
+                // ever reaches the server and the script's next redirect then looks exactly like a refusal. That
+                // signed out a user on 2026-10-09 whose app password the server was still accepting. So the
+                // suspicion is settled by asking the server with one authenticated API request, and only its
+                // HTTP 401 leads to `AppDelegate.requireSignIn()`, never a timeout, an unreachable server or a
+                // Keychain that would not answer.
+                //
+                // `retryBudget` decides which of those this redirect calls for. The navigation is cancelled before
+                // the answer is acted on, so that a retry's load never starts while WebKit is still waiting on a
+                // decision about this one.
                 let target = NextcloudSessionRoute.redirectTarget(of: url, on: serverAddress) ?? serverAddress
+                let step = retryBudget.signInFormReached(redirectingTo: target)
 
-                guard retryBudget.isSpent(on: target) == false else {
-                    logger.notice("Silently re-requesting \(target.absoluteString) with the stored app password already landed back on the sign-in form; the app password appears to be rejected, so requiring sign-in (WebViewController \(self.logID))")
-                    retryBudget.release()
-                    (NSApp.delegate as? AppDelegate)?.requireSignIn()
-                    decisionHandler(.cancel)
-                    return
-                }
-
-                retryBudget.spend(on: target)
-                logger.notice("Navigation action targets the configured server's own sign-in form; re-requesting \(target.absoluteString) with the stored app password instead of prompting the user and cancelling the navigation (WebViewController \(self.logID))")
-                webView.load(authenticatedRequest(for: target))
+                logger.notice("Navigation action targets the configured server's own sign-in form on the way back to \(target.absoluteString); cancelling it and acting on what the silent retry budget answered (WebViewController \(self.logID))")
                 decisionHandler(.cancel)
+                performSilentRetryStep(step, on: serverAddress)
                 return
 
             case .none:
@@ -130,10 +133,25 @@ extension WebViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping @MainActor (WKNavigationResponsePolicy) -> Void) {
         logger.debug("Deciding policy for navigation response from \(navigationResponse.response.url?.absoluteString ?? "no URL") (WebViewController \(self.logID))")
 
-        // A response is the server answering, which is what retires a silent retry — whatever the answer turns out
-        // to be. It cannot wait for the load to finish: a retry that becomes a download or fails on the network
-        // never finishes, and a budget released only on success is one that is eventually never released at all.
-        retryBudget.releaseIfAnswered(by: navigationResponse.response.url)
+        // A main-frame response is the server answering the page, which is what ends a silent retry's episode —
+        // unless the answer is HTTP 401, which asks the server about the app password instead. It cannot wait for
+        // the load to finish: a retry that becomes a download or fails on the network never finishes, and an
+        // episode ended only on success is one that is eventually never ended at all. A sub-frame's response
+        // answers for its own document, not for the page being retried, so it is not reported. A 401 page is
+        // still allowed to display below, since it is what the server sent, and whatever the budget answers is
+        // acted on only once this decision has been handed back, as in the action policy above.
+        var silentRetryStep: SilentRetryStep?
+
+        if navigationResponse.isForMainFrame {
+            let statusCode = (navigationResponse.response as? HTTPURLResponse)?.statusCode
+            silentRetryStep = retryBudget.responseArrived(from: navigationResponse.response.url, statusCode: statusCode)
+        }
+
+        defer {
+            if let silentRetryStep, let serverAddress = AccountStore.shared.serverAddress {
+                performSilentRetryStep(silentRetryStep, on: serverAddress)
+            }
+        }
 
         // Download anything the web view cannot render inline, and anything the server marks as an attachment,
         // which is how Nextcloud delivers a file the user asked to download. As with a download-flagged action,

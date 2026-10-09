@@ -254,7 +254,9 @@ class Store {
     ///
     /// Sign the user out because the server no longer accepts the stored app password, and say so.
     ///
-    /// The counterpart of `logout()` for the case where the app is signing the user out rather than the user. `NextcloudNavigationDecider` calls it when a page re-requested with the stored app password lands back on the server's sign-in form, which is the point at which an expired browser session has been ruled out and the credential itself is what is being refused.
+    /// The counterpart of `logout()` for the case where the app is signing the user out rather than the user.
+    /// `NextcloudNavigationDecider` calls it only once the server has answered HTTP 401 to an authenticated request asking whether it still accepts the stored app password, which is the one answer that rules out an expired browser session and names the credential itself as what is being refused.
+    /// A page re-requested with the stored app password landing back on the server's sign-in form is not reason enough, since the stale page's own script produces exactly that while the server still accepts the password.
     /// Unlike `logout()` it does not revoke the app password: the server has just rejected it, so there is nothing left to revoke and the request would only fail. What it adds instead is `wasSignedOutBySystem`, which is what makes the sign-in screen explain why it is there. macOS strikes the same bargain in `AppDelegate.requireSignIn()`.
     ///
     func requireSignIn() {

@@ -3,62 +3,208 @@
 
 import Foundation
 
-/// `SilentRetryBudget` is the one silent retry an embedded web view is allowed per episode of a lapsed browser session, and the record of whether it has been spent.
 ///
-/// It exists because the sign-in form a Nextcloud server redirects to means two different things and the app has to tell them apart. Nearly always it means the browser session's cookie expired while the app was away, which says nothing about the app password the app itself holds: re-requesting the page with that password signs the web view straight back in. Occasionally it means the app password is no longer accepted, and then the same retry comes back to the same form, and the honest answer is to sign the account out. One retry distinguishes the two.
-/// Both halves of what is remembered are load-bearing, and both are answers to ways of getting this wrong that cost a user their session. The address keeps an unrelated page from spending the budget, so a second expiry somewhere else still gets its own retry. The moment keeps a retry that is never answered from spending it forever — the address being retried is by construction the page the user was on and will most likely return to, so a budget that is never released and one that is released on the wrong occasion are the same defect.
-/// A clock is the backstop rather than the mechanism. The ordinary release is `releaseIfAnswered(by:)`, called the moment the server answers the retry at all; only a retry that gets no answer relies on the window.
+/// `SilentRetryBudget` decides what an embedded web view does while it works through a lapsed browser session, answering each event with the `SilentRetryStep` to take next.
+///
+/// A redirect to the server's sign-in form nearly always means the browser session's cookie expired while the app was away, which says nothing about the app password the app itself holds: re-requesting the page with that password signs the web view straight back in.
+/// A second redirect to the form soon after that retry is only a *suspicion* that the app password was refused, never a verdict. The stale page's own script keeps navigating to the sign-in form on every HTTP 401 its polls receive, and WebKit drops an app-initiated load whose policy decision is still pending when that script navigates; on 2026-10-09 that sequence, stretched to minutes by a starved main thread, signed a user out whose app password the server was still accepting. A refused app password does not even look like that: Nextcloud answers a page request carrying refused credentials with HTTP 401, not with a redirect to the form.
+/// So the suspicion is settled by asking the server directly, and `signOut` is answered only after `appPasswordChecked(_:for:at:)` reports `AppPasswordVerdict.rejected`. That is the one invariant this type exists to keep, and its suite enforces it over arbitrary sequences of events.
+/// What is bounded instead is the work: at most `maximumAttempts` page loads and as many checks per episode, one check at a time unless the one in flight has gone unanswered for `confirmationTimeout`, and a hold that doubles from `firstHold` up to `longestHold` when the server cannot be asked or the page cannot be restored. Nothing is ever signed out by running out of attempts.
+/// It is a value type that takes every instant as an argument, so its suite can state the passage of time instead of waiting for it, and it is shared by both apps because they once each decided this alone and each got it wrong.
+///
 struct SilentRetryBudget {
-    /// `outstanding` is the address a retry is in flight for and the moment it went out, or `nil` while none is.
-    private var outstanding: (target: URL, issuedAt: ContinuousClock.Instant)?
-
-    /// `window` is how long a retry may go unanswered before it is presumed lost rather than still outstanding.
     ///
-    /// A sign-in form that is the server refusing the app password arrives as the redirected response to the retry, so it is one round trip behind it and well inside any sane value here. Anything still unanswered a minute later has failed, and `URLRequest`'s own default timeout says the same, so treating the budget as spent past that point could only ever sign out a user whose credentials are fine.
-    private let window: Duration
-
-    /// `init(window:)` builds a budget that presumes an unanswered retry lost after `window`.
+    /// `episodeTarget` is the page the current episode is retrying, or `nil` while no retry is outstanding.
     ///
-    /// The default is the one both apps use; the parameter exists so a test can state the passage of time instead of waiting for it.
-    init(window: Duration = .seconds(60)) {
+    private var episodeTarget: URL?
+
+    ///
+    /// `attempts` is how many times `episodeTarget` has been re-requested in the current episode.
+    ///
+    private var attempts = 0
+
+    ///
+    /// `lastRetryAt` is when `episodeTarget` was last re-requested, which is what a redirect to the sign-in form is measured against to tell a suspicious one from a fresh expiry.
+    ///
+    private var lastRetryAt: ContinuousClock.Instant?
+
+    ///
+    /// `confirmingSince` is when the check of the app password now in flight was asked for, or `nil` while none is.
+    ///
+    private var confirmingSince: ContinuousClock.Instant?
+
+    ///
+    /// `held` is the page whose silent retries are paused and the moment that pause ends, or `nil` while none is.
+    ///
+    private var held: (target: URL, until: ContinuousClock.Instant)?
+
+    ///
+    /// `consecutiveHolds` is how many holds have been imposed since a retry was last answered, from which the next hold's length doubles.
+    ///
+    private var consecutiveHolds = 0
+
+    ///
+    /// `window` is how long after a retry a redirect to the sign-in form for the same page counts as suspicious rather than as a new expiry.
+    ///
+    /// A retry that is still unanswered a minute later has failed, and `URLRequest`'s own default timeout says the same.
+    ///
+    let window: Duration
+
+    ///
+    /// `confirmationTimeout` is how long a check of the app password may stay unanswered before it is presumed lost, and a later redirect or HTTP 401 may ask again.
+    ///
+    let confirmationTimeout: Duration
+
+    ///
+    /// `maximumAttempts` is how many times one episode may re-request its page before it holds instead.
+    ///
+    let maximumAttempts: Int
+
+    ///
+    /// `firstHold` is how long the first hold since a retry was last answered lasts.
+    ///
+    let firstHold: Duration
+
+    ///
+    /// `longestHold` is the length no hold exceeds, however many came before it.
+    ///
+    let longestHold: Duration
+
+    ///
+    /// `init(window:confirmationTimeout:maximumAttempts:firstHold:longestHold:)` builds a budget with the given limits.
+    ///
+    /// The defaults are the ones both apps use; the parameters exist so a test can state them rather than depend on them.
+    ///
+    init(window: Duration = .seconds(60), confirmationTimeout: Duration = .seconds(120), maximumAttempts: Int = 3, firstHold: Duration = .seconds(60), longestHold: Duration = .seconds(30 * 60)) {
         self.window = window
+        self.confirmationTimeout = confirmationTimeout
+        self.maximumAttempts = maximumAttempts
+        self.firstHold = firstHold
+        self.longestHold = longestHold
     }
 
-    /// `isSpent(on:at:)` reports whether the retry of `target` is the one already made and still outstanding at `instant`, which is what makes a sign-in form reached again a rejected app password rather than a second expired cookie.
-    func isSpent(on target: URL, at instant: ContinuousClock.Instant = .now) -> Bool {
-        guard let outstanding else {
-            return false
-        }
-
-        guard outstanding.target == target else {
-            return false
-        }
-
-        return instant - outstanding.issuedAt < window
-    }
-
-    /// `spend(on:at:)` records that `target` has just been re-requested with the stored app password.
-    mutating func spend(on target: URL, at instant: ContinuousClock.Instant = .now) {
-        outstanding = (target, instant)
-    }
-
-    /// `releaseIfAnswered(by:)` retires the outstanding retry when `url` is the address it was made for.
     ///
-    /// Matched by address rather than taken as any answer at all, so that a sub-frame of the document being navigated away from cannot answer for the retry. A retry whose own chain ends somewhere else is left to the window instead, which is the honest outcome: it is no longer a retry of what was asked for.
-    mutating func releaseIfAnswered(by url: URL?) {
-        guard let outstanding else {
-            return
+    /// `signInFormReached(redirectingTo:at:)` is what to do about a main-frame navigation to the server's sign-in form that would return to `target`.
+    ///
+    /// While a check is in flight, or `target` is held, the navigation is only to be cancelled. A redirect for the page retried less than `window` ago asks for a check, because the retry may well have been superseded rather than refused. Anything else is a fresh expiry and is retried.
+    ///
+    mutating func signInFormReached(redirectingTo target: URL, at instant: ContinuousClock.Instant = .now) -> SilentRetryStep {
+        if let confirmingSince {
+            guard instant - confirmingSince >= confirmationTimeout else {
+                return .wait
+            }
+
+            self.confirmingSince = nil
         }
 
-        guard url == outstanding.target else {
-            return
+        if let held, held.target == target {
+            guard instant >= held.until else {
+                return .wait
+            }
+
+            self.held = nil
         }
 
-        self.outstanding = nil
+        if episodeTarget == target, let lastRetryAt, instant - lastRetryAt < window {
+            confirmingSince = instant
+            return .confirmAppPassword(target)
+        }
+
+        episodeTarget = target
+        attempts = 1
+        lastRetryAt = instant
+
+        return .retry(target)
     }
 
-    /// `release()` retires whatever retry is outstanding, whether it was answered or not.
-    mutating func release() {
-        outstanding = nil
+    ///
+    /// `appPasswordChecked(_:for:at:)` is what to do once the server has been asked about the app password on behalf of `target` and `verdict` is what it said.
+    ///
+    /// `rejected` signs out whatever happened to the episode meanwhile, since it is the server's own answer. An episode that ended meanwhile needs nothing more. Otherwise an accepted password retries while attempts remain, and everything else holds.
+    ///
+    mutating func appPasswordChecked(_ verdict: AppPasswordVerdict, for target: URL, at instant: ContinuousClock.Instant = .now) -> SilentRetryStep {
+        confirmingSince = nil
+
+        guard verdict != .rejected else {
+            reset()
+            return .signOut
+        }
+
+        guard episodeTarget == target else {
+            return .wait
+        }
+
+        guard verdict == .accepted, attempts < maximumAttempts else {
+            return hold(target, at: instant)
+        }
+
+        attempts += 1
+        lastRetryAt = instant
+
+        return .retry(target)
+    }
+
+    ///
+    /// `responseArrived(from:statusCode:at:)` is what to do about a main-frame response from `url` that answered with `statusCode`.
+    ///
+    /// Only a response for the page being retried or held concerns this budget. An HTTP 401 for it is how a page request carrying a refused app password is answered, so it asks for a check unless one is already in flight and not yet presumed lost. Any other response means the server answered, which ends the episode, its hold and the hold's growth.
+    ///
+    mutating func responseArrived(from url: URL?, statusCode: Int?, at instant: ContinuousClock.Instant = .now) -> SilentRetryStep {
+        guard let url else {
+            return .wait
+        }
+
+        guard url == episodeTarget || url == held?.target else {
+            return .wait
+        }
+
+        if statusCode == 401 {
+            if let confirmingSince, instant - confirmingSince < confirmationTimeout {
+                return .wait
+            }
+
+            confirmingSince = instant
+            return .confirmAppPassword(url)
+        }
+
+        episodeTarget = nil
+        attempts = 0
+        lastRetryAt = nil
+        held = nil
+        consecutiveHolds = 0
+
+        return .wait
+    }
+
+    ///
+    /// `reset()` forgets everything, for a load the user asked for, which starts over, and for a check's answer that arrives once the account it was asked for is no longer the one signed in or the page it was asked for has moved on.
+    ///
+    mutating func reset() {
+        episodeTarget = nil
+        attempts = 0
+        lastRetryAt = nil
+        confirmingSince = nil
+        held = nil
+        consecutiveHolds = 0
+    }
+
+    ///
+    /// `hold(_:at:)` ends the episode for `target` and pauses its silent retries, each hold since a retry was last answered lasting twice as long as the one before, up to `longestHold`.
+    ///
+    private mutating func hold(_ target: URL, at instant: ContinuousClock.Instant) -> SilentRetryStep {
+        var duration = firstHold
+
+        for _ in 0 ..< consecutiveHolds where duration < longestHold {
+            duration *= 2
+        }
+
+        duration = min(duration, longestHold)
+        consecutiveHolds += 1
+        held = (target, instant.advanced(by: duration))
+        episodeTarget = nil
+        attempts = 0
+        lastRetryAt = nil
+
+        return .hold(target, for: duration)
     }
 }
