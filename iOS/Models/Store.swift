@@ -168,6 +168,7 @@ class Store {
     /// The shape is `updateApps()`': everything decidable without the network is decided here and synchronously, and only the network half goes to a `Task`. The fetch is `UnreadNotifications.fetch(reason:)` — the very call the background refresh makes, with no store involved — so the two cannot arrive at different counts, and the badge is written from the same decision whichever path produced it.
     /// Having no account is deliberately not an early exit. A signed-out app still has a badge to clear, and letting the shared fetch report that there is no account is what clears it without a second rule about when clearing is due.
     /// Only a fetch that actually reached the server replaces what is published. A cancelled or failed one leaves the array exactly as it stands, for the same reason it leaves the badge alone: a network blip must not read as "everything was read".
+    /// A fetch the server refused with HTTP 401 goes on to `confirmRefusedAppPassword()`, which signs out once the server confirms the refusal. This is the foreground's job alone: the background refresh has no way to say why it signed anybody out, so it leaves that to the refresh the next activation runs.
     ///
     func refreshUnreadNotifications() {
         guard isRefreshingUnreadNotifications == false else {
@@ -196,7 +197,36 @@ class Store {
             }
 
             await AppIconBadge.apply(outcome.badgeUpdate)
+
+            if case .credentialsRejected = outcome {
+                await confirmRefusedAppPassword()
+            }
         }
+    }
+
+    ///
+    /// Ask the server whether it still accepts the account's app password, after the notifications endpoint refused it, and sign out if it does not.
+    ///
+    /// The refusal is the server's own word, but about the account `UnreadNotifications.fetch(reason:)` resolved from the Keychain for itself; asking again with this store's own account is what makes the sign-out about the credentials actually in use, through the same check both web views make before they sign anybody out.
+    /// It runs inside the refresh, so `isRefreshingUnreadNotifications` keeps a second refresh, and with it a second check, from starting beside it.
+    /// Only `AppPasswordVerdict.rejected` for the account still signed in when the answer arrives signs out, and every other answer leaves the account as it is, a network that failed in between included.
+    ///
+    private func confirmRefusedAppPassword() async {
+        guard let account else {
+            logger.notice("The notifications endpoint refused the stored app password, but no account is signed in any more; nothing to confirm")
+            return
+        }
+
+        logger.notice("The notifications endpoint refused the stored app password; asking the server directly before signing out")
+
+        let verdict = await ServerConnection.verifyAppPassword(at: account.server, as: account.credentials)
+
+        guard verdict.signsOut(askedAbout: account, signedIn: self.account) else {
+            logger.notice("Keeping the account: the server's answer was \(String(describing: verdict), privacy: .public), or the account changed while it was being asked")
+            return
+        }
+
+        requireSignIn()
     }
 
     ///
@@ -257,6 +287,7 @@ class Store {
     /// The counterpart of `logout()` for the case where the app is signing the user out rather than the user.
     /// `NextcloudNavigationDecider` calls it only once the server has answered HTTP 401 to an authenticated request asking whether it still accepts the stored app password, which is the one answer that rules out an expired browser session and names the credential itself as what is being refused.
     /// A page re-requested with the stored app password landing back on the server's sign-in form is not reason enough, since the stale page's own script produces exactly that while the server still accepts the password.
+    /// `refreshUnreadNotifications()` calls it too, once the notifications endpoint has refused the app password and the same check has confirmed the refusal for the account still signed in.
     /// Unlike `logout()` it does not revoke the app password: the server has just rejected it, so there is nothing left to revoke and the request would only fail. What it adds instead is `wasSignedOutBySystem`, which is what makes the sign-in screen explain why it is there. macOS strikes the same bargain in `AppDelegate.requireSignIn()`.
     ///
     func requireSignIn() {

@@ -968,6 +968,23 @@ Quarantining the stale page with a `WKContentRuleList` until the retry lands wou
 Asking the `/cloud/capabilities` endpoint, as `validate(_:)` already does, proves nothing about the credentials, since it answers without any.
 And `/cloud/user`, the most direct question of all, needs Rainmaker 5, which the project has not adopted yet; it is the request to move to once it does.
 
+## Why does the iPhone sign out when the notifications endpoint refuses the app password, and only from the foreground?
+
+Because that refusal is the server's own word, and an app that keeps showing a signed-in account the server no longer accepts looks broken rather than careful.
+The Mac has always signed out on it, through `NotificationMonitor`.
+The iPhone only cleared its badge, and stayed signed in until the web view happened to notice, which, since the change described in the previous entry, it does only by asking the server anyway.
+
+The foreground refresh, `Store.refreshUnreadNotifications()`, therefore asks once more before it signs out.
+`UnreadNotifications.fetch(reason:)` resolves its account from the Keychain for itself, so its HTTP 401 is about the credentials it found there, not necessarily the ones the store holds.
+`ServerConnection.verifyAppPassword(at:as:)`, the check both web views make, is asked with the store's own account, and only [`AppPasswordVerdict.signsOut(askedAbout:signedIn:)`](./Core/Account/AppPasswordVerdict.swift) answering yes, a refusal of the account still signed in when the answer arrives, leads to `Store.requireSignIn()` and the alert that explains it.
+Anything else keeps the account, a network that failed between the two requests included.
+
+The background refresh signs nobody out.
+It runs on a schedule nobody watches, has no way to say why the account is gone, and touches no store by design, as [`NotificationRefreshTask`](./iOS/Notifications/NotificationRefreshTask.swift) records.
+What it does on a refusal is what it did before, clearing the badge and disarming itself, and the refresh the next activation runs meets the same refusal, confirms it and signs out with the explanation.
+Activation re-arms the background refresh before that refresh runs, so it stays armed whenever the refusal is not confirmed, and a confirmed refusal disarms it again as it signs out.
+The cost is that a revoked password is only acted on once the user opens the app, which is the first moment anything about the account is on screen anyway.
+
 ## Why do the keyboard shortcuts and appearance settings outlive a sign-out, when everything from the server does not?
 
 Because they are what the user set up on this Mac, and nothing about a session or a server is theirs to delete.

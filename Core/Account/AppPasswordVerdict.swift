@@ -18,4 +18,13 @@ enum AppPasswordVerdict: Equatable, Sendable {
 
     /// `undetermined` means the request learned nothing about the app password, whether it failed on the network, was cancelled, or was answered with anything other than success or HTTP 401.
     case undetermined
+
+    ///
+    /// `signsOut(askedAbout:signedIn:)` is whether this verdict, asked about the credentials of `askedAbout`, signs out `signedIn`, the account signed in by the time it arrived.
+    ///
+    /// Only a refusal signs out, and only the account it was asked about: a verdict that arrives after a sign-out, or after a sign-in to another account or with fresh credentials, says nothing about the credentials in use now.
+    ///
+    func signsOut(askedAbout: ServerAccount, signedIn: ServerAccount?) -> Bool {
+        self == .rejected && askedAbout == signedIn
+    }
 }

@@ -22,7 +22,9 @@ enum UnreadNotifications {
         /// `endpointUnavailable` reports the `404` an instance answers while its notifications app is absent or disabled.
         case endpointUnavailable
 
-        /// `credentialsRejected` reports that the stored app password was refused, so it has been revoked on the server.
+        /// `credentialsRejected` reports that the server answered the notifications request with HTTP 401, refusing the stored app password.
+        ///
+        /// It is the server's word about the account this fetch resolved for itself, which is why the iOS foreground asks `ServerConnection.verifyAppPassword(at:as:)` again with the account it holds before signing out on it.
         case credentialsRejected
 
         /// `cancelled` reports that the fetch was cancelled before it finished, which is what a background task running out of its allotted time looks like from in here.
@@ -34,7 +36,7 @@ enum UnreadNotifications {
         /// `badgeUpdate` is what this outcome means for the app icon badge.
         ///
         /// Deciding it here rather than at whichever call site happens to write the badge is what keeps the foreground and the background path from reaching different conclusions about the same answer, and it is the whole of the feature's logic that can be tested without a server.
-        /// An outcome that learned nothing leaves the badge alone: a blocked request, a captive portal, or a background run that ran out of time must not read to the user as "everything was read". An outcome that learned there is nothing to count clears it, which covers a signed-out app, a revoked app password, and an instance whose notifications app was switched off.
+        /// An outcome that learned nothing leaves the badge alone: a blocked request, a captive portal, or a background run that ran out of time must not read to the user as "everything was read". An outcome that learned there is nothing to count clears it, which covers a signed-out app, a refused app password, and an instance whose notifications app was switched off.
         var badgeUpdate: BadgeUpdate {
             switch self {
                 case let .fetched(items):
