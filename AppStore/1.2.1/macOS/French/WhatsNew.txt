@@ -7,3 +7,4 @@
 • Correction des noms des applications Nextcloud qui restaient dans la langue précédente dans le menu Présentation, le menu du Dock, les réglages Raccourcis clavier, Spotlight et l’app Raccourcis après un changement de langue dans Nextcloud
 • Correction de l’usage incohérent des majuscules dans les actions Raccourcis
 • Correction d’une déconnexion survenue pendant que tu n’étais pas devant ton Mac, alors que ton serveur acceptait toujours le mot de passe d’application de Cirruscope
+• Correction d’une déconnexion survenue après un moment sans utiliser Cirruscope, lorsque ton serveur déconnecte automatiquement les sessions de navigateur inactives

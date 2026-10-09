@@ -389,7 +389,7 @@ The WebKit half is the opposite.
 The code that talks to WebKit and to the page — navigation handling, downloads, injected JavaScript, and notification bridging — only means anything against a live Nextcloud server in a real web view, so a test there buys little beyond "the delegate fired" while costing a server fixture, network flakiness, and permanent maintenance.
 Those paths are verified by hand against a real server, with the app's own `os` logging as the record.
 What that code *decides* is pulled out of it wherever it can be, and is then native logic like any other.
-Whether an address is the connected server's to display or the system's to open, whether it is one of the server's sign-in or sign-out routes, and what a web view does next while it works through a lapsed session are each answered by a value type that takes everything it needs as arguments, the time included, and the suites in [`Tests/WebView/`](./Tests/WebView/) cover all three against both app modules.
+Whether an address is the connected server's to display or the system's to open, whether it is one of the server's sign-in or sign-out routes, whether a navigation to the sign-out route is the user's, and what a web view does next while it works through a lapsed session are each answered by a value type that takes everything it needs as arguments, the time included, and the suites in [`Tests/WebView/`](./Tests/WebView/) cover all four against both app modules.
 
 Tests are therefore expected wherever logic is Swift-only and server-free, including a decision a web view acts on, and deliberately absent around the code that hands those decisions to WebKit — a deliberate scope, not a backlog.
 Two store methods sit on the hand-verified side of that line despite being persistence code: the sign-out, `disconnect()`, empties the real caches, the widget's saved feed and the real Keychain and makes the real widget redraw, and `persist(theming:)` downloads over the network on every call, so both are verified by hand while the storage half of the first, `deleteAccount()`, is covered like everything else.
@@ -397,6 +397,7 @@ Two store methods sit on the hand-verified side of that line despite being persi
 One habit comes out of the same work and generalizes: where the app depends on undocumented framework behaviour, the test measures the framework rather than restating the belief, so [`KeyEquivalentMatchingOracleTests`](./macOSTests/KeyboardShortcuts/KeyEquivalentMatchingOracleTests.swift) asks a real `NSMenu` what it matches and holds [`ShortcutMatching`](./macOS/ShortcutMatching.swift) to that answer.
 The same shape reaches into WebKit where no server is needed: [`SafariUserAgentProbe`](./iOSTests/WebView/SafariUserAgentProbe.swift) loads `about:blank` into a real `WebPage` so that [`SafariUserAgentTests`](./iOSTests/WebView/SafariUserAgentTests.swift) can assert against the user agent WebKit actually reports.
 [`ScriptNavigationSupersessionProbe`](./Tests/WebView/ScriptNavigationSupersessionProbe.swift) likewise drives a real `WKWebView` so that [`ScriptNavigationSupersessionTests`](./Tests/WebView/ScriptNavigationSupersessionTests.swift) can assert that a page's own script navigation supersedes a load the app started, which is why a web view no longer decides on its own that an app password was refused.
+[`NavigationTypeProbe`](./Tests/WebView/NavigationTypeProbe.swift) does the same for [`SignOutNavigationTypeTests`](./Tests/WebView/SignOutNavigationTypeTests.swift), which asserts the navigation type WebKit reports for each way of reaching the sign-out route, the one fact that tells Nextcloud's own "Log out" from the page's own script.
 See [AGENTS.md → Testing](./AGENTS.md#testing) for the mechanics.
 
 ## Why does a Swift project carry a JavaScript linter?
@@ -920,9 +921,10 @@ That says nothing about the app password Cirruscope holds, and the form itself i
 So the navigation is cancelled and the page the request had been for is re-requested with the app password attached, exactly as the first load of the session already does.
 The user sees the page they left.
 
-Sign-out is the mirror image.
-Nextcloud's own "Log out" would end the browser session while leaving the app holding a perfectly good app password, so it is widened into an app-level sign-out.
+Sign-out is the mirror image, as long as it is the user who asks for it.
+Nextcloud's own "Log out" would end the browser session while leaving the app holding a perfectly good app password, so the user activating it is widened into an app-level sign-out.
 Because the navigation is cancelled, the server never processes the request, which is why the app has to revoke that password itself.
+The page can also navigate to the same route on its own, and that is not the user asking for anything, so it is cancelled with the account kept (see "Why does the app ignore the sign-out route when the page navigates there on its own?").
 
 The interesting part is what happens when the retry does not seem to work.
 A second redirect to the sign-in form soon after the retry looks like the app password being refused, and both apps once read it that way, but it never is: Nextcloud answers a page request carrying credentials it refuses with HTTP 401, not with a redirect to the form.
@@ -984,6 +986,31 @@ It runs on a schedule nobody watches, has no way to say why the account is gone,
 What it does on a refusal is what it did before, clearing the badge and disarming itself, and the refresh the next activation runs meets the same refusal, confirms it and signs out with the explanation.
 Activation re-arms the background refresh before that refresh runs, so it stays armed whenever the refusal is not confirmed, and a confirmed refusal disarms it again as it signs out.
 The cost is that a revoked password is only acted on once the user opens the app, which is the first moment anything about the account is on screen anyway.
+
+## Why does the app ignore the sign-out route when the page navigates there on its own?
+
+Because only the user choosing Nextcloud's "Log out" asks to sign out, while the page navigating there by itself is the browser session timing itself out.
+On a server with `auto_logout` set, Nextcloud's own page script navigates to the sign-out route once nobody has used the page for the session's lifetime.
+Both apps used to read every navigation to that route as the user's, so an app window left idle on such a server signed the account out and revoked its app password.
+
+The two share an address and differ in how they began, which WebKit reports as the navigation's type.
+Nextcloud's "Log out" is a plain link, and the user activating it reads as `.linkActivated`, while a script assigning the location reads as `.other`, as does a load the app starts itself.
+[`SignOutRequest`](./Cirruscope/SignOutRequest.swift) treats only `.linkActivated` as explicit, both apps ask it before they sign anybody out, and every other type is cancelled with the account kept.
+On the Mac, a link to the route that asks for a new window is decided in `createWebViewWith`, before any window exists, because the new window's own load would read as `.other` whatever the user did.
+The context menu's "Open Link in New Window" reads as `.other` there too, exactly like a script's `window.open()`, so it is ignored along with it.
+That is accepted on purpose: a sign-out the app misses costs the user one more click on the same link, while a wrong one costs a revoked app password and a new sign-in.
+
+Letting the scripted navigation through would protect nothing.
+The server's sign-out ends only the browser session, not the app password, and the app would sign that session straight back in, as it does every lapsed one.
+Nextcloud documents `auto_logout` as a way for an inactive browser to log itself out, not as a limit on compromised sessions, and an app that keeps its app password in the Keychain is not a browser left open on a shared computer.
+
+The limitation accepted is that a script calling `click()` on a link to the route also reads as `.linkActivated`, and so still signs out; Nextcloud does not do that.
+Two other ways to tell the user's click from a script were rejected: WebKit's own user-gesture flag is private API, and a user script reporting trusted clicks would add a message whose ordering against the navigation decision is unverified.
+
+[`SignOutRequestTests`](./Tests/WebView/SignOutRequestTests.swift) pins the decision, and [`SignOutNavigationTypeTests`](./Tests/WebView/SignOutNavigationTypeTests.swift) measures through [`NavigationTypeProbe`](./Tests/WebView/NavigationTypeProbe.swift), with a real `WKWebView`, the type WebKit reports for each way of reaching the route, the script's `click()` included.
+A test cannot produce a trusted click, so the app's own script calling the link's `click()` stands in for the user.
+
+Where an authentication app replaces "Log out" with its own single-logout address, that link is not recognized as a sign-out at all, which predates this decision and is unchanged by it.
 
 ## Why do the keyboard shortcuts and appearance settings outlive a sign-out, when everything from the server does not?
 

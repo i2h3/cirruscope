@@ -5,11 +5,12 @@ import AppKit
 import os
 import WebKit
 
-/// `WebViewController`'s conformance to `WKNavigationDelegate` confines the embedded `WKWebView`'s main frame to the configured Nextcloud server, hands anything off that server's origin to the system via `NSWorkspace`, turns responses the web view cannot display or that arrive as attachments into downloads, reveals the storyboard-hidden web view once its initial page load has completed, treats the web view navigating to the server's own sign-out link as an app-level logout, and reports every redirect to the server's sign-in form and every main-frame response to `retryBudget`, whose answers `WebViewController+SilentRetry` carries out.
+/// `WebViewController`'s conformance to `WKNavigationDelegate` confines the embedded `WKWebView`'s main frame to the configured Nextcloud server, hands anything off that server's origin to the system via `NSWorkspace`, turns responses the web view cannot display or that arrive as attachments into downloads, reveals the storyboard-hidden web view once its initial page load has completed, treats the user activating a link to the server's own sign-out route as an app-level logout while cancelling a navigation the page's own script makes there, and reports every redirect to the server's sign-in form and every main-frame response to `retryBudget`, whose answers `WebViewController+SilentRetry` carries out.
 ///
-/// Which of those an address is, is decided by `NextcloudSessionRoute` and `WebViewDestination` rather than here, so this and the iOS web view cannot come to different conclusions — they did, and the answers macOS reached on its own were wrong in three ways: it compared hosts where it meant origins, so a differently-ported service on the same machine counted as the server; it matched the sign-in and sign-out routes by last path component, so a file a user named "logout" revoked their app password; and it resolved the `redirect_url` it re-requests without checking where it pointed.
+/// Which of those an address is, is decided by `NextcloudSessionRoute` and `WebViewDestination` rather than here, and whether a navigation to the sign-out route is the user's by `SignOutRequest`, so this and the iOS web view cannot come to different conclusions — they did, and the answers macOS reached on its own were wrong in three ways: it compared hosts where it meant origins, so a differently-ported service on the same machine counted as the server; it matched the sign-in and sign-out routes by last path component, so a file a user named "logout" revoked their app password; and it resolved the `redirect_url` it re-requests without checking where it pointed.
 /// A redirect to the sign-in form nearly always means only that the browser session's cookie expired, so the page is re-requested with the stored app password rather than the user being asked to sign in.
 /// Nothing a navigation reports here is ever taken as the app password having been refused, not even a second redirect right after that retry: such a redirect is only a suspicion, the server is asked with one authenticated request, and only its HTTP 401 signs the account out.
+/// The sign-out route is the user's only when they activate a link to it: Nextcloud's session heartbeat with `auto_logout` navigates there by script once the page has gone without mouse or touch input for the session's lifetime, and reading that as a sign-out revoked the app password of every window left idle.
 ///
 /// Any navigation that becomes a download is handed to `DownloadManager.shared`, which takes over as the transfer's delegate so it continues even if this web window closes.
 /// It is also where every new document picks up what the document-start seed script could not know: `didCommit` re-applies the appearance before the new document's first paint, and `didFinish` again once it has settled.
@@ -68,6 +69,15 @@ extension WebViewController: WKNavigationDelegate {
 
         switch NextcloudSessionRoute.matching(url, on: serverAddress) {
             case .signOut:
+                // Only the user activating a link to the route is a sign-out. Nextcloud's own "Log out" is such a
+                // link; its session heartbeat with `auto_logout` navigates here by script instead, which is the
+                // browser session timing itself out and is cancelled with the account kept. `SignOutRequest` says why.
+                guard SignOutRequest.of(navigationAction.navigationType) == .explicit else {
+                    logger.notice("Navigation action targets the configured server's own sign-out link but was not started by activating a link (type \(navigationAction.navigationType.rawValue, privacy: .public)); cancelling it and keeping the account (WebViewController \(self.logID))")
+                    decisionHandler(.cancel)
+                    return
+                }
+
                 // Nextcloud's own "Log out" is an unambiguous, explicit sign-out, so it is widened into an
                 // app-level one. Cancelling means the server never processes the request, which is why the
                 // sign-out has to revoke the app password itself — `logOut()` does.

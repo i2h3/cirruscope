@@ -7,13 +7,18 @@ import SwiftUI
 import WebKit
 
 ///
-/// Decides what `NextcloudView`'s web view is allowed to navigate to, which for the moment is one decision: a navigation to the connected server's sign-in form is cancelled, and the page behind it re-requested with the stored app password.
+/// Decides what `NextcloudView`'s web view is allowed to navigate to: a navigation to the connected server's sign-in form is cancelled, and the page behind it re-requested with the stored app password.
 ///
 /// It exists because of what a user sees without it. The web view's browser session is a cookie the server issues and expires on its own schedule, independently of the app password the app itself holds, so an app left alone for a few hours comes back to a first navigation that the server redirects to its sign-in form — and that form is a dead end here, since signing in happens natively through Login Flow v2 and not in the page. Re-requesting the redirected-from page with the app password attached signs the web view back in exactly the way the initial load does, and the user sees the page they left. macOS has done this since its own web view was written, in `WebViewController+WKNavigationDelegate`.
 /// A redirect to the sign-in form soon after such a retry is only a suspicion that the app password was refused, never a verdict.
 /// The stale page's own script navigates to the sign-in form on every HTTP 401 its polls receive, and that navigation can supersede the retry before the retry ever reaches the network; reading the next such redirect as a refused password is how the Mac app signed out a user on 2026-10-09 whose app password the server still accepted, and this decider read it the same way.
 /// So the web view only suspects, and one authenticated request decides: the suspicion is put to the server through `ServerConnection.verifyAppPassword(at:as:)`, and only an HTTP 401 in answer to it leads to `Store.requireSignIn()`.
 /// Every other outcome keeps the account, retrying a bounded number of times while the server accepts the password and pausing the retries while it cannot be asked, each step as the shared `SilentRetryBudget` decides it.
+///
+/// It also decides the two other ways a navigation can leave the page the user is looking at.
+/// An address off the connected server is offered to the system rather than displayed.
+/// A navigation to the server's sign-out route signs the account out of the app and revokes its app password only when the user activated a link to it, as `SignOutRequest` decides; any other, such as Nextcloud's session heartbeat navigating there by script once `auto_logout` finds the page idle, is cancelled with the account kept, since that is the browser session timing itself out rather than the user asking to leave.
+///
 /// It is a class because `WebPage` takes its decider by value at initialization and holds it from then on, while the two things this needs — the page to reload through and the store to read the account from — only exist afterwards. That is the same shape, and the same reason, as `AppNavigationBridge` and `NotificationsPanelBridge`.
 ///
 @MainActor
@@ -105,7 +110,15 @@ final class NextcloudNavigationDecider: WebPage.NavigationDeciding {
         // processes the request, which is why the sign-out has to revoke the app password itself — `Store.logout()`
         // does, and without it the browser session would end while a working credential stayed on the account's
         // device list. macOS reads the same link the same way.
-        guard route != .signOut else {
+        // Only the user activating a link to the route is that instruction. Nextcloud's session heartbeat with
+        // `auto_logout` navigates here by script, which is the browser session timing itself out rather than the user
+        // leaving, so it is cancelled and the account kept; `SignOutRequest` says why, and macOS reads it the same way.
+        if route == .signOut {
+            guard SignOutRequest.of(action.navigationType) == .explicit else {
+                logger.notice("Navigation action targets the connected server's sign-out link but was not started by activating a link (type \(action.navigationType.rawValue, privacy: .public)); keeping the account and returning .cancel")
+                return .cancel
+            }
+
             logger.notice("Navigation action targets the connected server's sign-out link; signing out of the app as well and returning .cancel")
             store.logout()
 

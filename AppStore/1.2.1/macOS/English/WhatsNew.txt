@@ -7,3 +7,4 @@
 • Fixed the View menu, the Dock menu, the Keyboard Shortcuts settings, Spotlight and Shortcuts listing your Nextcloud apps in the previous language after you change your Nextcloud language
 • Fixed inconsistent capitalization in Shortcuts actions
 • Fixed being signed out while your Mac was unattended, although your server still accepted Cirruscope’s app password
+• Fixed being signed out after a while without using Cirruscope, when your server automatically logs out idle browser sessions

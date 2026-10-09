@@ -9,6 +9,8 @@ import WebKit
 ///
 /// It grants camera and microphone capture to the configured Nextcloud server without an extra web-view prompt, presents an open panel so the web interface can upload files, and answers new-window requests itself rather than returning a second web view. WKWebView shows no file chooser of its own, so without `runOpenPanelWith` an "Upload" action in Nextcloud does nothing; and it would prompt per-site for camera/microphone on top of the one-time macOS system permission. Which requests are granted is `MediaCaptureDecision`'s to say, on the origins of both the page and the frame asking, so a differently-ported service on the server's machine, or a frame from another origin inside the server's page, gets the default prompt rather than the camera.
 /// Nextcloud opens some actions, including certain downloads, in a new window — as does `target="_blank"`, `window.open()`, and the system context menu's "Open Link in New Window" — and WKWebView drops those unless a second web view is returned, so `createWebViewWith` instead asks `WebViewDestination` where the destination belongs, the same origin-based decision `WebViewController+WKNavigationDelegate` makes for a main-frame navigation: one it assigns to the web view opens in a genuine new Cirruscope window, and any other is handed to the system through `NSWorkspace`, or ignored when no application is registered to open it.
+/// A new-window request for the server's sign-out route never opens a window: it is decided here, by how the request began, because the new window's own load would be the app's and could no longer tell the user's link from the page's own script, so the user activating such a link signs the account out through `AppDelegate.logOut()` and anything else is ignored with the account kept.
+/// The context menu's "Open Link in New Window" on that link is among what is ignored: WebKit reports it as `.other`, exactly as it reports a script's `window.open()`, and a missed sign-out costs a click where a wrong one costs the app password.
 /// Every method here logs its entry and each outcome at debug level so the behaviour of a specific window — identified by the appended `logID` — can be reconstructed from a log capture when tracing misbehaviour.
 extension WebViewController: WKUIDelegate {
     func webView(_: WKWebView, decideMediaCapturePermissionsFor origin: WKSecurityOrigin, initiatedBy frame: WKFrameInfo, type _: WKMediaCaptureType) async -> WKPermissionDecision {
@@ -70,6 +72,22 @@ extension WebViewController: WKUIDelegate {
 
         guard let serverAddress = AccountStore.shared.serverAddress else {
             logger.debug("No server is configured, so there is nothing to open this against; ignoring (WebViewController \(self.logID))")
+            return nil
+        }
+
+        // A link to the sign-out route that asks for a new window is decided here rather than in the window it would
+        // open, because only this action says how the navigation began: the new window's own load is the app's, and
+        // would read as anything but the user's link. No window is opened for it either way. The context menu's "Open
+        // Link in New Window" arrives as `.other` like a script's `window.open()`, and is ignored with it on purpose.
+        if NextcloudSessionRoute.matching(url, on: serverAddress) == .signOut {
+            guard SignOutRequest.of(navigationAction.navigationType) == .explicit else {
+                logger.notice("New-window request targets the configured server's own sign-out link but was not started by activating a link (type \(navigationAction.navigationType.rawValue, privacy: .public)); ignoring it and keeping the account (WebViewController \(self.logID))")
+                return nil
+            }
+
+            logger.notice("New-window request targets the configured server's own sign-out link; logging out at the app level instead of opening a window (WebViewController \(self.logID))")
+            (NSApp.delegate as? AppDelegate)?.logOut()
+
             return nil
         }
 
