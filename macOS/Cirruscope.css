@@ -333,6 +333,54 @@ html:not(:fullscreen) #viewer {
 }
 
 /*
+ * - MARK: Nextcloud Office Insets
+ *
+ * The Nextcloud Office app with the identifier `eurooffice`, the connector for the Euro-Office editor, opens a document from Nextcloud Files in a frame of its own rather than in the Viewer; the Collabora-based Nextcloud Office, `richdocuments`, opens in the Viewer and is covered by the section above.
+ * For as long as that frame is open the body carries `eurooffice-inline`, and the connector's stylesheet hides the header and pins the content container to the whole viewport, with the frame laid over it edge to edge, on the assumption that the browser chrome stays above it.
+ * Here the header bar is the chrome, so that put the editor's tabs under the traffic lights and left the window nothing to be dragged by (issue #142).
+ * The header is restored below and the content container moved back under it, so the editor overlays the app content from the header's bottom edge down and is closed with its own button in its top trailing corner.
+ *
+ * It is the content container that moves rather than the frame's own container, because the connector positions that one with an inline style marked `!important`, which no stylesheet can outrank.
+ * The connector pins the content container with `!important` as well, and this stylesheet, being injected at document start, loses every tie with it on document order, so those selectors repeat the connector's own behind a test of the root element's full-width attribute, which outranks them.
+ * Its rule hiding the header is not `!important`, so the restoring selector repeats it exactly and `!important` decides, as in the Viewer Insets; `inline-flex` is the value core/css/header.scss gives the header itself.
+ *
+ * The content container is moved by its top margin, which is how Nextcloud puts it below the header in the first place, and which holds whether it is fixed, as it normally is, or static, as it is beside a full-screen sidebar, where the `top` the connector zeroes would do nothing.
+ * Its height has to shrink by the same amount, because the connector sets its top, bottom and height together, and a box given all three ignores its bottom.
+ * With "Remove gaps around content" on, that is all, and the editor meets the window's other three edges as the rest of the content does.
+ * With it off, the margins, width, height and rounded corners the connector removes come back from the very custom properties Nextcloud's own layout uses, so the editor sits in the same inset card as every other app.
+ * Either way, a connector from before it began pinning anything is left exactly as it was.
+ *
+ * A public share of a single file mounts the frame's container on the body instead, fixed to the viewport by the connector's stylesheet alone and stacked beneath the header, so there it is that container which moves down.
+ * A public share of a folder mounts it in the content container without pinning anything, which leaves only the header to restore.
+ *
+ * None of these rules stands aside in element fullscreen, unlike the Viewer Insets: the editor asks for fullscreen from inside its frames, which makes the frame the fullscreen element, drawn in the top layer against the viewport whatever its ancestors' margins.
+ */
+
+#body-user.eurooffice-inline #header,
+#body-public.eurooffice-inline #header {
+    display: inline-flex !important;
+}
+
+html[data-cirruscope-full-width="true"] #body-user.eurooffice-inline #content,
+html[data-cirruscope-full-width="true"] #body-user.eurooffice-inline #content-vue {
+    height: calc(100% - var(--header-height)) !important;
+    margin-top: var(--header-height) !important;
+}
+
+html:not([data-cirruscope-full-width="true"]) #body-user.eurooffice-inline #content,
+html:not([data-cirruscope-full-width="true"]) #body-user.eurooffice-inline #content-vue {
+    border-radius: var(--body-container-radius) !important;
+    height: var(--body-height) !important;
+    margin: var(--body-container-margin) !important;
+    margin-top: var(--header-height) !important;
+    width: calc(100% - var(--body-container-margin) * 2) !important;
+}
+
+#body-public.eurooffice-inline > .eurooffice-iframe-container {
+    top: var(--header-height) !important;
+}
+
+/*
  * MARK: - Dashboard
  *
  * Minor overrides for issues which surface in translucent appearance.

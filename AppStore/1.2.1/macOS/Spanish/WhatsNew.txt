@@ -8,3 +8,4 @@
 • Corregido el uso incoherente de mayúsculas en las acciones de Atajos
 • Corregido un cierre de sesión que se producía mientras no estabas frente a tu Mac, aunque tu servidor seguía aceptando la contraseña de aplicación de Cirruscope
 • Corregido un cierre de sesión que se producía tras un rato sin usar Cirruscope, cuando tu servidor cierra automáticamente las sesiones inactivas del navegador
+• Corregido Nextcloud Office, que ocultaba el encabezado de Nextcloud mientras había un documento abierto y dejaba los controles del editor bajo los botones rojo, amarillo y verde de la ventana

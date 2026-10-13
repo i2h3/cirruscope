@@ -8,3 +8,4 @@
 • Correction de l’usage incohérent des majuscules dans les actions Raccourcis
 • Correction d’une déconnexion survenue pendant que tu n’étais pas devant ton Mac, alors que ton serveur acceptait toujours le mot de passe d’application de Cirruscope
 • Correction d’une déconnexion survenue après un moment sans utiliser Cirruscope, lorsque ton serveur déconnecte automatiquement les sessions de navigateur inactives
+• Correction de Nextcloud Office qui masquait l’en-tête de Nextcloud pendant qu’un document était ouvert, plaçant les commandes de l’éditeur sous les boutons rouge, jaune et vert de la fenêtre
