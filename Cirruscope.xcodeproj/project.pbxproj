@@ -191,6 +191,16 @@
 			path = Core;
 			sourceTree = "<group>";
 		};
+		AA8B0D3D307C114D0066101D /* Documentation */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Documentation;
+			sourceTree = "<group>";
+		};
+		AA8B0D40307C114D0066101D /* Tools */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Tools;
+			sourceTree = "<group>";
+		};
 		AAE67F6530231586007853C0 /* Website */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Website;
@@ -287,6 +297,7 @@
 				AA8A9A90300522C20098151F /* Cirruscope.xcconfig */,
 				AAE70077303DB197001A7B02 /* .github */,
 				AA4464EF306F739600CCD54D /* AppStore */,
+				AA8B0D3D307C114D0066101D /* Documentation */,
 				AA059CA52FE407A700DE3094 /* Cirruscope */,
 				AA89BB01303ECC0000C5D5D9 /* Core */,
 				AA45EF073042D2410092ABFD /* Tests */,
@@ -295,6 +306,7 @@
 				AA2AC5D630189B11002A0C28 /* macOSTests */,
 				AAE7F451303D7455001A7B02 /* iOS */,
 				AAE7F45F303D7457001A7B02 /* iOSTests */,
+				AA8B0D40307C114D0066101D /* Tools */,
 				AAE67F6530231586007853C0 /* Website */,
 				AA059CBD2FE407BA00DE3094 /* Frameworks */,
 				AA059CA42FE407A700DE3094 /* Products */,

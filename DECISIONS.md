@@ -259,7 +259,7 @@ With the team and the entitlements in the tracked configuration, Xcode either em
 Getting past it takes a deliberate override — `CODE_SIGNING_ALLOWED=NO` or `CODE_SIGN_IDENTITY=-` on the command line or in a `Local.xcconfig`, or an empty `CODE_SIGN_ENTITLEMENTS` on the command line or in a `Local.xcconfig` inside a target folder — and such a build of either app now traps at launch rather than running degraded, which nobody can mistake for success.
 
 Carrying the entitlements is also what lets the Mac keep its credentials where the widget can read them, which the next entry explains.
-See [AGENTS.md → Building and Signing](./AGENTS.md#building-and-signing) for the mechanics.
+See [AGENTS.md → Building and Signing](./AGENTS.md#building-and-signing) for the rules and [Documentation/BuildingAndSigning.md](./Documentation/BuildingAndSigning.md) for the mechanics.
 
 ## Why are the credentials in the data-protection Keychain on the Mac as well?
 
@@ -398,7 +398,7 @@ One habit comes out of the same work and generalizes: where the app depends on u
 The same shape reaches into WebKit where no server is needed: [`SafariUserAgentProbe`](./iOSTests/WebView/SafariUserAgentProbe.swift) loads `about:blank` into a real `WebPage` so that [`SafariUserAgentTests`](./iOSTests/WebView/SafariUserAgentTests.swift) can assert against the user agent WebKit actually reports.
 [`ScriptNavigationSupersessionProbe`](./Tests/WebView/ScriptNavigationSupersessionProbe.swift) likewise drives a real `WKWebView` so that [`ScriptNavigationSupersessionTests`](./Tests/WebView/ScriptNavigationSupersessionTests.swift) can assert that a page's own script navigation supersedes a load the app started, which is why a web view no longer decides on its own that an app password was refused.
 [`NavigationTypeProbe`](./Tests/WebView/NavigationTypeProbe.swift) does the same for [`SignOutNavigationTypeTests`](./Tests/WebView/SignOutNavigationTypeTests.swift), which asserts the navigation type WebKit reports for each way of reaching the sign-out route, the one fact that tells Nextcloud's own "Log out" from the page's own script.
-See [AGENTS.md → Testing](./AGENTS.md#testing) for the mechanics.
+See [AGENTS.md → Testing](./AGENTS.md#testing) for the rules and [Documentation/Testing.md](./Documentation/Testing.md) for the mechanics.
 
 ## Why does a Swift project carry a JavaScript linter?
 
@@ -499,7 +499,7 @@ The Mac passes its menu-bar lookup explicitly when it builds `shared` in [`Accou
 Closures rather than protocols and mock types, deliberately: the app has no dependency-injection layer and does not want one, and a protocol per collaborator would buy nothing over a function value here.
 Those two are injected at all — rather than simply called — because the test bundle is hosted by the app, so the real menu bar and the real application delegate are both live during a test run: the reserved-shortcut lookup would answer from the storyboard's own shortcuts, and a test write would rebuild the app's actual View menu behind the test's back.
 The same reasoning is why the app-list write takes the app's own `ServerAppTransferObject` rather than the network library's model, which neither test target links.
-See [AGENTS.md → Testing](./AGENTS.md#testing).
+See [AGENTS.md → Testing](./AGENTS.md#testing) for the rules and [Documentation/Testing.md → Testing the account store](./Documentation/Testing.md#testing-the-account-store) for the mechanics.
 
 ## Why is a keyboard shortcut another app already uses rejected rather than moved?
 

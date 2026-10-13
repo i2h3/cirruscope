@@ -102,7 +102,7 @@ The Mac and the iOS Simulator are not affected.
 
   The scheme is shared, so once signing is set up as described above a fresh clone needs nothing else configured for it.
   GitHub does not build or test pull requests: the maintainer runs the same tests, and a Release build, in Xcode Cloud before merging.
-  See [AGENTS.md → Testing](./AGENTS.md#testing) for what the suites cover.
+  See [Documentation/Testing.md → Suite map](./Documentation/Testing.md#suite-map) for what the suites cover.
 - Changing anything in `Core/` or `Cirruscope/` changes more than the Mac app, since `Core/` compiles into the macOS app, the iOS app and the widget extension alike and `Cirruscope/` into both apps.
   Build and test the `Cirruscope for iOS` scheme on an iOS Simulator as well before opening a pull request, signed like every other build; the iOS app embeds the widget extension, so that run builds the extension too:
 
@@ -115,7 +115,7 @@ The Mac and the iOS Simulator are not affected.
 - Changing Swift-only logic that needs no server or web view — shortcut handling, string rendering, pure decision functions — means adding or updating its tests in the same pull request.
   The WebKit-facing code is deliberately not unit-tested; see [AGENTS.md → Testing](./AGENTS.md#testing) for where the line sits and why.
 - Any claimed performance improvement must be backed by evidence: include the benchmark, profiling data, or test results that show the before/after impact and explain the scenario it applies to.
-- See [AGENTS.md](./AGENTS.md) for the full set of project conventions followed by human and AI contributors alike.
+- See [AGENTS.md](./AGENTS.md), and the documents in [Documentation/](./Documentation/) it points to, for the full set of project conventions followed by human and AI contributors alike.
 
 ## Contribution Workflow
 
