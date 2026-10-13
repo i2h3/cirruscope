@@ -5,7 +5,9 @@ import os
 import SwiftUI
 
 ///
-/// The iOS app itself.
+/// The iOS app itself, which builds the app state from the credentials the device already holds and hands it to every window.
+///
+/// It attaches `ServerAppCommands`, which lists the server apps in the iPad's View menu, registers the background refresh of the unread-notification badge, and re-arms it on activation.
 ///
 @main
 struct iOSApp: App {

@@ -85,6 +85,7 @@ enum AppDatabase {
     /// Whatever the App Group container already holds under the store's name is quarantined first rather than overwritten: on a Mac that ran an entitled build in between, it is the store that build created, and it stays on disk beside its replacement. Moving rather than copying is what makes this happen once, since the next launch finds nothing left to import.
     /// The store file moves before its sidecars, and nothing moves at all unless the App Group container is clear of every file of that name, so a failure leaves the store where it was to be tried again on the next launch rather than pairing it with somebody else's write-ahead log.
     /// One case it resolves the wrong way on purpose: going back to a build without the entitlement and forward again moves the store that build wrote over the shared one, which is quarantined rather than lost.
+    /// Remove this import only once no build without the entitlement can still be on anybody's Mac.
     static func importStore(from ownStoreURL: URL, into sharedStoreURL: URL) {
         let fileManager = FileManager.default
         let ownDirectory = ownStoreURL.deletingLastPathComponent()

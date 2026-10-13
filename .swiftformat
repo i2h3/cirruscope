@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: 2026 Iva Horn
 # SPDX-License-Identifier: MIT
 
+# SwiftFormat reads the Swift version from `.swift-version`, beside this file.
+
 --complex-attributes prev-line
 --computed-var-attributes prev-line
 --enable blankLinesBetweenScopes

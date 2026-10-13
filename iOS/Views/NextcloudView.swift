@@ -5,6 +5,13 @@ import os
 import SwiftUI
 import WebKit
 
+///
+/// Hosts the `WebPage` the connected server is shown in, along with the navigation bar and toolbar the app draws around it.
+///
+/// It titles its navigation bar with the name of the Nextcloud app the loaded URL resolves to, falling back to the page's own shortened title where it resolves to none.
+/// It publishes its `WebPage` and its display scale as focused scene values, which is how the iPad's View menu finds the window in front and renders its icons sharp.
+/// It overlays the web view with `LoadingOverlay` for as long as `WebPage.isLoading` says a document is on its way in.
+///
 struct NextcloudView: View {
     @Environment(Store.self)
     private var store

@@ -4,10 +4,15 @@
 // Configuration settings file format documentation can be found at:
 // https://developer.apple.com/documentation/xcode/adding-a-build-configuration-file-to-your-project
 
+// Only the root configuration is included, never `Cirruscope/Cirruscope.xcconfig`, which is where the apps are
+// assigned their entitlements after including the same root, so this test bundle carries no entitlements.
 #include "../Cirruscope.xcconfig"
 
 PRODUCT_BUNDLE_IDENTIFIER = $(CIRRUSCOPE_BASE_BUNDLE_IDENTIFIER).tests
 PRODUCT_NAME = $(CIRRUSCOPE_BUNDLE_NAME)
+
+// Tests must not contribute localized strings: a test's literals stay out of every String Catalog, so the
+// catalogs' completeness check stays about the app's own strings.
 SWIFT_EMIT_LOC_STRINGS = NO
 
 #include? "Local.xcconfig"

@@ -8,7 +8,11 @@ import SwiftUI
 import WebKit
 
 ///
-/// Global iOS app state object.
+/// The observable state of the iOS app, which owns the connected account and the `Rainmaker.Server` built from it.
+///
+/// It holds a projection of the app list `AccountStore` has persisted and the unread notifications the server still has queued, because SwiftUI observes this object rather than the store.
+/// It decides which request may open a server app, more than one menu opening one and what may carry the app password not being a rule to hold twice.
+/// It runs the app's two sign-outs: `logout()`, which the user asks for and which revokes the app password on the server, and `requireSignIn()`, which the app makes on its own once the server refuses the app password, and which the sign-in screen then explains.
 ///
 @Observable
 @MainActor

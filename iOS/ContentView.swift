@@ -5,6 +5,11 @@ import CoreSpotlight
 import os
 import SwiftUI
 
+///
+/// The root view of every iOS window, which shows the sign-in screen while no account is configured and the web view once one is.
+///
+/// It also receives a Spotlight result the user tapped and hands it to the entity opener, logging what the continuation did.
+///
 struct ContentView: View {
     ///
     /// Records what a Spotlight continuation did, under the `ContentView` category.

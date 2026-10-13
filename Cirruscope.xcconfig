@@ -19,10 +19,14 @@ IPHONEOS_DEPLOYMENT_TARGET = 26.0
 MACOSX_DEPLOYMENT_TARGET = 26.0
 MARKETING_VERSION = 1.2.1
 LOCALIZATION_PREFERS_STRING_CATALOGS = YES
-SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated
 SWIFT_EMIT_LOC_STRINGS = YES
-SWIFT_STRICT_CONCURRENCY = complete
 SWIFT_VERSION = 6.0
+
+// Nothing in either app module is main-actor-isolated unless the SDK or the code says so, as
+// AGENTS.md → Concurrency explains. SWIFT_DEFAULT_ACTOR_ISOLATION is stated explicitly so that a target-level
+// override shows up in a -showBuildSettings diff, Xcode's iOS target template writing MainActor there.
+SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated
+SWIFT_STRICT_CONCURRENCY = complete
 
 // Every build signs automatically with the team above, because the apps and the widget extension share their data
 // through the App Group and a build without it is not a working build. A contributor signs with their own team and

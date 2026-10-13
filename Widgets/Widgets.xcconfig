@@ -17,6 +17,9 @@ PRODUCT_BUNDLE_IDENTIFIER = $(CIRRUSCOPE_BASE_BUNDLE_IDENTIFIER).widgets
 // The same entitlements as the apps: the App Group is what the extension reaches the apps' data through, and the
 // Keychain access group is what it reads their credentials through, on both platforms, because the credentials are in
 // the data-protection Keychain on macOS as well, the one Keychain where an access group decides who may read an item.
+// They are assigned here, after the include of the root, as `Cirruscope/Cirruscope.xcconfig` assigns them to the apps.
+// `REGISTER_APP_GROUPS` is a macOS-only build setting, letting automatic signing register the App Group the
+// entitlements name when it signs for the Mac, and it sits beside them here rather than in `project.pbxproj`.
 CODE_SIGN_ENTITLEMENTS = Cirruscope/Cirruscope.entitlements
 REGISTER_APP_GROUPS = YES
 
@@ -27,5 +30,12 @@ REGISTER_APP_GROUPS = YES
 SDKROOT = auto
 SUPPORTED_PLATFORMS = iphoneos iphonesimulator macosx
 TARGETED_DEVICE_FAMILY = 1,2
+
+// Two files beside this one are rewritten by Xcode and carry no comments, so what they hold on purpose is noted here.
+// `Info.plist` deliberately declares no `NSLocalNetworkUsageDescription`, although the extension reaches the server
+// itself: an app extension shares its containing app's local network permission, and the reason belongs in the app's
+// property list alone. `PrivacyInfo.xcprivacy` is the extension's own privacy manifest, since the extension is a
+// bundle of its own and the apps' copy in `Cirruscope/` does not reach it: it declares the file-timestamp APIs that
+// `Core/` and Rainmaker compile into the extension as well.
 
 #include? "Local.xcconfig"
