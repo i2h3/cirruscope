@@ -34,6 +34,14 @@ enum Script: String {
     case pageLanguage = "PageLanguage"
 
     ///
+    /// `localStorageRetention` makes clearing a storage area do nothing in the server's page, so the preferences Nextcloud keeps in local storage survive a lapsed browser session.
+    ///
+    /// Nextcloud clears the page's storage before sending a lapsed session to its sign-in form, which both apps cancel and answer by signing the same account straight back in, so nothing would be left of that episode but lost preferences.
+    /// Both apps install it as a user script that runs at the start of every document load, in the main frame alone, so no embedded frame from another origin is changed by it.
+    ///
+    case localStorageRetention = "LocalStorageRetention"
+
+    ///
     /// `styleSheet` appends the app's bundled `Cirruscope.css` to the document as a `<style>` element.
     ///
     /// It is the one case whose resource is not itself JavaScript: `source` reads the stylesheet and wraps it in the script that installs it, so the caller handles it exactly like the others. Both apps install it as a user script that runs at the *start* of every document load, early enough that the page never paints unstyled.
@@ -51,7 +59,7 @@ enum Script: String {
     ///
     private var resourceExtension: String {
         switch self {
-            case .sidebarToggle, .sidebarToggleState, .pageLanguage:
+            case .sidebarToggle, .sidebarToggleState, .pageLanguage, .localStorageRetention:
                 "js"
 
             case .styleSheet:
@@ -70,7 +78,7 @@ enum Script: String {
         }
 
         switch self {
-            case .sidebarToggle, .sidebarToggleState, .pageLanguage:
+            case .sidebarToggle, .sidebarToggleState, .pageLanguage, .localStorageRetention:
                 return contents
 
             case .styleSheet:

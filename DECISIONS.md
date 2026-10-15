@@ -936,7 +936,7 @@ Recognizing the routes is [shared too](./Cirruscope/NextcloudSessionRoute.swift)
 
 Because all a web view can do on its own is infer that the app password was refused, and on 2026-10-09 that inference signed a user out of an account whose app password the server still accepted.
 
-A page already on screen does not know that its browser session has lapsed: its periodic requests start being answered with HTTP 401, and Nextcloud's own page script answers each of them by navigating to the sign-in form.
+A page already on screen does not know that its browser session has lapsed: its periodic requests start being answered with HTTP 401, and Nextcloud's own page script answers each of them by clearing the page's storage and navigating to the sign-in form (see "Why does the web view ignore a Nextcloud page clearing its local storage?").
 The web view cancels that navigation and re-requests the page with the app password, as the previous entry describes, but the stale page keeps running until the new one replaces it.
 If its script navigates again while the app's load is still waiting for its navigation-policy decision, WebKit drops the app's load without telling any delegate, and the script's next redirect looks exactly like the retry having been refused.
 A starved main thread, with the display off and the app under App Nap, stretched that window from a moment to minutes.
@@ -1000,6 +1000,29 @@ Two other ways to tell the user's click from a script were rejected: WebKit's ow
 A test cannot produce a trusted click, so the app's own script calling the link's `click()` stands in for the user.
 
 Where an authentication app replaces "Log out" with its own single-logout address, that link is not recognized as a sign-out at all, which predates this decision and is unchanged by it.
+
+## Why does the web view ignore a Nextcloud page clearing its local storage?
+
+Because the page clears it on the way to a sign-in the app never lets happen, and all the clearing ever took from the user was their preferences.
+
+A browser signed in through Nextcloud's own form recovers quietly when its session lapses, while the web view, signed in with the app password, leaves the server nothing to recover the session from.
+So when the session lapses under a page that is on screen, the page's next request is refused, and Nextcloud's page script clears everything the page keeps in the browser before sending it to the sign-in form, a measure meant for a browser left signed in on a shared computer.
+The app cancels that navigation and signs the same account straight back in (see "Why does the web view intercept the sign-in and sign-out routes instead of just displaying them?"), so the user sees the page they left, without the preferences Nextcloud keeps in local storage, the emoji picker's skin tone and frequently used emojis among them (issue #143).
+A Mac left asleep long enough lapses the session, so this happened routinely and went unnoticed until somebody opened the picker.
+
+Both apps therefore install [a script](./Cirruscope/Scripts/LocalStorageRetention.js) at the start of every document that makes clearing a storage area do nothing.
+Nothing is lost by it: every sign-out the app makes, Nextcloud's own "Log out" included, erases all website data natively, and the clearing Nextcloud does on the way out never runs, since the app cancels that route before the server sees it.
+The app holds a single account, so what a page keeps can never belong to somebody else.
+
+The script replaces the method local and session storage share, so session storage is kept as well, which costs nothing, since it ends with the web view.
+It runs in the main frame alone, so a frame embedded from another origin, such as an office editor, keeps the method it was given.
+The trade-offs accepted are that a Nextcloud app clearing its own storage on purpose now silently keeps it, and that clearing item by item would still get through; what a page keeps in its databases is deleted with the lapse as before.
+
+Two other answers were rejected.
+Keeping the browser session alive narrows the window but cannot stop the server from ending it, as it does across an upgrade.
+Keeping only the keys Nextcloud's own storage library marks as persistent would still lose the frequently used emojis, which the picker's underlying component writes directly.
+
+[`LocalStorageRetentionTests`](./Tests/WebView/LocalStorageRetentionTests.swift) measures through [`LocalStorageClearProbe`](./Tests/WebView/LocalStorageClearProbe.swift), with a real `WKWebView`, that a script installed this way decides what the page's own call does.
 
 ## Why do the keyboard shortcuts and appearance settings outlive a sign-out, when everything from the server does not?
 

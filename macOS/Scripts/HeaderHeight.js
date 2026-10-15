@@ -18,9 +18,9 @@
 // header at all reports nothing, which leaves the last known height in place:
 // the right outcome, that page having no header to center within either.
 //
-// Only the main frame reports. Every bundled script is installed with
-// forMainFrameOnly: false, and an embedded editor's iframe has no header of the
-// app's window to describe.
+// Only the main frame reports. This script is installed with
+// forMainFrameOnly: false, as most bundled scripts are, and an embedded
+// editor's iframe has no header of the app's window to describe.
 
 (() => {
   if (window !== window.top) {

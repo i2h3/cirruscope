@@ -402,11 +402,15 @@ struct NextcloudView: View {
     ///
     /// Registers every user script the page runs, with `measurement` baked into the one that publishes the insets.
     ///
-    /// All four are re-registered together on every measurement rather than the insets script alone, because a `WKUserContentController` can only be emptied wholesale. Doing it at all is what keeps a document loaded after a rotation from being seeded with the insets of the previous orientation.
-    /// The stylesheet runs at document start so the page never paints unstyled, the insets script immediately after it so the properties it declares are set before the first layout, and the two observers — of the app navigation and of the notifications menu — at document end, once there is a document for them to observe.
+    /// All five are re-registered together on every measurement rather than the insets script alone, because a `WKUserContentController` can only be emptied wholesale. Doing it at all is what keeps a document loaded after a rotation from being seeded with the insets of the previous orientation.
+    /// The storage retention runs first, at document start and in the main frame alone, before any of the page's own scripts can clear its storage. The stylesheet follows at document start so the page never paints unstyled, the insets script immediately after it so the properties it declares are set before the first layout, and the two observers — of the app navigation and of the notifications menu — at document end, once there is a document for them to observe.
     ///
     private func installUserScripts(with measurement: WebPageInsets) {
         userContentController.removeAllUserScripts()
+
+        if let source = Script.localStorageRetention.source {
+            userContentController.addUserScript(WKUserScript(source: source, injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        }
 
         if let source = Script.styleSheet.source {
             userContentController.addUserScript(WKUserScript(source: source, injectionTime: .atDocumentStart, forMainFrameOnly: false))

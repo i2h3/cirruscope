@@ -9,3 +9,4 @@
 • Correction d’une déconnexion survenue pendant que tu n’étais pas devant ton Mac, alors que ton serveur acceptait toujours le mot de passe d’application de Cirruscope
 • Correction d’une déconnexion survenue après un moment sans utiliser Cirruscope, lorsque ton serveur déconnecte automatiquement les sessions de navigateur inactives
 • Correction de Nextcloud Office qui masquait l’en-tête de Nextcloud pendant qu’un document était ouvert, plaçant les commandes de l’éditeur sous les boutons rouge, jaune et vert de la fenêtre
+• Correction de Nextcloud qui oubliait les réglages qu’il enregistre sur ton Mac, comme la couleur de peau des émojis et les émojis fréquemment utilisés, après un moment où tu n’étais pas devant ton Mac

@@ -9,3 +9,4 @@
 • Fixed being signed out while your Mac was unattended, although your server still accepted Cirruscope’s app password
 • Fixed being signed out after a while without using Cirruscope, when your server automatically logs out idle browser sessions
 • Fixed Nextcloud Office hiding the Nextcloud header while a document is open, which left the editor’s controls under the window’s red, yellow and green buttons
+• Fixed Nextcloud forgetting settings it keeps on your Mac, such as the emoji skin tone and frequently used emoji, after your Mac was left unattended

@@ -133,10 +133,14 @@ class Store {
         // The store still names a server while the Keychain says, for certain, that no credential is left: a
         // sign-out that did not finish, or a store carried to a device the credential, being this device's only,
         // did not travel to. Finish it, so Spotlight stops offering that server's things and a request latched for
-        // one of them cannot be served once somebody signs in somewhere else. A Keychain that cannot be read says
-        // nothing either way and leaves the store alone.
+        // one of them cannot be served once somebody signs in somewhere else. The web view's site data goes with it,
+        // as it does with every sign-out, since the web view leaves what a page keeps in place when the page clears
+        // it. A Keychain that cannot be read says nothing either way and leaves the store alone.
         if stored?.isEmpty == true, AccountStore.shared.serverAddress != nil {
-            Logger(for: Store.self).notice("The store names a server but no credential is stored; signing out what is left")
+            Logger(for: Store.self).notice("The store names a server but no credential is stored; signing out what is left, the web view's site data included")
+            WKWebsiteDataStore.default().removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast) {
+                Logger(for: Store.self).debug("Cleared the web view's site data")
+            }
             AccountStore.shared.disconnect()
         }
 

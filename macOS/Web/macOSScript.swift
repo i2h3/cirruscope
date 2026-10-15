@@ -7,8 +7,8 @@ import os
 /// `macOSScript` enumerates the JavaScript resources bundled with the app that `WebViewController` injects into or evaluates within its `WKWebView`.
 ///
 /// Each case maps to a `.js` file of the same name in `macOS/Scripts/`, which keeps the scripts in standalone files that can be edited with JavaScript tooling instead of being embedded as string literals in Swift source.
-/// These are the scripts only macOS runs. The three both apps share — the app-navigation toggle, the state it reports, and the language a page was rendered in — are `Script` cases in `Cirruscope/`.
-/// `WebViewController` reads `source` at the moment it needs a script, either to install it as a `WKUserScript` via `installUserScript(_:injectionTime:)` or to evaluate it on demand with `WKWebView.evaluateJavaScript(_:)`.
+/// These are the scripts only macOS runs. The four both apps share — the app-navigation toggle, the state it reports, the language a page was rendered in, and the one keeping a page from clearing its storage — are `Script` cases in `Cirruscope/`.
+/// `WebViewController` reads `source` at the moment it needs a script, either to install it as a `WKUserScript` via `installUserScript(_:injectionTime:forMainFrameOnly:)` or to evaluate it on demand with `WKWebView.evaluateJavaScript(_:)`.
 enum macOSScript: String {
     /// `windowDrag` forwards `mousedown` events that land on Nextcloud's header to the `windowDrag` message handler so the host window can begin a drag.
     ///

@@ -9,3 +9,4 @@
 • Behoben, dass du abgemeldet wurdest, während du nicht an deinem Mac warst, obwohl dein Server das App-Passwort von Cirruscope weiterhin akzeptierte
 • Behoben, dass du abgemeldet wurdest, wenn du Cirruscope eine Weile nicht benutzt hattest und dein Server inaktive Browsersitzungen automatisch abmeldet
 • Behoben, dass Nextcloud Office die Nextcloud-Kopfzeile ausblendete, während ein Dokument geöffnet war, wodurch die Bedienelemente des Editors unter den roten, gelben und grünen Tasten des Fensters lagen
+• Behoben, dass Nextcloud Einstellungen vergaß, die es auf deinem Mac speichert, etwa den Hautton der Emojis und häufig verwendete Emojis, nachdem du eine Weile nicht an deinem Mac warst

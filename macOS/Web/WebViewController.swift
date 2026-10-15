@@ -156,6 +156,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         makeWebViewBackgroundTransparent()
         observeWebViewTitle()
         observeWebViewURL()
+        installUserScript(Script.localStorageRetention.source, injectionTime: .atDocumentStart, forMainFrameOnly: true)
         installUserScript(Script.styleSheet.source, injectionTime: .atDocumentStart)
         installAppearanceAttributes()
         installWindowDragBridge()
@@ -703,15 +704,16 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         case notification
     }
 
-    /// `installUserScript(_:injectionTime:)` registers `source` on the web view's `WKUserContentController` so it runs at `injectionTime` on every page load, doing nothing if the resource behind it could not be read.
+    /// `installUserScript(_:injectionTime:forMainFrameOnly:)` registers `source` on the web view's `WKUserContentController` so it runs at `injectionTime` on every page load, in every frame unless `forMainFrameOnly` is `true`, doing nothing if the resource behind it could not be read.
     ///
     /// `installWindowDragBridge()` and `installSidebarToggleBridge()` call this after registering the script-message handlers their scripts post back to. It takes the loaded source rather than a `macOSScript` so it can install a shared `Script` just as readily — the two enumerations name different resources but produce the same JavaScript text.
-    private func installUserScript(_ source: String?, injectionTime: WKUserScriptInjectionTime) {
+    /// Most scripts run in every frame, which is the default; `Script.localStorageRetention` is installed in the main frame alone, so it changes nothing in a frame embedded from another origin.
+    private func installUserScript(_ source: String?, injectionTime: WKUserScriptInjectionTime, forMainFrameOnly: Bool = false) {
         guard let source else {
             return
         }
 
-        let userScript = WKUserScript(source: source, injectionTime: injectionTime, forMainFrameOnly: false)
+        let userScript = WKUserScript(source: source, injectionTime: injectionTime, forMainFrameOnly: forMainFrameOnly)
         webView.configuration.userContentController.addUserScript(userScript)
     }
 

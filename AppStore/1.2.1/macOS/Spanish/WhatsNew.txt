@@ -9,3 +9,4 @@
 • Corregido un cierre de sesión que se producía mientras no estabas frente a tu Mac, aunque tu servidor seguía aceptando la contraseña de aplicación de Cirruscope
 • Corregido un cierre de sesión que se producía tras un rato sin usar Cirruscope, cuando tu servidor cierra automáticamente las sesiones inactivas del navegador
 • Corregido Nextcloud Office, que ocultaba el encabezado de Nextcloud mientras había un documento abierto y dejaba los controles del editor bajo los botones rojo, amarillo y verde de la ventana
+• Corregida la pérdida de los ajustes que Nextcloud guarda en tu Mac, como el tono de piel de los emojis y los emojis usados con frecuencia, tras un rato en el que no estabas frente a tu Mac
