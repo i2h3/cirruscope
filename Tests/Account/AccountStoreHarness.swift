@@ -4,6 +4,7 @@
 @testable import Cirruscope
 import Foundation
 import SwiftData
+import Testing
 
 /// `AccountStoreHarness` is one `AccountStore` under test, over a private in-memory SwiftData container and with stand-ins for the two things the store reaches outside itself for.
 ///
@@ -38,8 +39,10 @@ final class AccountStoreHarness {
     /// `init(isReservedShortcut:)` opens a fresh in-memory container over the app's current schema and answers `isReservedShortcut` when the store asks whether a combination is already spoken for.
     ///
     /// The default reserves nothing, which is what a suite that never touches shortcuts wants and what the store itself defaults to on a platform that assigns no server-app shortcuts.
+    /// It records an issue when the case was not given `ExclusiveStoreAccess`, since opening this container while another suite seeds a store over a frozen schema is what aborted the iOS host.
     /// Building the container is force-tried: an in-memory container over the very schema the app opens on every launch cannot fail for a reason a test should report as an expectation, so a throw here is a broken harness rather than a finding — the same call `KeyEquivalentProbe.keyDown(for:)`'s force-unwrap makes.
     init(isReservedShortcut: @escaping @MainActor (KeyboardShortcutTransferObject) -> Bool = { _ in false }) {
+        ExclusiveStoreAccess.recordIfNotHeld(opening: "AccountStoreHarness")
         container = try! ModelContainer(for: AppDatabase.schema, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
         self.isReservedShortcut = isReservedShortcut
     }

@@ -9,7 +9,7 @@ import Testing
 /// `DuplicateShortcutSuppressionTests` covers which app a combination reaches when several could claim it; this suite covers the simpler contract underneath that, including the deliberate asymmetry that the store stores whatever it is given and leaves refusing an occupied combination to the recorder — visible here because a shortcut Cirruscope's own menu occupies is still stored, merely never applied.
 /// The store likewise keeps a shortcut for an app the connected server does not offer: it is recorded against the identifier and announced, reaches nothing and occupies nothing while the app is missing, and applies once a refresh lists it. Clearing a shortcut that was never recorded is the one call to `setShortcut(_:forAppID:)` that announces nothing.
 @MainActor
-@Suite(.serialized)
+@Suite(.serialized, .exclusiveStoreAccess)
 struct AppShortcutAssignmentTests {
     /// `harness` is this case's own store over a fresh in-memory container.
     private let harness = AccountStoreHarness()

@@ -9,7 +9,7 @@ import Testing
 ///
 /// One case here is not like the others and is the reason the suite matters beyond symmetry: the store has nowhere to put a note's text, and a case asserts that the type it is written with has no such field. That is a weaker assertion than it sounds only if the value type is never changed — which is exactly when someone would add one.
 @MainActor
-@Suite(.serialized)
+@Suite(.serialized, .exclusiveStoreAccess)
 struct NotePersistenceTests {
     /// `harness` is this case's own store over a fresh in-memory container.
     private let harness = AccountStoreHarness()

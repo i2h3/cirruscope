@@ -9,7 +9,7 @@ import Testing
 ///
 /// The cases that earn the suite are the ones about scope. Pages are fetched one collective at a time, so a write of the collectives alone must leave the pages already stored for them alone, and a write of one collective's pages must not touch another's. Both are easy to get wrong in a way that only shows up on an account with more than one collective, which is why the fixture has two.
 @MainActor
-@Suite(.serialized)
+@Suite(.serialized, .exclusiveStoreAccess)
 struct CollectivePersistenceTests {
     /// `harness` is this case's own store over a fresh in-memory container.
     private let harness = AccountStoreHarness()

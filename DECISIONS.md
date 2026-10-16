@@ -223,6 +223,11 @@ The version identifier of `SchemaV2` was deliberately *not* bumped when it was f
 Stores in the field carry `2.0.0`, and the models nested into it are byte-for-byte the live models at the `1.1.0` tag, so the identity it claims is the identity those stores have.
 Freezing after the fact is only safe because that was checked rather than assumed; it would not have been safe a single model edit later, which is the whole argument for the rule.
 
+The frozen copies keep the live models' entity names, since that is how a migration recognizes them, and that has a cost in a process opening more than one container.
+SwiftData resolves a model by its entity name across the whole process, and opening a container over one schema can leave an object of another schema with the same names unsaveable, aborting the process.
+The app never meets it, opening one container per process, always through the migration plan.
+The test process opens one per case and seeds stores through the frozen copies, so every suite opening a container takes its turn through one shared trait rather than running beside the others; see [Documentation/Testing.md → Testing the account store](./Documentation/Testing.md#testing-the-account-store).
+
 ## Why does the store keep every failed copy instead of overwriting the last one?
 
 Because the run most worth recovering is the first one that failed, and overwriting destroyed exactly that.

@@ -10,7 +10,7 @@ import Testing
 /// A shortcut belongs to the device and is keyed by the app's identifier, so none of these may delete it. What they change is whether it reaches anything: a shortcut whose app the connected server does not offer applies to nothing, conflicts with nothing and is named as nobody's occupant, and applies again the moment a server offers the app.
 /// The cases read the shortcut the way a menu does, through `shortcut(forAppID:)` and `nameOfApp(usingShortcut:otherThanAppID:)`, which are macOS's alone; that the records themselves outlive a deletion is also pinned on both modules by `Tests/Account/ConnectedAccountTests`.
 @MainActor
-@Suite(.serialized)
+@Suite(.serialized, .exclusiveStoreAccess)
 struct ShortcutSurvivalTests {
     /// `harness` is this case's own store over a fresh in-memory container.
     private let harness = AccountStoreHarness()

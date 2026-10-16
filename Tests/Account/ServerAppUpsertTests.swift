@@ -10,7 +10,7 @@ import Testing
 ///
 /// Where a locale files a diacritic is deliberately not asserted. `localizedStandardCompare(_:)` answers in the user's own locale by design, and locales genuinely disagree — Swedish orders "Ä" after "Z", English with "A" — so pinning one answer would assert the test machine's locale rather than the store's behaviour.
 @MainActor
-@Suite(.serialized)
+@Suite(.serialized, .exclusiveStoreAccess)
 struct ServerAppUpsertTests {
     /// `harness` is this case's own store over a fresh in-memory container; Swift Testing instantiates the suite once per case, so no case sees another's data.
     private let harness = AccountStoreHarness()

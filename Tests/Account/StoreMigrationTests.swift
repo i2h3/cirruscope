@@ -17,7 +17,7 @@ import Testing
 /// It is `.serialized` because Swift Testing runs a suite's cases in parallel by default, and a migration is not a pure function of the store it opens: `CirruscopeMigrationPlan` carries what it captured through process-wide state between `willMigrate` and `didMigrate`, so two of them in flight at once are two writers of one stash.
 ///
 /// It is deliberately **not** `@MainActor`, which the other suites in this folder are. Nothing here touches AppKit or `AccountStore`; it builds its own containers and contexts, and those have no main-actor requirement. Annotating it anyway meant a synchronous migration ran *on* the main actor while the rest of the run's main-actor suites waited behind it, which is a deadlock rather than a slowdown — the run stopped with `StoreMigrationTests` announced, no case result after it, and the host app idle in its run loop.
-@Suite(.serialized)
+@Suite(.serialized, .exclusiveStoreAccess)
 struct StoreMigrationTests {
     /// `harness` gives each case its own store on disk; see `StoreFileHarness` for why an in-memory one cannot answer this question.
     let harness = StoreFileHarness()

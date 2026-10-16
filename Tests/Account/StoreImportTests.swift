@@ -13,7 +13,7 @@ import Testing
 /// Two harnesses stand in for the two containers. Neither is the app's: naming `AppDatabase.container` from a test is forbidden, because its recovery path moves the developer's real store files aside, and this function moves files by design.
 /// Like `StoreMigrationTests` it is not `@MainActor`, for the same reason: nothing here touches AppKit or `AccountStore`.
 ///
-@Suite(.serialized)
+@Suite(.serialized, .exclusiveStoreAccess)
 struct StoreImportTests {
     /// `own` stands in for the app's own container, where a build without the App Group entitlement kept the store.
     let own = StoreFileHarness()

@@ -4,6 +4,7 @@
 @testable import Cirruscope
 import Foundation
 import SwiftData
+import Testing
 
 /// `StoreFileHarness` gives one test case a SwiftData store on disk, in a directory of its own, and removes it again when the case ends.
 ///
@@ -39,7 +40,9 @@ final class StoreFileHarness {
     /// `seed(_:_:)` opens the store at `schema` with no migration plan, hands its context to `write`, saves, and closes it again.
     ///
     /// Closing is the whole point and is why this takes a closure rather than vending a container: a `ModelContainer` keeps its store open for as long as anything references it, so a case that merely stopped using one would go on to reopen a file still held by the first. Everything the container owns is confined to this call, so the store is closed by the time it returns.
+    /// Like `open(_:migrationPlan:_:)`, it records an issue when the case was not given `ExclusiveStoreAccess`, since a frozen schema opened while another suite opens the live one is what aborted the iOS host.
     func seed(_ schema: Schema, _ write: (ModelContext) throws -> Void) throws {
+        ExclusiveStoreAccess.recordIfNotHeld(opening: "StoreFileHarness")
         let container = try ModelContainer(for: schema, configurations: configuration(for: schema))
         let context = ModelContext(container)
         context.autosaveEnabled = false
@@ -49,6 +52,7 @@ final class StoreFileHarness {
 
     /// `open(_:migrationPlan:)` reopens the store at `schema` through `migrationPlan`, hands its context to `read`, and closes it again.
     func open<Result>(_ schema: Schema, migrationPlan: (any SchemaMigrationPlan.Type)?, _ read: (ModelContext) throws -> Result) throws -> Result {
+        ExclusiveStoreAccess.recordIfNotHeld(opening: "StoreFileHarness")
         let container = try ModelContainer(for: schema, migrationPlan: migrationPlan, configurations: configuration(for: schema))
         let context = ModelContext(container)
         context.autosaveEnabled = false

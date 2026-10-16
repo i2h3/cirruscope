@@ -13,7 +13,7 @@ import Testing
 /// The read-back and unset cases are baselines that held under the old design too, and the announcement case observes the store's own seam rather than a web view in the host app reacting to it.
 /// It runs against both app modules, the store being shared, though only the Mac app shows the settings today.
 @MainActor
-@Suite(.serialized)
+@Suite(.serialized, .exclusiveStoreAccess)
 struct DevicePreferencesTests {
     /// `harness` is this case's own store over a fresh in-memory container.
     private let harness = AccountStoreHarness()

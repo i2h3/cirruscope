@@ -11,6 +11,7 @@ import Testing
 ///
 /// Every case reads a store of its own through `AccountStoreHarness`, and none names `AccountStore.shared`, whose container holds the developer's real account.
 @MainActor
+@Suite(.exclusiveStoreAccess)
 struct EntityActivationTests {
     /// `harness` is this case's own store.
     private let harness = AccountStoreHarness()

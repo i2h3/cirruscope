@@ -9,7 +9,7 @@ import Testing
 ///
 /// The case that earns the suite is the upsert. Matching an existing row by token rather than replacing the list is what keeps a conversation the same record across a refresh, and that is not tidiness: Spotlight is donated an item per conversation, and a list torn down and rebuilt on every launch would delete and re-add every one of them rather than leaving them alone.
 @MainActor
-@Suite(.serialized)
+@Suite(.serialized, .exclusiveStoreAccess)
 struct ConversationPersistenceTests {
     /// `harness` is this case's own store over a fresh in-memory container.
     private let harness = AccountStoreHarness()

@@ -13,7 +13,7 @@ import Testing
 ///
 /// That a shortcut kept through the deletion reaches its app again once a server offers it is asserted by `macOSTests/Account/ShortcutSurvivalTests`, because reading a shortcut the way a menu does is macOS's alone. This suite runs against both app modules, which is what makes it the one that would notice an iOS-side difference in how the store or its container behaves.
 @MainActor
-@Suite(.serialized)
+@Suite(.serialized, .exclusiveStoreAccess)
 struct ConnectedAccountTests {
     /// `harness` is this case's own store over a fresh in-memory container.
     private let harness = AccountStoreHarness()

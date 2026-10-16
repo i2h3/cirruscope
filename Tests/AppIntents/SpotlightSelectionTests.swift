@@ -13,6 +13,7 @@ import Testing
 ///
 /// The activities are built the way Spotlight delivers one: a `CSSearchableItemActionType` whose `userInfo` carries `CSSearchableItemActivityIdentifier` as `<EntityTypeName>/<identifier>`. That shape is not invented here — it is what a result carried in the field, and what a probe confirmed is the only thing that arrives. `NSUserActivity.appEntityIdentifier` is deliberately not used by these cases or by the code they cover: it is held out of band, so assigning it leaves `userInfo` empty and it answers `nil` for an activity that crossed from Spotlight.
 @MainActor
+@Suite(.exclusiveStoreAccess)
 struct SpotlightSelectionTests {
     /// `harness` is this case's own store.
     private let harness = AccountStoreHarness()

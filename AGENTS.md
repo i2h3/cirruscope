@@ -188,6 +188,7 @@ Prefer that shape — measure the framework, then assert the app agrees — over
 Give each case its own `AccountStoreHarness`, an `AccountStore` over an in-memory container that counts announcements.
 Never name `AccountStore.shared` from a test, its container holding the developer's real account.
 Never build a second store over `AppDatabase.container` either, each instance memoizing on its own.
+Give every suite that opens a SwiftData container, through either harness or directly, the `.exclusiveStoreAccess` trait: the frozen schemas share entity names with the live one, and two suites using SwiftData at once aborted the iOS host; the harnesses record an issue without it.
 `AccountStore.persist(serverApps:)` takes the app's own `ServerAppTransferObject`, not `Rainmaker.NavigationItem`, so a test seeds an app list without linking Rainmaker, which neither test target does.
 Keep it that way.
 What matters is that no test *writes* through the store.

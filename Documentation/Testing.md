@@ -25,6 +25,7 @@ The rules themselves are in that section and are not restated here.
 - Tests run in Debug because `@testable import` needs the testability that the Release configuration does not enable.
 - `macOSTests/macOSTests.xcconfig` and `iOSTests/iOSTests.xcconfig` set `SWIFT_EMIT_LOC_STRINGS = NO`, so tests contribute no localized strings and the string-catalog check stays about the app's own strings.
 - Swift Testing builds a fresh suite instance for every case, so a harness held as a stored property belongs to that case alone, and it runs a suite's cases in parallel unless the suite is `.serialized`.
+  It runs suites beside each other as well, which is why every suite opening a SwiftData container carries `.exclusiveStoreAccess` (see [Testing the account store](#testing-the-account-store)).
 
 ## Suite map
 
@@ -102,6 +103,8 @@ Each is the measure-then-agree shape [AGENTS.md → Testing](../AGENTS.md#testin
   It answers the reserved-shortcut lookup with the closure it was given, reserving nothing by default, and counts announcements in `notificationCount`, recording their names in `announcements`.
   The count says that a mutator announced, not when: the production post hops to the next main-thread turn and the harness deliberately does not, so a case can assert it synchronously.
 - `StoreFileHarness` (`Tests/Account/`) gives one case a store on disk in a directory of its own under `URL.temporaryDirectory`, removed when the case ends, because a migration reopens a store written earlier and an in-memory container is never reopened.
+- `ExclusiveStoreAccess` (`Tests/Account/`) is the `.exclusiveStoreAccess` trait, which runs each case of a suite carrying it while holding `StoreAccessLock`, an actor handing one lock from waiter to waiter in arrival order, so no two cases in the process use SwiftData at once.
+  Both store harnesses record an issue when they open a container in a case running without it.
 - `KeychainScratchService` (`macOSTests/Account/`) gives one case a Keychain service of its own in both Keychains, with as many accounts under it as the case needs, and deletes everything filed under it from both when the case ends, so no case ever touches `Keychain.service`, where the developer's real credentials are.
 - `ReservedShortcuts` (`macOSTests/Account/`) builds the reserved-shortcut closure that the assignment and duplicate-suppression suites hand `AccountStoreHarness`, out of `ShortcutMatching`, which is AppKit and so could not follow the harness into `Tests/`.
 - `ServerAppFixture` (`Tests/Account/`) is the server-app corpus the account suites seed a store with, in the shape `AccountStore.persist(serverApps:)` takes.
@@ -125,6 +128,11 @@ The rules are in [AGENTS.md → Testing](../AGENTS.md#testing), and the reasonin
 - `AccountStore` takes its `ModelContainer` through `init(container:isReservedShortcut:notifyChange:)`: `shared` passes `AppDatabase.container`, and each `AccountStoreHarness` an in-memory one, since nothing there tests file layout and an in-memory store leaves no cleanup a failing case could skip.
 - `AccountStore.shared` is off limits because its container lives in the shared App Group container and holds the developer's real account, and `AppDatabase.container`'s recovery path moves the store files aside on a failed open and opens an empty store in their place.
   Being a `static let`, that container is opened only once something asks for it, so no suite opens it as long as none reaches `shared`.
+- Every suite opening a SwiftData container, through `AccountStoreHarness`, `StoreFileHarness` or directly, carries `.exclusiveStoreAccess`, so one case at a time in the test process uses SwiftData while suites without a container keep running beside it.
+  SwiftData resolves a model by its entity name through state the whole process shares, opening a container rewrites that state, and the frozen copies in the shipped schemas share their names with the live models.
+  On the iOS 26.5 Simulator a seeded `SchemaV2` store saved after an `AccountStoreHarness` container had been opened aborted the host on `NSUnknownKeyException`, `the entity Account is not key value coding-compliant for the key "conversations"`, even with nothing running concurrently, and the full iOS action interleaved the migration and import suites with the main-actor store suites that way on every run, a different case dying each time.
+  The lock is an actor rather than a `Mutex` because a main-actor case blocking the main thread while a migration case holds it is the deadlock `StoreMigrationTests` already stays off the main actor for.
+  A suite that forgets the trait fails every case opening a container, through the harnesses' issue, instead of crashing an unrelated one on some runs.
 - A second store over `AppDatabase.container` is off limits because each instance memoizes the single `Account` and the single `DevicePreferences` separately, so two of them over one container would each believe a stale answer.
 - The store is shared, so the harness lives in `Tests/Account/` and runs against both app modules, as do the suites over it that need nothing platform-specific; `macOSTests/Account/` holds the part that needs AppKit, which is why the harness takes the reserved-shortcut stand-in as a closure rather than as a list of shortcuts it compares itself.
 - The store's two reaches outside itself are injected as plain closures, with no protocols, no mock types and no `#if DEBUG`, because the test bundle is hosted by the app, which changes what a test may assume.
