@@ -928,6 +928,7 @@ The user sees the page they left.
 
 Sign-out is the mirror image, as long as it is the user who asks for it.
 Nextcloud's own "Log out" would end the browser session while leaving the app holding a perfectly good app password, so the user activating it is widened into an app-level sign-out.
+The Mac's stylesheet hides that entry (see "Why does Cirruscope hide "Log out" in Nextcloud's account menu?"), but any other link to the route is widened the same way.
 Because the navigation is cancelled, the server never processes the request, which is why the app has to revoke that password itself.
 The page can also navigate to the same route on its own, and that is not the user asking for anything, so it is cancelled with the account kept (see "Why does the app ignore the sign-out route when the page navigates there on its own?").
 
@@ -1004,7 +1005,7 @@ Two other ways to tell the user's click from a script were rejected: WebKit's ow
 [`SignOutRequestTests`](./Tests/WebView/SignOutRequestTests.swift) pins the decision, and [`SignOutNavigationTypeTests`](./Tests/WebView/SignOutNavigationTypeTests.swift) measures through [`NavigationTypeProbe`](./Tests/WebView/NavigationTypeProbe.swift), with a real `WKWebView`, the type WebKit reports for each way of reaching the route, the script's `click()` included.
 A test cannot produce a trusted click, so the app's own script calling the link's `click()` stands in for the user.
 
-Where an authentication app replaces "Log out" with its own single-logout address, that link is not recognized as a sign-out at all, which predates this decision and is unchanged by it.
+Where an authentication app replaces "Log out" with its own single-logout address, that link is not recognized as a sign-out at all, which predates this decision and is unchanged by it, though the Mac's stylesheet now hides that entry like any other "Log out".
 
 ## Why does the web view ignore a Nextcloud page clearing its local storage?
 
@@ -1129,6 +1130,19 @@ Since Nextcloud 35 an administrator can switch the action off for the whole serv
 
 The cost accepted is that someone who runs the desktop client beside Cirruscope loses a shortcut that worked for them on the Mac, which a browser still offers.
 And because a stylesheet can hide an entry but not remove it, the arrow keys still step onto the hidden one, with one key press that seems to do nothing.
+
+## Why does Cirruscope hide "Log out" in Nextcloud's account menu?
+
+Because Cirruscope is a client rather than a browser, and signing in is meant to happen once (issue #145).
+The web view widens Nextcloud's "Log out" into signing the account out of the app, which revokes its app password and deletes everything the app keeps from the server, and that entry sits one stray click below the profile and the settings.
+Signing out stays deliberate in the app's own "Log out" under Settings… > General, which says what it does next to the button.
+
+The Mac's stylesheet therefore hides the entry, keyed on its identifier `logout` rather than its label or address, so it stays hidden in every language and where an authentication app points the entry at an address of its own.
+The interception of the sign-out route stays as it is (see "Why does the web view intercept the sign-in and sign-out routes instead of just displaying them?"), because a link elsewhere on the server, or the page's own script, can still reach it.
+
+The cost accepted is that someone used to logging out of Nextcloud in a browser has to find the app's own button instead.
+
+The iOS stylesheet has no such rule, since it hides Nextcloud's header, the account menu with it, and the app's own Account menu in the toolbar takes its place.
 
 ## Why does a Spotlight tap resolve what it opens by entity *type*, and refuse a selection that carries no type?
 

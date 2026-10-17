@@ -381,6 +381,22 @@ html:not([data-cirruscope-full-width="true"]) #body-user.eurooffice-inline #cont
 }
 
 /*
+ * - MARK: Account Menu
+ *
+ * Hide "Log out" from Nextcloud's account menu, the one behind the avatar at the trailing end of the header (issue #145).
+ * Cirruscope is a client rather than a browser, so signing in is meant to happen once, and the web view widens that entry into signing the account out of the app, revoking its app password and deleting everything it keeps from the server.
+ * That is one stray click away in a menu used for the profile and the settings, while the app's own "Log out" in Settings… > General is where signing out is deliberate.
+ *
+ * The selector keys on the entry's identifier, logout, which Nextcloud writes into the id of the entry's link, and not on its label or address: the label is translated, and an authentication app may point the entry at an address of its own.
+ * It hides the list item holding that link rather than the link itself, which would leave an empty row behind, and it is scoped to #user-menu because the header's own items are list items too.
+ * The entry is the menu's last and the menu draws no separators, so nothing is left around the gap.
+ */
+
+#user-menu li:has(#logout) {
+    display: none !important;
+}
+
+/*
  * MARK: - Dashboard
  *
  * Minor overrides for issues which surface in translucent appearance.
