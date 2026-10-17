@@ -117,6 +117,22 @@ The comparison also asks the exact question that matters: is the color AppKit ha
 
 The trade-offs accepted are that a custom accent color identical to the brand color at that precision counts as "Multicolor", and that an increased-contrast adjustment AppKit might make to the app's own color would defeat the comparison and forward the brand color, as 1.1.0 and 1.2.0 did.
 
+## Why does removing the gaps square the content's outer corners but keep the one beside the sidebar?
+
+Because the outer corners would sit on the window's edges, where a rounded corner is a cut rather than a shape, while the one beside the sidebar touches no edge and is part of the look.
+
+With "Remove gaps around content" on, the content fills the window below the header, so every corner of the boxes Nextcloud frames it with lies on a window edge.
+Those boxes clip what they contain to their corners.
+The top-left one used to be kept, and once the sidebar was hidden the opaque content slid to the window's leading edge underneath it, so the window material showed through the cut ([#139](https://github.com/i2h3/cirruscope/issues/139)).
+They therefore lose all four corners, which takes nothing visible away while the sidebar is shown, since the sidebar in front of that corner is transparent.
+
+The corner between the sidebar and the content is a different one, the content's own.
+In the Liquid Glass appearance it is what sets the content apart from the sidebar and the header, and the App Store screenshots show it, so it stays.
+Nextcloud rounds it itself, and only while the sidebar is open beside the content, so [`Cirruscope.css`](./macOS/Cirruscope.css) leaves it to Nextcloud and only squares it beside a closed sidebar, where the content reaches the window's leading edge and the cut would be back.
+
+Squaring every corner instead was tried.
+It fixed the cut, but changed the look the screenshots record, and needed a line under the header to set the two apart again, so it was reverted to this.
+
 ## Why is macOS the product and iOS a side product?
 
 Focus.

@@ -147,11 +147,6 @@ html[data-cirruscope-translucency="true"] .content:fullscreen {
  * prefers-color-scheme: dark icons on the light material, light icons on the
  * dark one. (When translucency is off, Nextcloud's own white-on-primary
  * default is left untouched.)
- *
- * In full width, a bottom border separates the header from the content below,
- * which then meets it without a margin, in the same contrasting color at a
- * tenth of its strength. It is declared once and follows the appearance through
- * the custom property, which is resolved on #header itself.
  */
 html[data-cirruscope-translucency="true"] #header {
     --color-background-plain-text: #000;
@@ -163,19 +158,16 @@ html[data-cirruscope-translucency="true"] #header {
     }
 }
 
-html[data-cirruscope-full-width="true"][data-cirruscope-translucency="true"] #header {
-    border-bottom: 1px solid color-mix(in srgb, var(--color-background-plain-text) 10%, transparent);
-}
-
 /*
  * - MARK: Full Width
  *
  * Remove the margins and rounded corners Nextcloud puts around the content area so it reaches the window edges.
  *
- * #content and #content-vue are the outer containers, the server's own and NcContent's, nested one inside the other in an app that mounts into #content, as Talk does.
+ * #content and #content-vue are the outer containers, the server's own and NcContent's, nested one inside the other in an app that mounts into #content, as Talk does, while an app that replaces #content, as Files does, has #content-vue alone.
  * Once they fill the window every one of their corners lies on a window edge, so all four go, in either appearance.
  * A corner left rounded on either is not merely cosmetic: both clip what they contain to their border (overflow: clip on #content, overflow: hidden on #content-vue), so it is cut into whatever reaches it.
  * The top-left one used to be kept, and once the app navigation was hidden the opaque app content slid to the leading edge underneath it and the window material showed through the cut (issue #139).
+ * Squaring it takes nothing visible away while the app navigation is shown, because the navigation in front of it is transparent; the rounded corner that marks the content there is the app content's own, below.
  */
 html[data-cirruscope-full-width="true"] #content,
 html[data-cirruscope-full-width="true"] #content-vue {
@@ -188,11 +180,26 @@ html[data-cirruscope-full-width="true"] #content-vue {
 }
 
 /*
- * The app content loses all four corners as well, in either appearance.
- * Leaving its top inner corner to Nextcloud did not hold up: in Talk it stayed rounded at the leading edge of #content-vue whether the app navigation was open or hidden.
+ * The app content keeps one rounded corner in the Liquid Glass appearance: the top-left one beside an open app navigation, which is how it has always looked there.
+ * That corner is Nextcloud's own, rounded by NcContent only while an open app navigation precedes the app content in a window wide enough for the two to sit side by side, so it is left to Nextcloud rather than drawn here.
+ * The other three corners lie on window edges and go, the bottom-left one included, which Nextcloud rounds together with the top-left one.
+ * They are named physically rather than logically, as they always have been, so a right-to-left page, whose app navigation sits on the right, keeps the square corners it has always had.
+ *
+ * Beside a closed app navigation the top-left corner goes as well, because the app content then reaches the window's leading edge, where a rounded corner would show the window material through its cut just as the outer containers' did (issue #139).
+ * Nextcloud drops the corner there itself, but the Vue 3 version of its component library marks a closed app navigation app-navigation--closed and the Vue 2 one app-navigation--close, and the Vue 2 rule rounding the corner recognizes only its own spelling, so both are named here.
+ * Without any app navigation, as on the Dashboard or for a guest in Talk, nothing rounds the corner in the first place.
+ *
+ * In the solid appearance the app content loses all four corners, as it always has with the gaps removed.
  */
 html[data-cirruscope-full-width="true"] #app-content-vue {
-    border-radius: 0 !important;
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+}
+
+html[data-cirruscope-full-width="true"][data-cirruscope-translucency="false"] #app-content-vue,
+html[data-cirruscope-full-width="true"] :is(.app-navigation--closed, .app-navigation--close) ~ #app-content-vue {
+    border-top-left-radius: 0 !important;
 }
 
 /*
