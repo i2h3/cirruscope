@@ -32,6 +32,8 @@ enum WebWindowFrame {
     /// `record(_:name:)` remembers `window`'s frame under `name`, unless the window is in fullscreen.
     ///
     /// `WebWindowController`'s `NSWindowDelegate` conformance calls it when a live resize ends and when the window closes, and `AppDelegate.applicationWillTerminate(_:)` calls it for the frontmost web window — `NSWindow.willCloseNotification` is not posted when the application terminates, so without that last caller a size the user reached by zooming rather than dragging would be lost on quit.
+    /// It is isolated to the main actor because `NSWindow` is, AppKit isolating it through `NSResponder`, and every member it reads or calls is main-actor API.
+    @MainActor
     static func record(_ window: NSWindow, name: String = defaultName) {
         guard isRecordable(styleMask: window.styleMask) else {
             logger.debug("Not recording the frame of a fullscreen web window")
@@ -47,6 +49,8 @@ enum WebWindowFrame {
     /// `AppDelegate.presentWebViewWindow(targetURL:)` calls it on every web window it creates, before handing the window to `present(windowController:sender:)` to be cascaded — which offsets the origin and keeps the size this applied. The restoration path in `AppDelegate+NSWindowRestoration` deliberately does not call it: AppKit assigns a restored window its own saved frame.
     ///
     /// The origin is captured and put back because `setFrameUsingName(_:)` applies the whole remembered frame, position included, and may even land the window on a different screen. Restoring it afterwards reduces the call to its size alone. The size itself needs no clamping of its own: `NSWindow` constrains a frame against the window's minimum and maximum size — the storyboard declares a 600 × 400 minimum — and against the screen.
+    /// It is isolated to the main actor for the reason `record(_:name:)` is.
+    @MainActor
     static func applySize(to window: NSWindow, name: String = defaultName) {
         let origin = window.frame.origin
 

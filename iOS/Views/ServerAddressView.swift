@@ -296,7 +296,7 @@ struct ServerAddressView: View {
                         throw CirruscopeError.loginPresentationFailed
                     }
 
-                    let result = try await LoginSession(anchor: anchor).signIn(to: server)
+                    let result = try await LoginSession.signIn(to: server, anchoredTo: anchor)
                     let credentials = Credentials(user: result.name, appPassword: result.password)
 
                     try Keychain.store(credentials, for: result.server)

@@ -8,9 +8,9 @@ import Rainmaker
 
 /// `LoginSession` runs Nextcloud's Login Flow v2 against one server: it presents the grant page in an `ASWebAuthenticationSession` and concurrently polls the login endpoint until the user completes the grant.
 ///
-/// One instance drives one sign-in attempt.
+/// One instance drives one sign-in attempt, and `signIn(to:anchoredTo:)` is the only way to start one, so no caller ever holds an instance.
 ///
-/// The whole flow is platform-agnostic except for the window the sheet is anchored to, which is why that is the one thing the caller supplies. `ASPresentationAnchor` is `NSWindow` on macOS and `UIWindow` on iOS, so the initializer's signature needs no `#if` of its own. The caller resolves it, rather than this type reaching for a key window itself: on macOS the right window is the specific one the sign-in scene is in, not whichever is frontmost, and each caller already knows which that is. A caller with no window to offer cannot sign in and reports `CirruscopeError.loginPresentationFailed` itself, which is why nothing here is optional.
+/// The whole flow is platform-agnostic except for the window the sheet is anchored to, which is why that is the one thing the caller supplies. `ASPresentationAnchor` is `NSWindow` on macOS and `UIWindow` on iOS, so the entry point's signature needs no `#if` of its own. The caller resolves it, rather than this type reaching for a key window itself: on macOS the right window is the specific one the sign-in scene is in, not whichever is frontmost, and each caller already knows which that is. A caller with no window to offer cannot sign in and reports `CirruscopeError.loginPresentationFailed` itself, which is why nothing here is optional.
 @MainActor
 final class LoginSession: NSObject {
     /// `anchor` is the window the grant sheet is presented from, returned as-is by `presentationAnchor(for:)`.
@@ -27,14 +27,25 @@ final class LoginSession: NSObject {
     /// `logger` records the sign-in flow under the `LoginSession` category.
     private let logger = Logger(for: LoginSession.self)
 
-    init(anchor: ASPresentationAnchor) {
+    private init(anchor: ASPresentationAnchor) {
         self.anchor = anchor
+    }
+
+    /// `signIn(to:anchoredTo:)` runs one Login Flow v2 attempt against `server`, presenting the grant sheet from `anchor`, and returns the credentials the grant produced.
+    ///
+    /// It owns the attempt's one instance as a named constant, so the instance lives exactly as long as the attempt: the weak `presentationContextProvider` and the `[weak self]` completion handler find it alive while polling, and the late callback `cancel()` triggers after a successful poll finds it gone.
+    /// A caller writing `LoginSession(anchor:).signIn(to:)` itself would make whole-module builds warn that the weak reference "will always be nil", because the compiler sees the unnamed temporary released after the call and does not model that the call itself keeps it alive.
+    /// The constant stays named for the same reason, since that temporary written here would warn in every build, caller and callee then sharing a file.
+    static func signIn(to server: Server, anchoredTo anchor: ASPresentationAnchor) async throws -> LoginResult {
+        let attempt = LoginSession(anchor: anchor)
+
+        return try await attempt.signIn(to: server)
     }
 
     /// `signIn(to:)` runs Nextcloud's Login Flow v2 against `server` and returns the credentials the grant produced.
     ///
     /// Login Flow v2 never invokes the session's `nc` callback URL, so a successful `server.poll(_:token:)` is what signals completion; the session is then dismissed by the `defer`. It throws `CirruscopeError.loginCancelled` if the user dismisses the sheet and `CirruscopeError.loginTimedOut` if the grant is not completed in time.
-    func signIn(to server: Server) async throws -> LoginResult {
+    private func signIn(to server: Server) async throws -> LoginResult {
         let flow = try await server.login()
 
         defer {
