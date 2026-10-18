@@ -1,0 +1,25 @@
+Cirruscope brings Nextcloud to your Mac as a proper, app-like experience — not just another browser tab.
+
+FEATURES
+
+• No browser address bar, tabs or toolbar — your Nextcloud interface fills the window edge to edge
+• Drag the window by the Nextcloud top bar
+• Show or hide Nextcloud's sidebar from the View menu or with Control-Command-S whenever you want more room
+• Quick-launch any Nextcloud server app from the View menu, each with its own icon, or from the Dock — and give your favorites their own keyboard shortcuts
+• Find your Nextcloud server apps, Talk conversations, notes, collectives and their pages right in Spotlight
+• Open them with an action in the Shortcuts app, too
+• The Activity widget shows recent changes to your Nextcloud files on your desktop or in Notification Center
+• Get your Nextcloud notifications in Notification Center, with a count on the Dock icon
+• Join video and audio calls in Nextcloud Talk with your camera and microphone
+• Optional translucent Liquid Glass appearance, if you prefer it over the solid default
+• Downloads land straight in your Downloads folder, with a progress window and a notification when they finish
+
+PRIVACY
+
+Cirruscope collects nothing. No analytics, no tracking — the app connects only to your own Nextcloud server and to services your server points it to, such as one for office documents or calls.
+
+FREE & OPEN SOURCE
+
+Cirruscope is free and built entirely in the open, so you can review every line of its source code.
+
+Cirruscope is an independent project from the Nextcloud community. It is not affiliated with Nextcloud GmbH.

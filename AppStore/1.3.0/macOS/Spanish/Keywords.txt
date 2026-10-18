@@ -1,0 +1,1 @@
+nextcloud,autoalojado,nube privada,file sync,talk,correo,calendario,contactos,tareas,notas,cliente
