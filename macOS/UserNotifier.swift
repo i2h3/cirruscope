@@ -3,76 +3,46 @@
 
 import AppKit
 import os
-import Rainmaker
 import UserNotifications
 import WebKit
 
-/// `UserNotifier` bridges notifications created by the Nextcloud web interface into the macOS Notification Center and makes them actionable.
+/// `UserNotifier` posts the notifications only the Mac posts — those the Nextcloud web interface raises and those announcing a finished download — and answers a click on either.
 ///
-/// `WebViewController` forwards each web `Notification` through its `notification` script-message handler to `post(title:body:tag:webNotificationID:webView:)`, which posts a `UNNotificationRequest`. `AppDelegate` calls `configure()` on launch to register this object as the `UNUserNotificationCenter` delegate, and `WebViewController` calls `requestAuthorization()` when a web window opens.
-/// When the user clicks a notification, `userNotificationCenter(_:didReceive:withCompletionHandler:)` brings the originating web window forward and asks its page to run the notification's own click handler, so the web interface navigates to the notification's target as it would natively.
+/// `WebViewController` forwards each web `Notification` through its `notification` script-message handler to `post(title:body:tag:webNotificationID:webView:)`, and `DownloadManager` announces a finished transfer through `postDownloadFinished(filename:fileURL:)`.
+/// The server's own notifications are posted by the shared `ServerNotificationDispatcher`, and every click reaches the shared `UserNotificationDelegate` first, which hands what is not a server notification to `respond(toNotificationWithIdentifier:userInfo:)` here.
+/// A click on a web notification brings the originating web window forward and asks its page to run the notification's own click handler, so the web interface navigates to the notification's target as it would natively; a click on a download notification reveals the file in Finder.
 @MainActor
-final class UserNotifier: NSObject, UNUserNotificationCenterDelegate {
-    /// `shared` is the process-wide notifier instance, used so a single object owns the `UNUserNotificationCenter` delegate relationship for the app's lifetime.
+final class UserNotifier {
+    /// `shared` is the process-wide notifier instance, which remembers the web view behind each web notification for the app's lifetime.
     static let shared = UserNotifier()
 
-    /// `logger` records notification activity under the `UserNotifier` category; it is `nonisolated` so the `nonisolated` `UNUserNotificationCenterDelegate` callbacks can log through it.
-    nonisolated let logger = Logger(for: UserNotifier.self)
+    /// `logger` records notification activity under the `UserNotifier` category.
+    let logger = Logger(for: UserNotifier.self)
 
     /// `webViewsByIdentifier` maps a posted notification's request identifier to the web view that created it, held weakly so closed windows are released, so that a click can be routed back to the originating page.
     private let webViewsByIdentifier = NSMapTable<NSString, WKWebView>.strongToWeakObjects()
 
+    /// `webNotificationIDKey` is the `userInfo` key under which `post(title:body:tag:webNotificationID:webView:)` stores the page-side id the activation hook uses to find the original `Notification`.
+    private static let webNotificationIDKey = "webNotificationID"
+
     /// `downloadFilePathKey` is the `userInfo` key under which `postDownloadFinished(filename:fileURL:)` stores a finished download's file path so a click can reveal it in Finder.
-    ///
-    /// It is `nonisolated` so the `nonisolated` delegate callback that inspects a clicked notification can read it.
-    private nonisolated static let downloadFilePathKey = "downloadFilePath"
+    private static let downloadFilePathKey = "downloadFilePath"
 
-    /// `serverNotificationLinkKey` is the `userInfo` key under which `postServerNotification(_:serverAddress:)` stores a server notification's absolute link so a click can open it in a web window.
+    /// `webNotificationIdentifierPrefix` is what the request identifier of a web notification posted under a tag starts with.
     ///
-    /// It is `nonisolated` so the `nonisolated` delegate callback that inspects a clicked notification can read it.
-    private nonisolated static let serverNotificationLinkKey = "serverNotificationLink"
-
-    /// `configure()` registers `shared` as the `UNUserNotificationCenter` delegate so notifications are presented even while Cirruscope is the active app and so clicks are delivered here.
-    ///
-    /// `AppDelegate.applicationDidFinishLaunching(_:)` calls it once, before the launch sequence completes, as `UNUserNotificationCenter` requires its delegate to be set by then.
-    func configure() {
-        UNUserNotificationCenter.current().delegate = self
-    }
-
-    /// `requestAuthorization()` asks the user for permission to show alerts, play sounds, and badge the app icon, prompting only the first time the authorization state is undetermined.
-    ///
-    /// `WebViewController` calls it when a web window opens so the prompt appears in the context of a connected server rather than at launch.
-    /// The `.badge` option is essential and not merely for `UNNotificationContent` badges: once an app becomes a `UNUserNotificationCenter` client, macOS gates the app-icon badge — including the `NSApp.dockTile.badgeLabel` count `NotificationMonitor` sets — behind the notification "Badges" setting, which this option authorizes. Without it the Dock badge is silently suppressed even though the label is assigned.
-    func requestAuthorization() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { [logger] granted, error in
-            if let error {
-                logger.error("Notification authorization failed: \(error.localizedDescription)")
-            } else if granted == false {
-                logger.notice("Notification authorization was denied")
-            }
-        }
-    }
-
-    /// `withdrawAll()` removes every notification the app has delivered or still has pending, for a sign-out.
-    ///
-    /// Every one of them was about the account being signed out of — its server's notifications, its web interface's messages, the files it downloaded — and a banner left in Notification Center would otherwise go on naming that account's people and files, and open its server's pages when clicked.
-    func withdrawAll() {
-        let center = UNUserNotificationCenter.current()
-        center.removeAllDeliveredNotifications()
-        center.removeAllPendingNotificationRequests()
-        logger.notice("Withdrew every delivered and pending notification")
-    }
+    /// The tag is chosen by the page, and posted as it stands it could spell a server notification's identifier, which would then be withdrawn, replaced or opened as the server's own; the prefix keeps the two namespaces apart.
+    private static let webNotificationIdentifierPrefix = "web-notification-"
 
     /// `post(title:body:tag:webNotificationID:webView:)` posts a notification with `title` and `body`, remembering `webView` and `webNotificationID` so a later click can be routed back to the page that created it.
     ///
-    /// When `tag` is non-empty it is used as the request identifier so a web notification reusing a tag replaces the earlier one, matching the web Notification API; otherwise a fresh identifier is generated. `webNotificationID` is the page-side id the activation hook uses to find the original `Notification`.
+    /// When `tag` is non-empty it names the request identifier, so a web notification reusing a tag replaces the earlier one, matching the web Notification API; otherwise a fresh identifier is generated. `webNotificationID` is the page-side id the activation hook uses to find the original `Notification`.
     func post(title: String, body: String, tag: String, webNotificationID: String, webView: WKWebView) {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
-        content.userInfo = ["webNotificationID": webNotificationID]
+        content.userInfo = [Self.webNotificationIDKey: webNotificationID]
 
-        let identifier = tag.isEmpty ? UUID().uuidString : tag
+        let identifier = tag.isEmpty ? UUID().uuidString : Self.webNotificationIdentifierPrefix + tag
         webViewsByIdentifier.setObject(webView, forKey: identifier as NSString)
 
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: nil)
@@ -81,7 +51,7 @@ final class UserNotifier: NSObject, UNUserNotificationCenterDelegate {
 
     /// `postDownloadFinished(filename:fileURL:)` posts a notification announcing that `filename` finished downloading, remembering `fileURL` so a click reveals the file in Finder.
     ///
-    /// `DownloadManager` calls it from `downloadDidFinish(_:)`. It reuses the authorization already requested when a web window opened, and its `userInfo` carries the file path under `downloadFilePathKey` so `userNotificationCenter(_:didReceive:withCompletionHandler:)` can distinguish it from a web notification.
+    /// `DownloadManager` calls it from `downloadDidFinish(_:)`. It reuses the authorization already asked for when a server was connected, and its `userInfo` carries the file path under `downloadFilePathKey` so `respond(toNotificationWithIdentifier:userInfo:)` can tell it from a web notification.
     func postDownloadFinished(filename: String, fileURL: URL) {
         let content = UNMutableNotificationContent()
         content.title = String(localized: "Download Finished", comment: "Title of the notification shown when a file download finishes.")
@@ -92,53 +62,21 @@ final class UserNotifier: NSObject, UNUserNotificationCenterDelegate {
         UNUserNotificationCenter.current().add(request)
     }
 
-    /// `postServerNotification(_:serverAddress:)` posts a banner for a Nextcloud server notification, remembering its link so a click opens it in a web window.
+    /// `respond(toNotificationWithIdentifier:userInfo:)` answers a click on a notification this type posted: it reveals a finished download in Finder, or brings the originating web window forward and runs the page's click handler for a web notification.
     ///
-    /// `NotificationMonitor` calls it for each newly arrived notification. The request identifier is derived from the notification's server id so the same notification, seen again on a later fetch, replaces its banner rather than posting a duplicate.
-    /// The link is resolved through `SameOriginURL` because the server returns it relative to the instance root — and because it is the server that chose it. Clicking the banner opens the link in a web window, which loads it with the app password attached, so a link naming somewhere else would hand that password to whatever it named. This is the same rule every other server-named path in the app is resolved by; a notification whose link does not stay on the server is posted without one rather than not posted at all, the text still being worth reading.
-    func postServerNotification(_ item: NotificationItem, serverAddress: URL) {
-        let content = UNMutableNotificationContent()
-        content.title = item.subject
-        content.body = item.message
-
-        if let link = SameOriginURL(path: item.link, relativeTo: serverAddress) {
-            content.userInfo = [Self.serverNotificationLinkKey: link.url.absoluteString]
-        } else {
-            logger.error("The link offered for server notification \(item.id) does not stay on the connected server; posting its banner without one")
+    /// `UserNotificationDelegate` calls it for every clicked notification that is not a server notification, with the request identifier and the string values of its `userInfo`.
+    func respond(toNotificationWithIdentifier identifier: String, userInfo: [String: String]) {
+        guard let downloadFilePath = userInfo[Self.downloadFilePathKey] else {
+            activate(identifier: identifier, webNotificationID: userInfo[Self.webNotificationIDKey])
+            return
         }
 
-        let request = UNNotificationRequest(identifier: "server-notification-\(item.id)", content: content, trigger: nil)
-        UNUserNotificationCenter.current().add(request)
-    }
-
-    nonisolated func userNotificationCenter(_: UNUserNotificationCenter, willPresent _: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        completionHandler([.banner, .sound, .list])
-    }
-
-    nonisolated func userNotificationCenter(_: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
-        let identifier = response.notification.request.identifier
-        let userInfo = response.notification.request.content.userInfo
-        let webNotificationID = userInfo["webNotificationID"] as? String
-        let downloadFilePath = userInfo[Self.downloadFilePathKey] as? String
-        let serverNotificationLink = userInfo[Self.serverNotificationLinkKey] as? String
-
-        Task { @MainActor in
-            if let downloadFilePath {
-                self.revealDownloadedFile(atPath: downloadFilePath)
-            } else if let serverNotificationLink, let url = URL(string: serverNotificationLink) {
-                self.openServerNotificationLink(url)
-            } else {
-                self.activate(identifier: identifier, webNotificationID: webNotificationID)
-            }
-        }
-
-        completionHandler()
+        revealDownloadedFile(atPath: downloadFilePath)
     }
 
     /// `activate(identifier:webNotificationID:)` brings the app and the originating web window forward and runs that page's click handler for the notification, navigating the web interface to the notification's target.
     ///
     /// If the originating window has since closed, it activates the app and does nothing further, since the page that knew the notification's target is gone.
-    @MainActor
     private func activate(identifier: String, webNotificationID: String?) {
         NSApp.activate()
 
@@ -154,20 +92,8 @@ final class UserNotifier: NSObject, UNUserNotificationCenterDelegate {
     }
 
     /// `revealDownloadedFile(atPath:)` brings the app forward and opens Finder with the finished download selected.
-    ///
-    /// `userNotificationCenter(_:didReceive:withCompletionHandler:)` calls it when the clicked notification was posted by `postDownloadFinished(filename:fileURL:)`.
-    @MainActor
     private func revealDownloadedFile(atPath path: String) {
         NSApp.activate()
         NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
-    }
-
-    /// `openServerNotificationLink(_:)` brings the app forward and opens the server notification's target in a web window.
-    ///
-    /// `userNotificationCenter(_:didReceive:withCompletionHandler:)` calls it when the clicked notification was posted by `postServerNotification(_:serverAddress:)`.
-    @MainActor
-    private func openServerNotificationLink(_ url: URL) {
-        NSApp.activate(ignoringOtherApps: true)
-        (NSApp.delegate as? AppDelegate)?.presentWebViewWindow(targetURL: url)
     }
 }

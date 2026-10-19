@@ -6,7 +6,7 @@
 
 #include "../Cirruscope/Cirruscope.xcconfig"
 
-// The identifier of the background refresh that keeps the app icon badge current. It lives here rather than in the
+// The identifier of the background refresh that posts new notifications and keeps the app icon badge current. It lives here rather than in the
 // root configuration because BackgroundTasks is unavailable on macOS, so this is not a value every target needs.
 CIRRUSCOPE_NOTIFICATION_REFRESH_TASK_IDENTIFIER = $(CIRRUSCOPE_BASE_BUNDLE_IDENTIFIER).refresh.notifications
 SDKROOT = iphoneos

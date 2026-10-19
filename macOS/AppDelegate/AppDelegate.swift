@@ -46,16 +46,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_: Notification) {
         logger.notice("Application finished launching")
-        UserNotifier.shared.configure()
+        UserNotificationDelegate.shared.configure()
         NotificationCenter.default.addObserver(self, selector: #selector(serverAppsDidChange), name: .serverAppsDidChange, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(serverAppsDidChange), name: .keyboardShortcutsDidChange, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(downloadDidStart), name: .downloadDidStart, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(serverCredentialsRejected), name: .serverCredentialsRejected, object: nil)
         rebuildServerAppsMenu()
         // Tell the App Intents layer how this app opens a server app, before anything can ask it to. An intent run
         // from Spotlight or Siri while Cirruscope was not running launches it and reaches `EntityOpening` on the
         // way, which may be before this line; that request is latched rather than dropped, and installing here is
-        // what serves it.
+        // what serves it. A clicked server notification is opened through the same opener, as a page.
         EntityOpening.shared.install { [weak self] request in
             switch request {
                 case let .serverApp(app):
@@ -180,10 +179,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        let credentials: Credentials?
+        let storedCredentials: Credentials?
 
         do {
-            credentials = try Keychain.storedCredentials(for: serverAddress)
+            storedCredentials = try Keychain.storedCredentials(for: serverAddress)
         } catch {
             // The Keychain refused the read, which says nothing about whether the credential is there: ask for a
             // sign-in, which replaces it, rather than sign out what may be a working account.
@@ -192,7 +191,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        guard credentials != nil else {
+        guard let credentials = storedCredentials else {
             // Credentials the move in `applicationWillFinishLaunching(_:)` could not carry across, a TestFlight build
             // whose prompt was denied among them, are still in the file-based Keychain. That is a move to try again on
             // the next launch rather than a sign-out that did not finish, and signing out would delete them.
@@ -266,8 +265,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                             return
                         }
 
-                        // Begin (or restart) tracking unread notifications for the Dock badge and banners.
-                        NotificationMonitor.shared.start(for: server, capabilities: capabilities)
+                        // The notifications endpoint exists only while the server's notifications app is enabled,
+                        // which an authenticated validation can tell in advance, sparing a request that would 404.
+                        guard capabilities.contains(Notifications.self) else {
+                            logger.notice("Notifications capability absent; not starting the notification monitor")
+                            NotificationMonitor.shared.stop()
+                            return
+                        }
+
+                        startNotificationMonitor(for: ServerAccount(server: serverAddress, credentials: credentials))
 
                     case let .unsupported(capabilities):
                         let version = capabilities.version.string
@@ -317,7 +323,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// `requireSignIn()` signs out because the server rejected the stored credentials, alerts the user, and returns the app to the sign-in screen.
     ///
-    /// `presentInitialWindow(forLaunch:)` calls it when validation reports the stored app password was revoked, the `serverCredentialsRejected` observer calls it when `NotificationMonitor`'s event stream detects the same during a session, and `WebViewController+SilentRetry` calls it when the server answered HTTP 401 to the check of the app password the web view asks for whenever it suspects that password was refused. In every case the app is signing the user out on its own initiative rather than because the user asked to, so — unlike `logOut()` — it shows an alert explaining why before presenting the sign-in screen. It stops the monitor, closes any web windows left on the now-unusable server, clears the web view's site data, signs out through `AccountStore.disconnect()` exactly as `logOut()` does, and presents `ServerAddressWindowController`; the keyboard shortcuts and appearance settings, which belong to the device, survive it as they survive any sign-out. It does not attempt to revoke the app password: the server has already rejected it, so revoking it again would be pointless.
+    /// `presentInitialWindow(forLaunch:)` calls it when validation reports the stored app password was revoked, the notification monitor calls it when a fetch or its event stream is refused the app password during a session, and `WebViewController+SilentRetry` calls it when the server answered HTTP 401 to the check of the app password the web view asks for whenever it suspects that password was refused. In every case the app is signing the user out on its own initiative rather than because the user asked to, so — unlike `logOut()` — it shows an alert explaining why before presenting the sign-in screen. It stops the monitor, closes any web windows left on the now-unusable server, clears the web view's site data, signs out through `AccountStore.disconnect()` exactly as `logOut()` does, and presents `ServerAddressWindowController`; the keyboard shortcuts and appearance settings, which belong to the device, survive it as they survive any sign-out. It does not attempt to revoke the app password: the server has already rejected it, so revoking it again would be pointless.
     func requireSignIn() {
         logger.notice("Credentials rejected; signing out and requiring sign-in")
         signOutLocally()
@@ -330,12 +336,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         presentSignInWindow()
     }
 
-    /// `signOutLocally()` is the part every sign-out shares: it stops the notification monitor, withdraws every notification the app delivered, closes every web window, clears the web view's site data and signs out through `AccountStore.disconnect()`.
+    /// `signOutLocally()` is the part every sign-out shares: it stops the notification monitor, closes every web window, clears the web view's site data and signs out through `AccountStore.disconnect()`, which also withdraws every notification the app delivered.
     ///
     /// `logOut()`, `requireSignIn()` and `presentInitialWindow(forLaunch:)`'s missing-credentials branch all call it, so that no sign-out leaves a window open on a server the store no longer names, where the navigation delegate would stop confining it, or a monitor polling with credentials that are gone.
     private func signOutLocally() {
         NotificationMonitor.shared.stop()
-        UserNotifier.shared.withdrawAll()
         closeWebViewWindows()
 
         WKWebsiteDataStore.default().removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast) {
@@ -367,16 +372,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         AccountStore.shared.connect(to: account.server)
     }
 
-    /// `serverCredentialsRejected()` returns the app to sign-in when `NotificationMonitor` reports its stream was rejected because the stored app password was revoked.
-    @objc
-    private func serverCredentialsRejected() {
-        logger.notice("Notification monitor reported rejected credentials")
-        requireSignIn()
+    /// `startNotificationMonitor(for:)` starts watching `account`'s notifications, signing out with an explanation should the server refuse its app password.
+    ///
+    /// `presentInitialWindow(forLaunch:)` calls it once a server is validated and `ServerAddressViewController` once a sign-in succeeds, so the Dock badge and Notification Center follow a fresh sign-in without waiting for the next launch.
+    /// The Mac signs out on the server's refusal at once, as it always has; the iPhone confirms the refusal with the server first.
+    /// The refusal reaches the handler a turn later, so it is asked again whether the refused account is still the one signed in, as every other caller of `requireSignIn()` asks: a validation or a web view refused the same app password may have signed out and said so first.
+    func startNotificationMonitor(for account: ServerAccount) {
+        NotificationMonitor.shared.start(for: account) { [weak self] refused in
+            guard ServerConnection.isStillSignedIn(at: refused.server, as: refused.credentials) else {
+                self?.logger.notice("The notification monitor was refused an app password that is no longer the one signed in; not asking for a new sign-in")
+                return
+            }
+
+            self?.logger.notice("The notification monitor was refused the app password; requiring sign-in")
+            self?.requireSignIn()
+        }
     }
 
     /// `hasOpenWebWindow` is `true` while at least one web window is open, including any AppKit restored at launch.
     ///
-    /// `presentInitialWindow(forLaunch:)` reads it at launch to avoid opening a duplicate window when AppKit already restored one, and `NotificationMonitor` reads it to suppress its own banners while the embedded web interface can surface its own.
+    /// `presentInitialWindow(forLaunch:)` reads it at launch to avoid opening a duplicate window when AppKit already restored one, and the notification monitor's `shared` instance reads it to withhold the server's notifications while the embedded web interface can surface its own.
     var hasOpenWebWindow: Bool {
         windowControllers.contains { $0 is WebWindowController }
     }
@@ -406,7 +421,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// `presentWebViewWindow(targetURL:)` opens and tracks a web window, loading `targetURL` when given or `AccountStore.serverAddress` otherwise.
     ///
-    /// `presentInitialWindow(forLaunch:)` and `ServerAddressViewController` open the root window through it, and `openServerApp(_:)`, a page an intent or a Spotlight result asks for, a clicked server notification and a page's own request for a new window open theirs through it too, so every web window is created, cascaded, and retained the same way.
+    /// `presentInitialWindow(forLaunch:)` and `ServerAddressViewController` open the root window through it, and `openServerApp(_:)`, a page an intent, a Spotlight result or a clicked server notification asks for through `EntityOpening`, and a page's own request for a new window open theirs through it too, so every web window is created, cascaded, and retained the same way.
     ///
     /// Being the one place every web window is created is also what makes it the one place the remembered size is applied (issue #82): `WebWindowFrame.applySize(to:)` resizes the window before `present(windowController:sender:)` cascades it, so the cascade offsets the origin and leaves that size alone. Windows AppKit restores at launch bypass this method entirely and keep the frame AppKit saved for each of them.
     func presentWebViewWindow(targetURL: URL? = nil) {

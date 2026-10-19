@@ -7,14 +7,14 @@ import Rainmaker
 
 /// `UnreadNotifications` fetches the notifications the connected server still has queued for the user, and reports what that means for the app icon badge.
 ///
-/// It is the one place the app asks a server how many notifications are unread, and it is deliberately stateless: it takes nothing but a reason to log the fetch under, resolves the account from `Keychain` itself, and answers with a value. That is what lets the iOS background refresh — which runs in a process with no store, no view hierarchy, and nothing restored but the Keychain — call exactly the code the foreground calls, instead of a second implementation free to drift from it.
+/// It is the one place the app asks a server for its notifications, and it is deliberately stateless: it takes an account, or resolves one from `Keychain` itself, and answers with a value. That is what lets the iOS background refresh — which runs in a process with no store, no view hierarchy, and nothing restored but the Keychain — call exactly the code both apps' live monitors call, instead of a second implementation free to drift from it.
 /// Everything here is `nonisolated` and nothing it touches is main-actor-bound, which is the property the background path depends on; see AGENTS.md → Concurrency.
-/// There is no read/unread flag on a Nextcloud notification: the server returns exactly the ones still queued, so their count *is* the unread count. macOS reads them the same way in `NotificationMonitor`.
+/// There is no read/unread flag on a Nextcloud notification: the server returns exactly the ones still queued, so their count *is* the unread count.
 enum UnreadNotifications {
-    /// `Outcome` is the closed set of results a fetch can have, carrying the notifications themselves only in the one case where there are any to carry.
+    /// `Outcome` is the closed set of results a fetch can have, carrying the notifications, and the account they were fetched as, only in the one case where there are any to carry.
     enum Outcome: Sendable {
-        /// `fetched` carries the notifications currently queued, which is the empty array when there are none.
-        case fetched([NotificationItem])
+        /// `fetched` carries the notifications currently queued, which is the empty array when there are none, and the account they were fetched as, which was still the signed-in one when the answer arrived.
+        case fetched([ServerNotificationTransferObject], account: ServerAccount)
 
         /// `noAccount` reports that no usable credentials are stored, so there is no server to ask, or that the account a fetch asked for is no longer the configured one by the time it was answered.
         case noAccount
@@ -22,9 +22,9 @@ enum UnreadNotifications {
         /// `endpointUnavailable` reports the `404` an instance answers while its notifications app is absent or disabled.
         case endpointUnavailable
 
-        /// `credentialsRejected` reports that the server answered the notifications request with HTTP 401, refusing the stored app password.
+        /// `credentialsRejected` reports that the server answered the notifications request with HTTP 401, refusing the app password it was asked with.
         ///
-        /// It is the server's word about the account this fetch resolved for itself, which is why the iOS foreground asks `ServerConnection.verifyAppPassword(at:as:)` again with the account it holds before signing out on it.
+        /// It is the server's word about the account this fetch was made as, which is why the iOS foreground asks `ServerConnection.verifyAppPassword(at:as:)` again before signing out on it.
         case credentialsRejected
 
         /// `cancelled` reports that the fetch was cancelled before it finished, which is what a background task running out of its allotted time looks like from in here.
@@ -35,12 +35,13 @@ enum UnreadNotifications {
 
         /// `badgeUpdate` is what this outcome means for the app icon badge.
         ///
-        /// Deciding it here rather than at whichever call site happens to write the badge is what keeps the foreground and the background path from reaching different conclusions about the same answer, and it is the whole of the feature's logic that can be tested without a server.
+        /// Deciding it here rather than at whichever call site happens to write the badge is what keeps the live monitors and the background path from reaching different conclusions about the same answer.
         /// An outcome that learned nothing leaves the badge alone: a blocked request, a captive portal, or a background run that ran out of time must not read to the user as "everything was read". An outcome that learned there is nothing to count clears it, which covers a signed-out app, a refused app password, and an instance whose notifications app was switched off.
+        /// Nothing is clamped here. A count comes from an array and cannot be negative, and the lower bound `setBadgeCount(_:)` insists on belongs with the call that would fail without it.
         var badgeUpdate: BadgeUpdate {
             switch self {
-                case let .fetched(items):
-                    UnreadNotifications.badgeUpdate(forFetchedCount: items.count)
+                case let .fetched(items, _):
+                    .set(items.count)
 
                 case .noAccount, .endpointUnavailable, .credentialsRejected:
                     .clear
@@ -66,25 +67,11 @@ enum UnreadNotifications {
     /// `logger` records every fetch under the `UnreadNotifications` category.
     static let logger = Logger(for: UnreadNotifications.self)
 
-    /// `badgeUpdate(forFetchedCount:)` is what a fetch that reached the server means for the badge: show exactly what it found.
+    /// `fetch(reason:)` asks the connected server for the notifications queued for the user, resolving the account from the Keychain, and reports what came back.
     ///
-    /// It is a function of its own rather than a line inside `Outcome.badgeUpdate` so that it can be tested. Neither test target links Rainmaker — `ServerAddressEndpointDerivationTests` says so and works around it the same way — so a test can name `Outcome` but cannot build a `NotificationItem` to put in its `fetched` case, and this is the half of that mapping which actually has a rule in it.
-    /// Nothing is clamped here. A count comes from an array and cannot be negative, and the lower bound `setBadgeCount(_:)` insists on belongs with the call that would fail without it.
-    static func badgeUpdate(forFetchedCount count: Int) -> BadgeUpdate {
-        .set(count)
-    }
-
-    /// `fetch(reason:)` asks the connected server for the notifications queued for the user, reporting what came back.
-    ///
-    /// `reason` names which half of the app asked — `"foreground"` or `"background"` — and appears in every line this logs, because the two can overlap: a background run started while the app was away is still in flight when the user brings the app back and the foreground refresh begins beside it. A `StaticString` is used so the value prints in the clear in the log store rather than as `<private>`.
-    /// The account is resolved through `Keychain.storedAccounts().first`, exactly as `Store.restored()` resolves it, rather than taken as a parameter. That is not indirection for its own sake: the background path has no store to ask, a `Rainmaker.Server` is then built and used entirely inside this one function so it never crosses an isolation boundary, and the foreground path pays one Keychain read to be provably running the same code.
-    /// It never throws. Every failure is a case of `Outcome`, because both callers want to decide what a failure means for the badge rather than to handle an error.
+    /// The account is resolved through `Keychain.storedAccounts().first`, exactly as `Store.restored()` resolves it. The iPhone's background refresh calls this, having no store to ask and no account held anywhere else.
     /// A Keychain that refuses a read is `unreachable` rather than `noAccount`, because it says nothing about whether anybody is signed in, and `noAccount` would clear the badge and stop the background refresh until the app is next opened.
     static func fetch(reason: StaticString) async -> Outcome {
-        let started = ContinuousClock.now
-
-        logger.notice("Fetching unread notifications (\(reason))")
-
         let accounts: [ServerAccount]
 
         do {
@@ -99,35 +86,46 @@ enum UnreadNotifications {
             return .noAccount
         }
 
-        guard let server = ServerConnection.authenticated(address: account.server) else {
-            // The enumeration above has just read these very credentials, so failing to read them again is the
-            // Keychain refusing, or a sign-out landing in between, which clears the badge itself.
-            logger.error("The credentials just enumerated could not be read again, so there is nothing to fetch with (\(reason))")
-            return .unreachable
-        }
+        return await fetch(as: account, reason: reason, routine: false)
+    }
+
+    /// `fetch(as:reason:routine:)` asks the server `account` signs in to for the notifications queued for the user, and reports what came back.
+    ///
+    /// `reason` names which part of the app asked — `"monitor"` or `"background"` — and appears in every line this logs, because the two can overlap: a background run started while the app was away is still in flight when the user brings the app back and the live monitor begins beside it. A `StaticString` is used so the value prints in the clear in the log store rather than as `<private>`.
+    /// `routine` moves the lines a successful fetch writes to `.debug`, for the monitor's passes, which a server without push makes every thirty seconds; a failure is logged at `.notice` or above whatever it says.
+    /// A `Rainmaker.Server` is built and used entirely inside this one function, so it never crosses an isolation boundary.
+    /// It never throws. Every failure is a case of `Outcome`, because every caller wants to decide what a failure means rather than to handle an error.
+    static func fetch(as account: ServerAccount, reason: StaticString, routine: Bool) async -> Outcome {
+        let started = ContinuousClock.now
+        let server = ServerConnection.authenticated(account)
+
+        logger.log(level: routine ? .debug : .default, "Fetching unread notifications (\(reason))")
 
         do {
             let items = try await server.notifications()
 
             // A sign-out does not wait for a fetch under way, and the app password is revoked without waiting either,
             // so this can succeed for an account that is gone; publishing it would put that account's count back on
-            // the app icon after the sign-out cleared it.
-            let configured: [ServerAccount]
+            // the app icon after the sign-out cleared it, and its notifications back in Notification Center.
+            let storedCredentials: Credentials?
 
             do {
-                configured = try Keychain.storedAccounts()
+                storedCredentials = try Keychain.storedCredentials(for: account.server)
             } catch {
                 logger.error("The Keychain could not be read after the fetch, so whether its account is still configured is unknown; discarding it (\(reason)): \(error.localizedDescription, privacy: .public)")
                 return .unreachable
             }
 
-            guard configured.first == account else {
+            guard storedCredentials == account.credentials else {
                 logger.notice("Fetched unread notifications for an account that is no longer the configured one; discarding them (\(reason))")
                 return .noAccount
             }
 
-            logger.notice("Fetched \(items.count, privacy: .public) unread notification(s) in \(Self.milliseconds(since: started), privacy: .public) ms (\(reason))")
-            return .fetched(items)
+            logger.log(level: routine ? .debug : .default, "Fetched \(items.count, privacy: .public) unread notification(s) in \(Self.milliseconds(since: started), privacy: .public) ms (\(reason))")
+
+            let notifications = items.map { ServerNotificationTransferObject(id: $0.id, app: $0.app, creation: $0.creation, subject: $0.subject, message: $0.message, link: $0.link) }
+
+            return .fetched(notifications, account: account)
         } catch is CancellationError {
             logger.error("Fetching unread notifications was cancelled after \(Self.milliseconds(since: started), privacy: .public) ms (\(reason))")
             return .cancelled
@@ -140,7 +138,7 @@ enum UnreadNotifications {
             logger.notice("The notifications endpoint answered 404 after \(Self.milliseconds(since: started), privacy: .public) ms, so the notifications app is absent or disabled (\(reason))")
             return .endpointUnavailable
         } catch RainmakerError.credentialsRequired, RainmakerError.unexpectedStatus(code: 401) {
-            logger.notice("The stored app password was rejected after \(Self.milliseconds(since: started), privacy: .public) ms (\(reason))")
+            logger.notice("The app password was rejected after \(Self.milliseconds(since: started), privacy: .public) ms (\(reason))")
             return .credentialsRejected
         } catch {
             logger.notice("Could not fetch unread notifications after \(Self.milliseconds(since: started), privacy: .public) ms (\(reason)): \(error.localizedDescription)")

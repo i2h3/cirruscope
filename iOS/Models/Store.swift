@@ -10,7 +10,7 @@ import WebKit
 ///
 /// The observable state of the iOS app, which owns the connected account and the `Rainmaker.Server` built from it.
 ///
-/// It holds a projection of the app list `AccountStore` has persisted and the unread notifications the server still has queued, because SwiftUI observes this object rather than the store.
+/// It holds a projection of the app list `AccountStore` has persisted, because SwiftUI observes this object rather than the store, and starts the notification monitor for the account it holds, whose unread count it passes on.
 /// It decides which request may open a server app, more than one menu opening one and what may carry the app password not being a rule to hold twice.
 /// It runs the app's two sign-outs: `logout()`, which the user asks for and which revokes the app password on the server, and `requireSignIn()`, which the app makes on its own once the server refuses the app password, and which the sign-in screen then explains.
 ///
@@ -35,28 +35,18 @@ class Store {
     var apps: [ServerAppTransferObject]
 
     ///
-    /// The notifications the connected server still has queued for the user.
+    /// How many notifications the connected server still has queued for the user, as the notification monitor last heard.
     ///
-    /// Not persisted, deliberately: the server is the only record of these, and nothing in the app needs them to outlive its own process. They are kept for as long as the app runs so the account menu can say how many there are and, in time, list them. The background refresh keeps none of this — it has no store at all — and writes the badge from the same fetch before discarding what came back.
-    /// There is no read/unread flag on a Nextcloud notification: the server returns exactly the ones still queued, so this array is the unread set.
-    ///
-    private(set) var unreadNotifications: [NotificationItem] = []
-
-    ///
-    /// How many notifications the connected server still has queued for the user.
-    ///
-    /// Derived rather than stored, so it cannot come to disagree with the array it counts.
+    /// Read through rather than copied, so it cannot come to disagree with the monitor; the monitor is observable, so a view reading this is redrawn when the count changes.
     ///
     var unreadNotificationCount: Int {
-        unreadNotifications.count
+        NotificationMonitor.shared.unreadCount
     }
 
     ///
-    /// Whether a refresh of the unread notifications is already in flight, so a second one does not start beside it.
+    /// Whether the server is being asked about the app password after the notification monitor was refused it, so a second refusal does not start a second check beside it.
     ///
-    /// Returning to the foreground triggers a refresh, and that happens more often than a fetch takes — pulling Notification Center down and letting it go is one round trip of it — so without this the app would run overlapping requests whose answers could land in either order.
-    ///
-    private var isRefreshingUnreadNotifications = false
+    private var isConfirmingRefusedAppPassword = false
 
     ///
     /// Whether the app signed the user out on its own initiative rather than because the user asked it to.
@@ -98,10 +88,9 @@ class Store {
     ///
     /// The app itself uses `restored()` instead; this initializer is what previews and tests use, so they cannot pick up whatever credentials happen to sit in the Keychain of the machine they run on.
     ///
-    init(account: ServerAccount? = nil, apps: [ServerAppTransferObject] = [], notifications: [NotificationItem] = []) {
+    init(account: ServerAccount? = nil, apps: [ServerAppTransferObject] = []) {
         self.account = account
         self.apps = apps
-        unreadNotifications = notifications
 
         server = account.flatMap { ServerConnection.authenticated(address: $0.server) }
 
@@ -171,65 +160,54 @@ class Store {
     }
 
     ///
-    /// Fetch the notifications the server has queued for the user, publish them, and update the app icon badge.
+    /// Start watching the account's notifications, or stop watching when there is no account.
     ///
-    /// The shape is `updateApps()`': everything decidable without the network is decided here and synchronously, and only the network half goes to a `Task`. The fetch is `UnreadNotifications.fetch(reason:)` — the very call the background refresh makes, with no store involved — so the two cannot arrive at different counts, and the badge is written from the same decision whichever path produced it.
-    /// Having no account is deliberately not an early exit. A signed-out app still has a badge to clear, and letting the shared fetch report that there is no account is what clears it without a second rule about when clearing is due.
-    /// Only a fetch that actually reached the server replaces what is published. A cancelled or failed one leaves the array exactly as it stands, for the same reason it leaves the badge alone: a network blip must not read as "everything was read".
-    /// A fetch the server refused with HTTP 401 goes on to `confirmRefusedAppPassword()`, which signs out once the server confirms the refusal. This is the foreground's job alone: the background refresh has no way to say why it signed anybody out, so it leaves that to the refresh the next activation runs.
+    /// `iOSApp` calls it whenever the app comes to the front and `ServerAddressView` once a sign-in succeeds; starting again for the account already watched only fetches once more, so neither has to know whether the monitor is running.
+    /// A refusal of the app password goes on to `confirmRefusedAppPassword(askedAbout:)`, which signs out once the server confirms it. That is the foreground's job alone: the background refresh has no way to say why it signed anybody out, so it leaves that to the monitor the next activation starts.
     ///
-    func refreshUnreadNotifications() {
-        guard isRefreshingUnreadNotifications == false else {
-            logger.debug("A refresh of the unread notifications is already in flight")
+    func startNotificationMonitor() {
+        guard let account else {
+            NotificationMonitor.shared.stop()
             return
         }
 
-        isRefreshingUnreadNotifications = true
-
-        Task {
-            defer {
-                isRefreshingUnreadNotifications = false
-            }
-
-            let outcome = await UnreadNotifications.fetch(reason: "foreground")
-
-            switch outcome {
-                case let .fetched(items):
-                    unreadNotifications = items
-
-                case .noAccount, .endpointUnavailable, .credentialsRejected:
-                    unreadNotifications = []
-
-                case .cancelled, .unreachable:
-                    break
-            }
-
-            await AppIconBadge.apply(outcome.badgeUpdate)
-
-            if case .credentialsRejected = outcome {
-                await confirmRefusedAppPassword()
+        NotificationMonitor.shared.start(for: account) { [weak self] refused in
+            Task {
+                await self?.confirmRefusedAppPassword(askedAbout: refused)
             }
         }
     }
 
     ///
-    /// Ask the server whether it still accepts the account's app password, after the notifications endpoint refused it, and sign out if it does not.
+    /// Fetch the notifications once more, for Nextcloud's notifications panel having just closed, which is a moment notifications may just have been dismissed in.
     ///
-    /// The refusal is the server's own word, but about the account `UnreadNotifications.fetch(reason:)` resolved from the Keychain for itself; asking again with this store's own account is what makes the sign-out about the credentials actually in use, through the same check both web views make before they sign anybody out.
-    /// It runs inside the refresh, so `isRefreshingUnreadNotifications` keeps a second refresh, and with it a second check, from starting beside it.
-    /// Only `AppPasswordVerdict.rejected` for the account still signed in when the answer arrives signs out, and every other answer leaves the account as it is, a network that failed in between included.
+    func refreshUnreadNotifications() {
+        NotificationMonitor.shared.refreshNow()
+    }
+
     ///
-    private func confirmRefusedAppPassword() async {
-        guard let account else {
-            logger.notice("The notifications endpoint refused the stored app password, but no account is signed in any more; nothing to confirm")
+    /// Ask the server whether it still accepts the app password the notification monitor was refused, and sign out if it does not.
+    ///
+    /// The refusal is the server's own word about one request, and asking once more through the check both web views make before they sign anybody out is what keeps a single odd answer from costing the user their session.
+    /// Only `AppPasswordVerdict.rejected` for the account still signed in when the answer arrives signs out, and every other answer leaves the account as it is, a network that failed in between included; the monitor then stays suspended until the next activation starts it again.
+    ///
+    private func confirmRefusedAppPassword(askedAbout refused: ServerAccount) async {
+        guard isConfirmingRefusedAppPassword == false else {
+            logger.debug("The server is already being asked about the app password")
             return
         }
 
-        logger.notice("The notifications endpoint refused the stored app password; asking the server directly before signing out")
+        isConfirmingRefusedAppPassword = true
 
-        let verdict = await ServerConnection.verifyAppPassword(at: account.server, as: account.credentials)
+        defer {
+            isConfirmingRefusedAppPassword = false
+        }
 
-        guard verdict.signsOut(askedAbout: account, signedIn: self.account) else {
+        logger.notice("The notification monitor was refused the app password; asking the server directly before signing out")
+
+        let verdict = await ServerConnection.verifyAppPassword(at: refused.server, as: refused.credentials)
+
+        guard verdict.signsOut(askedAbout: refused, signedIn: account) else {
             logger.notice("Keeping the account: the server's answer was \(String(describing: verdict), privacy: .public), or the account changed while it was being asked")
             return
         }
@@ -276,7 +254,7 @@ class Store {
     /// The app password is revoked on the server first, so the credential this device is about to forget is invalidated rather than left standing in the account's device list. That request is fire-and-forget: revocation is fail-open — an unreachable server must not be able to keep someone signed in locally — which is the same bargain `AppDelegate.logOut()` strikes on macOS. Everything after it is `discardSession()`, which is also what `requireSignIn()` does; revoking is the whole of the difference between the two.
     ///
     func logout() {
-        logger.notice("Logging out; revoking the app password on the server, clearing the web view's site data, disarming the background refresh, clearing the app icon badge, and clearing the stored credentials")
+        logger.notice("Logging out; revoking the app password on the server, clearing the web view's site data, disarming the background refresh, stopping the notification monitor, and signing out of the store, which clears the stored credentials and withdraws every notification")
 
         if let server {
             Task {
@@ -295,11 +273,11 @@ class Store {
     /// The counterpart of `logout()` for the case where the app is signing the user out rather than the user.
     /// `NextcloudNavigationDecider` calls it only once the server has answered HTTP 401 to an authenticated request asking whether it still accepts the stored app password, which is the one answer that rules out an expired browser session and names the credential itself as what is being refused.
     /// A page re-requested with the stored app password landing back on the server's sign-in form is not reason enough, since the stale page's own script produces exactly that while the server still accepts the password.
-    /// `refreshUnreadNotifications()` calls it too, once the notifications endpoint has refused the app password and the same check has confirmed the refusal for the account still signed in.
+    /// `confirmRefusedAppPassword(askedAbout:)` calls it too, once the notification monitor has been refused the app password and the same check has confirmed the refusal for the account still signed in.
     /// Unlike `logout()` it does not revoke the app password: the server has just rejected it, so there is nothing left to revoke and the request would only fail. What it adds instead is `wasSignedOutBySystem`, which is what makes the sign-in screen explain why it is there. macOS strikes the same bargain in `AppDelegate.requireSignIn()`.
     ///
     func requireSignIn() {
-        logger.notice("The stored app password is no longer accepted; clearing the web view's site data, disarming the background refresh, clearing the app icon badge, and clearing the stored credentials without revoking them")
+        logger.notice("The stored app password is no longer accepted; clearing the web view's site data, disarming the background refresh, stopping the notification monitor, and signing out of the store without revoking the app password")
 
         wasSignedOutBySystem = true
 
@@ -316,7 +294,7 @@ class Store {
     ///
     /// Forget everything this device holds about the connected account, which is the half `logout()` and `requireSignIn()` have in common.
     ///
-    /// The web view's site data goes with the credentials, so a later account does not inherit a session from this one, and so does everything `AccountStore.disconnect()` forgets, the cached avatars of everyone whose activity this account could see included. The background refresh is disarmed before the credentials it counts with are gone, and the app icon badge is cleared as the session ends, so the home screen does not keep advertising a number from a session that no longer exists. Neither is strictly load-bearing — the next foreground refresh would find no account and clear the badge anyway — but a badge that outlives a sign-out even briefly is the kind of thing a user reports as the app still being logged in.
+    /// The web view's site data goes with the credentials, so a later account does not inherit a session from this one, and so does everything `AccountStore.disconnect()` forgets, the cached avatars of everyone whose activity this account could see included. The background refresh is disarmed before the credentials it counts with are gone, and the notification monitor is stopped, which clears the app icon badge, so the home screen does not keep advertising a number from a session that no longer exists; a badge that outlives a sign-out even briefly is the kind of thing a user reports as the app still being logged in. The notifications already delivered are withdrawn by the store's sign-out, which every sign-out of either app runs.
     ///
     private func discardSession() {
         WKWebsiteDataStore.default().removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast) {
@@ -324,22 +302,18 @@ class Store {
         }
 
         NotificationRefreshTask.cancelRequest()
-
-        Task {
-            await AppIconBadge.apply(.clear)
-        }
+        NotificationMonitor.shared.stop()
 
         // The credentials, the persisted account and every cache go through the store's own sign-out, which every one of
         // the Mac's sign-outs runs too, so the list of what a sign-out forgets cannot drift between them. What the
         // store holds about the server — its address, the app list, and every other domain hanging off the same
         // `Account` record — is no secret, but all of it describes a server this device is no longer signed in to,
         // in a file that is not encrypted. Branding outliving a sign-out would only be untidy, but the avatar caches
-        // hold photographs of the people on that server and the widget's saved feed names their files, and those
-        // must not survive the account that was allowed to see them.
+        // hold photographs of the people on that server, the widget's saved feed names their files, and the
+        // delivered notifications name both, and those must not survive the account that was allowed to see them.
         AccountStore.shared.disconnect()
 
         apps = []
-        unreadNotifications = []
         account = nil
     }
 }

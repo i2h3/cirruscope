@@ -148,7 +148,7 @@ And having a second target compile the same folders is the only thing that keeps
 That is why a change to either shared folder is built and tested against the iOS app as well as the Mac app.
 
 What the app does today is sign in through Nextcloud's Login Flow v2, restore its account from the Keychain at launch, and present the web interface signed in, signing back in silently when the browser session behind it lapses and revoking the app password on the server when the user signs out.
-It lists the server apps as the navigation bar's title menu and, on an iPad, in the View menu of the menu bar, badges its icon with the unread-notification count from both the foreground and a background refresh, and gives a call in Talk the camera and the microphone.
+It lists the server apps as the navigation bar's title menu and, on an iPad, in the View menu of the menu bar, posts the server's notifications to Notification Center from a background refresh, keeps the unread count and the icon badge current while it is in front, and gives a call in Talk the camera and the microphone.
 It persists the account's data through the same SwiftData stack as the Mac app, and offers the same App Intents and Spotlight results over it.
 The consequence for the codebase is the part that carries design weight, and it is why this entry says so: shared code is organized for two consumers by default rather than generalized on demand, which is what `Core/` and `Cirruscope/` are for and why domain logic landing in `macOS/` is the choice that needs an argument.
 None of this changes the public story, and deliberately so: the [FAQ on the website](./Website/support.html) and its German, French and Spanish translations still answer "Will there be an iOS or iPadOS version?" with "Not right now", because this entry describes how the work is organized, not what has been promised.
@@ -413,7 +413,7 @@ What that code *decides* is pulled out of it wherever it can be, and is then nat
 Whether an address is the connected server's to display or the system's to open, whether it is one of the server's sign-in or sign-out routes, whether a navigation to the sign-out route is the user's, and what a web view does next while it works through a lapsed session are each answered by a value type that takes everything it needs as arguments, the time included, and the suites in [`Tests/WebView/`](./Tests/WebView/) cover all four against both app modules.
 
 Tests are therefore expected wherever logic is Swift-only and server-free, including a decision a web view acts on, and deliberately absent around the code that hands those decisions to WebKit — a deliberate scope, not a backlog.
-Two store methods sit on the hand-verified side of that line despite being persistence code: the sign-out, `disconnect()`, empties the real caches, the widget's saved feed and the real Keychain and makes the real widget redraw, and `persist(theming:)` downloads over the network on every call, so both are verified by hand while the storage half of the first, `deleteAccount()`, is covered like everything else.
+Two store methods sit on the hand-verified side of that line despite being persistence code: the sign-out, `disconnect()`, empties the real caches, the widget's saved feed, the record of notifications already seen and the real Keychain, withdraws the real delivered notifications and makes the real widget redraw, and `persist(theming:)` downloads over the network on every call, so both are verified by hand while the storage half of the first, `deleteAccount()`, is covered like everything else.
 
 One habit comes out of the same work and generalizes: where the app depends on undocumented framework behaviour, the test measures the framework rather than restating the belief, so [`KeyEquivalentMatchingOracleTests`](./macOSTests/KeyboardShortcuts/KeyEquivalentMatchingOracleTests.swift) asks a real `NSMenu` what it matches and holds [`ShortcutMatching`](./macOS/ShortcutMatching.swift) to that answer.
 The same shape reaches into WebKit where no server is needed: [`SafariUserAgentProbe`](./iOSTests/WebView/SafariUserAgentProbe.swift) loads `about:blank` into a real `WebPage` so that [`SafariUserAgentTests`](./iOSTests/WebView/SafariUserAgentTests.swift) can assert against the user agent WebKit actually reports.
@@ -984,18 +984,17 @@ Asking the server's public capabilities, as `validate(_:)` does, proves nothing 
 ## Why does the iPhone sign out when the notifications endpoint refuses the app password, and only from the foreground?
 
 Because that refusal is the server's own word, and an app that keeps showing a signed-in account the server no longer accepts looks broken rather than careful.
-The Mac has always signed out on it, through `NotificationMonitor`.
-The iPhone only cleared its badge, and stayed signed in until the web view happened to notice, which, since the change described in the previous entry, it does only by asking the server anyway.
+The Mac has always signed out on it, through its notification monitor, and still does at once.
+The iPhone runs the same [`NotificationMonitor`](./Cirruscope/Notifications/NotificationMonitor.swift) while it is in front, and what a refusal leads to is the one thing the two apps hand it differently.
 
-The foreground refresh, `Store.refreshUnreadNotifications()`, therefore asks once more before it signs out.
-`UnreadNotifications.fetch(reason:)` resolves its account from the Keychain for itself, so its HTTP 401 is about the credentials it found there, not necessarily the ones the store holds.
-`ServerConnection.verifyAppPassword(at:as:)`, the check both web views make, is asked with the store's own account, and only [`AppPasswordVerdict.signsOut(askedAbout:signedIn:)`](./Core/Account/AppPasswordVerdict.swift) answering yes, a refusal of the account still signed in when the answer arrives, leads to `Store.requireSignIn()` and the alert that explains it.
-Anything else keeps the account, a network that failed between the two requests included.
+On the iPhone the monitor suspends itself and hands the refused account to `Store`, which asks once more before it signs out.
+`ServerConnection.verifyAppPassword(at:as:)`, the check both web views make, is asked with the very account the monitor was refused for, and only [`AppPasswordVerdict.signsOut(askedAbout:signedIn:)`](./Core/Account/AppPasswordVerdict.swift) answering yes, a refusal of the account still signed in when the answer arrives, leads to `Store.requireSignIn()` and the alert that explains it.
+Anything else keeps the account, a network that failed between the two requests included, and the monitor stays suspended until the app next comes to the front and starts it again.
 
 The background refresh signs nobody out.
 It runs on a schedule nobody watches, has no way to say why the account is gone, and touches no store by design, as [`NotificationRefreshTask`](./iOS/Notifications/NotificationRefreshTask.swift) records.
-What it does on a refusal is what it did before, clearing the badge and disarming itself, and the refresh the next activation runs meets the same refusal, confirms it and signs out with the explanation.
-Activation re-arms the background refresh before that refresh runs, so it stays armed whenever the refusal is not confirmed, and a confirmed refusal disarms it again as it signs out.
+What it does on a refusal is clear the badge and disarm itself, leaving the notifications already delivered for a sign-out to withdraw, and the monitor the next activation starts meets the same refusal, confirms it and signs out with the explanation.
+Activation re-arms the background refresh before that, so it stays armed whenever the refusal is not confirmed, and a confirmed refusal disarms it again as it signs out.
 The cost is that a revoked password is only acted on once the user opens the app, which is the first moment anything about the account is on screen anyway.
 
 ## Why does the app ignore the sign-out route when the page navigates there on its own?
@@ -1050,7 +1049,7 @@ Keeping only the keys Nextcloud's own storage library marks as persistent would 
 
 Because they are what the user set up on this Mac, and nothing about a session or a server is theirs to delete.
 
-A sign-out — the user's own Log Out, or the one the app performs when the server rejects its app password — deletes everything that came from the server: the account, its server apps, conversations, notes and collectives, the cached pictures, the widget's saved feed and the credentials.
+A sign-out — the user's own Log Out, or the one the app performs when the server rejects its app password — deletes everything that came from the server: the account, its server apps, conversations, notes and collectives, the cached pictures, the widget's saved feed, the record of notifications already seen and the credentials, and withdraws every notification the app delivered.
 That includes the app list, which a sign-out has no business keeping: menus offering a server nobody is signed in to are a bug, not a convenience.
 The keyboard shortcuts and the two appearance choices are different in kind, and the same on every sign-in, so having to set them up again after each one is the cost a sign-out must not impose.
 
@@ -1120,7 +1119,7 @@ Because the web view carries the account's session, and because a page shown ins
 
 The rule is [one shared decision](./Cirruscope/WebViewDestination.swift) on origin — scheme, host and port together.
 Host alone is not enough, and that is not theoretical: it was what both apps compared, so a plain-HTTP listener or a differently-ported service on the very machine the server runs on counted as the server, and could be loaded in a window that attaches the app password.
-The same comparison guards the `redirect_url` the sign-in retry follows, the link a notification banner opens, and the request a download is re-issued as.
+The same comparison guards the `redirect_url` the sign-in retry follows, the link a tapped notification opens in either app, and the request a download is re-issued as.
 It also decides which page either app gives the camera and the microphone without a prompt of the web view's own, in [`MediaCaptureDecision`](./Cirruscope/MediaCaptureDecision.swift), which on the Mac used to compare hosts as well.
 There it is asked of the frame requesting them as well as of the page, because a frame is not held to the navigation rule, and one from another origin can sit inside the server's own page.
 
@@ -1316,30 +1315,88 @@ The SDK says the system "may still hide the image" even when asked, and the app 
 And the Dock menu still shows nothing — the same factory builds it, and the Dock draws it out of process and drops the image whatever it is asked for.
 None of this is unit-tested: what AppKit and UIKit finally draw is not observable through a public API, so it is verified on screen.
 
-## Why does the iPhone's background refresh do nothing but update the app icon badge?
+## Why does the iPhone's background refresh post notifications, and keep nothing but a list of numbers?
 
-Because everything it does not do is one less thing that can fail where nobody can see it.
+Because the background refresh is the only moment the iPhone hears from the server while the app is closed, so it is where a new notification has to be posted, and because everything it does beyond that is one more thing that can fail where nobody can see it.
 A background launch gets a short, unpredictable slice of time on a schedule no one can force, with no debugger attached and no user watching, and the failure modes are all silent: an unarmed app is simply never woken again, and an app that overruns its slice is killed.
-What is left here is one HTTP GET and one integer — no persistence, no icon downloads, no web view, and no contact with `Store`, which is main-actor-bound while the job runs off the main actor.
+What is left here is one HTTP GET, the shared [`ServerNotificationDispatcher`](./Cirruscope/Notifications/ServerNotificationDispatcher.swift) acting on its answer, and one integer for the badge — no icon downloads, no web view, and no contact with `Store` or the account store, which are main-actor-bound while the job runs off the main actor.
 
-The requirement that the count not be persisted falls out of the same reasoning rather than fighting it.
-The server is the only record of these notifications; the foreground app keeps them for as long as it runs so the account menu can count them, and the background job keeps nothing at all, writing the badge from the fetch and discarding what came back.
+Posting needs to know what was posted before, and a process woken in the background starts with nothing in memory, so the one thing it keeps is a record of the notifications already seen: the account they belong to and their numbers, in a small file in the App Group container, never a subject, a message or a link.
+It is not in the account store, which the background job deliberately does not touch, and it is not Notification Center itself, because tapping a notification removes it from there without dismissing it on the server, so the next run would post it again.
+The record is written before anything is posted, so a run cut short while posting never posts the same notifications twice, and each fetch takes a ticket before it starts, so a background run finishing after the live monitor has already recorded a newer answer cannot overwrite it.
+Each notification is posted only while its account is still signed in, and a sign-out that lands while a run is posting is taken back by that run once it has posted, the sign-out having withdrawn everything and erased the record already.
 
 The scope is also what makes the feature verifiable.
-`BGTaskScheduler` refuses to schedule anything in the Simulator, so the scheduler itself can only be exercised on a device — but every other part of the path is the foreground refresh, which runs the same shared fetch and the same badge decision, and is fully verifiable in the Simulator.
+`BGTaskScheduler` refuses to schedule anything in the Simulator, so the scheduler itself can only be exercised on a device — but the fetch, the record and what is posted and withdrawn are the very code the live monitor runs in the Simulator, and every decision in between is a value the tests cover without a server.
 The cost accepted is that "iOS never ran the task" is not a fixable outcome, only a diagnosable one: whether a request was pending and whether a run started are logged separately, because the difference between those two is the difference between the system's judgement and our bug, and nothing else in the system distinguishes them.
+
+## Why does the iPhone fetch its notifications rather than have them pushed?
+
+Because a push needs a service between the server and Apple that holds a certificate for this app, and the one Nextcloud runs serves Nextcloud's own apps rather than a third-party one.
+Running such a service would mean operating infrastructure that sees when each user receives a notification, which the project does not want to do, and the privacy page promises that Cirruscope gets your notifications from your server itself, not through a push service.
+So the app carries no push entitlement, and the iPhone hears from the server only while it is in front, through the live monitor, and when the system wakes it for a background refresh.
+
+The cost is that delivery while the app is closed is best effort.
+The system wakes the app no sooner than fifteen minutes after the last refresh asked it to, often much later, not at all after the user force-quits the app, and less in Low Power Mode, so a notification can arrive in Notification Center long after the server raised it.
+The Mac does not have this problem only because it keeps running with no window open, where its monitor posts what arrives.
+
+## Why does the app remember which notifications it has seen, and why is the first look at an account silent?
+
+Because "new" means "not announced before", and only a record can say that across launches and across the iPhone's background processes.
+The record, kept by [`ServerNotificationLedger`](./Cirruscope/Notifications/ServerNotificationLedger.swift), is replaced by every fetch with what that fetch listed rather than added to, so it stays as small as the server's own list and needs no pruning.
+
+The first look at an account posts nothing and only records what it found: everything listed then was already waiting, and announcing all of it at once would bury the user in old news.
+That is the first fetch after a sign-in, after a fresh install, after the record could not be read, and the first launch of the Mac after updating to the release that introduced the record, which before it posted the whole queue whenever it started with no web window open.
+
+The server answers with its newest notifications only, so dismissing newer ones lets an older one move back into the answer, where it would look new to a plain comparison with the record.
+The server numbers notifications in the order it raises them, so a notification is posted only when its number is above the highest one ever recorded for the account, which also keeps one the server left out of a listing for a while, or the same list returning after an empty answer, from being announced again.
+When that rule is wrong a notification goes unannounced rather than many being announced at once, which is the failure the user is far more likely to forgive.
+
+The record names the account by its server and login name, never by the app password and never by the addressee a notification carries, which can differ from the login name; a record made for anybody else counts as none.
+Both apps keep it, so the Mac and the iPhone decide what is new the same way.
+
+## Why does Notification Center follow the server's list, and only a list the server actually returned?
+
+Because a notification left in Notification Center after it was dealt with in the web interface, or on another device, is a notification the user has to deal with twice.
+Every fetch that returns a list withdraws the delivered notifications that list no longer holds, which also withdraws ones that have fallen out of the newest part of the list the server answers with.
+A notification posted for another account is withdrawn whatever the list says, since it does not belong on screen at all once someone else is signed in.
+
+Only a list the server actually returned is followed.
+A refused app password, a missing notifications app or an unreachable server withdraws nothing, because none of them says the notifications were dealt with; a sign-out withdraws everything instead, since every notification delivered was about the account being signed out of.
+Notifications are grouped by the Nextcloud app that raised them, so a busy conversation does not bury a share.
+
+Dismissing a notification in Notification Center does not dismiss it on the server, because the app has no way yet to tell the server so; it stays recorded and is not posted again.
+Notifications delivered by a release that did not yet record their account are still recognized by their identifier, kept while the server lists them and withdrawn once it does not.
+
+## Why does the iPhone watch the server live only while it is in front, and banner nothing then?
+
+Because while the app is in front the web interface is on screen, and it shows the same notifications itself.
+The Mac makes the same call: its monitor posts only while no web window is open, since an open window raises the web interface's own notifications.
+So the iPhone runs the monitor while the app is active — the same stream the Mac uses, push where the server offers it and polling otherwise — keeping the unread count in the account menu and the icon badge live, and records what arrives as seen without posting it, so the background refresh does not announce it later either.
+A notification the background refresh happens to post while the app comes to the front is listed in Notification Center without a banner or a sound.
+
+The monitor is suspended as the app goes to the background, where the system would freeze its connection anyway, and resumed when it returns; the app being active is all it asks, so on an iPad beside another app in Stage Manager what arrives is recorded silently too.
+Watching costs the stream asking the server for its capabilities as it connects and every ten minutes while it polls, which is paid only while the app is in front.
+The iPhone asks permission for alerts and the badge and not for sounds, since no notification the app posts carries one.
+
+## Why does a tapped notification open only for the account it was posted for?
+
+Because a notification outlives the session it was posted in, and opening it loads its address with the app password of whoever is signed in.
+Each notification carries the server and login name of the account it was fetched as, and a tap is resolved by [`ServerNotificationTap`](./Cirruscope/Notifications/ServerNotificationTap.swift) against the account signed in when it arrives: one posted for somebody else opens nothing, and its address is proven again to stay on the signed-in server.
+A tap is then opened through `EntityOpening`, the route Spotlight and the Shortcuts app take, which holds it until a window can serve it when the tap launched the app, so both apps open a notification the way they open everything else.
 
 ## Why does iOS decide the notifications app is missing from a 404 rather than from the server's capabilities?
 
 Because the capability the Mac reads is not available to ask for at the moment iOS would ask.
-macOS validates a *credentialed* server at launch and hands the resulting `CapabilitySet` to `NotificationMonitor`, which gates on `contains(Notifications.self)`.
+macOS validates a *credentialed* server at launch, and `AppDelegate` starts the shared notification monitor only when the resulting `CapabilitySet` contains `Notifications`.
 iOS validates an *anonymous* server before Login Flow v2 and discards the result, and Nextcloud only advertises the `notifications` key to authenticated clients — so a check written that way would read false against every server, including working ones.
 
-`Store` does hold a credentialed server that could be asked, so the gate is reachable; it is declined because it would cost a `capabilities()` round trip on every launch and every background wake to answer a question the request being made already answers.
-`Server.notifications()` throws `notFound` when the app is absent or disabled, which is the same fact arriving for free.
+`Store` does hold a credentialed server that could be asked, so the gate is reachable; it is declined because it would cost a `capabilities()` round trip on every activation and every background wake to answer a question the request being made already answers.
+`Server.notifications()` throws `notFound` when the app is absent or disabled, which is the same fact arriving for free, and the Mac relies on it too after a fresh sign-in, which validated anonymously.
 
-The cost accepted is one wasted request per wake-up on an instance whose notifications app is switched off, forever — macOS latches that condition and stops asking, and iOS does not, because a background run may be a fresh process, so a latch held in memory would not reach the next run.
-A latch could be kept in the account store, but the background job deliberately persists nothing and touches no store (see "Why does the iPhone's background refresh do nothing but update the app icon badge?"), and nothing has measured whether one wasted GET a few times an hour is worth a stored flag that can itself go stale when an administrator switches the app back on.
+While the app is in front, the monitor latches that condition in memory and stops fetching until its stream connects again or it is started again.
+The background refresh does not latch it, because a background run may be a fresh process, so a latch held in memory would not reach the next run, and the cost accepted is one wasted request per wake-up on an instance whose notifications app is switched off, forever.
+The record of notifications already seen could hold such a flag, but nothing has measured whether one wasted GET a few times an hour is worth a stored flag that can itself go stale when an administrator switches the app back on (see "Why does the iPhone's background refresh post notifications, and keep nothing but a list of numbers?").
 It is one cheap GET at most a few times an hour, the badge ends up correct either way, and the 404 is logged so the situation reads as understood rather than as a malfunction.
 
 ## Why is Nextcloud's notifications panel revealed by a stylesheet rule rather than by an attribute the app sets?

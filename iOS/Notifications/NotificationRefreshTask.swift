@@ -6,9 +6,9 @@ import Foundation
 import os
 
 ///
-/// The background job iOS wakes the app for, which fetches the unread notification count, writes it to the app icon badge, and stops.
+/// The background job iOS wakes the app for, which fetches the notifications the server has queued, posts the new ones to Notification Center, withdraws those the server no longer lists, writes the count to the app icon badge, and stops.
 ///
-/// The scope is the design. A background launch gets a short, unpredictable slice of time on a schedule nobody can force, with no debugger attached and no user watching, so everything the app could do while awake and does not do here is one less thing that can fail invisibly: nothing is persisted, no icon is downloaded, no web view is built, no store is touched. What is left is one HTTP GET and one integer.
+/// The scope is the design. A background launch gets a short, unpredictable slice of time on a schedule nobody can force, with no debugger attached and no user watching, so everything the app could do while awake and does not do here is one less thing that can fail invisibly: no icon is downloaded, no web view is built, no store is touched. What is left is one HTTP GET, the shared dispatcher acting on its answer, and one integer; the only thing written is the dispatcher's small record of the notifications already seen, without which a process woken in the background could not tell a new notification from one it announced last time.
 /// Registration is SwiftUI's. `iOSApp` carries `.backgroundTask(.appRefresh(_:))`, which registers this identifier with `BGTaskScheduler` while the scene is being built — inside launch, which is the deadline registration has — and which also owns the expiration handler and the completion call that the manual `BGTaskScheduler.register` API leaves to its caller. Submitting the requests is not SwiftUI's, and that is what `submitRequest(reason:)` is for.
 /// Everything here logs at `.notice` or above, because `.debug` and `.info` are ephemeral and a run nobody watched leaves nothing else behind. See AGENTS.md → Logging and Diagnostics.
 ///
@@ -58,8 +58,9 @@ enum NotificationRefreshTask {
     ///
     /// A run is identified in the log by the process it ran in and a four-digit number drawn once at its start. The process identifier alone is not enough — a wake-up can be delivered to a process that is merely suspended rather than gone, so two runs can share one — and a counter is no better, since each background launch would start it at one again. A random number needs no shared state to maintain, prints in the clear where a string would be redacted, and is enough to pull one run out of an interleaved log by eye.
     /// The next request is submitted before any work is done, not after. An expiration, a throw, or a crash below must not cost the app its next wake-up, because an app with no pending request is never woken again, and that is the one way this feature dies without leaving a trace. The cost of getting it wrong the other way is one wasted round trip to the scheduler when the account turns out to be gone, which the branch below then withdraws.
-    /// A refused app password disarms the refresh and clears the badge, and signs nobody out. A run in the background has no way to say why it signed somebody out, which `Store.requireSignIn()` exists to do, and touches no store by design; the refresh the next activation runs meets the same refusal, confirms it with the server and signs out with the explanation. Activation re-arms this task before that refresh runs, so it stays armed whenever the refusal is not confirmed, and a confirmed one disarms it again as it signs out.
-    /// Cancellation is how expiration arrives: SwiftUI cancels the task this body runs in, so the fetch unwinds as cancelled and the badge is left alone. It is logged as an error because a run that keeps running out of time is exactly the thing worth finding in a log a week later.
+    /// A run is the one place new notifications are posted on the iPhone: the live monitor only records them as seen, the app being in front while it runs.
+    /// A refused app password disarms the refresh and clears the badge, and signs nobody out; the notifications already delivered stay until a sign-out withdraws them. A run in the background has no way to say why it signed somebody out, which `Store.requireSignIn()` exists to do, and touches no store by design; the refresh the next activation runs meets the same refusal, confirms it with the server and signs out with the explanation. Activation re-arms this task before that refresh runs, so it stays armed whenever the refusal is not confirmed, and a confirmed one disarms it again as it signs out.
+    /// Cancellation is how expiration arrives: SwiftUI cancels the task this body runs in, so the fetch unwinds as cancelled, or the dispatcher abandons the answer before recording it, and the badge is left alone; an expiry while posting is not honoured until posting ends, since the record already names what is being posted. It is logged as an error because a run that keeps running out of time is exactly the thing worth finding in a log a week later.
     ///
     static func run() async {
         let started = ContinuousClock.now
@@ -70,10 +71,13 @@ enum NotificationRefreshTask {
 
         submitRequest(reason: "re-arm")
 
-        await AppIconBadge.logAuthorizationState()
+        await NotificationAuthorization.logState(reason: "background")
 
+        let ticket = ServerNotificationDispatcher.issueTicket()
         let outcome = await UnreadNotifications.fetch(reason: "background")
-        await AppIconBadge.apply(outcome.badgeUpdate)
+        let delivery = await ServerNotificationDispatcher.deliver(outcome, ticket: ticket, mayPost: true, reason: "background", routine: false)
+
+        await AppIconBadge.apply(delivery.badgeUpdate(for: outcome))
 
         switch outcome {
             case .noAccount, .credentialsRejected:

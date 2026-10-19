@@ -11,7 +11,7 @@ This document explains them and does not repeat them.
 
 ## Why every build carries the entitlements
 
-The apps and the widget extension share their data through the App Group container (the store, the cached assets and the widget's last good feed) and their credentials through the Keychain access group.
+The apps and the widget extension share their data through the App Group container (the store, the cached assets, the widget's last good feed and the record of the server's notifications already seen) and their credentials through the Keychain access group.
 A build that cannot reach them is therefore not a degraded build of the app but a broken one, which is why there is no ad-hoc configuration and no runtime fallback.
 
 This is not theoretical.

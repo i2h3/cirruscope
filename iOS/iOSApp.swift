@@ -7,7 +7,7 @@ import SwiftUI
 ///
 /// The iOS app itself, which builds the app state from the credentials the device already holds and hands it to every window.
 ///
-/// It attaches `ServerAppCommands`, which lists the server apps in the iPad's View menu, registers the background refresh of the unread-notification badge, and re-arms it on activation.
+/// It attaches `ServerAppCommands`, which lists the server apps in the iPad's View menu, installs the notification center delegate before launch finishes, registers the background refresh that posts new notifications and badges the app icon, re-arms it on activation, and runs the live notification monitor while the app is in front.
 ///
 @main
 struct iOSApp: App {
@@ -24,7 +24,16 @@ struct iOSApp: App {
     let store = Store.restored()
 
     ///
-    /// Whether the app is in front of the user, which is what both halves of the notification refresh hang off.
+    /// Install the notification center delegate, which must be in place before launch finishes to receive the tap on a notification that launched the app.
+    ///
+    /// The app has no application delegate, and this is the earliest point SwiftUI runs its code, during every launch, a background launch included.
+    ///
+    init() {
+        UserNotificationDelegate.shared.configure()
+    }
+
+    ///
+    /// Whether the app is in front of the user, which is what the notification monitor and the background refresh both hang off.
     ///
     @Environment(\.scenePhase)
     private var scenePhase
@@ -60,8 +69,8 @@ struct iOSApp: App {
     ///
     /// React to the app arriving in front of the user, or leaving.
     ///
-    /// Arriving is the whole of the foreground refresh: on launch and on every return, with no timer and no push. It re-arms the background task as well, which closes the hole that arming on the way out alone would leave — pending task requests do not survive a restart of the device, so an app arming only as it is backgrounded would go unarmed from a reboot until its next full session.
-    /// Leaving arms it too, and that is not redundant: it is the last moment the app knows whether there is an account to fetch for, and a second submission for one identifier replaces the pending request rather than adding to it.
+    /// Arriving starts the notification monitor, on launch and on every return, which watches the server for as long as the app stays in front and records what arrives as seen without announcing it. It re-arms the background task as well, which closes the hole that arming on the way out alone would leave — pending task requests do not survive a restart of the device, so an app arming only as it is backgrounded would go unarmed from a reboot until its next full session.
+    /// Leaving suspends the monitor, which the system would otherwise freeze mid-stream, and arms the background task too, which is not redundant: it is the last moment the app knows whether there is an account to fetch for, and a second submission for one identifier replaces the pending request rather than adding to it.
     /// `.inactive` is deliberately not acted on. It is passed through in both directions, and it is also what a pulled-down Notification Center produces, so treating it as either edge would fire on gestures that never left the app.
     ///
     private func handle(_ phase: ScenePhase) {
@@ -69,7 +78,7 @@ struct iOSApp: App {
             case .active:
                 Self.logger.notice("The app became active\(self.store.account == nil ? " with no account configured" : "", privacy: .public)")
                 arm()
-                store.refreshUnreadNotifications()
+                store.startNotificationMonitor()
 
                 // Donates the persisted apps to Spotlight and refreshes the values the Shortcuts app offers for the
                 // action's parameter. There is no once-per-launch hook on this platform the way macOS has
@@ -89,6 +98,7 @@ struct iOSApp: App {
             case .background:
                 Self.logger.notice("The app went to the background")
                 arm()
+                NotificationMonitor.shared.suspend()
 
             default:
                 break

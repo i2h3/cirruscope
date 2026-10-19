@@ -315,12 +315,11 @@ struct ServerAddressView: View {
 
                     store.account = ServerAccount(server: result.server, credentials: credentials)
 
-                    // Asked here so the prompt arrives with a server actually connected, rather than in front of an
-                    // empty launch. Not awaited: it would otherwise hold this screen's spinner up until the user
-                    // answered, when the account is already adopted and the screen is already on its way out.
-                    Task {
-                        await AppIconBadge.requestAuthorization()
-                    }
+                    // Started here rather than left to the next activation, the app being in front already. Starting
+                    // it is also what asks for notification permission, so the prompt arrives with a server actually
+                    // connected rather than in front of an empty launch, and without holding this screen's spinner up
+                    // until the user answers.
+                    store.startNotificationMonitor()
 
                     // There was nothing to fetch for a moment ago and now there is.
                     NotificationRefreshTask.submitRequest(reason: "sign-in")

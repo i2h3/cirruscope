@@ -8,7 +8,7 @@ import Testing
 ///
 /// `ActivityRowTests` covers the rules `ActivityRow` applies when it reduces a Nextcloud activity to the line a widget draws.
 ///
-/// Neither test target links Rainmaker, so an `ActivityItem` cannot be built here and `init(_:)` cannot be exercised directly — `UnreadNotifications.badgeUpdate(forFetchedCount:)` is factored out for the same reason and says so. What that initializer actually decides, though, is in the three functions below plus `ActivityVerb`, and those take and answer strings. The cases are the shapes Nextcloud's own recorded responses contain, not invented ones: the rich `file` parameter spells a path without a leading separator, while `objectName` spells the same file with one, and both reach these functions depending on which the server sent.
+/// Neither test target links Rainmaker, so an `ActivityItem` cannot be built here and `init(_:)` cannot be exercised directly, which is the same reason `UnreadNotifications` maps the server's notifications to a value type of the app's own before deciding anything about them. What that initializer actually decides, though, is in the three functions below plus `ActivityVerb`, and those take and answer strings. The cases are the shapes Nextcloud's own recorded responses contain, not invented ones: the rich `file` parameter spells a path without a leading separator, while `objectName` spells the same file with one, and both reach these functions depending on which the server sent.
 ///
 struct ActivityRowTests {
     // MARK: - Directory

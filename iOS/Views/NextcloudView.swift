@@ -227,15 +227,15 @@ struct NextcloudView: View {
 
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
-                        if store.unreadNotificationCount > 0 {
-                            Button {
-                                openNotificationsPanel()
-                            } label: {
-                                Label("Notifications", systemImage: "bell.badge.fill")
-                            }
-
-                            Divider()
+                        // Offered whether or not anything is unread, so the panel is always one tap away and the
+                        // menu's items keep their places; the menu's badge is what says whether anything is waiting.
+                        Button {
+                            openNotificationsPanel()
+                        } label: {
+                            Label("Notifications", systemImage: "bell.badge.fill")
                         }
+
+                        Divider()
 
                         Button {
                             navigate(to: ["settings", "user"])
@@ -261,9 +261,9 @@ struct NextcloudView: View {
             .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .onChange(of: notificationsPanel.isOpen) { wasOpen, isOpen in
-                // A panel that has just closed is a panel notifications may just have been dismissed from. Nothing
-                // else would correct the count until the next time the app is brought forward, which is long enough
-                // for the badge to be visibly arguing with what the user has just read.
+                // A panel that has just closed is a panel notifications may just have been dismissed from. A server
+                // without push would otherwise leave the count, and what Notification Center lists, arguing with what
+                // the user has just read until the monitor's next poll.
                 guard wasOpen, isOpen == false else {
                     return
                 }
@@ -556,7 +556,7 @@ struct NextcloudView: View {
     }
 
     ///
-    /// Make this screen the one that opens what Spotlight and the Shortcuts app ask for, answering whether it opened a request that was already waiting.
+    /// Make this screen the one that opens what Spotlight, the Shortcuts app and a tapped notification ask for, answering whether it opened a request that was already waiting.
     ///
     /// The page is the owner because it is this window's own and lives exactly as long as the window does, which is what lets the window hand the job back when it closes.
     ///

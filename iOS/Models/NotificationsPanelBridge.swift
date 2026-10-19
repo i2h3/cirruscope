@@ -9,9 +9,9 @@ import WebKit
 /// Receives what `iOSScript.notificationsPanelState` reports about Nextcloud's notifications menu: whether the page offers one, which of the script's candidate selectors matched it, and whether its panel is open.
 ///
 /// It is a class, and an `NSObject` at that, for the reason `AppNavigationBridge` is: `WKScriptMessageHandler` is a class-bound Objective-C protocol and a SwiftUI `View` is a struct. `NextcloudView.init()` registers it on the `WebPage.Configuration` before building the page, the configuration being a struct the page copies at initialization.
-/// Unlike `AppNavigationBridge` it decides nothing about what is on screen. The account menu's "Notifications" item follows the server's own unread count, and the panel reveals itself through a stylesheet rule keyed on its own open state, so nothing here has to be kept in step with the page. It exists for the two things only the page can answer.
+/// Unlike `AppNavigationBridge` it decides nothing about what is on screen. The account menu always offers its "Notifications" item, the badge beside it following the server's own unread count, and the panel reveals itself through a stylesheet rule keyed on its own open state, so nothing here has to be kept in step with the page. It exists for the two things only the page can answer.
 /// The first is diagnostic, and is why every message is logged at `.notice`: no selector for Nextcloud's notifications bell could be verified past the minimum supported server version, so the log — read back after one hand test against a live server — is where that answer is recorded rather than guessed at again. It also separates the two failures that look identical on screen, an unmatched selector from a panel that opened invisibly.
-/// The second is that a panel closing is the moment notifications may just have been dismissed in the web view, which is a cue to re-read the count rather than leave a badge arguing with what the user has just seen.
+/// The second is that a panel closing is the moment notifications may just have been dismissed in the web view, which is a cue to fetch the notifications again rather than leave a badge, and a notification in Notification Center, arguing with what the user has just seen.
 ///
 @Observable
 @MainActor

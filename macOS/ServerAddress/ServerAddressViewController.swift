@@ -116,7 +116,8 @@ class ServerAddressViewController: NSViewController {
                         }
 
                         let result = try await LoginSession.signIn(to: server, anchoredTo: window)
-                        try Keychain.store(Credentials(user: result.name, appPassword: result.password), for: result.server)
+                        let credentials = Credentials(user: result.name, appPassword: result.password)
+                        try Keychain.store(credentials, for: result.server)
                         AccountStore.shared.connect(to: result.server)
                         logger.info("Stored credentials and connected to \(result.server)")
 
@@ -125,6 +126,10 @@ class ServerAddressViewController: NSViewController {
                         WidgetCenter.shared.reloadAllTimelines()
                         (NSApp.delegate as? AppDelegate)?.presentWebViewWindow()
                         view.window?.close()
+
+                        // Started here rather than left to the next launch, so the Dock badge and Notification Center
+                        // follow the account from the moment it is signed in.
+                        (NSApp.delegate as? AppDelegate)?.startNotificationMonitor(for: ServerAccount(server: result.server, credentials: credentials))
 
                         if let authenticated = ServerConnection.authenticated(address: result.server) {
                             await ServerConnection.refreshNavigationApps(using: authenticated)

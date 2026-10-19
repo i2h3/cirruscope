@@ -7,7 +7,7 @@ import Rainmaker
 
 /// `RecentActivity` fetches the newest file activity of the connected server, prepared for a widget to draw.
 ///
-/// It is the sibling of `UnreadNotifications` and deliberately the same shape: stateless, resolving the account from `Keychain` itself rather than taking one, and answering with a value instead of throwing. That is what lets a widget timeline provider — a short-lived process with no store, no view hierarchy and nothing restored but the Keychain — call exactly the code an app would.
+/// It is the sibling of `UnreadNotifications` and deliberately the same shape: stateless, resolving the account from `Keychain` itself, and answering with a value instead of throwing. That is what lets a widget timeline provider — a short-lived process with no store, no view hierarchy and nothing restored but the Keychain — call exactly the code an app would.
 /// Everything here is `nonisolated` and nothing it touches is main-actor-bound, which is the property an extension depends on; see AGENTS.md → Concurrency.
 /// Scope is the server's own `files` filter rather than a client-side selection, so an instance decides what counts as file activity. That filter is Nextcloud's `FileChanges`, which admits `file_created`, `file_changed`, `file_deleted` and `file_restored` and excludes sharing entirely — see `DECISIONS.md` for why the widget shows no shares.
 enum RecentActivity {

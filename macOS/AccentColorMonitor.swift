@@ -56,7 +56,7 @@ final class AccentColorMonitor: NSObject {
 
     /// `systemColorsDidChange()` handles `NSColor.systemColorsDidChangeNotification`, which AppKit posts once it has invalidated its own color caches.
     ///
-    /// It is `nonisolated` and hops internally, following `UserNotifier`'s delegate methods, because AppKit does not document which queue this notification is delivered on: a main-actor-isolated `@objc` method would trap rather than merely misbehave if it ever changed. No delay is needed before reading the new color, unlike with the distributed notification `start()` documents rejecting.
+    /// It is `nonisolated` and hops internally, following `UserNotificationDelegate`'s delegate methods, because AppKit does not document which queue this notification is delivered on: a main-actor-isolated `@objc` method would trap rather than merely misbehave if it ever changed. No delay is needed before reading the new color, unlike with the distributed notification `start()` documents rejecting.
     @objc
     private nonisolated func systemColorsDidChange() {
         Task { @MainActor [weak self] in

@@ -14,7 +14,7 @@ import Foundation
 ///
 /// The conformance is gated on the release that introduced the protocol, which is newer than either app's deployment target. Everything else here works unchanged below it — the app simply keeps donating on its own, as it did before, and only loses the system's ability to *ask* for one. The SDK's own line names visionOS as well and this one deliberately does not, following `Widgets.xcconfig`: no target here builds that platform, and a platform nothing builds is a platform that rots.
 ///
-/// Both methods are `nonisolated` although the query itself is main-actor-isolated, and that is forced rather than chosen: `CSSearchableIndexDescription` is not `Sendable`, so a main-actor implementation would be asking the compiler to send one across an isolation boundary. Nothing here reads it, and the `await` onto the indexer is the hop that was going to happen anyway — the same shape `UserNotifier`'s delegate methods use.
+/// Both methods are `nonisolated` although the query itself is main-actor-isolated, and that is forced rather than chosen: `CSSearchableIndexDescription` is not `Sendable`, so a main-actor implementation would be asking the compiler to send one across an isolation boundary. Nothing here reads it, and the `await` onto the indexer is the hop that was going to happen anyway — the same shape `UserNotificationDelegate`'s delegate methods use.
 @available(macOS 27.0, iOS 27.0, *)
 extension CollectivePageEntityQuery: IndexedEntityQuery {
     /// `reindexEntities(for:indexDescription:)` donates the pages within the account's collectives again, which covers the ones named and every other one besides.

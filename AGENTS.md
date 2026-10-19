@@ -39,7 +39,7 @@ Every type and property has a documentation comment saying what it is and, where
 
 | Folder | Compiled into | Holds |
 |---|---|---|
-| `Cirruscope/` | both apps | bundle identity, entitlements, the apps' privacy manifest, `AppIcon.icon` (both platforms), sign-in, the web views' shared decisions and scripts, persistence, App Intents, the store-writing halves of `ServerConnection` |
+| `Cirruscope/` | both apps | bundle identity, entitlements, the apps' privacy manifest, `AppIcon.icon` (both platforms), sign-in, the web views' shared decisions and scripts, persistence, App Intents, the server's notifications in Notification Center, the store-writing halves of `ServerConnection` |
 | `Core/` | both apps and `Widgets` | one subfolder per domain, six cross-domain files, `Assets.xcassets` |
 | `macOS/`, `iOS/` | that app | AppKit or SwiftUI user interface and platform integration, String Catalogs |
 | `Widgets/` | the extension, against each app's SDK | the activity widget, its own `Info.plist`, privacy manifest and String Catalog |
@@ -60,7 +60,7 @@ The root holds `Cirruscope.xcconfig`, the only file that names a team, `Cirrusco
   `.github/`, `AppStore/`, `Documentation/`, `Tools/` and `Website/` are in the main group only for browsing in Xcode, and no target may list them.
 - **Placement follows "Platform Scope".**
   Nothing in `Core/` imports AppKit or UIKit, and since `membershipExceptions` is a deny list, the extension must never list `Cirruscope/`, or it would silently absorb each file later moved there.
-- **A platform's remainder of shared code lives in that platform's folder, never behind `#if os`**, as an `+AppKit` or `+UIKit` extension or an `AccountStore+Shared.swift` per app.
+- **A platform's remainder of shared code lives in that platform's folder, never behind `#if os`**, as an `+AppKit` or `+UIKit` extension, or as a `+Shared.swift` per app building the one instance with what only that platform can answer, as `AccountStore+Shared.swift` and `NotificationMonitor+Shared.swift` do.
 - **`Core/`'s domain subfolders share their names with the tests**, a type and its suites sitting under one word; `RemoteAssets/` is the exception, its SVG renderer's suites being in `Tests/Icons/`.
 - **No two files in one target share a base name**, since Xcode derives each `.stringsdata` output from it.
   Shared notification names go in `Cirruscope/Persistence/AccountStoreNotificationName.swift`, macOS-only ones in `macOS/Settings/NotificationName.swift`.
@@ -81,9 +81,10 @@ The root holds `Cirruscope.xcconfig`, the only file that names a team, `Cirrusco
   - `Persistence/`: the SwiftData stack — `AppDatabase`, `AccountStore` (the sole reader and writer, one file per domain, vending value types), the versioned schemas, the migration plan, `RefreshAdmission`, the notification names, and the `@Model` records in `Models/`.
   - `AppEntities/`, `AppIntents/`: per donated type an entity, its query with a gated `+Indexed.swift`, an `Open…Intent` and an indexer over `SpotlightIndex`; `ServerAppShortcuts` is the single `AppShortcutsProvider`, and `EntityActivation`, `EntityOpening` and `SpotlightSelection` are the seams both apps share, a selection resolved by type as well as identifier.
   - `KeyboardShortcuts/`: the shortcut value type the store's reserved-shortcut seam is typed over.
-- `Core/`: `Account/` (credentials, the Keychain), `Activity/` (the widget's feed), `Notifications/` (the unread count and its badge), `RemoteAssets/` (the asset cache, icons, avatars and the `SVG/` renderer), and `Conversations/`, `Collectives/`, `Notes/` and `ServerApps/` (a value snapshot, its one order and the route opening it), beside `AppGroup`, `InfoPlist`, `Logging`, `CirruscopeError`, `SameOriginURL` and `ServerConnection`.
+  - `Notifications/`: the live `NotificationMonitor`, the record of the server's notifications already seen, what each fetch posts and withdraws, the notification center delegate and the authorization both apps ask for, each app supplying its badge, presentation and options in its own `Notifications/`.
+- `Core/`: `Account/` (credentials, the Keychain), `Activity/` (the widget's feed), `Notifications/` (the unread notifications fetch, their value snapshot and the badge decision), `RemoteAssets/` (the asset cache, icons, avatars and the `SVG/` renderer), and `Conversations/`, `Collectives/`, `Notes/` and `ServerApps/` (a value snapshot, its one order and the route opening it), beside `AppGroup`, `InfoPlist`, `Logging`, `CirruscopeError`, `SameOriginURL` and `ServerConnection`.
 - `macOS/`: `AppDelegate/` (the delegate, its menus, window restoration), `Web/` (the web view, its windows, what is forwarded into the page), `Downloads/`, `Settings/` (the settings tabs, the macOS-only notification names), `ServerAddress/` (the AppKit half of sign-in), `Views/`, `Notifications/`, `Scripts/`, `Models/` and `Persistence/` (the Mac's halves of shared types, the file-based Keychain move among them), and `Base.lproj/Main.storyboard` with its catalog in `mul.lproj/`.
-- `iOS/`: `iOSApp`, `ContentView`, the iPad's View menu commands, `Views/`, `Models/` (`Store`, the observable app state, and the script-message bridges), `Web/` (the navigation decider, the user agent, the iOS-only scripts), `Notifications/` (the app icon badge and its background refresh), `Persistence/` and `Scripts/`.
+- `iOS/`: `iOSApp`, `ContentView`, the iPad's View menu commands, `Views/`, `Models/` (`Store`, the observable app state, and the script-message bridges), `Web/` (the navigation decider, the user agent, the iOS-only scripts), `Notifications/` (the app icon badge, the background refresh and the iOS halves of the shared notification code), `Persistence/` and `Scripts/`.
 - `Widgets/`: `WidgetsBundle`, the activity widget's timeline provider, entry and views, and `ActivityStyle`, every colour in one place.
 
 **`AppStore/`** holds the App Store Connect and TestFlight texts, one file per field at `AppStore/<marketing version>/<platform>/<language>/<field>.txt`.
@@ -176,7 +177,7 @@ Prefer that shape — measure the framework, then assert the app agrees — over
 - The root follows the code under test: `Tests/` for code in `Core/` or `Cirruscope/`, the platform's test target otherwise, and the platform's too for a suite over shared code that itself needs AppKit or UIKit, the split following what a suite needs rather than what it is about.
 - A suite is a type: its own file, and a documentation comment saying what it covers and why it exists.
   Add or rename it in the suite map of `Documentation/Testing.md` in the same change.
-- Never touch live state from a case — `Keychain.service`, `AssetCache.shared`, `EntityOpening.shared`, the real `UserDefaults` keys — but the stand-in `Documentation/Testing.md` names for each; a case touching `Keychain.service` deletes the developer's real credentials.
+- Never touch live state from a case — `Keychain.service`, `AssetCache.shared`, `EntityOpening.shared`, `ServerNotificationLedger.shared`, `UNUserNotificationCenter`, the real `UserDefaults` keys — but the stand-in `Documentation/Testing.md` names for each; a case touching `Keychain.service` deletes the developer's real credentials.
 - Share fixtures through a named type (`ShortcutFixture`), and use `@Test(arguments:)` for matrices.
 - Annotate a suite `@MainActor` when it touches AppKit, and add `.serialized` where cases would contend for the main actor.
 - Never let a case post a notification the host app observes.
@@ -297,8 +298,8 @@ Cirruscope builds with `SWIFT_STRICT_CONCURRENCY = complete` and `SWIFT_DEFAULT_
 - **A `@Sendable` callback needs none of that:** a closure whose *contextual type* is `@Sendable` does not inherit the isolation it is written in, so no dynamic check is emitted.
   That is the whole question to ask of any framework callback — is the closure parameter type `@Sendable`?
   `ASWebAuthenticationSession`'s completion handler is a bare `(URL?, (any Error)?) -> Void` and is not, hence its `nonisolated` factory; SwiftUI's `backgroundTask(_:action:)` types its action `@escaping @Sendable (D) async -> R` and is, so `iOSApp` writes the background refresh inline in its main-actor `body` and it is still safely invoked off-main.
-  Prefer the `async` variant of a system API wherever one exists, since a closure never written cannot have its isolation wrong: the iOS notification badge reaches `UNUserNotificationCenter` and `BGTaskScheduler` without a single completion handler.
-- `UserNotifier`'s `nonisolated` delegate methods are a variant worth following directly: the *method* is marked `nonisolated`, so it is never inferred main-actor whichever type declares it, and it hops via `Task { @MainActor in ... }` internally.
+  Prefer the `async` variant of a system API wherever one exists, since a closure never written cannot have its isolation wrong: the notification code writes no completion handler for `UNUserNotificationCenter` (the shared code in `Cirruscope/Notifications/`) or `BGTaskScheduler` (iOS only, in `NotificationRefreshTask`), and only `UserNotificationDelegate` keeps the completion handlers the system calls.
+- `UserNotificationDelegate`'s `nonisolated` delegate methods are a variant worth following directly: the *method* is marked `nonisolated`, so it is never inferred main-actor whichever type declares it, and it hops via `Task { @MainActor in ... }` internally.
 
 ## Logging and Diagnostics
 

@@ -537,8 +537,12 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
 
     // MARK: - Notifications
 
+    /// `installNotificationBridge()` forwards the notifications the web interface raises to `UserNotifier`, asking for notification permission first if the user has not answered yet, so the prompt appears with a server connected.
     private func installNotificationBridge() {
-        UserNotifier.shared.requestAuthorization()
+        Task {
+            await NotificationAuthorization.requestIfUndetermined(reason: "web window")
+        }
+
         webView.configuration.userContentController.add(self, name: ScriptMessageName.notification.rawValue)
         installUserScript(macOSScript.notificationBridge.source, injectionTime: .atDocumentStart)
     }

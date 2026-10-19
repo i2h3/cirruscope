@@ -1,0 +1,3 @@
+• Ahora retira del Centro de notificaciones una notificación de Nextcloud que Cirruscope mostró sin ninguna ventana abierta en cuanto la descartas en Nextcloud
+• Ahora agrupa las notificaciones de Nextcloud que Cirruscope muestra sin ninguna ventana abierta según la app de Nextcloud de la que proceden
+• Corregidos el globo del Dock y las notificaciones de Nextcloud, que no aparecían tras iniciar sesión hasta volver a abrir Cirruscope

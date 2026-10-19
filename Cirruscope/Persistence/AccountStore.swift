@@ -180,7 +180,7 @@ final class AccountStore {
         notifyChange(.donatedArtworkDidChange)
     }
 
-    /// `disconnect()` signs out: it deletes the account — cascading to every record that hangs off it — then forgets every cache describing the old server and clears the stored Login Flow v2 credentials, so nothing that came from that server, or describes the people on it, remains in the store, the caches, the Spotlight index, the widget or the Keychain.
+    /// `disconnect()` signs out: it deletes the account — cascading to every record that hangs off it — then forgets every cache describing the old server, clears the stored Login Flow v2 credentials and withdraws every notification the app delivered, so nothing that came from that server, or describes the people on it, remains in the store, the caches, the Spotlight index, the widget, Notification Center or the Keychain.
     ///
     /// It is the one sign-out there is: the Mac's `AppDelegate.logOut()` and `requireSignIn()`, the Mac's launch when it finds a server named but no credential stored for it, both of iOS's sign-outs and iOS's launch in the same state run it, so the list of what a sign-out forgets is written once. What the user set up on this device — the keyboard shortcuts and the appearance settings — has no relationship to the account and stays, ready for the next sign-in. The announcements happen in `deleteAccount()`, ahead of the clears rather than after them, which is unobservable inside this process: the posts are delivered on the next main-thread turn, while every clear is synchronous and finishes inside the current one.
     func disconnect() {
@@ -188,13 +188,15 @@ final class AccountStore {
         forgetEverythingOutsideTheStore()
     }
 
-    /// `forgetEverythingOutsideTheStore()` clears the stored credentials, empties every cache that describes the connected server or the people on it, and then asks WidgetKit to redraw the widget.
+    /// `forgetEverythingOutsideTheStore()` clears the stored credentials, empties every cache that describes the connected server or the people on it, forgets the record of the server's notifications already seen, withdraws every notification the app delivered, and then asks WidgetKit to redraw the widget.
     ///
-    /// The order is the point. The credentials go first, because the widget runs in a process of its own and reads them to decide whom to fetch for: a timeline that read them before this ran saves its rows either before the saved feed is cleared below, which removes them, or after the credentials are gone, which it checks for and takes them back itself. The widget is asked to redraw last, once nothing it could read would sign it in, because otherwise it draws what its last timeline held until WidgetKit next asks, which can be long after the account it shows has gone.
+    /// The order is the point. The credentials go first, because the widget runs in a process of its own and reads them to decide whom to fetch for: a timeline that read them before this ran saves its rows either before the saved feed is cleared below, which removes them, or after the credentials are gone, which it checks for and takes them back itself. The notifications follow the same rule: a fetch admitted to the record before the credentials went is erased with the record, one arriving after is turned away because they are gone, and a notification posted after the withdrawal is taken back by the fetch that posted it, which asks again once it has posted. The widget is asked to redraw last, once nothing it could read would sign it in, because otherwise it draws what its last timeline held until WidgetKit next asks, which can be long after the account it shows has gone.
     private func forgetEverythingOutsideTheStore() {
         Keychain.clearAll()
         forgetCaches()
         ActivityFeedStore.clear()
+        ServerNotificationLedger.shared.clear()
+        ServerNotificationDispatcher.withdrawAll()
         WidgetCenter.shared.reloadAllTimelines()
     }
 
@@ -226,7 +228,7 @@ final class AccountStore {
 
     /// `deleteAccount()` deletes the account record — cascading to every record that hangs off it — drops the memoized `cachedAccount`, commits, and announces every domain the account held; the keyboard shortcuts and the appearance settings hang off nothing and are left alone.
     ///
-    /// It is the storage half of `disconnect()`, separated so it can be exercised on its own: `disconnect()`'s remaining steps empty the shared caches and the widget's saved feed and clear the `Keychain`, none of which a test can run without destroying the developer's real cached assets and stored credentials. Clearing `cachedAccount` is what keeps a later write from landing on the deleted object instead of a fresh account.
+    /// It is the storage half of `disconnect()`, separated so it can be exercised on its own: `disconnect()`'s remaining steps empty the shared caches, the widget's saved feed and the record of notifications already seen, withdraw the delivered notifications and clear the `Keychain`, none of which a test can run without destroying the developer's real data. Clearing `cachedAccount` is what keeps a later write from landing on the deleted object instead of a fresh account.
     /// Each domain is announced under its own name because each Spotlight indexer listens for its own: announcing only the server apps left every conversation, note and collective of a signed-out account in the index.
     func deleteAccount() {
         if let account = currentAccount(createIfNeeded: false) {

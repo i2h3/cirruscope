@@ -13,9 +13,6 @@ extension Notification.Name {
     /// `downloadDidStart` is posted by `DownloadManager` when a new transfer begins so `AppDelegate` can open and bring the Downloads window to the foreground.
     static let downloadDidStart = Notification.Name("DownloadDidStart")
 
-    /// `serverCredentialsRejected` is posted by `NotificationMonitor` when its event stream reports the stored app password was revoked so `AppDelegate` can sign out and require a new sign-in.
-    static let serverCredentialsRejected = Notification.Name("ServerCredentialsRejected")
-
     /// `accentColorDidChange` is posted by `AccentColorMonitor` whenever the macOS accent color or the light/dark appearance changes so every open `WebViewController` re-resolves the accent color for its own web view and forwards it into the page without a reload.
     ///
     /// It is the system-driven counterpart to `appearanceSettingsDidChange`, which announces a change to the appearance settings chosen on this device; both funnel into `WebViewController.reapplyAppearance()`.
