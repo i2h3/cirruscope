@@ -62,10 +62,18 @@ final class KeychainScratchService {
     }
 
     /// `add(_:dataProtection:account:)` files `value` as the data of the item under `account` in the chosen Keychain, answering the status the Keychain gave.
+    ///
+    /// An item in the data-protection Keychain is filed as readable after the first unlock, as `Keychain.store(_:for:)` and the move file the app's own credentials.
+    /// Left at the default, readable only while the Mac is unlocked, every case filing one failed with `errSecInteractionNotAllowed` whenever the suite ran while the screen was locked, which reads as a regression in the move rather than as the machine's state.
+    /// The file-based Keychain has no such class, so nothing is set there.
     @discardableResult
     func add(_ value: String, dataProtection: Bool, account: String? = nil) -> OSStatus {
         var attributes = itemQuery(dataProtection: dataProtection, account: account)
         attributes[kSecValueData as String] = Data(value.utf8)
+
+        if dataProtection {
+            attributes[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+        }
 
         return SecItemAdd(attributes as CFDictionary, nil)
     }
