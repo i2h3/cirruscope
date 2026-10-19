@@ -188,7 +188,7 @@ final class AccountStore {
         forgetEverythingOutsideTheStore()
     }
 
-    /// `forgetEverythingOutsideTheStore()` clears the stored credentials, empties every cache that describes the connected server or the people on it, forgets the record of the server's notifications already seen, withdraws every notification the app delivered, and then asks WidgetKit to redraw the widget.
+    /// `forgetEverythingOutsideTheStore()` clears the stored credentials, empties every cache that describes the connected server or the people on it, forgets the record of the server's notifications already seen, withdraws every notification the app delivered, discards a request to open something of the account that nothing has served yet, and then asks WidgetKit to redraw the widget.
     ///
     /// The order is the point. The credentials go first, because the widget runs in a process of its own and reads them to decide whom to fetch for: a timeline that read them before this ran saves its rows either before the saved feed is cleared below, which removes them, or after the credentials are gone, which it checks for and takes them back itself. The notifications follow the same rule: a fetch admitted to the record before the credentials went is erased with the record, one arriving after is turned away because they are gone, and a notification posted after the withdrawal is taken back by the fetch that posted it, which asks again once it has posted. The widget is asked to redraw last, once nothing it could read would sign it in, because otherwise it draws what its last timeline held until WidgetKit next asks, which can be long after the account it shows has gone.
     private func forgetEverythingOutsideTheStore() {
@@ -197,6 +197,7 @@ final class AccountStore {
         ActivityFeedStore.clear()
         ServerNotificationLedger.shared.clear()
         ServerNotificationDispatcher.withdrawAll()
+        EntityOpening.shared.discardPending()
         WidgetCenter.shared.reloadAllTimelines()
     }
 

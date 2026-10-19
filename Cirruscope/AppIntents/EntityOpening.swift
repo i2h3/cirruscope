@@ -32,7 +32,7 @@ final class EntityOpening {
 
     /// `pending` is a request made before anything could serve it, held until something can.
     ///
-    /// It is cleared by whatever installs a handler next. It holds at most one: a second request before either is served replaces the first, which is what a user pressing Return twice in Spotlight means.
+    /// It is cleared by whatever installs a handler next, or by a sign-out through `discardPending()`. It holds at most one: a second request before either is served replaces the first, which is what a user pressing Return twice in Spotlight means.
     private(set) var pending: Request?
 
     /// `handlers` is every way the running app can currently serve a request, the one installed most recently last, each with the object that installed it.
@@ -81,6 +81,19 @@ final class EntityOpening {
         }
 
         logger.notice("Removed an entity opener; \(self.handlers.count, privacy: .public) still installed")
+    }
+
+    /// `discardPending()` forgets a request no handler has served yet, which every sign-out does.
+    ///
+    /// What was asked for belonged to the account signed in when it was asked, and serving it after a sign-out would open it for whoever signs in next: on the same server the address still passes every origin check, and a tapped notification or a donated entity of one account would open in another's session.
+    /// The handlers are left alone, since they belong to the windows and the process rather than to the account.
+    func discardPending() {
+        guard pending != nil else {
+            return
+        }
+
+        pending = nil
+        logger.notice("Discarded a request no opener had served yet, the account it was made for having signed out")
     }
 
     /// `open(_:)` serves `request` now if this app can, and remembers it to be served as soon as it can otherwise.

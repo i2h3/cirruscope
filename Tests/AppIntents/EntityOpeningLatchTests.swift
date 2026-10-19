@@ -107,4 +107,50 @@ struct EntityOpeningLatchTests {
 
         #expect(served.isEmpty)
     }
+
+    /// A sign-out discards what was asked for while it waited, since it belonged to the account that signed out and would otherwise open in the session of whoever signs in next.
+    @Test
+    func `A request discarded by a sign-out is not served by the next opener`() throws {
+        let server = try #require(serverAddress)
+        let target = try #require(SameOriginURL(path: firstAddress, relativeTo: server))
+        let opening = EntityOpening()
+        var served: [SameOriginURL] = []
+
+        opening.open(.page(target))
+        opening.discardPending()
+
+        let servedOnInstall = opening.install { request in
+            guard case let .page(address) = request else {
+                return
+            }
+
+            served.append(address)
+        }
+
+        #expect(opening.pending == nil)
+        #expect(servedOnInstall == false)
+        #expect(served.isEmpty)
+    }
+
+    /// Discarding forgets only what is waiting: the openers belong to the windows and the process, and the next request must still reach one.
+    @Test
+    func `Discarding leaves the installed opener serving the next request`() throws {
+        let server = try #require(serverAddress)
+        let target = try #require(SameOriginURL(path: firstAddress, relativeTo: server))
+        let opening = EntityOpening()
+        var served: [SameOriginURL] = []
+
+        opening.install { request in
+            guard case let .page(address) = request else {
+                return
+            }
+
+            served.append(address)
+        }
+
+        opening.discardPending()
+        opening.open(.page(target))
+
+        #expect(served.map(\.url) == [target.url])
+    }
 }

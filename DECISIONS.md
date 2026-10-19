@@ -865,6 +865,7 @@ The window that appeared last is no answer, because it may since have been close
 Each iPad window installs its own when it starts, installs it again whenever its scene becomes active, which brings it to the front of the list, and removes it whenever its scene goes to the background, which hands requests to the window in front before it.
 The view disappearing removes it too, but the background is the signal relied on, and that was observed rather than assumed: closing windows under Stage Manager sent their scenes to the background without `onDisappear` ever running, so an opener removed only on disappearance lingered and could keep serving a window nobody could see.
 A request arriving while every window is in the background waits in the latch for the one that comes forward, which a Spotlight tap brings about by itself.
+A sign-out discards a request still waiting there, since it was made for the account signing out and, on the same server, would otherwise open in the session of whoever signs in next.
 macOS keeps a single handler for the whole process, installed at launch and never removed, because `AppDelegate` already decides which of its windows a request belongs in.
 
 A window starts serving only once it has measured its insets, and a request waiting from a cold launch becomes that window's first document rather than a second load straight after the server's front page.
