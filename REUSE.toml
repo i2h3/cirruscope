@@ -6,7 +6,7 @@ version = 1
 # nearly every build or project-settings change.
 [[annotations]]
 path = [
-    "Cirruscope.xcodeproj/project.pbxproj",
+    "Cirruscope.xcodeproj/project.xcproj",
     "Cirruscope.xcodeproj/project.xcworkspace/contents.xcworkspacedata",
 ]
 precedence = "override"

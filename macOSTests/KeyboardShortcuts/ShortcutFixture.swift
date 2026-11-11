@@ -5,8 +5,6 @@ import AppKit
 @testable import Cirruscope
 
 /// `ShortcutFixture` is one named keyboard shortcut the shortcut test suites run their cases over.
-///
-/// `ShortcutMatchingTests` and `KeyEquivalentMatchingOracleTests` share `all` so both reason about exactly the same combinations: the first asserts what `ShortcutMatching.areEquivalent(_:_:)` says about them, the second what real `NSMenu` key-equivalent matching does, and a fixture missing from one would quietly narrow the cross-check between the two. The `name` exists so a failure names the shortcut symbolically (`⇧⌘Z`) instead of printing a Private Use Area scalar nobody can read.
 struct ShortcutFixture: Sendable, CustomStringConvertible {
     /// `name` is the symbolic spelling of the shortcut, used as the fixture's description in test output.
     let name: String
@@ -30,8 +28,6 @@ struct ShortcutFixture: Sendable, CustomStringConvertible {
     private static let arrowUp = "\u{F700}"
 
     /// `all` is every combination the suites cover: the case-carrying keys where Shift lives in the character, the shift-invariant typable keys, and the function-region keys where Shift lives in the modifier mask.
-    ///
-    /// Both `"Z"` with ⌘ alone and `"Z"` with ⇧⌘ are present deliberately: the recorder always stores the Shift bit it saw, while a storyboard menu item may declare the same shortcut without it, so the pair is the realistic input to every comparison the app makes.
     static let all: [ShortcutFixture] = [
         .init("⌘z", "z", [.command]),
         .init("⌘Z", "Z", [.command]),

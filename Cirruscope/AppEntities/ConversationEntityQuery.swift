@@ -5,12 +5,6 @@ import AppIntents
 import os
 
 /// `ConversationEntityQuery` supplies `ConversationEntity` values to the App Intents system: it enumerates the Talk conversations the connected account takes part in, resolves tokens back to entities, and matches them by name.
-///
-/// It is `ServerAppEntityQuery`'s counterpart and reads the same store on the same actor, conforming to the same three query protocols: `allEntities()` powers the Shortcuts parameter picker, `suggestedEntities()` the suggestions, `entities(for:)` resolves a donated or saved token, and `entities(matching:)` matches what the user types or says.
-///
-/// `suggestedEntities()` is where it deliberately differs. The whole app list is short enough to offer in full; a conversation list is not bounded by anything, so what is suggested is the handful most recently active — which is the order the store already returns them in, and the order a person asked to pick a conversation is thinking in.
-///
-/// Each call logs its outcome at `.notice` with counts in the clear so a Spotlight, Siri or Shortcuts interaction is reconstructable from a log capture. Tokens are logged too: they identify a conversation on one server and are useless without the account's credentials, exactly as an app identifier is.
 @MainActor
 struct ConversationEntityQuery: EntityQuery, EntityStringQuery, EnumerableEntityQuery {
     /// `logger` records query activity under the `ConversationEntityQuery` category.

@@ -7,20 +7,12 @@ import Foundation
 
 /// `CollectiveEntity` is the App Intents projection of a collective the account is a member of, exposing it to Spotlight, Siri, and the Shortcuts app as a discoverable, openable entity.
 ///
-/// It follows the shape every entity here has, including the two details that carry weight — the `numericFormat` on the type representation and the `name` property bound to Spotlight's `displayName`, which together are what make an entity usable as a phrase parameter at all.
-///
 /// It donates no image. A collective is decorated with an emoji rather than an icon, and an emoji is already in the title where a person reads it; rendering one into a bitmap to hand Spotlight would be drawing a picture of text.
 struct CollectiveEntity: IndexedEntity {
     /// `defaultQuery` is the query the App Intents system uses to enumerate, resolve, and suggest these entities.
     static let defaultQuery = CollectiveEntityQuery()
 
     /// `typeDisplayRepresentation` is the human-readable name of this entity type, shown wherever the Shortcuts app names the kind of value.
-    ///
-    /// "Nextcloud Collective" rather than naming the Collectives app as well: a Nextcloud has one thing called a collective, so the app's name would be the product's name twice.
-    /// The synonym is there for someone who thinks of it by the app instead.
-    /// A bare "collective" is deliberately not among them, for the reason a bare "app" is not among `ServerAppEntity`'s.
-    /// The name is in title case and its numeric form is not, as in Apple's own entity types ("Checklist Item", "%lld checklist items"): the Shortcuts app shows the name as a name, the kind of value a parameter takes and the subject of the Find action it generates for this type, beside action titles in the same case, while the numeric form is a count read inside a sentence.
-    /// See `DECISIONS.md`.
     static var typeDisplayRepresentation: TypeDisplayRepresentation {
         TypeDisplayRepresentation(
             name: "Nextcloud Collective",
@@ -50,8 +42,6 @@ struct CollectiveEntity: IndexedEntity {
     }
 
     /// `iconData` is the collective's own emoji on the plated artwork, or the Collectives app's icon where it has none.
-    ///
-    /// Carried rather than looked up, for the reason `ServerAppEntity` carries its own: these representations are read from outside the main actor and travel out of the process, while the icon store is neither.
     var iconData: Data?
 
     /// `displayRepresentation` is how a single collective appears in Spotlight results, the Shortcuts parameter picker, and Siri.
@@ -64,9 +54,6 @@ struct CollectiveEntity: IndexedEntity {
     }
 
     /// `subtitle` is the one line of context a collective carries besides its name, in the one place both surfaces that show it read from.
-    ///
-    /// Stated once because it reaches Spotlight twice by two different routes — as the display representation's subtitle and as the searchable item's `contentDescription` — and a result whose two descriptions disagreed would be this app contradicting itself.
-    /// It follows the one pattern every entity's subtitle follows — *`<what it is>` in Nextcloud `<the app it lives in>`* — so that a column of mixed results reads as one list rather than four. The first half is the plain noun somebody would use for the thing, the second names the server app it belongs to, and neither is left to be inferred from the title: a Spotlight row is often the only context there is.
     private static let subtitle: LocalizedStringResource = "Collective in Nextcloud Collectives"
 
     /// `attributeSet` is the Spotlight metadata donated for this entity, adding keywords so the server product and the owning app both find a collective whose own name mentions neither.

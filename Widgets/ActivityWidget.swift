@@ -5,10 +5,6 @@ import SwiftUI
 import WidgetKit
 
 /// `ActivityWidget` shows what has been happening to the files on the connected Nextcloud server.
-///
-/// One idea per widget: the newest file activity, newest first, and nothing else. Scope is the server's own file filter, which admits creations, changes, deletions and restorations and excludes sharing — `DECISIONS.md` records why the widget shows no shares.
-/// It takes no configuration. There is one connected account and one thing to show about it, so there is nothing to ask, and an intent configuration would put a settings sheet on a widget whose only setting would be which of one account to use.
-/// Tapping it opens Cirruscope, which is what a widget with no link of its own does by default. Nothing here declares one: the rows are a summary rather than a set of destinations, and every one of them would open the same window.
 struct ActivityWidget: Widget {
     /// `kind` is the identifier WidgetKit tells this widget's configured instances apart by.
     ///
@@ -80,8 +76,6 @@ struct ActivityWidget: Widget {
 
 extension ActivityRow {
     /// `previewRows` is the sample feed the previews draw, matching the design's own cards so a preview and the mockup can be compared side by side.
-    ///
-    /// One row deliberately has no actor, which is how the server reports your own activity and the only way to see the figure the avatar draws in place of initials. Another is named `_draft_.md` and sits at the account's root, so it covers two cases at once: a legal filename that is also markdown emphasis, and a row with no folder to put under it. It is there as a regression guard: the underscores must survive, and they only do because `ActivityRow.fileText` hands the name over as a `Text` rather than interpolating it into a `LocalizedStringKey`, which would parse it.
     static var previewRows: [ActivityRow] {
         [
             ActivityRow(id: 1, verb: .changed, fileName: "Q3 Roadmap.md", directory: "Documents/Planning", actorID: "anja", actorName: "Anja Kranz", additionalCount: 0, date: .now.addingTimeInterval(-240)),

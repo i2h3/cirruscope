@@ -4,9 +4,6 @@
 import Foundation
 
 /// `SVGNumberScanner` reads the number, flag, and command tokens an SVG attribute is written in, one at a time, from a string it does not copy the meaning of.
-///
-/// SVG's grammar for the `d` and `transform` attributes is deliberately terse and cannot be tokenized by splitting on whitespace: separators are optional wherever they are unambiguous, so `.5.5` is two numbers, `-.437` is one, and the two flags of an elliptical arc may be written with nothing between them or the numbers around them (`a1 1 0 011 1`). Foundation's `Scanner` reads none of those the way SVG means them, which is why this exists rather than being wrapped around it.
-/// It is a value type holding an index into the characters it was given, so a caller advances it by mutating its own copy and nothing is shared.
 struct SVGNumberScanner {
     /// `characters` is the text being scanned, indexable by position.
     private let characters: [Character]
@@ -33,9 +30,6 @@ struct SVGNumberScanner {
     }
 
     /// `nextNumber()` reads the number at the current position, or returns `nil` and stays where it is if there is not one.
-    ///
-    /// It accepts every form SVG permits: a leading sign, an omitted integer or fractional part (`.5`, `5.`), and a scientific exponent. An exponent that turns out to be malformed (`1e`) is rewound rather than consumed, so the `e` is left for whoever reads next.
-    /// A number too large to be one — `1e999`, which `Double` reads as an infinity — is refused as though it were not a number at all. Nothing downstream can do arithmetic with an infinity, and several things trap on the results, so this is the one place worth stopping it.
     mutating func nextNumber() -> Double? {
         skipSeparators()
 
@@ -113,8 +107,6 @@ struct SVGNumberScanner {
     }
 
     /// `nextFlag()` reads one elliptical-arc flag, which is a bare `0` or `1` that needs no separator after it.
-    ///
-    /// Reading it as a number instead would swallow the digits that follow, since `011` is one number but three tokens: two flags and the start of a coordinate.
     mutating func nextFlag() -> Bool? {
         skipSeparators()
 

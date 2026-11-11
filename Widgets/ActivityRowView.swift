@@ -82,8 +82,6 @@ struct ActivityRowView: View {
 
 extension ActivityRow {
     /// `fileText` is the file an activity is about: its name, emphasized, and however many further files the server merged in with it.
-    ///
-    /// The name is a `Text` rather than a value interpolated into one, and that is load-bearing. A `LocalizedStringKey` is parsed as markdown, and so is anything interpolated into it — a file legitimately named `_draft_.md` comes back out of that as `draft.md`, silently, because the underscores were read as emphasis. Interpolating a `Text` inserts it as it is instead, which is what makes the emphasis safe to apply here rather than with a pair of asterisks around a placeholder in the catalog.
     var fileText: Text {
         let name = Text(verbatim: fileName).bold()
 

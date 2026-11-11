@@ -4,9 +4,6 @@
 import Foundation
 
 /// `PageTitle` shortens the title a Nextcloud page gives itself to the part worth showing in the app's own interface.
-///
-/// Nextcloud composes a document title as the application's name followed by the instance's, and its single-page apps prepend whatever is open inside them, so a title reads "Files - Nextcloud" or "Ada - Talk - Nextcloud". The instance's name is the one component a native app never needs: the user is looking at one server, and the app's own chrome says which.
-/// It is only ever a fallback. Where a page can be resolved to one of the server's apps, that app's own name is shorter still and is used instead — see `ServerAppTransferObject+Resolution.swift`.
 enum PageTitle {
     /// `separator` is the string Nextcloud joins a title's components with.
     private static let separator = " - "

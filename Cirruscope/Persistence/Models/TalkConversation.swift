@@ -5,12 +5,6 @@ import Foundation
 import SwiftData
 
 /// `TalkConversation` is the SwiftData record for one Nextcloud Talk conversation the connected account takes part in, persisted so Spotlight and the Shortcuts app can be offered them without the server having been asked first.
-///
-/// It is the persistent counterpart of the value-type `ConversationTransferObject`; `AccountStore` maps between the two so nothing outside the store ever holds a managed object. `AccountStore.persist(conversations:)` upserts these by `token` — updating existing rows and deleting ones the server no longer lists — so a conversation keeps its identity across a refresh rather than being torn down and rebuilt, which is what lets a donated Spotlight item stay the same item.
-///
-/// It is named for the app rather than for the thing, unlike `ServerApp`, and that is not decoration: Rainmaker exports a public `Conversation`, and a record of the same name in this module would shadow it in every file that imports both. The project has met this before and answered it the same way, which is why the keyboard-shortcut record is not called `AppShortcut`.
-///
-/// Two fields the server reports are deliberately absent. How many messages are unread, and whether any of them mentions the account, are both true only for as long as nobody reads anything — and what reads this record is an index that is refreshed when the conversation *list* changes, not when a message arrives. See `ConversationTransferObject` for why a sometimes-right count is worse than none.
 @Model
 final class TalkConversation {
     /// `token` is what Talk addresses the conversation by, and what the route opening it requires.

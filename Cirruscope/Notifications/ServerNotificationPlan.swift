@@ -3,57 +3,30 @@
 
 import Foundation
 
-///
 /// `ServerNotificationPlan` is what one fetch of the server's notifications means for Notification Center and for the record of what was already seen: which notifications to post, which to withdraw, and what to remember next.
-///
-/// It is a pure decision over values, so every rule that keeps Notification Center an honest mirror of the server is tested without a server, a notification centre or a file.
-/// It lives in `Cirruscope/` because the widget extension posts nothing.
-/// The first look at an account is a baseline that posts nothing, since everything listed then was already waiting and announcing it all at once would bury the user in old news.
-/// Withdrawing follows the server whether or not posting is allowed: a notification the server no longer lists was dealt with somewhere, and one posted for another account does not belong on screen at all.
-///
 struct ServerNotificationPlan: Equatable, Sendable {
-    ///
     /// `Delivered` is one server notification found in Notification Center, with the account it was posted for where it says.
-    ///
     struct Delivered: Equatable, Sendable {
-        ///
         /// `id` is the server's identifier of the notification.
-        ///
         let id: Int
 
-        ///
         /// `recipient` is the account it was posted for, or `nil` for one posted before notifications recorded it.
-        ///
         let recipient: ServerNotificationRecipient?
     }
 
-    ///
     /// `isBaseline` is whether this fetch was the first look at its account, so nothing was posted.
-    ///
     let isBaseline: Bool
 
-    ///
     /// `post` is the notifications to post, oldest first.
-    ///
     let post: [ServerNotificationTransferObject]
 
-    ///
     /// `withdraw` is the identifiers of the delivered notifications to remove from Notification Center.
-    ///
     let withdraw: Set<Int>
 
-    ///
     /// `record` is what to remember once this fetch has been acted on.
-    ///
     let record: ServerNotificationRecord
 
-    ///
     /// `make(listing:for:recorded:delivered:mayPost:)` decides what the fetch that answered `listing` for `recipient` means, given what was recorded before, what Notification Center holds, and whether posting is allowed at all just now.
-    ///
-    /// The record is replaced rather than added to, and a record made for another account counts as none.
-    /// A notification is posted only when the record already belongs to `recipient`, posting is allowed, the record did not list it, Notification Center does not hold it, and its identifier is above the highest one ever recorded for `recipient`.
-    /// The server numbers notifications in the order it raises them, so that floor is what keeps a notification seen before — one that moved back into the part of the list the server answers with once newer ones were dealt with, or one the server left out of a listing for a while — from being taken for a new one; when the floor is wrong, a notification goes unannounced rather than many being announced at once.
-    ///
     static func make(listing: [ServerNotificationTransferObject], for recipient: ServerNotificationRecipient, recorded: ServerNotificationRecord?, delivered: [Delivered], mayPost: Bool) -> ServerNotificationPlan {
         var listedIDs = Set<Int>()
         var unique: [ServerNotificationTransferObject] = []
@@ -86,9 +59,7 @@ struct ServerNotificationPlan: Equatable, Sendable {
         return ServerNotificationPlan(isBaseline: false, post: post, withdraw: withdraw, record: record)
     }
 
-    ///
     /// `withoutPosting()` is this plan with nothing to post, for a record that could not be written: posting what it would have recorded would post it again on every fetch.
-    ///
     func withoutPosting() -> ServerNotificationPlan {
         ServerNotificationPlan(isBaseline: isBaseline, post: [], withdraw: withdraw, record: record)
     }

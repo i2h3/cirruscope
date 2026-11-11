@@ -5,9 +5,6 @@
 import Testing
 
 /// `DuplicateShortcutSuppressionTests` covers the rule that decides which single app a keyboard shortcut reaches when the stored data offers more than one candidate.
-///
-/// This is the logic issue #64 is about, and the reason it needs covering at this level rather than through `ShortcutRecorderView`: the recorder refuses a combination another app already holds, but duplicates can still be stored — by data recorded before that check existed, and, a shortcut belonging to the device rather than to a server, by an app returning to a server that offers another app the same combination was recorded for meanwhile — and the store is what keeps such a duplicate off the menus. Two enabled menu items sharing one key equivalent have no reliable tie-break in AppKit, so "the first app in menu order, on every call" is the property these cases pin — together with the matching asymmetry `appHolding(_:)` exists to prevent, where an app the store suppresses would still be named as a combination's occupant.
-/// A shortcut whose app the connected server does not offer is no candidate for as long as the app is missing, and two cases pin both ends of that: meanwhile it neither suppresses nor occupies anything, and once the app returns it competes like any other duplicate, the first app in menu order winning, and is kept rather than deleted when it loses.
 @MainActor
 @Suite(.serialized, .exclusiveStoreAccess)
 struct DuplicateShortcutSuppressionTests {

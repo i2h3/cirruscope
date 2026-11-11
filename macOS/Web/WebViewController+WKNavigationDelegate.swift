@@ -6,15 +6,6 @@ import os
 import WebKit
 
 /// `WebViewController`'s conformance to `WKNavigationDelegate` confines the embedded `WKWebView`'s main frame to the configured Nextcloud server, hands anything off that server's origin to the system via `NSWorkspace`, turns responses the web view cannot display or that arrive as attachments into downloads, reveals the storyboard-hidden web view once its initial page load has completed, treats the user activating a link to the server's own sign-out route as an app-level logout while cancelling a navigation the page's own script makes there, and reports every redirect to the server's sign-in form and every main-frame response to `retryBudget`, whose answers `WebViewController+SilentRetry` carries out.
-///
-/// Which of those an address is, is decided by `NextcloudSessionRoute` and `WebViewDestination` rather than here, and whether a navigation to the sign-out route is the user's by `SignOutRequest`, so this and the iOS web view cannot come to different conclusions — they did, and the answers macOS reached on its own were wrong in three ways: it compared hosts where it meant origins, so a differently-ported service on the same machine counted as the server; it matched the sign-in and sign-out routes by last path component, so a file a user named "logout" revoked their app password; and it resolved the `redirect_url` it re-requests without checking where it pointed.
-/// A redirect to the sign-in form nearly always means only that the browser session's cookie expired, so the page is re-requested with the stored app password rather than the user being asked to sign in.
-/// Nothing a navigation reports here is ever taken as the app password having been refused, not even a second redirect right after that retry: such a redirect is only a suspicion, the server is asked with one authenticated request, and only its HTTP 401 signs the account out.
-/// The sign-out route is the user's only when they activate a link to it: Nextcloud's session heartbeat with `auto_logout` navigates there by script once the page has gone without mouse or touch input for the session's lifetime, and reading that as a sign-out revoked the app password of every window left idle.
-///
-/// Any navigation that becomes a download is handed to `DownloadManager.shared`, which takes over as the transfer's delegate so it continues even if this web window closes.
-/// It is also where every new document picks up what the document-start seed script could not know: `didCommit` re-applies the appearance before the new document's first paint, and `didFinish` again once it has settled.
-/// Every method here logs its entry and each outcome at debug level so the navigation behaviour of a specific window — identified by the appended `logID` — can be reconstructed from a log capture when tracing misbehaviour.
 extension WebViewController: WKNavigationDelegate {
     /// These decision methods use the completion-handler form with an explicit `@objc(...)` selector rather than the
     /// `async` form: WKNavigationDelegate is dispatched by selector, and the `@escaping @MainActor` block matches the
@@ -187,9 +178,6 @@ extension WebViewController: WKNavigationDelegate {
     }
 
     /// `startDownload(from:in:)` starts an explicit `WKDownload` for `url` in `webView` and hands it to `DownloadManager`, the workaround for WebKit not delivering `…didBecomeDownload:` after a `.download` decision on this OS under Swift 6.
-    ///
-    /// `webView(_:decidePolicyFor:decisionHandler:)` (the response variant) calls it for a response it cannot render or that arrives as an attachment, then cancels the navigation; `startDownload(using:)` re-requests the URL in the web view's context, so the server session's cookies still authorize it.
-    /// The app password is attached on top of those cookies, but only for an address on the configured server. Cookies alone are not enough in the one case that matters most here — a download begun just after the browser session lapsed would otherwise save the sign-in page under the expected file name — and this method is reached from responses in sub-frames too, which on a page embedding an editor from another domain is exactly where a credential must not be sent.
     private func startDownload(from url: URL?, in webView: WKWebView) {
         guard let url else {
             logger.error("Cannot start a download because the response has no URL (WebViewController \(self.logID))")
@@ -237,17 +225,12 @@ extension WebViewController: WKNavigationDelegate {
     }
 
     /// `webView(_:didCommit:)` re-applies the appearance as a new document is created, before it is first painted.
-    ///
-    /// The document-start seed carries the values resolved when this controller loaded, and one of them it can never carry at all: there is no window at `viewDidLoad()`, so the window button clearance is seeded as absent and the stylesheet's fallback — an ordinary window's clearance — is what a fresh document starts on. For a window already in fullscreen that fallback is wrong, and `didFinish` would correct it only after the page had been laid out and painted with it. Committing is the last moment before that, so nothing wrong is ever displayed.
-    /// It is what makes a window AppKit restores directly into a fullscreen space correct from its first frame, no transition having been announced to anyone. `didFinish` still re-applies as well, because a page can change what the appearance is resolved against between the two.
     func webView(_: WKWebView, didCommit _: WKNavigation!) {
         logger.debug("Navigation committed; re-applying appearance before the new document paints (WebViewController \(self.logID))")
         reapplyAppearance()
     }
 
     /// `webView(_:didFinish:)` reveals the web view once a main-frame navigation has finished, re-applies the appearance, and reports the language the page was rendered in.
-    ///
-    /// The language is reported here rather than on commit because `<html lang>` is only certain to be there once the document has been parsed, and it is how a language changed in Nextcloud's personal settings, which only reloads the page, reaches the app list.
     func webView(_: WKWebView, didFinish _: WKNavigation!) {
         logger.debug("Navigation finished; revealing web view and reporting the page's language (WebViewController \(self.logID))")
 

@@ -6,11 +6,6 @@ import Foundation
 import Testing
 
 /// `MediaCaptureDecisionTests` covers `MediaCaptureDecision`, which decides which pages are given the camera and the microphone without a prompt of the web view's own.
-///
-/// The stakes are asymmetric, so most cases are ones that must not be granted: a plain-HTTP or differently-ported service on the server's own machine, which the host comparison this replaced waved through, and a frame from another origin inside the server's page.
-/// The rest pin that the server itself is still recognized however WebKit spells it.
-/// That spelling is measured rather than written down here: `SecurityOriginProbe` loads a document at each address in a real `WKWebView`, and the decision is asked about the origin WebKit reports for it.
-/// The time limit is what turns a report that never arrives into a failure rather than a run that never ends, and it is generous because a case alone takes seconds but shares the main actor with every other suite: in a full iOS run on a busy machine every case here took forty.
 @MainActor
 @Suite(.timeLimit(.minutes(5)))
 struct MediaCaptureDecisionTests {

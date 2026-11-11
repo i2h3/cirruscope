@@ -6,9 +6,6 @@ import os
 import UniformTypeIdentifiers
 
 /// `DownloadTableCellView` is the row view `DownloadViewController` dequeues for each `Download`, showing its name, progress, and status and owning the buttons that stop or reveal it.
-///
-/// `DownloadViewController+NSTableViewDelegate` calls `configure(with:)` to bind a row to its `Download`; the cell then drives its `progressIndicator` from the download's `Progress` and observes that progress to keep `status` current.
-/// Its stop and reveal buttons target the cell itself rather than the controller, so the cell asks `DownloadManager` to cancel the download it holds or opens Finder on the finished file.
 class DownloadTableCellView: NSTableCellView {
     /// `fileName` shows the download's `displayName`, the name the file is saved under in the Downloads folder.
     @IBOutlet
@@ -38,18 +35,12 @@ class DownloadTableCellView: NSTableCellView {
     private let logger = Logger(for: DownloadTableCellView.self)
 
     /// `download` is the model the row currently represents, retained so the button actions can act on it.
-    ///
-    /// `configure(with:)` sets it, and the actions read it to cancel the transfer or reveal its `destinationURL`.
     private var download: Download?
 
     /// `progressObservation` is the key-value observation of the current download's `fractionCompleted` that keeps `status` in sync while the transfer runs.
-    ///
-    /// `configure(with:)` replaces it on every bind, which invalidates the previous observation so a reused cell never keeps reporting a prior download.
     private var progressObservation: NSKeyValueObservation?
 
     /// `configure(with:)` binds the row to `download`, populating every subview and starting to observe its progress.
-    ///
-    /// `DownloadViewController+NSTableViewDelegate` calls it in `tableView(_:viewFor:row:)`; it first tears down any observation left from a previous binding so cell reuse is safe, since `NSTableCellView` has no `prepareForReuse`.
     func configure(with download: Download) {
         progressObservation = nil
         self.download = download

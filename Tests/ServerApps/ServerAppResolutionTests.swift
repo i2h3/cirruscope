@@ -5,35 +5,22 @@
 import Foundation
 import Testing
 
-///
 /// `ServerAppResolutionTests` covers `app(for:on:)`, which decides which of a server's apps a loaded page belongs to.
-///
-/// Two surfaces read it and neither can afford to be wrong in the same way. The iPhone titles its navigation bar with the answer, where a miss is merely a longer title; the Mac decides whether a window is already showing an app, where a miss opens a second window for a page the user already has open. So the cases below are less about the ordinary answer than about the ways a plausible implementation gets it wrong: a string prefix that matches a differently named app, a spelling of the same path the server chose for its own reasons, and a page on a host that only looks like the right one.
-/// Results are compared on `id`, `ServerAppTransferObject` being `Codable, Identifiable, Sendable` and deliberately not `Equatable`.
-///
 struct ServerAppResolutionTests {
-    ///
     /// An instance at the root of its host, which is how most are installed.
-    ///
     private static let server = URL(string: "https://cloud.example.com")!
 
-    ///
     /// An instance installed in a subdirectory, whose web root is part of every path it names.
-    ///
     private static let subpathServer = URL(string: "https://cloud.example.com/nextcloud/")!
 
-    ///
     /// Three apps as a server reports them, including the pair whose names share a prefix.
-    ///
     private static let apps = [
         ServerAppTransferObject(id: "files", order: 0, href: "/apps/files/", name: "Files"),
         ServerAppTransferObject(id: "files_sharing", order: 1, href: "/apps/files_sharing/", name: "File Sharing"),
         ServerAppTransferObject(id: "spreed", order: 2, href: "/apps/spreed/", name: "Talk"),
     ]
 
-    ///
     /// Resolves `address` against `apps` and answers the identifier of the app it belongs to, or `nil`.
-    ///
     private func resolve(_ address: String, in apps: [ServerAppTransferObject] = ServerAppResolutionTests.apps, on server: URL = ServerAppResolutionTests.server) throws -> String? {
         let url = try #require(URL(string: address))
 

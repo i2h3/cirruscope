@@ -6,10 +6,6 @@ import os
 import Rainmaker
 
 /// `RecentActivity` fetches the newest file activity of the connected server, prepared for a widget to draw.
-///
-/// It is the sibling of `UnreadNotifications` and deliberately the same shape: stateless, resolving the account from `Keychain` itself, and answering with a value instead of throwing. That is what lets a widget timeline provider — a short-lived process with no store, no view hierarchy and nothing restored but the Keychain — call exactly the code an app would.
-/// Everything here is `nonisolated` and nothing it touches is main-actor-bound, which is the property an extension depends on; see AGENTS.md → Concurrency.
-/// Scope is the server's own `files` filter rather than a client-side selection, so an instance decides what counts as file activity. That filter is Nextcloud's `FileChanges`, which admits `file_created`, `file_changed`, `file_deleted` and `file_restored` and excludes sharing entirely — see `DECISIONS.md` for why the widget shows no shares.
 enum RecentActivity {
     /// `Outcome` is the closed set of results a fetch can have, carrying the prepared rows only in the one case where there are any to carry.
     enum Outcome: Sendable {
@@ -19,8 +15,6 @@ enum RecentActivity {
         case fetched([ActivityRow], account: ServerAccount)
 
         /// `noAccount` reports that the Keychain holds no usable credentials, so there is no server to ask.
-        ///
-        /// A Keychain that could not be read is not this, but `unreachable`: nothing has been learned about whether anybody is signed in. Nor are credentials still in macOS's file-based Keychain, which the macOS app has not moved yet.
         case noAccount
 
         /// `endpointUnavailable` reports that the instance offers no file activity: either the activity app answered `404`, or it is enabled but publishes no `files` filter.
@@ -45,10 +39,6 @@ enum RecentActivity {
     private static let filterIdentifier = OSAllocatedUnfairLock<String?>(initialState: nil)
 
     /// `fetch(limit:reason:)` asks the connected server for its newest file activity, reporting what came back.
-    ///
-    /// `reason` names which surface asked and appears in every line this logs, as it does in `UnreadNotifications`, because a widget refresh and an app refresh can be in flight together. A `StaticString` is used so the value prints in the clear rather than as `<private>`.
-    /// `limit` is what the server is asked for, not what comes back: an activity whose type is none of the four the badges cover is dropped by `ActivityRow`, so a caller wanting *n* rows should ask for more than *n*. The server clamps it to `1...200` regardless.
-    /// It never throws. Every failure is a case of `Outcome`, because the caller wants to decide what a failure means for what is already on screen rather than to handle an error.
     static func fetch(limit: Int, reason: StaticString) async -> Outcome {
         let started = ContinuousClock.now
 
@@ -114,8 +104,6 @@ enum RecentActivity {
     }
 
     /// `fileActivityFilter(on:reason:)` is the id of the server's file-activity filter, asked for once per process and remembered, or `nil` when the instance publishes none.
-    ///
-    /// The filter is matched by id rather than by name, the name being localized into the account's language while the id is not. `ActivityFilter.object` is excluded even though the files app is what registers it: it is the placeholder id an object-scoped query uses, not a filter a caller may pass on its own.
     private static func fileActivityFilter(on server: Server, reason: StaticString) async throws -> String? {
         if let remembered = filterIdentifier.withLock({ $0 }) {
             return remembered
@@ -135,8 +123,6 @@ enum RecentActivity {
     }
 
     /// `milliseconds(since:)` is how long ago `start` was, in whole milliseconds, for the duration every line above carries.
-    ///
-    /// A monotonic clock rather than a `Date` difference, and an integer rather than `Duration`'s own description so it prints in the clear without being marked public by hand — the same reasoning as in `UnreadNotifications`.
     private static func milliseconds(since start: ContinuousClock.Instant) -> Int {
         Int(start.duration(to: .now) / .milliseconds(1))
     }

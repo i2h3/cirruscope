@@ -18,8 +18,6 @@ enum ActivityFeedStore {
         let fetchedAt: Date
 
         /// `serverAddress` is the server the rows were fetched from, which the avatars beside them were cached under, or `nil` for a snapshot saved before it was recorded.
-        ///
-        /// It is optional so that such a snapshot still decodes: a missing key decodes as `nil`, and the rows then draw their monograms until the next fetch records it.
         let serverAddress: URL?
     }
 

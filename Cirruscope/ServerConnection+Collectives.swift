@@ -6,10 +6,6 @@ import os
 import Rainmaker
 
 /// `ServerConnection`'s collectives: fetching the collectives the account is a member of and the pages within each.
-///
-/// This is the one domain that is gated before it asks anything, and the reason is arithmetic rather than principle. Talk and Notes are decided from the response because the gate would save a single request; here the server lists pages *per collective*, so a refresh is one request for the collectives plus one for each of them — and on an instance without the app, every one of those is wasted. The gate is free besides: Collectives advertises no capability at all, so the network library's own documentation points at the navigation entry with the identifier `collectives`, which this app already fetches and stores a moment earlier.
-///
-/// A `404` is still handled, because the gate is a prediction made from a list that can be a refresh behind. Either one clears what was stored, since both say the app is gone: the gate before anything is asked, and a `404` when that list turns out to be out of date. Only a failure of any other kind keeps the previous list.
 extension ServerConnection {
     /// `refreshCollectives(using:)` fetches the account's collectives and each one's pages, or clears what was stored when the server has no Collectives app.
     ///
@@ -71,9 +67,6 @@ extension ServerConnection {
     }
 
     /// `refreshPages(ofCollective:using:)` fetches the pages of one collective and persists them.
-    ///
-    /// A failure here leaves that collective's stored pages alone and does not abort the collectives after it: one collective being unreadable — deleted between the listing and this request, or refused for this account — says nothing about the rest, and treating it as though it did would empty an index because of one row.
-    /// It answers `false` only when the account the refresh fetched as is no longer signed in, which is what does abort them.
     private static func refreshPages(ofCollective collectiveID: Int, using server: Server) async -> Bool {
         do {
             let pages = try await server.pages(inCollective: collectiveID)

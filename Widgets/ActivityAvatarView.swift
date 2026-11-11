@@ -5,10 +5,6 @@ import SwiftUI
 import WidgetKit
 
 /// `ActivityAvatarView` is the circle at the head of an activity row: whoever acted, badged with what they did.
-///
-/// The circle is the actor's profile photograph when the server has one, and their initials on a colour of their own when it does not — `ServerAvatars` caches only photographs precisely so that a missing one lands here as the monogram the design specifies rather than as the monogram Nextcloud draws.
-/// The badge sits on the circle's corner and has to read over a photograph as well as over a flat fill, which is what the ring is for. The ring takes the *card's* colour rather than white, so on a dark card it reads as a cut-out rather than as a white outline the design never asks for.
-/// A tinted or clear Home Screen, and the Lock Screen, hand the widget an accented or vibrant rendering rather than full colour. There the system throws away every colour and keeps only the alpha, flattening each opaque fill to a single white — which would leave the circle and its badge as blank white discs with their monogram and glyph tinted invisibly into them. So in those modes the symbols and the ring are punched out of the fills as transparency instead of drawn in a second colour the system has already discarded, and the photograph is desaturated so it maps to a shaded portrait rather than a white disc. `compositingGroup()` is what lets one view's transparency cut into another's fill beneath it.
 struct ActivityAvatarView: View {
     /// `row` is the activity this circle belongs to, which supplies both the actor and the verb.
     let row: ActivityRow
@@ -50,8 +46,6 @@ struct ActivityAvatarView: View {
     }
 
     /// `accessibilityDescription` is who acted and what they did, which is the pair this circle states by drawing rather than in words.
-    ///
-    /// The row's design deliberately writes neither — `DECISIONS.md` records why — and a photograph and a glyph say nothing to a screen reader, so without this the two facts simply are not there. The monogram is hidden behind it rather than read, because "AK" is the drawing and not the fact.
     private var accessibilityDescription: String {
         let actor = row.actorName ?? String(localized: "You", comment: "Names the signed-in user as the person who acted, read aloud by VoiceOver in place of a name for your own activity. The server sends no name for it, and the design draws a figure in the circle rather than initials.")
 

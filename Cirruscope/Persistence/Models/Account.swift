@@ -5,14 +5,6 @@ import Foundation
 import SwiftData
 
 /// `Account` is the SwiftData root record for the Nextcloud account the user has connected to: the server address, its cached branding and version, who the account signs in as, and the account-scoped domain records that belong to it.
-///
-/// It is the anchor every record describing the server relates back to, directly or through a parent: the server apps, Talk conversations, notes and collectives each have an `account` relationship here, a collective's pages hang off it, and a later domain model gains a relationship here the same way, so each is partitioned per account for free. `AccountStore` maintains at most one `Account` today; the schema already supports several, so multi-account support later needs no migration.
-///
-/// What the user sets up on this device is deliberately not here: the keyboard shortcuts and the appearance settings are records of their own, `KeyboardShortcut` and `DevicePreferences`, with no relationship to an account, so deleting the account at a sign-out leaves them in place.
-///
-/// `serverAddress` is optional because the Mac's sign-in persists the server's theming and version (via `ServerConnection.validateAndPersist(_:)`) before the validated address itself is stored: a freshly created `Account` therefore represents "connecting" until the address is filled in. Deleting the `Account` cascades to its apps, conversations, collectives and notes, and through them to the collectives' pages, which is how `AccountStore.disconnect()` clears everything the server sent in one step.
-///
-/// Credentials are deliberately not stored here — secrets stay in `Keychain`, keyed by `serverAddress`, so the shared, unencrypted SwiftData store never holds them.
 @Model
 final class Account {
     /// `serverAddress` is the URL of the connected Nextcloud server, or `nil` while a sign-in is still in progress.
@@ -55,8 +47,6 @@ final class Account {
     var collectives: [ServerCollective] = []
 
     /// `notes` are the notes in this account's Nextcloud Notes app; deleting the account cascades to them.
-    ///
-    /// Only their titles and categories, never their text — see `ServerNote`. Cascading matters here for the same reason it does for the conversations: a note's title is something the user wrote, and it must not outlive the account that was allowed to read it.
     @Relationship(deleteRule: .cascade, inverse: \ServerNote.account)
     var notes: [ServerNote] = []
 

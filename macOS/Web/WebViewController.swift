@@ -6,10 +6,6 @@ import os
 import WebKit
 
 /// `WebViewController` backs the storyboard scene that hosts the embedded `WKWebView` Cirruscope uses to display Nextcloud.
-///
-/// `AppDelegate` presents it on launch when `AccountStore.serverAddress` is non-`nil` and credentials are stored for it, and `ServerAddressViewController` transitions to it after persisting a freshly validated server address.
-/// It injects the bundled `Cirruscope.css` stylesheet, bridges custom title-bar drag behaviour, and tracks the state of Nextcloud's sidebar so that `WebViewController+NSMenuItemValidation` can drive the "Show/Hide Sidebar" menu item. The drag and sidebar behaviours are driven by the JavaScript resources enumerated in `macOSScript`, which are loaded from the bundle on demand rather than embedded in this source file.
-/// The hosted `WKWebView` is hidden in the storyboard and only revealed by `WebViewController+WKNavigationDelegate` once its initial page load completes so the user is not exposed to the unstyled intermediate paint of the Nextcloud interface.
 class WebViewController: NSViewController, WKScriptMessageHandler {
     // MARK: - Outlets
 
@@ -18,45 +14,32 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     var backgroundImageView: BackgroundImageView!
 
     /// `stateOverlay` is the rounded card shown over the themed backdrop while a page loads or after a load fails, holding `progressIndicator`, `headline`, `explanation`, and `retry`.
-    ///
-    /// `showLoadingState()`, `handleNavigationFailure(_:)`, and `revealLoadedContent()` switch it between its two states and hide it once the web view is revealed, and `updateStateOverlayBackground()` clears its opaque fill while the translucent appearance is enabled.
     @IBOutlet
     var stateOverlay: StateOverlayStackView!
 
-    ///
     /// An animated activity indicator.
     ///
     /// Only visible during the initial page load, hidden when a load failed.
-    ///
     @IBOutlet
     var progressIndicator: NSProgressIndicator!
 
-    ///
     /// Multi-functional label for the current state.
     ///
     /// Should be something like "Loading" on window revelation and "Server unreachable" in case of failed page loads.
-    ///
     @IBOutlet
     var headline: NSTextField!
 
-    ///
     /// An optional and longer text to explain the failed page load, if so.
-    ///
     @IBOutlet
     var explanation: NSTextField!
 
-    ///
     /// Optional retry button for failed page loads.
     ///
     /// Visibility depends on the web view state.
-    ///
     @IBOutlet
     var retry: NSButton!
 
     /// `webView` is the `WKWebView` that loads `AccountStore.serverAddress` and renders the Nextcloud web interface.
-    ///
-    /// `viewDidLoad()` configures it, installs `Script.styleSheet` and the user scripts produced by `installWindowDragBridge()` and `installSidebarToggleBridge()`, and triggers the initial navigation.
-    /// The view is hidden in the storyboard and unhidden by `webView(_:didFinish:)` after the initial navigation has completed.
     @IBOutlet
     var webView: WKWebView!
 
@@ -69,8 +52,6 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     private static var nextLogID: UInt64 = 0
 
     /// `logID` is a per-instance identifier appended to this controller's log messages, for example "(WebViewController 3)", so entries from different web windows — which each have their own `WebViewController` sharing the `WebViewController` category — can be told apart while the category stays stable and filterable.
-    ///
-    /// It is an auto-incremented `UInt64`, which `os.Logger` prints in the clear (unlike a string, which would be redacted), and it is not `private` so the delegate extensions that log can append it too.
     let logID: UInt64 = {
         WebViewController.nextLogID += 1
         return WebViewController.nextLogID
@@ -79,23 +60,15 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     // MARK: - Initial Load
 
     /// `hasRevealedAfterInitialLoad` is `true` once `webView` has been unhidden after its initial navigation has completed.
-    ///
-    /// `webView(_:didFinish:)` consults this flag so the reveal happens exactly once, on the first finished navigation, and subsequent navigations do not touch the view's visibility.
     var hasRevealedAfterInitialLoad = false
 
     /// `hasStartedInitialLoad` is `true` once the initial navigation has been issued, so `viewWillAppear()` triggers it exactly once.
     private var hasStartedInitialLoad = false
 
     /// `pendingRetryURL` is the URL the retry button should reload: the address that last failed to load, or the initial target before the first load has been attempted.
-    ///
-    /// `startInitialLoadIfNeeded()` seeds it with the initial target, `handleNavigationFailure(_:)` updates it to the URL that actually failed, and `retryLoad(_:)` reloads it — rather than calling `WKWebView.reload()`, which does nothing after a provisional failure that never committed a page.
     private var pendingRetryURL: URL?
 
     /// `retryBudget` decides how this window works through a lapsed browser session: when to re-request a page with the stored app password, when to ask the server whether it still accepts that password, when to hold off, and when to sign out, which it answers only once the server has refused the password with HTTP 401.
-    ///
-    /// `webView(_:decidePolicyFor:decisionHandler:)` reports every redirect to the sign-in form and every main-frame response to it, `WebViewController+SilentRetry` reports what the server said about the app password and carries out each step it answers, and `retryLoad(_:)` resets it, a load the user asked for being a fresh start.
-    /// It used to be a single retry whose second redirect to the sign-in form signed the account out, and that cost a user their session on 2026-10-09: the stale page's own script, which navigates to the form on every HTTP 401 its polls receive, superseded the retry inside WebKit, and its next redirect was read as the server refusing a password it still accepted.
-    /// A redirect is therefore only ever a suspicion, and `SilentRetryBudget` is shared with iOS, the bookkeeping being the subtle half of this decision.
     var retryBudget = SilentRetryBudget()
 
     /// `webWindowController` is the `WebWindowController` hosting this controller, from which the `targetURL` to load is read once the view is in its window.
@@ -104,15 +77,11 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     }
 
     /// `restorableURL` is the URL to persist for window restoration: the page currently shown, or the window's target before the first load completes.
-    ///
-    /// `WebWindow.encodeRestorableState(with:)` reads it so a relaunch can reopen this window on the same page.
     var restorableURL: URL? {
         webView.url ?? webWindowController?.targetURL
     }
 
     /// `startInitialLoadIfNeeded()` issues the initial navigation the first time the view appears, loading the host window controller's `targetURL` when set or `AccountStore.serverAddress` otherwise.
-    ///
-    /// It runs from `viewWillAppear()` rather than `viewDidLoad()` because the host `WebWindowController` and its `targetURL` are only reachable once the view has been placed in its window.
     private func startInitialLoadIfNeeded() {
         guard hasStartedInitialLoad == false else {
             return
@@ -129,9 +98,6 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     }
 
     /// `authenticatedRequest(for:)` builds the request that loads `url`, attaching HTTP Basic authentication derived from the `Credentials` stored for the connected server address when they are available.
-    ///
-    /// Nextcloud accepts the app password as Basic authentication and establishes a web session from it, so the embedded web view is signed in without a separate in-page login. When no credentials are stored the request is unauthenticated and the server presents its normal login page.
-    /// Not `private`: `WebViewController+SilentRetry` also calls this, to re-request a page with the stored app password once the browser session behind it has lapsed mid-session rather than at the initial load, and `WebViewController+WKNavigationDelegate` to authorize a download from the connected server.
     func authenticatedRequest(for url: URL) -> URLRequest {
         var request = URLRequest(url: url)
 
@@ -185,8 +151,6 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     // MARK: - State Overlay
 
     /// `showLoadingState()` configures `stateOverlay` for an in-progress page load: the spinner and `headline` are shown, `explanation` and `retry` are hidden, and the web view stays hidden behind the background until the load finishes.
-    ///
-    /// `viewDidLoad()` calls it for the initial load and `retryLoad(_:)` calls it again when the user retries after a failure. Because `stateOverlay` detaches hidden arranged views, toggling each child's `isHidden` also collapses it out of the card's layout.
     private func showLoadingState() {
         headline.stringValue = String(localized: "Loading…", comment: "Headline shown in the web window while the page is loading.")
         headline.isHidden = false
@@ -200,8 +164,6 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     }
 
     /// `handleNavigationFailure(_:)` switches `stateOverlay` to its failure state — hiding the spinner and showing the "Server unreachable" headline, a friendly explanation, and the retry button — and records the URL a retry should reload.
-    ///
-    /// `WebViewController+WKNavigationDelegate` calls it from both `didFail` and `didFailProvisionalNavigation`. Navigations the app cancels itself — an external host handed to the browser, the server's own logout/login page, or a response turned into a download — surface here as cancellation errors rather than genuine load failures, so those are ignored to keep the overlay from flashing over content the user is still using.
     func handleNavigationFailure(_ error: any Error) {
         let nsError = error as NSError
 
@@ -218,8 +180,6 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     }
 
     /// `showFailureState(retrying:)` switches `stateOverlay` to its failure state and records `url` as what the retry button reloads, falling back to the page shown, the window's target or the server's address when `url` is `nil`.
-    ///
-    /// `handleNavigationFailure(_:)` calls it for a load that failed, and `WebViewController+SilentRetry` for a hold reached before any page was ever shown, where no stale page is left whose script could start the recovery again and the window would otherwise stay on its loading state for good.
     func showFailureState(retrying url: URL?) {
         pendingRetryURL = url
             ?? webView.url
@@ -239,8 +199,6 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     }
 
     /// `revealLoadedContent()` hides `stateOverlay` and the background and reveals the web view once a navigation has finished.
-    ///
-    /// `WebViewController+WKNavigationDelegate`'s `didFinish` calls it after every successful load, so a retry that follows a failure restores the web view too, not only the very first load. It makes the web view the first responder each time so it rejoins the key window's responder chain and re-enables the Back/Forward/Reload menu items: `handleNavigationFailure(_:)` hides the web view on a failure, which makes AppKit resign its first-responder status, so it has to be restored on every reveal rather than only the first.
     func revealLoadedContent() {
         progressIndicator.stopAnimation(self)
         stateOverlay.isHidden = true
@@ -250,9 +208,6 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     }
 
     /// `retryLoad(_:)` re-issues the failed navigation when the user taps the retry button, returning `stateOverlay` to its loading state until the load succeeds or fails again.
-    ///
-    /// It reloads `pendingRetryURL` rather than calling `WKWebView.reload()`, which would do nothing after a provisional failure that never committed a page.
-    /// It resets `retryBudget` first, because a load the user asked for starts over: a hold imposed while the server could not be reached would otherwise leave the user's own retry cancelled at the sign-in form with nothing happening.
     @IBAction
     func retryLoad(_: Any?) {
         guard let url = pendingRetryURL ?? webWindowController?.targetURL ?? AccountStore.shared.serverAddress else {
@@ -268,20 +223,12 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     // MARK: - Background
 
     /// `updateBackdrop()` paints the server's theming background behind the web view, its plain color or the cached copy of its image, or nothing when neither is available so the window material shows through.
-    ///
-    /// `viewDidLoad()` calls it.
-    /// The color is read back out of what `AccountStore.persist(theming:)` recorded, and the image is the cached copy of the theming background that it downloaded via `AssetCache`.
-    /// Both paths that produce the *first* web window — `AppDelegate.presentInitialWindow(forLaunch:)` at launch and `ServerAddressViewController` after sign-in — await `ServerConnection.validateAndPersist(_:)`, and so that recording and download, before presenting it, which is what puts both in place.
-    /// A window opened later by ⌘N deliberately does not wait for that validation, and simply reads what those paths already recorded; a miss is not an error state but the ordinary "no background available" case `cachedBackgroundColor()` and `cachedBackgroundImage()` return `nil` for, leaving the window material to show through.
     private func updateBackdrop() {
         backgroundImageView.backdropColor = cachedBackgroundColor()
         backgroundImageView.image = cachedBackgroundImage()
     }
 
     /// `cachedBackgroundColor()` returns the server's plain theming background color, or `nil` when the server publishes an image, no theming has been recorded yet, or the recorded value is not a color.
-    ///
-    /// The color needs no record of its own: whenever `themeBackgroundPlain` is set, `AccountStore.themeBackground` holds the capability's `background` as the server sent it, which is then the color Nextcloud paints behind its pages (issue #58).
-    /// It is drawn as a fixed sRGB color, because Nextcloud paints a plain background identically in its light and dark themes.
     private func cachedBackgroundColor() -> NSColor? {
         guard AccountStore.shared.themeBackgroundPlain == true else {
             return nil
@@ -312,22 +259,14 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     // MARK: - Window Title
 
     /// `titleObservation` retains the key-value observation of `webView`'s `title` that keeps the host window's title in sync with the currently displayed Nextcloud page.
-    ///
-    /// `observeWebViewTitle()` assigns it during `viewDidLoad()`, and it is released when the controller is deallocated, which ends the observation.
     private var titleObservation: NSKeyValueObservation?
 
     /// `observeWebViewTitle()` starts mirroring `webView.title` into the host window's title so the page title identifies the window in Mission Control, the "Window" menu, and other system UI, even though the title bar itself hides it.
-    ///
-    /// `viewDidLoad()` calls this once after the web view has been configured. The observation reads `webView.title` on every change, including the in-page title updates Nextcloud performs as the user navigates its single-page interface, and substitutes an empty string while the page has not yet reported a title.
     private func observeWebViewTitle() {
         titleObservation = webView.observe(\.title, options: [.initial, .new], changeHandler: makeTitleChangeHandler())
     }
 
     /// `makeTitleChangeHandler()` builds the KVO change handler `observeWebViewTitle()` registers on `webView.title`.
-    ///
-    /// It is `nonisolated` so the closure it returns is not itself inferred main-actor-isolated: `WebViewController` is main-actor-isolated via `NSResponder`, so a closure written directly inside one of its methods would inherit that isolation too, and trip a dynamic isolation check if `WKWebView` ever delivered this KVO callback off the main thread instead of hopping to the main actor explicitly, as this handler now does.
-    ///
-    /// Only `change.newValue` — the `Sendable` `String?` KVO already snapshotted — crosses into the `Task`, rather than `webView` itself, since `WKWebView` is main-actor-isolated and not `Sendable`.
     private nonisolated func makeTitleChangeHandler() -> @Sendable (WKWebView, NSKeyValueObservedChange<String?>) -> Void {
         { [weak self] _, change in
             let title = change.newValue.flatMap(\.self) ?? ""
@@ -345,22 +284,14 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     // MARK: - Web View URL
 
     /// `urlObservation` retains the key-value observation of `webView`'s `url` that logs every change to the currently displayed page's address.
-    ///
-    /// `observeWebViewURL()` assigns it during `viewDidLoad()`, and it is released when the controller is deallocated, which ends the observation.
     private var urlObservation: NSKeyValueObservation?
 
     /// `observeWebViewURL()` logs `webView.url` on every change so same-document navigations are visible in a log capture.
-    ///
-    /// `viewDidLoad()` calls this once after the web view has been configured. It complements `WebViewController+WKNavigationDelegate`, whose delegate callbacks fire only for the loading pipeline: Nextcloud's single-page interface changes the URL through the History API (`history.pushState` / `replaceState`, and `popstate`), which are same-document navigations that never issue a request or a document load, so `WKNavigationDelegate` never sees them. `WKWebView.url` is key-value-observing compliant and does update for those changes, which is why this observation catches what the delegate cannot.
     private func observeWebViewURL() {
         urlObservation = webView.observe(\.url, options: [.initial, .new], changeHandler: makeURLChangeHandler())
     }
 
     /// `makeURLChangeHandler()` builds the KVO change handler `observeWebViewURL()` registers on `webView.url`.
-    ///
-    /// It is `nonisolated` for the same reason as `makeTitleChangeHandler()`: so the closure it returns is not inferred main-actor-isolated and does not trip a dynamic isolation check should `WKWebView` ever deliver this KVO callback off the main thread instead of hopping to the main actor as this handler does.
-    ///
-    /// Only `change.newValue` — the `Sendable` `URL??` KVO already snapshotted — crosses into the `Task`, rather than `webView` itself, since `WKWebView` is main-actor-isolated and not `Sendable`.
     private nonisolated func makeURLChangeHandler() -> @Sendable (WKWebView, NSKeyValueObservedChange<URL?>) -> Void {
         { [weak self] _, change in
             let url = change.newValue.flatMap(\.self)
@@ -382,10 +313,6 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     }
 
     /// `makeWebViewResizeWithItsSuperview()` replaces the storyboard's four edge constraints on `webView` with an autoresizing mask, so the web view keeps filling whatever view it currently lives in — including the fullscreen window WebKit moves it into.
-    ///
-    /// `viewDidLoad()` calls it right after `enableElementFullscreen()`, the preference that makes that move possible in the first place.
-    /// Entering element fullscreen removes `webView` from this controller's view — which destroys every constraint referring to it, those four included — and adds it to a window of WebKit's own; leaving fullscreen adds it back. WebKit carries the frame and the autoresizing mask across both moves, but not constraints, so with the storyboard's Auto Layout pinning left in place the web view arrives in the fullscreen window with no layout at all and freezes at the size it had on entry. That is measured, not hypothetical: moving the fullscreen space to a larger external display resized WebKit's window and left the page rendering at the internal display's size.
-    /// An autoresizing mask survives the round trip because it belongs to the view itself rather than to the superview that owns its constraints, and for a subview that simply fills its parent it expresses exactly what those four constraints did. `translatesAutoresizingMaskIntoConstraints` has to be turned back on for the mask to be honoured at all, and the storyboard's constraints are deactivated first so the ones AppKit then generates from the frame do not fight them.
     private func makeWebViewResizeWithItsSuperview() {
         for constraint in view.constraints where constraint.firstItem === webView || constraint.secondItem === webView {
             constraint.isActive = false
@@ -397,24 +324,14 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     }
 
     /// `fullscreenStateObservation` retains the key-value observation of `webView`'s `fullscreenState` that logs every transition into and out of WebKit's own fullscreen window.
-    ///
-    /// `observeFullscreenState()` assigns it during `viewDidLoad()`, and it is released when the controller is deallocated, which ends the observation.
     private var fullscreenStateObservation: NSKeyValueObservation?
 
     /// `observeFullscreenState()` logs `webView.fullscreenState` on every change, so that a report of a page's fullscreen button doing nothing — the shape issue #84 arrived in — can be answered from a log capture: whether WebKit was asked at all, whether it entered, and whether it came back.
-    ///
-    /// `viewDidLoad()` calls this once, right after `enableElementFullscreen()`. `WKWebView` documents the property as the notification channel for the transition, on the expectation that an application adjusts or restores its own interface around it; Cirruscope has nothing to adjust, because the window chrome, `stateOverlay`, and `backgroundImageView` all stay behind in the host window the web view leaves, and the latter two are hidden for as long as a page is on screen anyway. What the app *does* have to keep working across the move is a keyboard shortcut and a stylesheet, and neither is driven from here: `macOSScript.sidebarShortcut` claims ⌃⌘S inside the page, and `Cirruscope.css` styles the fullscreen element with `:fullscreen`, so both follow the page rather than a state this observation would have to distribute.
-    /// The log is therefore all it does — the way `observeWebViewURL()` does — but at `.notice` rather than `.debug`, since only `.notice` and above are persisted for retrieval after the fact and a fullscreen transition is far too rare for that to become noise.
-    /// It deliberately does not ask for `.initial` either, which would report `notInFullscreen` once per window at launch and say nothing.
     private func observeFullscreenState() {
         fullscreenStateObservation = webView.observe(\.fullscreenState, options: [.new], changeHandler: makeFullscreenStateChangeHandler())
     }
 
     /// `makeFullscreenStateChangeHandler()` builds the KVO change handler `observeFullscreenState()` registers on `webView.fullscreenState`.
-    ///
-    /// It is `nonisolated` for the same reason as `makeTitleChangeHandler()`: so the closure it returns is not inferred main-actor-isolated and does not trip a dynamic isolation check should `WKWebView` ever deliver this KVO callback off the main thread instead of hopping to the main actor as this handler does.
-    ///
-    /// Only `change.newValue` — the `Sendable` `WKWebView.FullscreenState?` KVO already snapshotted, the enum being imported from Objective-C — crosses into the `Task`, rather than `webView` itself, since `WKWebView` is main-actor-isolated and not `Sendable`.
     private nonisolated func makeFullscreenStateChangeHandler() -> @Sendable (WKWebView, NSKeyValueObservedChange<WKWebView.FullscreenState>) -> Void {
         { [weak self] _, change in
             guard let state = change.newValue else {
@@ -454,9 +371,6 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     // MARK: - Server App
 
     /// `currentApp` is the Nextcloud app whose page the web view currently shows, or `nil` when it shows something that is not one of the server's apps.
-    ///
-    /// It reads `restorableURL` rather than `webView.url`, which is what makes a window opened for an app recognizable before its first load has committed: that property already falls back to the host window controller's `targetURL`. `AppDelegate.openServerApp(_:)` reads this to focus such a window instead of opening a duplicate.
-    /// The URL is turned into an app by the shared rule in `ServerAppTransferObject+Resolution.swift`, which is also what titles the iPhone's navigation bar, so the two platforms cannot disagree about what an address means. Answering with the app rather than with its identifier is the point of asking `AccountStore` at all: a caller comparing an identifier it parsed out of a path against one the navigation endpoint reported is comparing two things that are usually equal and not guaranteed to be.
     var currentApp: ServerAppTransferObject? {
         guard let url = restorableURL else {
             return nil
@@ -479,9 +393,6 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     // MARK: - Header Height
 
     /// `installHeaderHeightBridge()` registers the `headerHeight` message handler and injects `macOSScript.headerHeight`, which measures Nextcloud's header and reports how tall the server draws it.
-    ///
-    /// `viewDidLoad()` calls it beside `installWindowDragBridge()`, the other bridge concerned with the header bar that stands in for this window's title bar. What is reported goes to `NextcloudHeaderHeight`, which is where `WebWindow` reads it back to center the standard window buttons in that bar — a height the app used to assume, and assumed wrongly the moment Nextcloud server 35 changed it (issue #102).
-    /// Document end, like the window-drag bridge: there is no header to measure at document start. The script goes on reporting after that on its own, a `ResizeObserver` covering a header that settles to its final height only once the page's own scripts have run.
     private func installHeaderHeightBridge() {
         webView.configuration.userContentController.add(self, name: ScriptMessageName.headerHeight.rawValue)
         installUserScript(macOSScript.headerHeight.source, injectionTime: .atDocumentEnd)
@@ -490,13 +401,9 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     // MARK: - Sidebar
 
     /// `sidebarToggleAvailable` is `true` while the currently loaded Nextcloud page exposes a sidebar toggle that can be activated.
-    ///
-    /// `WebViewController+NSMenuItemValidation` reads this value to enable or disable the "Show/Hide Sidebar" menu item.
     var sidebarToggleAvailable = false
 
     /// `sidebarToggleExpanded` is `true` while Nextcloud's sidebar is currently shown.
-    ///
-    /// `WebViewController+NSMenuItemValidation` reads this value to switch the title of the "Show/Hide Sidebar" menu item between "Hide Sidebar" and "Show Sidebar".
     var sidebarToggleExpanded = false
 
     private func installSidebarToggleBridge() {
@@ -505,18 +412,12 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     }
 
     /// `installSidebarShortcutBridge()` registers the `sidebarShortcut` message handler and injects `macOSScript.sidebarShortcut`, which claims ⌃⌘S from inside the page for every case in which no `WebWindow` is offered the key equivalent.
-    ///
-    /// `viewDidLoad()` calls it alongside `installSidebarToggleBridge()`, whose script and message report whether there is a sidebar toggle to activate at all.
-    /// `WebWindow.performKeyEquivalent(with:)` remains the ordinary path and is the reason this one is a supplement rather than a replacement: while one of the app's own windows is key, AppKit offers it the key equivalent before the page is ever asked, the window claims it, and this script never runs. Element fullscreen is the case it exists for. There WebKit hosts the web view in a window of its own, so no `WebWindow` sees the event and the "Show/Hide Sidebar" menu item is disabled as well — its action targets the first responder, and the responder chain of WebKit's window does not lead back to this controller, so nothing implements `toggleSidebar(_:)` and AppKit disables the item without even asking `WebViewController+NSMenuItemValidation`. That left the keystroke to Nextcloud Talk's own handling, which swallows it and starts a bogus download (issue #59) — the very misbehaviour the window override was written to prevent, back again for as long as a call was fullscreen. A listener in the page is offered the event wherever the page is, which is what makes it the right place for the exception.
     private func installSidebarShortcutBridge() {
         webView.configuration.userContentController.add(self, name: ScriptMessageName.sidebarShortcut.rawValue)
         installUserScript(macOSScript.sidebarShortcut.source, injectionTime: .atDocumentStart)
     }
 
     /// `isSidebarToggleShortcut(_:)` is `true` when `event` is the ⌃⌘S keystroke Cirruscope claims for "Show/Hide Sidebar" ahead of the loaded page.
-    ///
-    /// `WebWindow.performKeyEquivalent(with:)` asks it, and `macOSScript.sidebarShortcut` tests for the same keystroke in JavaScript for the fullscreen case that override cannot cover. Naming it here rather than inline keeps the native half of that pair in one place, and the script's own comment points at this method so the two cannot quietly drift apart on which modifiers count.
-    /// `.deviceIndependentFlagsMask` also carries incidental flags like `.capsLock` and `.numericPad`; they are narrowed away to just the modifiers a shortcut can meaningfully require — the same two-step intersection `ShortcutRecorderView.handle(keyCode:modifierFlags:charactersIgnoringModifiers:)` applies — so that, for example, having Caps Lock on does not stop this from matching.
     static func isSidebarToggleShortcut(_ event: NSEvent) -> Bool {
         let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask).intersection([.command, .option, .control, .shift])
         return modifiers == [.control, .command] && event.charactersIgnoringModifiers?.lowercased() == "s"
@@ -546,9 +447,6 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     // MARK: - Web View Styling
 
     /// `makeWebViewBackgroundTransparent()` stops `webView` from painting an opaque background of its own, so the host window's material shines through wherever the loaded page leaves its background transparent.
-    ///
-    /// `viewDidLoad()` calls it once while configuring the web view. `WKWebView` on macOS exposes no public equivalent of iOS's `isOpaque`, but its `drawsBackground` property is reachable through key-value coding and is the established way to disable the opaque backing. `underPageBackgroundColor` is cleared as well so the area revealed by rubber-band scrolling beyond the page bounds stays transparent too, instead of falling back to a color derived from the page.
-    /// Note that the page itself still paints whatever background its own styles declare; `Cirruscope.css`, injected as `Script.styleSheet`, is the place to make page backgrounds transparent where desired.
     private func makeWebViewBackgroundTransparent() {
         webView.setValue(false, forKey: "drawsBackground")
         webView.underPageBackgroundColor = .clear
@@ -562,10 +460,6 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     }
 
     /// `installAppearanceAttributes()` injects a document-start script that seeds `data-cirruscope-translucency`, `data-cirruscope-full-width`, and the accent-color state on `<html>`, so the injected stylesheet's translucency, full-width, and accent rules apply from the first paint without a flash.
-    ///
-    /// `viewDidLoad()` calls it alongside the `Script.styleSheet` injection. Like every user script it re-runs on each full document load, carrying the values resolved when this controller loaded; `reapplyAppearance()` corrects them should a setting, the macOS accent color, or the window's fullscreen state change between loads.
-    /// The window button clearance is the one value the seed can never carry: `viewDidLoad()` runs before the view is in a window at all, for the same reason `startInitialLoadIfNeeded()` waits for `viewWillAppear()`, so it is seeded as `null` and every document starts on the stylesheet's own fallback. That fallback is the ordinary window's clearance, which is what a window is at the moment it opens — a window is never *born* in fullscreen, it is put there afterwards.
-    /// What remains is one accepted rough edge, now narrowed to a single frame. A window that was already open when the accent color changed paints the old color once on its next *full* document load, before the current one is re-applied — a window opened after the change is correct from its first paint, and Nextcloud's single-page interface makes full loads after the initial one rare. `webView(_:didCommit:)` re-applies before the new document's first paint rather than after it, which is what keeps a reload inside a fullscreen window from showing the fallback clearance at all. Removing the seed's staleness entirely is still not worth its cost: `WKUserContentController` offers only `removeAllUserScripts()`, so re-seeding means re-registering every user script `viewDidLoad()` installs, not only the seed, and `add(_:name:)` raises on a duplicate message-handler name, so `viewDidLoad()`'s interleaved script and handler registration would first have to be split into a re-runnable half and a run-once half.
     private func installAppearanceAttributes() {
         guard let source = appearanceAttributeScript() else {
             return
@@ -576,8 +470,6 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     }
 
     /// `observeAppearanceSettings()` subscribes to `Notification.Name.appearanceSettingsDidChange` so a change made in the Appearance settings tab is applied to this already-open web view without a reload.
-    ///
-    /// `viewDidLoad()` calls it once. The observer needs no explicit removal: `NotificationCenter` drops selector-based observers automatically when the observing object is deallocated.
     private func observeAppearanceSettings() {
         NotificationCenter.default.addObserver(self, selector: #selector(appearanceSettingsDidChange), name: .appearanceSettingsDidChange, object: nil)
     }
@@ -588,9 +480,6 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     }
 
     /// `reapplyAppearance(windowIsFullScreen:)` re-applies this device's appearance settings, the macOS accent color, and this window's button clearance to the live web view: it rewrites the `<html>` data attributes and the two custom properties the stylesheet keys off — switching translucency, full-width, the accent color, and the header's leading inset without a reload — and updates the native backdrop's visibility.
-    ///
-    /// It runs when the settings change (`appearanceSettingsDidChange`), when macOS changes the appearance or the accent-color preference (`accentColorDidChange`, posted by `AccentColorMonitor`), as every document commits and again once it has finished (`WebViewController+WKNavigationDelegate`'s `didCommit` and `didFinish`), and on every leg of the window's own fullscreen transition (`WebWindowController`'s `NSWindowDelegate` conformance), because the document-start seed carries the values captured when the controller loaded and a change made afterwards would otherwise reappear on the next full reload.
-    /// `windowIsFullScreen` is passed only by those transition hooks, which know where the window is heading before AppKit has finished taking it there; everywhere else it is `nil` and the window's own style mask is read instead, which is correct at every moment no transition is in flight. Nothing is stored between calls, so there is no remembered state to go stale.
     func reapplyAppearance(windowIsFullScreen: Bool? = nil) {
         if let source = appearanceAttributeScript(windowIsFullScreen: windowIsFullScreen) {
             webView.evaluateJavaScript(source)
@@ -601,11 +490,6 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     }
 
     /// `appearanceAttributeScript(windowIsFullScreen:)` builds the JavaScript that mirrors this device's current appearance settings, the macOS accent color, and this window's button clearance onto `<html>` — as the `data-cirruscope-translucency`, `data-cirruscope-full-width`, `data-cirruscope-accent`, and `data-cirruscope-accent-bright` attributes `Cirruscope.css` scopes its rules to, plus the `--cirruscope-accent-color` custom property it reads the color out of and the `--cirruscope-window-button-clearance` one it insets the header by — or `nil` if the bundled `AppearanceAttributes.js` resource is missing.
-    ///
-    /// It emits the bundled `macOSScript.appearanceAttributes` script, which contributes `applyAppearanceAttributes` to the page's `Cirruscope` namespace, followed by a call to it with the current values as its arguments. Both parts go together on every evaluation because the namespace assignment is idempotent, so a document that already carries one is simply rebound rather than disturbed. The same script backs both the document-start seed (`installAppearanceAttributes()`) and the live re-application (`reapplyAppearance()`), so the two paths never diverge. Translucency defaults off and full-width on until the user makes a choice on this device, the same defaults `AppearanceSettingsViewController` shows, and the accent argument is `null` while the macOS accent color is "Multicolor" or when the color cannot be expressed in sRGB, which closes the stylesheet's gate and leaves Nextcloud's own primary color in place.
-    /// The accent color is resolved against `webView.effectiveAppearance` rather than the application's, because that is the appearance the page is rendered under, and it carries the increased-contrast axis as well as light and dark. It is interpolated into a JavaScript string literal without escaping, which is safe because `WebAccentColor.hexString` can only ever be `#` followed by six hexadecimal digits — an invariant `WebAccentColorTests` pins for exactly this reason. Any future value that is not machine-generated in that form would need proper encoding instead.
-    /// Note that nothing here consults the translucency setting before resolving the accent color: the value is forwarded whatever the translucency setting and `Cirruscope.css` decides whether it applies, so switching translucency on picks up the accent that is current at that moment rather than one cached from whenever it was last on.
-    /// The clearance comes from `WebWindow.windowButtonClearance(isFullScreen:)` and is `null` whenever there is no window to ask — at document-start seeding above all — which removes the property rather than writing one, leaving the stylesheet's own fallback in force.
     private func appearanceAttributeScript(windowIsFullScreen: Bool? = nil) -> String? {
         guard let script = macOSScript.appearanceAttributes.source else {
             return nil
@@ -622,9 +506,6 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     }
 
     /// `windowButtonClearance(windowIsFullScreen:)` is how far in from the leading edge this window's page content must start to clear the standard window buttons, or `nil` while there is no `WebWindow` to ask or AppKit vends it no buttons.
-    ///
-    /// `windowIsFullScreen` overrides what the window's own style mask says, and is passed only by the fullscreen transition hooks: AppKit flips that bit somewhere inside a transition it does not document, so a hook that knows where the window is heading states it rather than reading it. Everywhere else the mask is the truth.
-    /// The window is asked rather than `WebWindow` being asked statically, because the button's own width is measured from the button AppKit actually vends — the same reason `repositionControlButtons()` measures its height rather than assuming one.
     private func windowButtonClearance(windowIsFullScreen: Bool?) -> CGFloat? {
         guard let window = view.window as? WebWindow else {
             return nil
@@ -639,9 +520,6 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     }
 
     /// `updateStateOverlayBackground()` drops the loading and failure card's opaque fill whenever the translucent appearance is enabled, so the window material shows through it as well.
-    ///
-    /// `viewDidLoad()` calls it for the initial state and `reapplyAppearance()` again whenever the setting changes, which is enough: the card's fill follows the translucency setting alone, not the load state that `updateBackdropVisibility()` also tracks.
-    /// The card keeps its rounded corners and its padding either way — only the fill goes, because an opaque card sitting on the material would hide exactly what the setting exists to reveal.
     private func updateStateOverlayBackground() {
         stateOverlay.drawsBackground = prefersTranslucentAppearance == false
     }
@@ -649,9 +527,6 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     // MARK: - Accent Color
 
     /// `observeAccentColor()` subscribes to `Notification.Name.accentColorDidChange` so a new macOS accent-color preference, or a switch between the light and dark appearance, reaches this already-open web view without a reload.
-    ///
-    /// `viewDidLoad()` calls it once, alongside `observeAppearanceSettings()`, which covers the appearance settings chosen on this device; between them every input to `appearanceAttributeScript(windowIsFullScreen:)` is observed except the window's own fullscreen state, which `WebWindowController`'s `NSWindowDelegate` conformance reports itself. `AccentColorMonitor` owns the two system observations behind the notification and posts it from the main actor, so this observer needs neither a `nonisolated` handler nor a hop of its own, and it needs no explicit removal: `NotificationCenter` drops selector-based observers automatically when the observing object is deallocated.
-    /// It deliberately does not check whether the translucent appearance is enabled first. The accent color only *applies* while translucency is on — `Cirruscope.css` scopes its accent rules to `data-cirruscope-translucency` — but it is still forwarded while translucency is off, so switching the setting on shows the accent that is current at that moment. Guarding here would let the forwarded value go stale instead, and would save nothing measurable: the work is one `evaluateJavaScript(_:)` on an event a human triggers by clicking in System Settings.
     private func observeAccentColor() {
         NotificationCenter.default.addObserver(self, selector: #selector(accentColorDidChange), name: .accentColorDidChange, object: nil)
     }
@@ -664,9 +539,6 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     // MARK: - Page Language
 
     /// `reportPageLanguage()` asks the page that has just finished loading which language the server rendered it in, and hands the answer to `ServerConnection.pageFinishedLoading(in:)`, which refreshes the app list when it changed.
-    ///
-    /// `WebViewController+WKNavigationDelegate`'s `didFinish` calls it after every main-frame load.
-    /// A failure is logged and otherwise costs nothing but the refresh, the list then keeping the names it had.
     func reportPageLanguage() {
         guard let query = PageLanguage.query else {
             return
@@ -685,8 +557,6 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     // MARK: - Script Bridge
 
     /// `ScriptMessageName` is the central list of script-message names that the injected user scripts post back to `userContentController(_:didReceive:)`.
-    ///
-    /// Each raw value is the name a `macOSScript` uses in `window.webkit.messageHandlers.<name>.postMessage(…)`; the `install…Bridge()` methods register a handler for it on the web view's `WKUserContentController`, and `userContentController(_:didReceive:)` switches on it.
     private enum ScriptMessageName: String {
         /// `windowDrag` is posted by `macOSScript.windowDrag` to ask the host window to begin a drag.
         case windowDrag
@@ -705,9 +575,6 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     }
 
     /// `installUserScript(_:injectionTime:forMainFrameOnly:)` registers `source` on the web view's `WKUserContentController` so it runs at `injectionTime` on every page load, in every frame unless `forMainFrameOnly` is `true`, doing nothing if the resource behind it could not be read.
-    ///
-    /// `installWindowDragBridge()` and `installSidebarToggleBridge()` call this after registering the script-message handlers their scripts post back to. It takes the loaded source rather than a `macOSScript` so it can install a shared `Script` just as readily — the two enumerations name different resources but produce the same JavaScript text.
-    /// Most scripts run in every frame, which is the default; `Script.localStorageRetention` is installed in the main frame alone, so it changes nothing in a frame embedded from another origin.
     private func installUserScript(_ source: String?, injectionTime: WKUserScriptInjectionTime, forMainFrameOnly: Bool = false) {
         guard let source else {
             return

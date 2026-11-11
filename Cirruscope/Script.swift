@@ -4,59 +4,30 @@
 import Foundation
 import os
 
-///
 /// `Script` enumerates the JavaScript both apps inject into their web view, and loads it from the bundle on demand.
-///
-/// Each case's raw value is the name of the resource behind it, so the JavaScript and CSS stay standalone files that can be edited with their own tooling instead of being embedded as string literals in Swift source. Lookup is by name against the flat bundle, which is why moving those resources between source folders does not disturb either app.
-/// It lives here rather than in `Core/` because only the two apps drive a web view; the widget extension has none. macOS's own `macOSScript` enumerates the five scripts that are macOS-only — window dragging, the ⌃⌘S claim, the appearance attributes, the notification bridge, and the header measurement — and this holds what turned out to be the same jobs on both platforms.
-///
 enum Script: String {
-    ///
     /// `sidebarToggle` clicks Nextcloud's app-navigation toggle to show or hide the navigation.
-    ///
-    /// `WebViewController.toggleSidebar(_:)` evaluates it on demand from the "Show/Hide Sidebar" menu item, and `NextcloudView.toggleAppNavigation()` from its toolbar toggle.
-    ///
     case sidebarToggle = "SidebarToggle"
 
-    ///
     /// `sidebarToggleState` observes Nextcloud's app-navigation toggle and reports its availability and expanded state through the `sidebarToggleState` message handler.
-    ///
-    /// Both apps install it as a user script that runs at the end of every document load. Its `MutationObserver` is what carries it across Nextcloud's single-page navigations, which never reload the document and so never re-run the script itself.
-    ///
     case sidebarToggleState = "SidebarToggleState"
 
-    ///
     /// `pageLanguage` contributes `pageLanguage` to the page's `Cirruscope` namespace, answering the language the server rendered the document in for a signed-in user, or `null`.
-    ///
-    /// Both apps evaluate it as a function body once a page has finished loading, through `PageLanguage.query`, which appends the call to it.
-    /// A language changed in Nextcloud's personal settings only reloads the page, so this is how the change reaches the app list the native menus are built from.
-    ///
     case pageLanguage = "PageLanguage"
 
-    ///
     /// `localStorageRetention` makes clearing a storage area do nothing in the server's page, so the preferences Nextcloud keeps in local storage survive a lapsed browser session.
     ///
     /// Nextcloud clears the page's storage before sending a lapsed session to its sign-in form, which both apps cancel and answer by signing the same account straight back in, so nothing would be left of that episode but lost preferences.
     /// Both apps install it as a user script that runs at the start of every document load, in the main frame alone, so no embedded frame from another origin is changed by it.
-    ///
     case localStorageRetention = "LocalStorageRetention"
 
-    ///
     /// `styleSheet` appends the app's bundled `Cirruscope.css` to the document as a `<style>` element.
-    ///
-    /// It is the one case whose resource is not itself JavaScript: `source` reads the stylesheet and wraps it in the script that installs it, so the caller handles it exactly like the others. Both apps install it as a user script that runs at the *start* of every document load, early enough that the page never paints unstyled.
-    /// Each app bundles its own `Cirruscope.css` — `macOS/Cirruscope.css` and `iOS/Cirruscope.css` — and they are deliberately different stylesheets for two very different windows. Only the loading is shared, and it can be because each target's bundle holds exactly one resource by that name.
-    ///
     case styleSheet = "Cirruscope"
 
-    ///
     /// Records failures to load a bundled resource under the `Script` category.
-    ///
     private static let logger = Logger(for: Script.self)
 
-    ///
     /// The file extension of the resource behind this case.
-    ///
     private var resourceExtension: String {
         switch self {
             case .sidebarToggle, .sidebarToggleState, .pageLanguage, .localStorageRetention:
@@ -67,11 +38,9 @@ enum Script: String {
         }
     }
 
-    ///
     /// The JavaScript to inject or evaluate for this case, or `nil` if the resource behind it is missing from the bundle or cannot be decoded as UTF-8.
     ///
     /// It is read lazily at the point of use, so edits to the underlying file take effect without any change to Swift source.
-    ///
     var source: String? {
         guard let contents = resourceContents else {
             return nil
@@ -86,9 +55,7 @@ enum Script: String {
         }
     }
 
-    ///
     /// The text of the bundled resource behind this case, or `nil` when it cannot be read.
-    ///
     private var resourceContents: String? {
         guard
             let url = Bundle.main.url(forResource: rawValue, withExtension: resourceExtension), let contents = try? String(contentsOf: url, encoding: .utf8)
@@ -100,12 +67,7 @@ enum Script: String {
         return contents
     }
 
-    ///
     /// Wraps `styleSheet` in the script that appends it to the document as a `<style>` element.
-    ///
-    /// The stylesheet is carried across as a template literal, so three characters have to be escaped for it to survive as text: a backslash, a backtick — `Cirruscope.css` has several, inside its own comments — and the `${` that would otherwise open an interpolation. Nothing in either stylesheet interpolates today; the escape is here so that a rule which ever needs `${` in a `content` string does not silently truncate the whole sheet.
-    /// The element is appended to `documentElement` rather than to `head`, because at document start there may not be a `head` yet. A `<style>` child of `<html>` applies just the same, and stays where it was put once the document finishes parsing.
-    ///
     private static func injection(of styleSheet: String) -> String {
         let escaped = styleSheet
             .replacingOccurrences(of: "\\", with: "\\\\")

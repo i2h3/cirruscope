@@ -5,9 +5,6 @@ import CoreGraphics
 import Foundation
 
 /// `SVGTransform` turns the text of an SVG `transform` attribute into the `CGAffineTransform` it describes.
-///
-/// An attribute may name several functions in a row, and SVG applies them left to right — the leftmost is the outermost, so a point passes through the rightmost first. That is the reverse of how `concatenating(_:)` reads, which is the one thing worth getting right here.
-/// Nextcloud's own app icons use this to normalize icons drawn on one grid into a viewBox of another size, which is why a `translate` followed by a `scale` is the common case rather than an exotic one.
 enum SVGTransform {
     /// `transform(from:)` parses `text`, ignoring any function it does not recognize.
     ///

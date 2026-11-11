@@ -5,10 +5,6 @@ import Foundation
 import os
 
 /// `CollectiveIndexer` keeps Spotlight and the Shortcuts app in step with the account's collectives and the pages within them.
-///
-/// It is the only one of these that donates two entity types, and it does because the two change together: a page is reached through its collective, so `AccountStore` announces both under one name and nothing observes one without observing the other. Two indexers over one notification would be two passes for one refresh.
-///
-/// As with the others, it does not ask for the App Shortcut parameters to be refreshed — `ServerAppIndexer` makes that call, and one refresh brings every entity query's values up to date.
 @MainActor
 final class CollectiveIndexer: NSObject {
     /// `shared` is the process-wide collective indexer.
@@ -77,9 +73,6 @@ final class CollectiveIndexer: NSObject {
     }
 
     /// `donateAll()` donates everything the account currently has, and waits for the donation to finish.
-    ///
-    /// Awaitable and not merely scheduled, because the system asks for this as well as the app doing it on its own: an `IndexedEntityQuery`'s reindex is a request Spotlight makes when it believes what it holds is stale, and answering it means having actually finished rather than having started.
-    /// The collectives go first because the pages are read through their own query, which pairs each page with the name of the collective containing it: donating the pages against a list the store has not yet settled would be donating them under a name that is about to change.
     func donateAll() async {
         await donateCollectives()
         await donatePages()

@@ -6,12 +6,6 @@ import os
 
 extension Keychain {
     /// `moveFileBasedItems(service:)` moves every credential macOS's file-based Keychain holds under `service` into the data-protection Keychain, and answers how many it copied across.
-    ///
-    /// Releases up to and including `1.1.0` stored their credentials in the file-based Keychain, where an item is readable without a prompt only by the program that created it. The widget extension is a program of its own, so every Mac would have been asked to let it read the app password — once for each sign-in, since a sign-in replaces the item. The data-protection Keychain decides by the Keychain access group both carry instead, so `AppDelegate` calls this at launch, before window restoration or anything else reads a credential.
-    /// Only the macOS app does this, being the one program the file-based items trust. A TestFlight build is the exception, its signature differing from the App Store's that the item names, and it is asked during the move: once if the prompt is allowed, and again at every launch while it is denied; an App Store update reads the item without a prompt.
-    /// An item is deleted from the file-based Keychain only once its copy is in place, so a launch that fails part-way — a TestFlight prompt that was denied, say — leaves it where it was to be moved by the next one, and `AppDelegate` asks for a sign-in meanwhile rather than signing out. Once the data-protection Keychain holds any credential at all, every file-based item is deleted without being copied: the one there is the newer, written by a sign-in after an earlier move or by an earlier launch that moved it, and copying another server's leftover beside it would leave two accounts where the app supports one.
-    /// Every query addressing the file-based items sets `kSecUseDataProtectionKeychain` to `false` explicitly. Leaving the flag out is not the same: measured in an entitled process, such a query searches both Keychains, and such a deletion deletes from both, which would take the new copy with the old one and sign the user out (see `FileBasedKeychainMoveTests`).
-    /// The file-based items are enumerated for their attributes alone and read one at a time, because that Keychain rejects `kSecReturnData` together with `kSecMatchLimitAll`.
     @discardableResult
     static func moveFileBasedItems(service: String = Keychain.service) -> Int {
         // `false` rather than left out: in an entitled process a query without the flag searches the data-protection

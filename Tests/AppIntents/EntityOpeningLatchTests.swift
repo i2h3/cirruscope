@@ -8,8 +8,6 @@ import Testing
 /// `EntityOpeningLatchTests` covers the latch that keeps a request made before anything could serve it.
 ///
 /// The latch is the whole reason this seam is not a bare closure, and the case it exists for is the one hardest to reach by hand: an intent or a Spotlight selection reaching the app during a cold launch, before any window or screen exists. A request dropped there looks exactly like the app launching and doing nothing, which is the shape a person reports as "Spotlight is broken".
-///
-/// Every case builds its own `EntityOpening` rather than using `shared`, into which the host app installs a real opener for the whole test run — the same hazard `AccountStore.shared` carries, answered the same way.
 @MainActor
 struct EntityOpeningLatchTests {
     /// `serverAddress` is the instance every address in this suite is on.

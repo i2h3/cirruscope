@@ -5,10 +5,6 @@ import Foundation
 import os
 
 /// `NoteIndexer` keeps Spotlight and the Shortcuts app in step with the connected account's notes.
-///
-/// It is the third of these and differs from `ConversationIndexer` only in which notification it observes and which read it donates, which is the point: everything that is the same — the bookkeeping of what has been donated, the deletion of what has not — lives in `SpotlightIndex`.
-///
-/// As there, it does not ask for the App Shortcut parameters to be refreshed. `ServerAppIndexer` makes that call, and there is one `AppShortcutsProvider` in the app, so one refresh brings every entity query's values up to date.
 @MainActor
 final class NoteIndexer: NSObject {
     /// `shared` is the process-wide note indexer.
@@ -72,8 +68,6 @@ final class NoteIndexer: NSObject {
     }
 
     /// `donateAll()` donates everything the account currently has, and waits for the donation to finish.
-    ///
-    /// Awaitable and not merely scheduled, because the system asks for this as well as the app doing it on its own: an `IndexedEntityQuery`'s reindex is a request Spotlight makes when it believes what it holds is stale, and answering it means having actually finished rather than having started.
     func donateAll() async {
         let entities = AccountStore.shared.notes.map(NoteEntity.init)
         logger.notice("Donating \(entities.count, privacy: .public) note(s)")

@@ -6,17 +6,7 @@ import Foundation
 import Testing
 import WebKit
 
-///
 /// `SignOutNavigationTypeTests` measures the `WKNavigationType` WebKit reports for each way a page can reach the connected server's sign-out route, and pins that `SignOutRequest` reads each of them as it is meant to.
-///
-/// Both apps used to sign out, and revoke the app password, on any main-frame navigation to the route.
-/// Nextcloud's session heartbeat with `auto_logout` set assigns the route to `location.href` from a timer once the page has gone without input for the session's lifetime, so an idle window signed its user out, and `SignOutRequest` now honours the route only when a link was activated.
-/// That rests on a belief about WebKit — by its source, `NavigationAction.cpp` reports a link activated by a click event, trusted or synthetic, as `LinkClicked` and a location assignment or an app's own load as `Other` — so it is measured here, the way `ScriptNavigationSupersessionTests` measures WebKit, rather than restated.
-/// `NavigationTypeProbe` drives a real `WKWebView` against a page a `WKURLSchemeHandler` serves and cancels the navigation, so no case ever leaves the page.
-/// A real click cannot be synthesized, so the user choosing Nextcloud's "Log out" is approximated by the app's own script calling that link's `click()`; what makes it a link activation is the click event, which a real click delivers too.
-/// The iOS app decides through `WebPage`, whose navigation decider is handed a `WKNavigationType` as well; what is measured here is a `WKWebView` on both platforms, on the understanding that `WebPage` passes on what its web view reports.
-/// The time limit turns a step that never happens into a failure rather than a run that never ends.
-///
 @MainActor
 @Suite(.serialized, .timeLimit(.minutes(5)))
 struct SignOutNavigationTypeTests {

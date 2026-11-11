@@ -5,13 +5,7 @@
 import Foundation
 import Testing
 
-///
 /// `NotificationRefreshTaskConfigurationTests` covers the agreement between the identifier the app registers its background refresh under and the property-list entries the system requires for it.
-///
-/// The suite exists because that agreement is otherwise unverifiable until far too late. `BGTaskScheduler.register` answers whether it accepted an identifier, and SwiftUI's `.backgroundTask(_:)` — which is what performs the registration here — does not pass that answer on, so an identifier the system does not permit is refused in silence at launch. Nothing then fails, nothing is logged by the app, and the symptom months later is "the badge is never current and no notification ever arrives", with no way left to tell a misconfigured build from a scheduler that simply chose not to run the task.
-/// It reads the real property list rather than the source of the substitutions, because the substitutions are the part that can go wrong: both entries derive from one build setting so they cannot disagree, and this is what proves that the derivation actually happened. `iOSTests` is hosted by the app, so `Bundle.main` here is the app's own bundle.
-/// It is in `iOSTests` rather than `Tests` because both the type and the keys belong to the iOS app alone — `BackgroundTasks` is unavailable on macOS.
-///
 struct NotificationRefreshTaskConfigurationTests {
     @Test
     func `The identifier the app registers is one the system permits`() throws {

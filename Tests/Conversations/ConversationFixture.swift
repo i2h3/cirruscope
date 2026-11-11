@@ -5,9 +5,6 @@
 import Foundation
 
 /// `ConversationFixture` is the corpus of Talk conversations the conversation suites run their cases over.
-///
-/// Shared through a named type rather than copied between suites, for the reason `ServerAppFixture` is: two suites with their own copies cannot be told apart from two suites that agree, and the first time one of them gains a case the other should have had, nothing says so.
-/// The timestamps are fixed rather than relative to now, so a case asserting an order asserts the same thing whenever it runs.
 enum ConversationFixture {
     /// `design` is an ordinary group conversation.
     static let design = ConversationTransferObject(id: "des1gn00", name: "Design", kind: .group, lastActivity: Date(timeIntervalSince1970: 1_700_000_300), avatarVersion: "v1")

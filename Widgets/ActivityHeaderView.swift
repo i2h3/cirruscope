@@ -4,9 +4,6 @@
 import SwiftUI
 
 /// `ActivityHeaderView` is the line every size of the widget opens with: the app's mark, the word `ACTIVITY`, and a marker when the feed is stale.
-///
-/// The header is what tells somebody at a glance whose widget this is on a Home Screen of widgets, which is why it is present even in the states that have nothing else to show. In those it is drawn in the dimmest colour the design has rather than removed: the widget still has to be identifiable when it is reporting that it has nothing to report.
-/// The design puts the app's mark to the left of the wordmark. There is no asset for it: the only marks in the repository are the layers of the Icon Composer bundle, which belong to the app icon, are not reachable from this target, and are a bare cloud rather than the rendered icon the design shows. Adding an image set for it to `Core/Assets.xcassets` is what completes this, and is deliberately left to somebody who can supply the artwork rather than approximated from what happens to be lying around.
 struct ActivityHeaderView: View {
     /// `style` is the resolved appearance to draw in.
     let style: ActivityStyle

@@ -5,9 +5,6 @@ import CoreGraphics
 import Foundation
 
 /// `SVGPathData` turns the text of an SVG `d` attribute into a `CGPath`.
-///
-/// It implements the whole path grammar — `M`, `L`, `H`, `V`, `C`, `S`, `Q`, `T`, `A` and `Z`, each in an absolute and a relative form — including the two parts of it that are easy to miss: a command letter may be followed by several groups of arguments and repeats for each, and a `moveto` that repeats becomes a `lineto` rather than starting further subpaths.
-/// Elliptical arcs are the one command CoreGraphics cannot take as written. SVG describes an arc by the point it ends at, CoreGraphics by the centre it turns around, so `addArc(_:from:to:radiusX:radiusY:rotation:isLargeArc:isSweep:)` converts between the two parameterizations.
 enum SVGPathData {
     /// `commandLimit` bounds how many commands one path may contain before its text is treated as malformed.
     ///
@@ -15,8 +12,6 @@ enum SVGPathData {
     private static let commandLimit = 100_000
 
     /// `path(from:)` parses `text` as SVG path data, or returns `nil` if it is malformed.
-    ///
-    /// Malformed means a command letter that is not one of the ten, or a path long enough to reach `commandLimit`. Arguments that merely run out mid-command end the path where they stopped instead of failing it, which is what the specification asks a renderer to do with a truncated `d`.
     static func path(from text: String) -> CGPath? {
         let path = CGMutablePath()
         var scanner = SVGNumberScanner(text)

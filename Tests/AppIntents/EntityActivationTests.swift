@@ -8,8 +8,6 @@ import Testing
 /// `EntityActivationTests` covers what each kind of donated entity resolves to, and what happens when it cannot resolve.
 ///
 /// This is the layer the Spotlight tap and the Shortcuts action now share, and sharing it is the point: before it existed the resolution lived inside the intents alone, so the Spotlight side had none of it and opened nothing for four of the five types. A case per type is therefore not repetition — it is the assertion that all five are served.
-///
-/// Every case reads a store of its own through `AccountStoreHarness`, and none names `AccountStore.shared`, whose container holds the developer's real account.
 @MainActor
 @Suite(.exclusiveStoreAccess)
 struct EntityActivationTests {

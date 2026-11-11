@@ -6,12 +6,7 @@ import Foundation
 import Testing
 import UserNotifications
 
-///
 /// `ServerNotificationContentTests` covers how a server notification is written into Notification Center and read back out of it.
-///
-/// It exists because the two directions must agree exactly: an identifier that does not parse back is a notification that is never withdrawn, a recipient that does not survive the round trip is one withdrawn as another account's, and a link that is not held to the server's origin is an address the app password would be sent to.
-/// It builds requests without posting them, so no case touches `UNUserNotificationCenter`.
-///
 struct ServerNotificationContentTests {
     // MARK: - Identifiers
 

@@ -7,24 +7,15 @@ import CoreGraphics
 import Foundation
 import Testing
 
-///
 /// `ServerAppIconThumbnailTests` covers the artwork donated to Spotlight and the Shortcuts app: a small white window with three traffic lights and the app's glyph in its body.
-///
-/// The bug this artwork exists to fix was invisible to every test the project had, because it was not about geometry — the glyph was drawn perfectly and simply could not be seen, being black on a dark background. So what is asserted here is colour and opacity rather than shape: that the plate is opaque, that the glyph contrasts with it, and that the traffic lights are there. Any of those quietly reverting would put the icons back where they started.
-/// It is a macOS suite rather than a shared one because the one part of the artwork that reaches into AppKit is the glyph's ink — the secondary label colour `glyphColor()` resolves — and because resolving that colour in the wrong appearance is one of the ways this can go wrong.
-///
 @MainActor
 struct ServerAppIconThumbnailTests {
-    ///
     /// A glyph filling its whole viewBox, so that the body of the window is covered by ink wherever the artwork puts it.
-    ///
     private static func glyph() -> SVGGlyph? {
         SVGGlyph(data: SVGGlyphFixture.data(SVGGlyphFixture.square))
     }
 
-    ///
     /// Reads back one pixel of a PNG, addressed from the top-left corner as it would be seen.
-    ///
     private func pixel(of data: Data, x: Int, y: Int) throws -> (red: UInt8, green: UInt8, blue: UInt8, alpha: UInt8) {
         let representation = try #require(NSBitmapImageRep(data: data))
         let color = try #require(representation.colorAt(x: x, y: y)?.usingColorSpace(.sRGB))

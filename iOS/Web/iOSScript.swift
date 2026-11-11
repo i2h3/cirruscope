@@ -4,44 +4,21 @@
 import Foundation
 import os
 
-///
 /// `iOSScript` enumerates the JavaScript resources bundled with the iOS app that `NextcloudView` injects into or evaluates within its `WebPage`.
-///
-/// Each case maps to a `.js` file of the same name in `iOS/Scripts/`, which keeps the scripts in standalone files that can be edited with JavaScript tooling instead of being embedded as string literals in Swift source.
-/// These are the scripts only iOS runs, as `macOSScript` holds those only macOS runs and `Script` the ones both apps share. A case here rather than in `Script` is what keeps the macOS bundle from being asked for a resource it does not carry, which would fail to load and be logged on every launch of the shipped app.
-///
 enum iOSScript: String {
-    ///
     /// `notificationsPanel` clicks Nextcloud's notifications bell to open the panel it hangs in the page header.
-    ///
-    /// `NextcloudView.openNotificationsPanel()` evaluates it on demand from the account menu's "Notifications" item, as both platforms evaluate `Script.sidebarToggle` from their app-navigation control. It carries no selector of its own: it reads the one `notificationsPanelState` published onto `<html>`, so the candidate list that found the control exists in exactly one place.
-    ///
     case notificationsPanel = "NotificationsPanel"
 
-    ///
     /// `notificationsPanelState` resolves Nextcloud's notifications menu, publishes the selector that matched onto `<html>`, and reports its availability and open state through the `notificationsPanelState` message handler.
-    ///
-    /// `NextcloudView` installs it as a user script that runs at the end of every document load. Its `MutationObserver` is what carries it across Nextcloud's single-page navigations, which never reload the document, exactly as `Script.sidebarToggleState`'s does.
-    ///
     case notificationsPanelState = "NotificationsPanelState"
 
-    ///
     /// `safeAreaInsets` publishes the margins the app's own interface covers onto `<html>` as the four `--cirruscope-safe-area-*` custom properties `Cirruscope.css` insets Nextcloud's content by.
-    ///
-    /// Its resource runs nothing on its own, as `macOSScript.appearanceAttributes` does not: it contributes `applySafeAreaInsets` to the page's `Cirruscope` namespace, and `NextcloudView` emits it followed by a call carrying the measurements SwiftUI took — both to install as a document-start user script and to push a new measurement into a page already on screen. The namespace assignment is idempotent, so the two paths can both send it.
-    ///
     case safeAreaInsets = "SafeAreaInsets"
 
-    ///
     /// Records failures to load a bundled script under the `iOSScript` category.
-    ///
     private static let logger = Logger(for: iOSScript.self)
 
-    ///
     /// The JavaScript text of the bundled `.js` resource backing this case, or `nil` if the resource is missing from the bundle or cannot be decoded as UTF-8.
-    ///
-    /// It is read lazily at the point of use so edits to the underlying `.js` file take effect without any change to Swift source.
-    ///
     var source: String? {
         guard let url = Bundle.main.url(forResource: rawValue, withExtension: "js") else {
             Self.logger.error("Could not find bundled script resource \(self.rawValue).js")

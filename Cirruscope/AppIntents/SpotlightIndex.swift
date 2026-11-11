@@ -10,8 +10,6 @@ import os
 ///
 /// It is the mechanism every domain's indexer shares, holding the one piece of state that is easy to get wrong: the set of identifiers currently in the index. Without it a list that loses an entry leaves a Spotlight result behind that opens nothing, and with a copy of it per domain the same bug is available once per domain.
 ///
-/// The index it writes to is named rather than `CSSearchableIndex.default()`, which Apple documents as being for prototyping only. The name is historical and deliberately not corrected: every entity type shares `"ServerAppIndex"` because renaming it would orphan everything already donated on every Mac that has run this app, with no way left to delete it — and `deleteAppEntities(identifiedBy:ofType:)` is scoped by type anyway, so one index costs nothing.
-///
 /// It is not an observer of anything and knows nothing about when to run. That belongs to the per-domain indexer that owns one, because what a domain listens to is the one thing about it that is not shared.
 @MainActor
 final class SpotlightIndex<Entity: IndexedEntity> {
@@ -41,8 +39,6 @@ final class SpotlightIndex<Entity: IndexedEntity> {
     }
 
     /// `donate(_:)` puts `entities` into the index and removes whatever was donated before and is not among them.
-    ///
-    /// It replaces rather than merges: what it is given is the whole of what the account currently has, so anything previously donated and now absent is gone rather than merely unlisted. That is what makes a signed-out account's entries disappear — `AccountStore` empties the list and announces it, and this is called with nothing.
     func donate(_ entities: [Entity]) async {
         let previous = latestDonation
 
@@ -56,8 +52,6 @@ final class SpotlightIndex<Entity: IndexedEntity> {
     }
 
     /// `replaceIndexedEntities(with:)` is one donation: it puts `entities` into the index and removes whatever was donated before and is not among them.
-    ///
-    /// Only `donate(_:)` calls it, once the donation before it has finished, so the identifiers it compares against are the ones the index actually holds.
     private func replaceIndexedEntities(with entities: [Entity]) async {
         let currentIDs = Set(entities.map(\.id))
         let removedIDs = indexedIDs.subtracting(currentIDs)

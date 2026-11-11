@@ -7,10 +7,6 @@ import UserNotifications
 import WebKit
 
 /// `UserNotifier` posts the notifications only the Mac posts — those the Nextcloud web interface raises and those announcing a finished download — and answers a click on either.
-///
-/// `WebViewController` forwards each web `Notification` through its `notification` script-message handler to `post(title:body:tag:webNotificationID:webView:)`, and `DownloadManager` announces a finished transfer through `postDownloadFinished(filename:fileURL:)`.
-/// The server's own notifications are posted by the shared `ServerNotificationDispatcher`, and every click reaches the shared `UserNotificationDelegate` first, which hands what is not a server notification to `respond(toNotificationWithIdentifier:userInfo:)` here.
-/// A click on a web notification brings the originating web window forward and asks its page to run the notification's own click handler, so the web interface navigates to the notification's target as it would natively; a click on a download notification reveals the file in Finder.
 @MainActor
 final class UserNotifier {
     /// `shared` is the process-wide notifier instance, which remembers the web view behind each web notification for the app's lifetime.
@@ -34,8 +30,6 @@ final class UserNotifier {
     private static let webNotificationIdentifierPrefix = "web-notification-"
 
     /// `post(title:body:tag:webNotificationID:webView:)` posts a notification with `title` and `body`, remembering `webView` and `webNotificationID` so a later click can be routed back to the page that created it.
-    ///
-    /// When `tag` is non-empty it names the request identifier, so a web notification reusing a tag replaces the earlier one, matching the web Notification API; otherwise a fresh identifier is generated. `webNotificationID` is the page-side id the activation hook uses to find the original `Notification`.
     func post(title: String, body: String, tag: String, webNotificationID: String, webView: WKWebView) {
         let content = UNMutableNotificationContent()
         content.title = title
@@ -50,8 +44,6 @@ final class UserNotifier {
     }
 
     /// `postDownloadFinished(filename:fileURL:)` posts a notification announcing that `filename` finished downloading, remembering `fileURL` so a click reveals the file in Finder.
-    ///
-    /// `DownloadManager` calls it from `downloadDidFinish(_:)`. It reuses the authorization already asked for when a server was connected, and its `userInfo` carries the file path under `downloadFilePathKey` so `respond(toNotificationWithIdentifier:userInfo:)` can tell it from a web notification.
     func postDownloadFinished(filename: String, fileURL: URL) {
         let content = UNMutableNotificationContent()
         content.title = String(localized: "Download Finished", comment: "Title of the notification shown when a file download finishes.")
@@ -63,8 +55,6 @@ final class UserNotifier {
     }
 
     /// `respond(toNotificationWithIdentifier:userInfo:)` answers a click on a notification this type posted: it reveals a finished download in Finder, or brings the originating web window forward and runs the page's click handler for a web notification.
-    ///
-    /// `UserNotificationDelegate` calls it for every clicked notification that is not a server notification, with the request identifier and the string values of its `userInfo`.
     func respond(toNotificationWithIdentifier identifier: String, userInfo: [String: String]) {
         guard let downloadFilePath = userInfo[Self.downloadFilePathKey] else {
             activate(identifier: identifier, webNotificationID: userInfo[Self.webNotificationIDKey])

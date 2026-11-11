@@ -5,18 +5,12 @@ import Cocoa
 import os
 
 /// `ServerAppsViewController` is the "Keyboard Shortcuts" tab of the settings window, listing the Nextcloud server apps and letting the user assign a keyboard shortcut to each.
-///
-/// It reads `AccountStore.serverApps` for the rows and writes each app's shortcut via `AccountStore.setShortcut(_:forAppID:)` as the user records shortcuts through the `ShortcutRecorderView` in each row; the store announces that as `Notification.Name.keyboardShortcutsDidChange`, which prompts `AppDelegate` to rebuild the View menu and this tab to reload, while the Dock menu is built from the store each time it is opened and needs no prompting.
-/// A shortcut belongs to this device and is keyed by the app's identifier, while only the apps the connected server offers have a row, so a shortcut recorded for an app it does not offer is neither shown nor editable here and applies again once a refresh lists that app.
-/// The table's rows and views are supplied by `ServerAppsViewController+NSTableViewDataSource` and `ServerAppsViewController+NSTableViewDelegate`.
 class ServerAppsViewController: NSViewController {
     /// `tableView` lists the server apps, one row per `AccountStore.serverApps` entry, each with the app name and a shortcut recorder.
     @IBOutlet
     private var tableView: NSTableView!
 
     /// `apps` is the snapshot of `AccountStore.serverApps` that backs the table.
-    ///
-    /// `reload()` refreshes it from `AccountStore`; the data source and delegate read it to populate the table, so it is settable only within this controller.
     private(set) var apps: [ServerAppTransferObject] = []
 
     /// `logger` records the Keyboard Shortcuts settings tab's activity under the `ServerAppsViewController` category.

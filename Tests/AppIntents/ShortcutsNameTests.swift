@@ -7,12 +7,6 @@ import Foundation
 import Testing
 
 /// `ShortcutsNameTests` covers the names the Shortcuts app lists for this app, its action titles and entity type names: that each is translated in every localization the bundle ships, and that the type names are cased as names.
-///
-/// A translation present in the bundle is the half of a Shortcuts action showing in the wrong language that the app answers for.
-/// When this passes and the action still shows in English, the cause is the system's own action index, which `DECISIONS.md` explains how to tell apart (issue #137).
-/// The Shortcuts app titles the Find action it generates for each type with the type name, beside actions titled in title case, so a type name in sentence case reads as an app's name miswritten: "Nextcloud note" beside Nextcloud Notes (issue #136).
-/// The names are read from the declarations themselves rather than restated, so a key that drifts from its catalog entry fails here too, and each localization is looked up the way the system resolves it, by the resource's own key and table in that language's `.lproj`.
-/// Of a translated type name's casing, only the first letter is asserted, because French and Spanish type names are otherwise in sentence case, as Apple's own are; see `DECISIONS.md`.
 struct ShortcutsNameTests {
     /// `typeNames` are the names of the five entity types, as the declarations give them.
     static let typeNames: [LocalizedStringResource] = [

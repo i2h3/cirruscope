@@ -5,13 +5,7 @@ import Foundation
 import Security
 import Testing
 
-///
 /// `KeychainEnumerationTests` pins the shape of the queries `Keychain` makes against both of the Keychains a Mac has, because one of them rejects a shape the other accepts.
-///
-/// macOS's file-based Keychain refuses to return item *data* for more than one match: `kSecReturnData` together with `kSecMatchLimitAll` answers `errSecParam`, whether or not anything matches. The data-protection Keychain — the only one iOS has, and the one `Keychain` now uses on macOS too — accepts it. `accounts()` was once written with that combination and worked for as long as iOS was its only caller; the first macOS caller, the widget extension, got an empty array and reported itself signed out on a Mac that was signed in. The macOS app still enumerates the file-based Keychain at every launch, to move any items left there, so the shape that Keychain accepts still matters.
-/// Every case runs once against each Keychain, `kSecUseDataProtectionKeychain` set to `false` addressing the file-based one alone on macOS; on iOS, where the flag has no effect, both runs address the same Keychain.
-/// The queries below are made against a service nothing is ever filed under, so nothing is read, written, or deleted. That is what makes the assertion possible at all: a malformed query answers `errSecParam` whether or not it matches anything, while a well-formed one that matches nothing answers `errSecItemNotFound`. The distinction between those two return values is the whole test.
-///
 struct KeychainEnumerationTests {
     /// `unusedService` is a `kSecAttrService` value no item is filed under, so every query here matches nothing.
     private static let unusedService = "de.i2h3.cirruscope.tests.keychain-enumeration"

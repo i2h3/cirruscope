@@ -6,9 +6,6 @@ import Foundation
 import Testing
 
 /// `ThemeColorTests` covers `ThemeColor(hexString:)`, which reads the plain background color a Nextcloud server's theming names for the Mac's web windows to fill their loading backdrop with.
-///
-/// The input is a string the server composed, and the same stored value holds an image address whenever the theme is not a plain color, so what matters as much as reading a color correctly is refusing everything that is not one: a wrongly accepted string would paint a bogus color behind the loading card.
-/// The rejected cases include the signed numbers the parser checks digits for explicitly, `#+12345` and `#-00000`, which the integer parser would otherwise read as numbers, and fullwidth digits, which `Character.isHexDigit` alone would admit.
 struct ThemeColorTests {
     @Test(arguments: [
         // Nextcloud's default background color.

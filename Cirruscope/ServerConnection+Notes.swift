@@ -13,8 +13,6 @@ import Rainmaker
 extension ServerConnection {
     /// `refreshNotes(using:)` fetches the notes the authenticated `server` has and persists their metadata, or clears what was stored when the server has no usable Notes app.
     ///
-    /// Availability is decided from the response rather than from the capability the server advertises, for the reasons recorded on `refreshConversations(using:)` and in `DECISIONS.md`. Notes adds a second way to be unusable and it is handled the same way: an app that is installed but older than the API this library speaks answers with an unsupported-version error, and an app this old is no more openable than an absent one, so what was stored for it goes too.
-    ///
     /// Every other failure leaves the previous list in place. An unreachable server has told us nothing, and emptying a Spotlight index on a network blip would be reading silence as an answer.
     static func refreshNotes(using server: Server) async {
         let address = server.address

@@ -10,8 +10,6 @@ import Testing
 /// `SpotlightSelectionTests` covers reading a tapped Spotlight result back into something the app can open.
 ///
 /// It exists because this is where the feature was broken: the selection was resolved by identifier alone, so only a server app ever came back and every note, conversation, collective and page the app had donated activated nothing. A person searching for a page of their collective watched Cirruscope come forward and sit there.
-///
-/// The activities are built the way Spotlight delivers one: a `CSSearchableItemActionType` whose `userInfo` carries `CSSearchableItemActivityIdentifier` as `<EntityTypeName>/<identifier>`. That shape is not invented here — it is what a result carried in the field, and what a probe confirmed is the only thing that arrives. `NSUserActivity.appEntityIdentifier` is deliberately not used by these cases or by the code they cover: it is held out of band, so assigning it leaves `userInfo` empty and it answers `nil` for an activity that crossed from Spotlight.
 @MainActor
 @Suite(.exclusiveStoreAccess)
 struct SpotlightSelectionTests {

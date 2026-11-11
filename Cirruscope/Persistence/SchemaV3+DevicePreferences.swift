@@ -6,8 +6,6 @@ import SwiftData
 
 extension SchemaV3 {
     /// `DevicePreferences` is the v3 record for the appearance choices made on this device exactly as it shipped in `1.2.0` and `1.2.1`.
-    ///
-    /// It is a frozen copy; see `SchemaV3` for why it never changes.
     @Model
     final class DevicePreferences {
         /// `translucentAppearance` is the user's choice, from the Appearance settings tab, to let the macOS window material show through the web view instead of Nextcloud's own backgrounds; `nil` means the user has not chosen and the app default (off) applies.

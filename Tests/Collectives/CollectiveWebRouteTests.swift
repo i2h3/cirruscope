@@ -7,8 +7,6 @@ import Testing
 
 /// `CollectiveWebRouteTests` pins where a collective and a page within it are opened.
 ///
-/// These two were the only addresses in the app not read out of the owning app's own routing, and the cost of that showed up on a live server: both resolved, both opened a window, and neither showed what was asked for. The Collectives app declares a catch-all on the server and decides the rest in its Vue router, so what the suite is written against is that router — `'/:collectiveSlug-:collectiveId(\\d+)'` before `'/:collective'`, each with the children `':pageSlug-:pageId(\\d+)'` before `':page(.*)'`.
-///
 /// So the cases come in pairs: the slugged form, which is what a current server gives and what the app's own links carry, and the unslugged one, which the network library documents as what an instance whose Collectives app predates slugs answers with.
 struct CollectiveWebRouteTests {
     @Test

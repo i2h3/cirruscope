@@ -6,15 +6,8 @@ import os
 import Rainmaker
 
 /// `ServerConnection`'s app half: the parts of talking to a server that also write what was learned to `AccountStore`.
-///
-/// `ServerConnection` itself lives in `Core/` and is compiled into the widget extension as well as both apps, so it can depend on nothing the extension does not compile — and `AccountStore` is a main-actor SwiftData store only the apps have. This extension is where that dependency is allowed to exist, which is why it sits in `Cirruscope/` rather than beside the type it extends.
-/// Both apps call it. macOS refreshes the app list from `AppDelegate` and `ServerAddressViewController`, and iOS from `Store.updateApps()`, each asking who the account signs in as through `refreshCurrentUser(using:)` straight afterwards, and both refresh the list again through `pageFinishedLoading(in:)` when a page arrives in another language, so the list every menu on either platform draws is persisted the same way; `validateAndPersist(_:)` and `isStillSignedIn(_:)` are the parts only macOS calls.
-/// It is also where every refresh, its per-domain siblings' included, has its writes admitted: `record(_:fetchedFrom:as:requiringStoredAccount:_:)` asks `RefreshAdmission` whether the account a refresh fetched as is still the one signed in, in the same main-actor turn as the write it allows.
 extension ServerConnection {
     /// `validateAndPersist(_:)` validates `server` and records what the validation found: its theming, and — when the version is supported — its version string.
-    ///
-    /// It is what `AppDelegate` and `ServerAddressViewController` call in place of `validate(_:)`, and it returns that call's outcome unchanged, so they switch over the same `ValidationOutcome` that iOS's `ServerAddressView` gets from `validate(_:)` directly.
-    /// Theming is persisted on both branches, an unsupported server's appearance being still the appearance of the server the user is looking at an alert about.
     static func validateAndPersist(_ server: Server) async throws -> ValidationOutcome {
         let outcome = try await validate(server)
 
@@ -41,11 +34,6 @@ extension ServerConnection {
     }
 
     /// `recordValidation(theming:version:of:as:)` records what a validation of the server at `address` found, and for one made with `credentials` only while that account is still signed in.
-    ///
-    /// An anonymous validation is the Mac's sign-in, made before there is an account to ask about, and what it found is recorded regardless, the first web window opened after the sign-in drawing its backdrop from it.
-    /// An authenticated one is the Mac's launch and every web window it opens afterwards, and a sign-out can overtake it like any refresh, so it is asked about before each write.
-    /// Whichever way it ends, the caches are then emptied again if nobody is signed in by then, the theming downloads being the likeliest thing a sign-out overtakes.
-    /// It is isolated to the main actor so that each question and the write after it happen in one turn: `persist(theming:)` writes before it first suspends, and nothing can sign out in between.
     @MainActor
     private static func recordValidation(theming: Theming?, version: String?, of address: URL, as credentials: Credentials?) async {
         let isAuthenticated = credentials != nil
@@ -76,8 +64,6 @@ extension ServerConnection {
     /// `refreshNavigationApps(using:)` fetches the server's navigation apps with the authenticated `server` and persists them via `AccountStore.persist(serverApps:)`.
     ///
     /// Failures are ignored because the apps list is non-critical: when it cannot be fetched the previously persisted list is simply left in place.
-    ///
-    /// Mapping `Rainmaker.NavigationItem` to `ServerAppTransferObject` happens here, at the boundary where the network library is already in scope, rather than inside the store or on the transfer object itself — the store then depends on nothing but the app's own value types, and the transfer object stays free of logic.
     static func refreshNavigationApps(using server: Server) async {
         let address = server.address
         let credentials = credentials(of: server)
@@ -119,9 +105,6 @@ extension ServerConnection {
     private static var pageLanguage = PageLanguage()
 
     /// `pageFinishedLoading(in:)` refreshes the app list when a page that has just finished loading was rendered in another language than the one before it, which is how a language changed in Nextcloud's personal settings, or on another device, reaches the menus, the Keyboard Shortcuts settings tab, Spotlight and the Shortcuts app (issue #138).
-    ///
-    /// Both web views call it with what `PageLanguage.query` answered, `nil` included.
-    /// The Keychain is read only once a change has been seen, and the refresh admits its writes like any other, so a sign-out it races cannot be undone by it.
     @MainActor
     static func pageFinishedLoading(in language: String?) async {
         let previous = pageLanguage.current
@@ -146,9 +129,6 @@ extension ServerConnection {
     }
 
     /// `refreshServerAppIcons(from:using:)` downloads the icon of every app the server just listed, and announces the app list again once they have landed.
-    ///
-    /// This is the only moment the app learns where an icon lives: the path is part of a navigation response and is deliberately not persisted, since a menu finds an icon again by the app's identifier rather than by where it came from. Fetching here rather than where the menus are built is what keeps the Dock menu — which AppKit asks for and draws in the same breath — free of anything it would have to wait for.
-    /// The second announcement is what redraws the menus with the icons in them; `persist(serverApps:)` has already made the first. It is sent only when something was actually fetched, so an unchanged app list does not rebuild every menu to look exactly as it already did. A third name goes out beside it for the domains that draw these icons without owning them — see `Notification.Name.donatedArtworkDidChange`.
     private static func refreshServerAppIcons(from items: [NavigationItem], using server: Server) async {
         guard let credentials = Keychain.credentials(for: server.address) else {
             logger.notice("No credentials are stored for the server whose apps were just listed; not fetching their icons")
@@ -181,10 +161,6 @@ extension ServerConnection {
     }
 
     /// `refreshCurrentUser(using:)` asks the authenticated `server` who the account signs in as, records the answer via `AccountStore.setUser(id:displayName:)`, and downloads the account's own photograph, announcing it once it has landed.
-    ///
-    /// The server is asked rather than the login name trusted, because a server can accept an email address or a directory login as the name to sign in with, and the account's picture is addressed by the identifier the server keys the account by instead.
-    /// Both apps call it straight after `refreshNavigationApps(using:)`, which is what repairs a store that never learned its own address and so has to run first: the identity is only ever recorded into a store that names the server it was fetched from.
-    /// Failures are logged and otherwise ignored, the previous identity and photograph being left in place, as the app list's are. Neither the identifier nor the names are logged, a login name being an email address as often as not.
     static func refreshCurrentUser(using server: Server) async {
         let address = server.address
         let credentials = credentials(of: server)
@@ -243,8 +219,6 @@ extension ServerConnection {
     }
 
     /// `admission(ofWhatWasFetchedFrom:as:requiringStoredAccount:)` reads what the Keychain and the store hold now and decides whether what a refresh fetched from `address` as `credentials` may be written.
-    ///
-    /// `requiringStoredAccount` is `false` only for recording the address itself, which is how a store that lost it is repaired and so cannot be required to agree already.
     @MainActor
     static func admission(ofWhatWasFetchedFrom address: URL, as credentials: Credentials?, requiringStoredAccount: Bool) -> RefreshAdmission {
         let storedCredentials: Credentials?
@@ -295,9 +269,6 @@ extension ServerConnection {
     }
 
     /// `record(_:fetchedFrom:as:requiringStoredAccount:_:)` runs `write` only if the account a refresh fetched as is still the one signed in, and reports whether it ran.
-    ///
-    /// The question and the write happen in one turn of the main actor, which is why the write is handed over as a closure rather than made by the caller afterwards: the store and every sign-out run on the main actor too, so a sign-out cannot fall between the answer and the write it allows.
-    /// Every write a refresh makes goes through it, deletions included: a `404` from a server nobody is signed in to any longer says nothing about the account that is.
     @discardableResult
     static func record(_ what: StaticString, fetchedFrom address: URL, as credentials: Credentials?, requiringStoredAccount: Bool = true, _ write: @MainActor @Sendable () -> Void) async -> Bool {
         await MainActor.run {

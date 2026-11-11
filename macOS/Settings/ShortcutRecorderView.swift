@@ -5,8 +5,6 @@ import AppKit
 import os
 
 /// `ShortcutRecorderView` is a focusable, text-field-style control that records a single keyboard shortcut.
-///
-/// Clicking it makes it the first responder, which is the visual cue that it is recording; the next key combination the user presses becomes its value, provided it includes at least one of Command, Option, or Control, or is itself a function-region key (F-keys, arrows, Home/End, Page Up/Down, etc.) that can safely be recorded bare, and is occupied by neither one of Cirruscope's own menu items (`AppDelegate.reservedShortcutName(for:)`) nor another server app (`conflictingAppName`). A trailing clear button, shown only while a shortcut is assigned, removes the shortcut. `ServerAppsViewController` places one per row in its apps table and observes `onChange` to persist the recorded `KeyboardShortcutTransferObject`, or `nil` when the user clears it, via `AccountStore.setShortcut(_:forAppID:)`.
 class ShortcutRecorderView: NSTableCellView {
     /// `shortcut` is the currently recorded shortcut, or `nil` when none is assigned.
     ///
@@ -19,13 +17,9 @@ class ShortcutRecorderView: NSTableCellView {
     }
 
     /// `onChange` is invoked whenever the user records a new shortcut or clears the existing one.
-    ///
-    /// It is a `@MainActor` closure because it is only ever invoked from this main-actor control and `ServerAppsViewController` uses it to call the main-actor `AccountStore` synchronously.
     var onChange: (@MainActor (KeyboardShortcutTransferObject?) -> Void)?
 
     /// `conflictingAppName` is asked, before a freshly recorded combination is accepted, for the name of another server app that already uses it, and returns `nil` when none does.
-    ///
-    /// `ServerAppsViewController` wires it to `AccountStore.nameOfApp(usingShortcut:otherThanAppID:)` for the row's own app, since only that controller knows which app a row stands for; this control stays unaware of the store, exactly as it is for `onChange`. A control left without it — as in a context where no other shortcut can be occupied — simply records anything not reserved.
     var conflictingAppName: (@MainActor (KeyboardShortcutTransferObject) -> String?)?
 
     /// `displayField` is the bezeled, non-editable text field that gives the control its text-field appearance and shows the placeholder, the recording prompt, or the recorded shortcut.
@@ -45,13 +39,9 @@ class ShortcutRecorderView: NSTableCellView {
     }
 
     /// `eventMonitor` is the local key-event monitor that is active only while recording.
-    ///
-    /// It is only ever assigned on the main actor while recording starts and stops, and read again in `deinit` once no other reference remains, so `nonisolated(unsafe)` lets the `nonisolated` deinit tear it down without a data race.
     private nonisolated(unsafe) var eventMonitor: Any?
 
     /// `conflictRevertTask` reverts the display from a rejected-shortcut message back to "Press now" a short while after `showConflict(named:)` shows it.
-    ///
-    /// `showConflict(named:)` replaces any still-pending one before scheduling a new one; `stopRecording()` and `deinit` cancel it so it never fires once the row stops recording or is reused by the table view. It is `nonisolated(unsafe)` for the same reason as `eventMonitor`: `deinit` is not main-actor-isolated, so it needs unsynchronized access to cancel this on teardown.
     private nonisolated(unsafe) var conflictRevertTask: Task<Void, Never>?
 
     override init(frame frameRect: NSRect) {
@@ -176,10 +166,6 @@ class ShortcutRecorderView: NSTableCellView {
     }
 
     /// `makeKeyDownHandler()` builds the local event monitor handler `startRecording()` installs.
-    ///
-    /// It is `nonisolated` for the same reason as `LoginSession.makeAuthenticationCompletionHandler()`: `ShortcutRecorderView` is main-actor-isolated via `NSView`, so a closure written directly inside one of its methods would inherit that isolation too, even though its body only creates a `Task`. AppKit does not annotate `NSEvent.addLocalMonitorForEvents(matching:handler:)`'s handler as main-actor, so never assume the calling thread; the monitor's return value does not depend on `handle(keyCode:modifierFlags:charactersIgnoringModifiers:)` completing first.
-    ///
-    /// Only the `Sendable` fields `handle(keyCode:modifierFlags:charactersIgnoringModifiers:)` needs cross into the `Task`, rather than `event` itself, since `NSEvent` is not `Sendable`.
     private nonisolated func makeKeyDownHandler() -> (NSEvent) -> NSEvent? {
         { [weak self] event in
             let keyCode = event.keyCode
@@ -291,8 +277,6 @@ class ShortcutRecorderView: NSTableCellView {
     // MARK: - Display
 
     /// `showConflict(named:)` briefly shows that the shortcut just pressed is already used by `name` — one of Cirruscope's own menu items, or another server app — instead of silently ignoring the keypress.
-    ///
-    /// `handle(keyCode:modifierFlags:charactersIgnoringModifiers:)` calls it when a recorded combination matches `AppDelegate.reservedShortcutName(for:)` or `conflictingAppName`, whose answers read the same way to the user: something already occupies the combination, so it cannot be assigned again. It stays non-modal — no `NSAlert` — reusing `displayField`'s existing text/color channel plus the standard system beep for rejected input, and leaves recording active so the user can immediately try another combination. `conflictRevertTask` restores the normal "Press now" prompt shortly after; if recording ends first (a valid shortcut recorded, Escape, Delete, or clicking away) or a fresh conflict replaces it, `updateDisplay()` itself clears the tooltip this set, so it never lingers regardless of which happens first.
     private func showConflict(named name: String) {
         NSSound.beep()
 
@@ -335,10 +319,6 @@ class ShortcutRecorderView: NSTableCellView {
     }
 
     /// `functionRegionKeyNames` maps the Unicode Private Use Area scalars AppKit reserves for function-region keys (e.g. `NSF4FunctionKey` at U+F707, `NSHomeFunctionKey` at U+F729) to a friendly name for `displayString(for:)`.
-    ///
-    /// `KeyboardShortcutTransferObject.keyEquivalent` stores these scalars unchanged for such keys, since that raw value is what `NSMenuItem.keyEquivalent` needs; this mapping only affects what is displayed, never what is stored.
-    ///
-    /// It names the scalars a user can actually record here, which is a subset of the Private Use Area region `ShortcutMatching.isFunctionRegionKey(_:)` matches over. That predicate is what decides shortcut *identity*, and it deliberately covers the whole region, so a scalar reaching this map without an entry still compares correctly and only falls through to the raw-character branch of `displayString(for:)` for display.
     private static let functionRegionKeyNames: [Unicode.Scalar: String] = [
         Unicode.Scalar(0xF700)!: "↑",
         Unicode.Scalar(0xF701)!: "↓",

@@ -5,15 +5,9 @@
 import Foundation
 import Testing
 
-///
 /// `SameOriginURLTests` covers `SameOriginURL`, which decides whether a path a Nextcloud server named may be requested with the user's credentials attached.
-///
-/// This is a security boundary rather than a convenience, and it is worth saying which attack it closes: the app asks the server what its apps are, the server answers with paths — where each app lives, and where its icon lives — and the app requests both with the app password in an `Authorization` header. An app able to name an off-origin URL in either would be handed the credential. Every case below is one spelling of that attempt, or one spelling of the legitimate value it has to keep accepting.
-///
 struct SameOriginURLTests {
-    ///
     /// The server every case resolves against.
-    ///
     private static let server = URL(string: "https://cloud.example.com")!
 
     @Test

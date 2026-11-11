@@ -6,8 +6,6 @@ import SwiftData
 
 extension SchemaV2_1 {
     /// `KeyboardShortcut` is the v2.1 record for a keyboard shortcut: the v2 record, still hanging off its `ServerApp`, with room for the identifier of the app it opens.
-    ///
-    /// It is a frozen copy; see `SchemaV2_1` for why this intermediate schema exists and why it never changes.
     @Model
     final class KeyboardShortcut {
         /// `appID` is the identifier of the app this shortcut opens, `nil` until the stage into `SchemaV3` copies it off `app`; optional and not unique, so adding it is a change SwiftData infers.

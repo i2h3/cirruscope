@@ -6,8 +6,6 @@ import SwiftData
 
 extension SchemaV2_1 {
     /// `Account` is the v2.1 root record for the connected Nextcloud account, identical to the v2 `Account`: it still carries the appearance choices, which the stage into `SchemaV3` copies into `DevicePreferences` before they are dropped.
-    ///
-    /// It is a frozen copy; see `SchemaV2_1` for why this intermediate schema exists and why it never changes.
     @Model
     final class Account {
         /// `serverAddress` is the URL of the connected Nextcloud server, or `nil` while a sign-in is still in progress.

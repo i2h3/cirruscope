@@ -8,9 +8,6 @@ import Testing
 /// `ConversationAvatarFreshnessTests` pins when `ConversationAvatars` asks the server again about a conversation's picture: once the last answer is a week old, whether that answer was a picture or a refusal.
 ///
 /// The suite exists because the rule once held for pictures and silently not for refusals. Every launch builds an entity for every conversation, which reads each cached answer, and reading a refusal remembered it in memory in a way that was consulted before the file's date — so a refusal older than a week was renewed at every launch and never asked about again, and a one-to-one conversation whose other party later uploaded a photograph kept the Talk mark for good.
-///
-/// Each case works on its own `AssetCache` over a directory under `URL.temporaryDirectory`, removed when the case ends, so nothing here touches the shared App Group cache or the developer's real cached pictures.
-/// It asks `pendingFetches(for:accountName:serverAddress:now:)` rather than calling `refresh`, which would need a `Rainmaker.Server` and a network; the decision it makes is the whole of what is being pinned.
 final class ConversationAvatarFreshnessTests {
     /// `directory` is this case's own cache directory.
     let directory: URL
@@ -51,8 +48,6 @@ final class ConversationAvatarFreshnessTests {
     }
 
     /// `storeAnswer(_:answeredDaysAgo:)` caches `data` as the server's answer about `conversation`, dated `days` before now.
-    ///
-    /// Empty `data` is a refusal, anything else a picture; the date is set on the file, because the file's date is what records when the server answered.
     private func storeAnswer(_ data: Data, answeredDaysAgo days: Double) throws {
         cache.store(data, forKey: key)
         try dateAnswer(daysAgo: days)

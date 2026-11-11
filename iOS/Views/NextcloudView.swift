@@ -5,120 +5,69 @@ import os
 import SwiftUI
 import WebKit
 
-///
 /// Hosts the `WebPage` the connected server is shown in, along with the navigation bar and toolbar the app draws around it.
-///
-/// It titles its navigation bar with the name of the Nextcloud app the loaded URL resolves to, falling back to the page's own shortened title where it resolves to none.
-/// It publishes its `WebPage` and its display scale as focused scene values, which is how the iPad's View menu finds the window in front and renders its icons sharp.
-/// It overlays the web view with `LoadingOverlay` for as long as `WebPage.isLoading` says a document is on its way in.
-///
 struct NextcloudView: View {
     @Environment(Store.self)
     private var store
 
-    ///
     /// Which way text runs, which is what decides whether SwiftUI's leading edge is the physically left one.
-    ///
     @Environment(\.layoutDirection)
     private var layoutDirection
 
-    ///
     /// How many pixels this window's screen draws to the point, which the iPad's View menu is told so its icons are rendered sharp.
-    ///
     @Environment(\.displayScale)
     private var displayScale
 
-    ///
     /// How the app opens an address itself, which for a link off the connected server means handing it to the browser.
-    ///
     @Environment(\.openURL)
     private var openURL
 
-    ///
     /// Whether this window is in front of the user, which is when it serves what Spotlight and the Shortcuts app ask the app to open and reloads a page left blank, and whether it has gone to the background, which is when it stops.
-    ///
     @Environment(\.scenePhase)
     private var scenePhase
 
     @State
     private var page: WebPage
 
-    ///
     /// Carries what the loaded page reports about its app-navigation toggle, which is what decides whether the toolbar control is on screen and how it renders.
-    ///
     @State
     private var appNavigation: AppNavigationBridge
 
-    ///
     /// Carries what the loaded page reports about its notifications menu: which selector found it, and whether its panel is open.
     ///
     /// Nothing on screen is gated on it. It is here so a selector that no longer matches shows up in the log, and so a panel that has just closed can prompt a fresh reading of the unread count.
-    ///
     @State
     private var notificationsPanel: NotificationsPanelBridge
 
-    ///
     /// Decides what the page may navigate to, which is how a sign-in form reached on an expired browser session is turned back into the page the user was on.
-    ///
-    /// Built here and handed to the page at initialization because that is the only moment a `WebPage` accepts one. The page is given back to it immediately afterwards, an object having to exist before another can be built around it, and the store from `body`, there being no environment to read one from yet.
-    ///
     @State
     private var navigationDecider: NextcloudNavigationDecider
 
-    ///
     /// The page's own script store, kept so the document-start scripts can be re-registered with a fresh measurement rather than only ever seeded once.
-    ///
-    /// `WebPage.Configuration` is a struct the page copies at initialization, but this property of it is a class, so the copy and this reference are the same object and a script added through it still reaches the page.
-    ///
     @State
     private var userContentController: WKUserContentController
 
-    ///
     /// The most recent measurement of how much of the web view the app's own interface covers, or `nil` until the first layout pass has produced one.
-    ///
-    /// Nothing is loaded while it is `nil`: the first document has to be able to inset itself as it parses, and until SwiftUI has laid the view out there is no honest value to give it.
-    ///
     @State
     private var insets: WebPageInsets?
 
-    ///
     /// Whether this screen has begun its session: loaded its first document, asked for the app list, and started serving what the App Intents layer asks it to open.
-    ///
-    /// A flag of its own rather than a reading of `page.url`, because a request waiting from a cold launch is loaded in place of the first document and leaves the address set before the session work has run; deciding by the address let such a request skip the app-list refresh for the whole session.
-    ///
     @State
     private var hasStarted = false
 
-    ///
     /// Whether a terminated web content process may be answered with a reload at once, which it may from the moment this window comes to the front until it has reloaded once or gone to the background.
-    ///
-    /// WebKit reloads a page whose process ended only once the page is visible again, and only once in a while, but leaves both to an app that is told of the termination, which a `WebPage` always is.
-    /// One reload per activation keeps both: a window in the background loads nothing nobody sees under the memory pressure that ended its process, and a page that ends its own process on every load, by running out of memory for one, cannot reload without end.
-    /// Coming back to the window is what tries again, its activation reloading a page left blank whatever this says.
-    /// State rather than a reading of `scenePhase`, because the task that hears of the termination holds the view as it was when the task began, and an environment value read from that is the one it had then.
-    ///
     @State
     private var mayReloadAfterTermination = false
 
-    ///
     /// Records this screen's activity under the `NextcloudView` category.
-    ///
-    /// Static because a `View` is a value rebuilt on every parent body evaluation, and one logger per screen is enough.
-    ///
     private static let logger = Logger(for: NextcloudView.self)
 
-    ///
     /// The name of the function that the bundled `iOSScript.safeAreaInsets` script installs on the page.
     ///
     /// Two callers invoke it with a measurement: the document-start user script that seeds the first one, and the live update that pushes a new one whenever the geometry changes. Nothing checks the name against the script itself, so holding it in one place is what keeps those two from drifting apart.
-    ///
     private static let safeAreaInsetsEntryPoint = "window.Cirruscope.applySafeAreaInsets"
 
-    ///
     /// Decides which of the device's sensors a page is given without WebKit asking first: the camera and the microphone for the connected server, and nothing for anyone else.
-    ///
-    /// `MediaCaptureDecision` answers it, on the origins of both the page and the frame asking, which is the decision the Mac's web view makes too, so a call asks only the system's own question, once. Anything else keeps WebKit's prompt, the motion sensors included, nothing in Nextcloud asking for them.
-    ///
     private static var deviceSensorAuthorization: WebPage.DeviceSensorAuthorization {
         WebPage.DeviceSensorAuthorization { permission, frame, origin in
             guard case .mediaCapture = permission else {
@@ -383,14 +332,7 @@ struct NextcloudView: View {
         .focusedSceneValue(\.displayScale, displayScale)
     }
 
-    ///
     /// What the navigation bar is titled with: the name of the Nextcloud app on screen, or the page's own title where the app cannot be told.
-    ///
-    /// The app's name is the shorter of the two by some way — "Files" against "Files - Nextcloud" — and this title is also the button that opens the app menu, so the space it does not take is space the app-navigation toggle and the account menu get to keep.
-    /// Reading `page.url` here is what subscribes this view to it, `WebPage` being observable, exactly as reading `page.title` subscribes it to that. Nothing else in the app reads the URL from a view body, so it is worth naming the mechanism.
-    /// A page without an address falls back to the one its history is at, because a page whose web content process has ended loses its address and title but keeps its history (issue #119). An empty title is no title at all, and the app menu opens from the title, so without the fallback a blank page would also take away the menu that leads off it.
-    /// The fallback is reached by more than a failure, so it has to read as a title in its own right rather than as an error, which is what `PageTitle.withoutSiteName(_:)` makes it. It covers the moment after a first sign-in before the app list has arrived — a relaunch starts from the persisted list — and the pages that genuinely belong to no app the server lists — its settings and a user's profile among them. A page that merely leaves its app's own path does not land here: a Talk conversation at `/call/<token>` resolves to Talk, the rule knowing the routes an app registers at the server's root.
-    ///
     private var navigationTitle: String {
         guard let url = page.url ?? page.backForwardList.currentItem?.url else {
             return PageTitle.withoutSiteName(page.title)
@@ -403,11 +345,9 @@ struct NextcloudView: View {
         return app.name
     }
 
-    ///
     /// Reads how much of the web view the app's own interface covers out of a layout that still respects the safe area.
     ///
     /// The reader is inset by exactly what covers the page, so its own insets are the measurement. It reports a width of zero until the view has actually been laid out, and that pass is not a measurement: adopting it would release the first load against insets of zero, so the page would parse uninset and be corrected a frame later.
-    ///
     private func measurement(in proxy: GeometryProxy) -> WebPageInsets? {
         guard proxy.size.width > 0 else {
             return nil
@@ -418,9 +358,7 @@ struct NextcloudView: View {
         return WebPageInsets(top: safeArea.top, leading: safeArea.leading, bottom: safeArea.bottom, trailing: safeArea.trailing, isRightToLeft: layoutDirection == .rightToLeft)
     }
 
-    ///
     /// Adopts a new measurement, so that documents loaded from now on inset themselves as they parse and the one already on screen re-insets itself now.
-    ///
     private func apply(_ measurement: WebPageInsets?) {
         guard let measurement else {
             return
@@ -436,12 +374,7 @@ struct NextcloudView: View {
         publishInsets()
     }
 
-    ///
     /// Registers every user script the page runs, with `measurement` baked into the one that publishes the insets.
-    ///
-    /// All five are re-registered together on every measurement rather than the insets script alone, because a `WKUserContentController` can only be emptied wholesale. Doing it at all is what keeps a document loaded after a rotation from being seeded with the insets of the previous orientation.
-    /// The storage retention runs first, at document start and in the main frame alone, before any of the page's own scripts can clear its storage. The stylesheet follows at document start so the page never paints unstyled, the insets script immediately after it so the properties it declares are set before the first layout, and the two observers — of the app navigation and of the notifications menu — at document end, once there is a document for them to observe.
-    ///
     private func installUserScripts(with measurement: WebPageInsets) {
         userContentController.removeAllUserScripts()
 
@@ -466,11 +399,9 @@ struct NextcloudView: View {
         }
     }
 
-    ///
     /// Publishes the current measurement into the page already on screen.
     ///
     /// The user script covers every document from its own start, so this is what covers the case the user script cannot: a page that is already parsed when the geometry changes under it, which is what a rotation is.
-    ///
     private func publishInsets() {
         guard let insets else {
             return
@@ -489,12 +420,10 @@ struct NextcloudView: View {
         }
     }
 
-    ///
     /// Asks the page that has just finished loading which language the server rendered it in, and hands the answer to `ServerConnection.pageFinishedLoading(in:)`, which refreshes the app list when it changed.
     ///
     /// The same query backs the Mac's web windows, so both apps notice a language change the same way.
     /// A failure is logged and otherwise costs nothing but the refresh, the list then keeping the names it had.
-    ///
     private func reportPageLanguage() {
         guard let query = PageLanguage.query else {
             return
@@ -510,15 +439,7 @@ struct NextcloudView: View {
         }
     }
 
-    ///
     /// Follows this screen's navigations for as long as it is on display: publishing the current measurement again each time a new document commits, reporting the language each finished page was rendered in, and reloading the page once its web content process has been terminated.
-    ///
-    /// Publishing is a backstop, not the mechanism: the user script has already set the properties by the time this runs. It is here for the case where a document commits carrying a seed that predates the last measurement, and it costs nothing when it has nothing to correct. `.committed` rather than `.finished` because the document exists from that point on, well before the page has finished loading and painting.
-    /// The language is reported on `.finished`, once `<html lang>` is certain to have been parsed, because a language changed in Nextcloud's personal settings only reloads the page and this is where the reload is seen arriving in it.
-    /// The reload is `reloadIfBlank()`'s to make, and made only while the window is in front, as `mayReloadAfterTermination` explains, which is also when Safari reloads a tab whose process ended.
-    /// One loop serves all three so that `page.navigations` has a single consumer.
-    /// The subscription is re-entered after a failure rather than abandoned, because `WebPage.navigations` reports a failed navigation by throwing, which ends the sequence — and a cancelled one counts as failed. `NextcloudNavigationDecider` cancels every sign-in redirect it intercepts, so a single expired browser session would otherwise retire both for the rest of the screen's life. The loop ends when the task is cancelled, which is when the screen goes away.
-    ///
     private func followNavigations() async {
         while Task.isCancelled == false {
             do {
@@ -551,14 +472,7 @@ struct NextcloudView: View {
         }
     }
 
-    ///
     /// Load something into a page that shows nothing, which is what iOS leaves behind when it ends the page's web content process to reclaim memory, as it does to an app suspended for long enough (issue #119).
-    ///
-    /// Such a page has no document, no address and no title of its own, only the history `navigationTitle` falls back to.
-    /// The page the user was on is loaded again from its history, and the server's front page is loaded where there is none, the process having ended before the first document arrived.
-    /// Its history item rather than `WebPage.reload()`, which does nothing to a page whose process is running but has never shown a document, as a reload that failed leaves it, while still reporting a load in progress, so `LoadingOverlay` would never lift.
-    /// It leaves alone a page with an address or a document on its way in, and a screen that has not started its session, since nothing may load before the first measurement.
-    ///
     private func reloadIfBlank() {
         guard hasStarted else {
             Self.logger.notice("Not reloading the page, as this screen has not started its session")
@@ -590,11 +504,7 @@ struct NextcloudView: View {
         page.load(item)
     }
 
-    ///
     /// Ask the page to show or hide Nextcloud's app navigation, by clicking the toggle the web interface offers.
-    ///
-    /// The same script backs macOS's "Show/Hide Sidebar" menu item, so both platforms drive the web interface through one click target. Nothing is assumed about the outcome: `AppNavigationBridge` reports the resulting state back, and the toolbar control renders from that.
-    ///
     private func toggleAppNavigation() {
         guard let source = Script.sidebarToggle.source else {
             return
@@ -609,11 +519,7 @@ struct NextcloudView: View {
         }
     }
 
-    ///
     /// Ask the page to open Nextcloud's own notifications panel, by clicking the bell the web interface offers in its header.
-    ///
-    /// The header is hidden on iOS, so a click alone would open a panel that never paints; `Cirruscope.css` reveals it through a rule scoped to the menu's own open state, which is also what closes it again and why there is nothing here to undo. Nothing is assumed about the outcome, as with `toggleAppNavigation()`: `NotificationsPanelBridge` reports what the page actually did, and the log is where a selector that no longer matches shows up.
-    ///
     private func openNotificationsPanel() {
         guard let source = iOSScript.notificationsPanel.source else {
             return
@@ -628,11 +534,7 @@ struct NextcloudView: View {
         }
     }
 
-    ///
     /// Load one server app into the web view.
-    ///
-    /// Which request may open it, signed in with the app password, is `Store.request(opening:)`'s to decide, since the iPad's View menu opens apps into this same page too.
-    ///
     func navigateToApp(_ app: ServerAppTransferObject) {
         guard let request = store.request(opening: app) else {
             return
@@ -641,11 +543,9 @@ struct NextcloudView: View {
         page.load(request)
     }
 
-    ///
     /// Make this screen the one that opens what Spotlight, the Shortcuts app and a tapped notification ask for, answering whether it opened a request that was already waiting.
     ///
     /// The page is the owner because it is this window's own and lives exactly as long as the window does, which is what lets the window hand the job back when it closes.
-    ///
     @discardableResult
     private func installEntityOpener() -> Bool {
         EntityOpening.shared.install(for: page) { request in
@@ -659,12 +559,7 @@ struct NextcloudView: View {
         }
     }
 
-    ///
     /// Load one of the connected server's own pages into the web view, named by the path components it lives at.
-    ///
-    /// Components rather than a path string, and that is the whole of what makes this correct on an instance installed in a subdirectory. A path the *server* named carries that instance's web root already; one the app knows does not, so resolving `"/settings/user"` from the server root against `https://example.com/nextcloud` opens `https://example.com/settings/user` — a live page on that host with nothing to do with the account, which is why this read as a working link for as long as it did. `SameOriginURL(components:relativeTo:)` appends instead, and taking components here means a caller cannot express the broken form to begin with.
-    /// The result is still proven to stay on the connected server before anything is loaded: `ServerAccount.authenticatedRequest(for:)` attaches the app password to whatever it is given, so that rule is kept unconditional rather than reasoned about per call site.
-    ///
     private func navigate(to components: [String]) {
         guard let account = store.account else {
             return
@@ -678,12 +573,7 @@ struct NextcloudView: View {
         load(target)
     }
 
-    ///
     /// Load one address on the connected server into the web view, signed in as the account.
-    ///
-    /// The address arrives proven to stay on *a* server, which is what `SameOriginURL` being the parameter type says, but not necessarily on this account's: a request the App Intents layer latched before anybody was signed in was proven against whichever server the store remembered then, which need not be the one signed in to since.
-    /// `ServerAccount.authenticatedRequest(for:)` attaches the app password to whatever it is handed, so the proof is made again here against the account whose password is about to be attached, and a request that fails it is dropped rather than signed in.
-    ///
     private func load(_ target: SameOriginURL) {
         guard let account = store.account else {
             return

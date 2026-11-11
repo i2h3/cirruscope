@@ -35,7 +35,7 @@ When macOS code is wanted on iOS, relocate it and lift its platform-only side ef
 ## Repository Structure
 
 The project builds two apps and one widget extension from five synchronized source folders, each target's `.xcconfig` chaining up to the root `Cirruscope.xcconfig`.
-Every type and property has a documentation comment saying what it is and, where it matters, why it sits where it does: read it before editing, since this section maps folders and placement rules, not files.
+Every type has a documentation comment saying what it is: read it before editing, since this section maps folders and placement rules, not files.
 
 | Folder | Compiled into | Holds |
 |---|---|---|
@@ -100,9 +100,10 @@ They are pasted verbatim, so their line breaks are part of the text and neither 
 
 - This project is set up to use SwiftFormat for Swift and Biome for JavaScript, both configured in the project root.
 - Every type declaration must reside in its own source code file.
-- Every type declaration must have a documentation comment.
-- Every property declaration must have a documentation comment.
-- Documentation comments should exclude details of other types related to what they document.
+- Every type declaration must have a documentation comment; one line is enough when the type is self-evident.
+- Properties, methods and enum cases carry a documentation comment only when the declaration alone does not say what they are for.
+- A documentation comment states what its symbol is for and any contract the declaration cannot show.
+  It never restates the symbol's name, and it never explains other symbols, files or their relations: placement and relations are recorded once, in this document and in `DECISIONS.md` (see `DECISIONS.md` → "Why must every type but not every property carry a documentation comment?").
 - Documentation comments should have one empty line at their top and their bottom each.
 - Documentation comments must not wrap at a fixed column count but when a sentence is finished.
   Line lengths do not matter in documentation comments.

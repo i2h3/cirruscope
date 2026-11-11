@@ -5,13 +5,6 @@ import Foundation
 import os
 
 /// `EntityActivation` turns the identifier of a donated entity into the request that opens it.
-///
-/// It exists because two surfaces ask the same question and must not be allowed to answer it differently. An `Open…Intent` asks it when the Shortcuts app or Siri runs an action; `SpotlightSelection` asks it when a person taps a Spotlight result, which the system delivers as a plain activity rather than by running the intent. Both then have to look the entity up in the store, build the address that opens it, and decide what to do when either step fails — and when that logic lived inside the intents alone, the Spotlight side simply did not have it: every selection that was not a server app was dropped without a trace.
-/// The collective page is what makes sharing this load-bearing rather than tidy. It is the one entity whose address may not be buildable and which therefore opens its *collective* instead, and a fallback that applied to the Shortcuts action but not to the Spotlight result would be the same feature behaving two ways.
-///
-/// Each address is logged where it is built, and deliberately **without** `privacy: .public`: a collective's path carries its name and a page's fallback path can carry its title, which is somebody's content rather than an identifier. It is in the clear for a build run from Xcode or a device carrying the logging profile, which is where anybody debugging a route actually is, and `<private>` in a sysdiagnose, which is where it would otherwise be somebody's private data. Not logging it at all was what turned a wrong address into a window that opened and showed the wrong thing with nothing in the record to say so.
-///
-/// Every function takes the store it reads from, defaulting to the process-wide one, so the production call sites are unchanged while a test can seed its own. That is the same arrangement `AccountStore`'s own closure seams use, and it is what lets these be covered at all: naming `AccountStore.shared` from a test would reach the developer's real store, whose recovery path deletes it.
 @MainActor
 enum EntityActivation {
     /// `Outcome` is what resolving one entity identifier came to.

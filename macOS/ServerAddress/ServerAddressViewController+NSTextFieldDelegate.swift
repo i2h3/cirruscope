@@ -4,8 +4,6 @@
 import Cocoa
 
 /// `ServerAddressViewController`'s conformance to `NSTextFieldDelegate` keeps the "Connect" button enabled only while the server-address field holds an address to submit, and names the address `ServerAddressFormatter` resolved once the user has finished entering one.
-///
-/// The two halves are split along AppKit's own end-editing sequence: `NSTextField.textDidEndEditing(_:)` validates the field through the formatter first, then posts the notification behind `controlTextDidEndEditing(_:)`, and only then sends the field's action — so by the time this extension is told editing has ended, the canonical address is already on screen and all that is left is to say why it changed.
 extension ServerAddressViewController: NSTextFieldDelegate {
     func controlTextDidChange(_: Notification) {
         // Keep the raw input around: once editing ends, `ServerAddressFormatter` replaces the field's value with the

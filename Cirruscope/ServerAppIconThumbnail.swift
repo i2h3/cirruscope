@@ -11,9 +11,6 @@ import UniformTypeIdentifiers
 /// `ServerAppIconThumbnail` draws the picture of a Nextcloud app that Spotlight and the Shortcuts app are given: a small white window, three traffic lights in its top-left corner, and the app's own glyph centred in the body below them.
 ///
 /// It exists because those two surfaces are the only ones that draw a downloaded icon *literally*. Everywhere else in the app an icon is a template image, which AppKit tints for the appearance it is drawn in; a donated bitmap leaves the process and is composited by something that will not tint it, so a bare glyph is legible in one appearance and nearly invisible in the other. That was the bug: black on black.
-///
-/// What fixes it is that the artwork is **opaque**. Nothing about it depends on what is behind it, so one bitmap is correct in both appearances and no second donation is needed when the user switches — which matters, because that switch usually happens while the app is not running. The window shape is the same idea as the app's own icon, and gives a Spotlight row something recognizable at a glance where a bare glyph read as a smudge.
-/// The shadow does the work a border would otherwise do, and does it in only the appearance that needs it: it lifts the white plate off Spotlight's near-white light background, and in dark appearance it disappears into the background by itself, where the white body already contrasts strongly. `DECISIONS.md` records what else was measured and rejected, including Spotlight's own `darkThumbnailURL`, which turns out to be inert.
 enum ServerAppIconThumbnail {
     /// `size` is the edge length, in points, of the artwork handed to Spotlight and Shortcuts.
     ///
@@ -36,8 +33,6 @@ enum ServerAppIconThumbnail {
     private static let glyphSideFraction: CGFloat = 0.46
 
     /// `trafficLightColors` are the close, minimize and zoom colours, in that order.
-    ///
-    /// Taken from the app's own icon rather than from the ones macOS paints on a real window, because the point of this artwork is to look like the Cirruscope icon; the two sets are close but not identical. They are written down here because `AppIcon.icon` is an Icon Composer bundle whose layers no Swift code can reach — so if the icon is ever recoloured, this is the second place that has to change.
     private static let trafficLightColors = [
         CGColor(srgbRed: 1.0, green: 0.21961, blue: 0.23529, alpha: 1),
         CGColor(srgbRed: 1.0, green: 0.8, blue: 0.0, alpha: 1),
@@ -49,8 +44,6 @@ enum ServerAppIconThumbnail {
     static let logger = Logger(for: ServerAppIconThumbnail.self)
 
     /// `pngData(forAppID:serverAddress:)` is the windowed icon of one app as PNG bytes, or `nil` if no icon has been cached for it or it cannot be drawn.
-    ///
-    /// A `nil` is ordinary rather than a failure — nothing has been fetched yet on a first launch — and the caller simply donates no image, which Spotlight and Shortcuts answer with their own generic one.
     static func pngData(forAppID appID: String, serverAddress: URL) -> Data? {
         guard let glyph = ServerAppIcons.shared.glyph(forAppID: appID, serverAddress: serverAddress) else {
             return nil
@@ -98,8 +91,6 @@ enum ServerAppIconThumbnail {
     }
 
     /// `pngData(drawingEmoji:)` is the artwork with `emoji` in the window's body instead of an app's glyph.
-    ///
-    /// `glyphColor()` deliberately does not apply here. A monochrome app glyph is filled with one ink because it is a silhouette; an emoji carries its own colours, and tinting one would throw away the whole of what makes it recognizable. It is drawn through Core Text rather than as an image because neither platform vends an emoji as a bitmap without going through a font, and Core Text is the layer both share.
     static func pngData(drawingEmoji emoji: String) -> Data? {
         pngData { context, box in
             let font = CTFontCreateWithName("AppleColorEmoji" as CFString, box.height, nil)
@@ -125,9 +116,6 @@ enum ServerAppIconThumbnail {
     }
 
     /// `pngData(compositing:)` is a picture the server drew, made into artwork this app can donate.
-    ///
-    /// It is not the window: a conversation's avatar is already a complete picture of something, and putting one inside a little window would say "this is an app" about a person. What it borrows instead is the one property that made the window necessary — **opacity**. The bitmap is laid on an opaque white plate of the same rounded shape and the same shadow, so a picture with an alpha channel, or one the server drew as a transparent monogram, is right in both appearances from a single donation, which is the whole of what `DECISIONS.md` records about `darkThumbnailURL` being inert.
-    /// It is filled rather than fitted, so a picture that is not square is cropped to the plate instead of leaving bars beside itself. Faces are centred in an avatar by convention, so the centre is what is kept.
     static func pngData(compositing image: CGImage) -> Data? {
         let edge = size * 2
         let margin = edge * shadowMarginFraction
@@ -225,8 +213,6 @@ enum ServerAppIconThumbnail {
     }
 
     /// `pngData(of:)` encodes a rendered bitmap as PNG bytes.
-    ///
-    /// Through ImageIO rather than `NSBitmapImageRep.representation(using:properties:)`, which is the call this used while the type was macOS-only and has no counterpart on iOS. `CGImageDestination` is the same encoder underneath and exists identically on both platforms, so one implementation serves both rather than the artwork being drawn twice — and the pixels a Mac donates to Spotlight are unchanged by the swap, which `ServerAppIconThumbnailTests` pins.
     private static func pngData(of image: CGImage) -> Data? {
         let data = NSMutableData()
 

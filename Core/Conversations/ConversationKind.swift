@@ -4,9 +4,6 @@
 import Foundation
 
 /// `ConversationKind` is what kind of Nextcloud Talk conversation something is, as the server numbers them.
-///
-/// It is a structure with a raw value rather than a Swift `enum` because the set is open: the server numbers the kinds it knows today and is free to add another, and a client that models this as a closed enum either fails to decode a conversation of a kind it has not heard of, or needs a catch-all case carrying an associated value — which cannot also be a `RawRepresentable` that round-trips. Keeping the number and naming the known ones beside it means an unrecognized kind survives being stored and read back unchanged, and nothing has to decide what to do about it before it is asked to.
-/// The number is the server's own, which is why it is what gets persisted. Talk's REST API does not name these in its payload; it sends the integer.
 struct ConversationKind: RawRepresentable, Hashable, Codable, Sendable {
     /// `rawValue` is the number the server uses for this kind.
     let rawValue: Int

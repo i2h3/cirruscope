@@ -6,10 +6,6 @@ import os
 import SwiftData
 
 /// `AppDatabase` owns the single, process-wide SwiftData `ModelContainer` backing Cirruscope's account store.
-///
-/// The container is configured with `groupContainer: .identifier(AppGroup.identifier)` so the store lives in the shared App Group container — under `Library/Application Support/`, disjoint from `AssetCache`'s `Library/Caches/` subtree — where any extension carrying the same entitlement can also open it. The store is local only (`cloudKitDatabase: .none`); secrets never go in it (they stay in `Keychain`).
-///
-/// `ModelContainer` is `Sendable`, so exposing it as a `static let` mirrors the existing `AppGroup` / `AssetCache.shared` singleton conventions. Access the main-actor context through `AccountStore`, which is the only type that touches it. Opening the store — including running `CirruscopeMigrationPlan` and any quarantine — logs at `.notice`/`.error`/`.fault` so the whole startup path is reconstructable from a log capture in a release build.
 enum AppDatabase {
     /// `logger` records store setup and recovery under the `AppDatabase` category.
     private static let logger = Logger(for: AppDatabase.self)
@@ -18,17 +14,11 @@ enum AppDatabase {
     private static let storeName = "Cirruscope"
 
     /// `schema` is the app's current SwiftData schema.
-    ///
-    /// It is one definition rather than two because `AccountStore`'s unit tests build their own in-memory container from it (see `AccountStoreHarness`): a schema spelled out a second time on the test side would keep exercising whichever version it was written against once the app moves on. It names the newest versioned schema, `SchemaV4`; `CirruscopeMigrationPlan` migrates a store written by an older one up to it.
     static let schema = Schema(versionedSchema: SchemaV4.self)
 
     /// `container` is the shared model container, built on first access, opened with `CirruscopeMigrationPlan` so a store written by an earlier shipped schema is migrated forward in place.
     ///
-    /// It lives in the App Group container and nowhere else. A store that a build without the App Group entitlement left in the app's own container is moved there first, once, by `importStore(from:into:)`. If opening it fails — a genuinely corrupt file, or a migration that could not complete — the store files are moved aside to `.quarantine` siblings (never deleted) and it is tried once more: the store is largely reconstructible (what came from the server is fetched from it again; only the user's own choices — keyboard shortcuts and the appearance settings — are authored locally), so recovering beats crash-looping on launch, and quarantining rather than deleting means a store that will not open is set aside with whatever it still holds rather than destroyed — the files stay on disk for recovery.
-    ///
     /// A failure after that is unrecoverable and traps. There is deliberately no store private to this build to open instead: one would be empty, so a build landing there would silently show the user none of their data, and a build that cannot reach the shared container is one whose signing was overridden — see AGENTS.md → Building and Signing.
-    ///
-    /// Being a `static let`, it is opened only once something actually asks for it, which is what lets the account store's tests run entirely on their own in-memory container: nothing in them reaches `AccountStore.shared`, so this store is never opened on their behalf — and it must stay that way, since the recovery path above moves the developer's real store files aside.
     static let container: ModelContainer = {
         let schema = Self.schema
 
@@ -80,12 +70,6 @@ enum AppDatabase {
     }()
 
     /// `importStore(from:into:)` moves the store at `ownStoreURL`, which a build without the App Group entitlement wrote into the app's own container, to `sharedStoreURL` in the App Group container, so the first entitled launch carries the user's data across instead of leaving it behind.
-    ///
-    /// Every release up to and including `1.1.0` reached the App Store without the entitlement and kept its store in the app's own container, and so did the TestFlight builds of `1.2.0` before its signing was fixed. For anybody updating from one of them that store, not the App Group's, is the one holding their keyboard shortcuts and appearance choices, which nothing can fetch again.
-    /// Whatever the App Group container already holds under the store's name is quarantined first rather than overwritten: on a Mac that ran an entitled build in between, it is the store that build created, and it stays on disk beside its replacement. Moving rather than copying is what makes this happen once, since the next launch finds nothing left to import.
-    /// The store file moves before its sidecars, and nothing moves at all unless the App Group container is clear of every file of that name, so a failure leaves the store where it was to be tried again on the next launch rather than pairing it with somebody else's write-ahead log.
-    /// One case it resolves the wrong way on purpose: going back to a build without the entitlement and forward again moves the store that build wrote over the shared one, which is quarantined rather than lost.
-    /// Remove this import only once no build without the entitlement can still be on anybody's Mac.
     static func importStore(from ownStoreURL: URL, into sharedStoreURL: URL) {
         let fileManager = FileManager.default
         let ownDirectory = ownStoreURL.deletingLastPathComponent()
@@ -152,10 +136,6 @@ enum AppDatabase {
     private static let storeFileSuffixes = ["", "-wal", "-shm", "-journal"]
 
     /// `quarantineStore(at:)` moves the SQLite store file and its `-wal`/`-shm`/`-journal` sidecars aside to `.quarantine` siblings, so a fresh container can be created in place of an unreadable one without destroying the user's data — which stays on disk, recoverable, rather than being deleted.
-    ///
-    /// A second quarantine never overwrites the first. The whole point of moving these files rather than deleting them is that the user's own choices — keyboard shortcuts and the appearance settings — are the one part of the store nothing can re-fetch, and an earlier version of this method removed an existing `.quarantine` sibling before moving the live file onto it — so a store that failed to open twice destroyed the copy made the first time, which is the run most likely to have held good data. Later passes therefore land on `.quarantine-2`, `.quarantine-3`, and so on, chosen by `quarantineExtension(in:for:)`.
-    ///
-    /// Each move is logged (and each failure logged at `.error`, without aborting the rest) so a support log shows exactly which files were set aside and where.
     private static func quarantineStore(at storeURL: URL) {
         let directory = storeURL.deletingLastPathComponent()
         let name = storeURL.lastPathComponent
@@ -186,9 +166,6 @@ enum AppDatabase {
     }
 
     /// `quarantineExtension(in:for:)` is the file extension this quarantine pass appends, being the first of `.quarantine`, `.quarantine-2`, `.quarantine-3`, … that no file of the store's name already carries.
-    ///
-    /// One extension is chosen for the whole pass rather than per file, so the store and its sidecars stay a matched set: a copy whose `-wal` came from a different failure is not a recoverable store. The plain `.quarantine` is kept for the first pass because it is the case that essentially always happens and the one the surrounding documentation names; the numbered ones exist so a second failure adds to the evidence instead of erasing it.
-    /// The search is bounded. Ten quarantined copies of one store is not a state worth generating more of, and reusing the last extension at that point trades a theoretical loss of the tenth copy for a guarantee that this never becomes an unbounded loop on a directory the app cannot write to.
     private static func quarantineExtension(in directory: URL, for name: String) -> String {
         let fileManager = FileManager.default
 

@@ -8,10 +8,6 @@ import ImageIO
 import Testing
 
 /// `PlatedArtworkTests` covers the two ways of filling the donated plate that are not an app's glyph: a collective's emoji, and a conversation's own picture.
-///
-/// It asserts colour and opacity rather than shape, for the reason `ServerAppIconThumbnailTests` does: the bug this artwork exists to prevent was never about geometry. A donated bitmap leaves the process and is composited by something that will not tint it and will not put anything behind it, so a plate that lets the background through hands the question of whether the picture can be seen back to whatever is behind it. Both new paths can lose that independently — the emoji one by dropping the plate, the compositing one by letting a picture's own alpha channel through — and neither loss is visible in a test of the layout.
-///
-/// It is a shared suite rather than a macOS one because neither path touches `glyphColor()`, which is the only part of this artwork either platform has to answer for itself. It reads pixels through `CGImageSource` for the same reason.
 struct PlatedArtworkTests {
     /// `edge` is the bitmap's width and height in pixels.
     private var edge: Int {
@@ -19,8 +15,6 @@ struct PlatedArtworkTests {
     }
 
     /// `pixel(of:x:y:)` reads back one pixel of a PNG, addressed from the top-left corner as it would be seen.
-    ///
-    /// Through `CGImageSource` and a one-pixel context rather than a platform image type, so this runs against both SDKs.
     private func pixel(of data: Data, x: Int, y: Int) throws -> (red: UInt8, green: UInt8, blue: UInt8, alpha: UInt8) {
         let source = try #require(CGImageSourceCreateWithData(data as CFData, nil))
         let image = try #require(CGImageSourceCreateImageAtIndex(source, 0, nil))

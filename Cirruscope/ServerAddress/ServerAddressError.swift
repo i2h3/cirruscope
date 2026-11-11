@@ -4,33 +4,20 @@
 import Foundation
 
 /// `ServerAddressError` is the reason `ServerAddress(normalizing:)` could not turn what the user typed into an address to connect to.
-///
-/// It is deliberately separate from `CirruscopeError`, which collects the operational failures the app's facilities throw — a Keychain rejection, an unexpected HTTP status, a login that timed out. These cases are not failures of the app at all but statements about one text field's contents, and keeping them apart is what lets `ServerAddress(normalizing:)` be typed as `throws(ServerAddressError)`: `ServerAddressViewController.open(_:)` then handles a closed set of input problems without also having to consider a `keychainFailure` it cannot get there.
-/// The conformance to `LocalizedError` is what makes each case presentable: `open(_:)` shows `localizedDescription` as the informative text of an alert titled "Invalid Server Address", so every case has to read as a complete instruction to the user on its own.
 enum ServerAddressError: Error, Equatable, LocalizedError {
     /// `empty` is thrown when the input holds nothing but whitespace, or nothing at all.
-    ///
-    /// No path through the user interface reaches it: the "Connect" button is disabled while the field holds nothing but whitespace, and `ServerAddressFormatter` leaves a field it cannot normalize exactly as it is. The case exists so the type refuses an empty input rather than producing the bare `https://` the inline sanitation it replaced produced.
     case empty
 
     /// `tooLong` is thrown when the input exceeds `ServerAddress.maximumLength` characters.
-    ///
-    /// It is diagnosed separately from `malformed` because that case carries the input into the alert message, which a pathological paste has no business appearing in.
     case tooLong
 
     /// `invalidCharacters` is thrown when the input still holds control characters after the invisible and line-breaking ones a paste carries have been removed.
-    ///
-    /// Like `tooLong`, it is kept apart from `malformed` so the message does not interpolate characters that cannot be displayed.
     case invalidCharacters
 
     /// `unsupportedScheme` is thrown when the input names a scheme other than HTTP or HTTPS, carrying it in lowercase for the message.
-    ///
-    /// This is the case that replaces the previous behaviour of prefixing anything unrecognized with `https://`, which turned `ftp://x` into `https://ftp://x/` and treated a `javascript:` or `file:` input as the beginning of a host name.
     case unsupportedScheme(String)
 
     /// `credentialsInAddress` is thrown when the input carries a user name or a password.
-    ///
-    /// Refusing rather than silently dropping them matters twice over: the credentials Cirruscope uses come from Login Flow v2 in the next step, so a password typed here would never be used, and `https://cloud.example.com@evil.example` reads as one host while naming another, which is worth stopping rather than quietly rewriting.
     case credentialsInAddress
 
     /// `malformed` is thrown when the input cannot be parsed as a URL at all, carrying the sanitized input for the message.
@@ -39,8 +26,6 @@ enum ServerAddressError: Error, Equatable, LocalizedError {
     case malformed(String)
 
     /// `missingHost` is thrown when the input parses but names no server, as `https://` and `/nextcloud` do.
-    ///
-    /// `URL(string:)` accepts both, which is why the host is checked here rather than assumed to exist.
     case missingHost
 
     /// `invalidHost` is thrown when the host cannot name a server, carrying it in the percent-encoded form so a host that is blank or invisible once decoded still shows up in the message.

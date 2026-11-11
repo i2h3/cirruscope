@@ -7,93 +7,57 @@ import Rainmaker
 import SwiftUI
 import WidgetKit
 
-///
 /// Asks for the address of the Nextcloud server to connect to, and signs in against it.
-///
-/// It is the iOS counterpart of macOS's `ServerAddressViewController` and deliberately performs the same steps in the same order against the same shared types — `ServerAddress`, `ServerConnection`, `LoginSession`, `Keychain` — so the two platforms cannot drift on what an entered address means or on which servers are accepted. `connect()` splits along the same seam `open(_:)` does: the normalization, the field rewrite, and the disabling happen synchronously, and only the network half goes to a `Task`.
-///
 struct ServerAddressView: View {
-    ///
     /// A sign-in failure worth showing the user, as the title and message of an alert.
     ///
     /// Cancelling the grant sheet is not one of these: it is the user's own decision and produces no alert, matching macOS.
-    ///
     private struct Failure {
-        ///
         /// The alert title, naming the kind of failure.
-        ///
         let title: String
 
-        ///
         /// The alert message, which is the failing error's `localizedDescription`.
-        ///
         let message: String
     }
 
     @Environment(Store.self)
     private var store
 
-    ///
     /// The server address as it currently stands in the text field.
-    ///
-    /// `connect()` overwrites it with the canonical form `ServerAddress` resolved, so the address the app is about to request is the address the user can see — the same thing `ServerAddressFormatter` does for the AppKit field.
-    ///
     @State
     private var enteredAddress: String
 
-    ///
     /// Whether a sign-in attempt is in flight, which the Connect button shows as a spinner in place of its label.
-    ///
     @State
     private var isConnecting: Bool
 
-    ///
     /// The address the HTTPS caption below the field describes, or `nil` when it describes none.
-    ///
-    /// This is what makes the caption survive its own arrival. Setting a flag instead cannot work: the caption appears because `connect()` rewrote the field, and any observer of that rewrite — a `didSet`, an `onChange` — fires *after* both assignments and retires the caption in the render that was meant to show it. Recording which address the caption is about has no ordering to get wrong. It is the SwiftUI counterpart of macOS keeping `typedText` beside the field's displayed value.
-    ///
     @State
     private var hintedAddress: String?
 
-    ///
     /// The failure to present, or `nil` while there is none.
-    ///
     @State
     private var failure: Failure?
 
-    ///
     /// Drives the compact layout: while the keyboard is up the wordmark and tagline step down a size and the footer
     /// links fade out, so the field and its button keep the shrunken area above the keys to themselves.
-    ///
     @FocusState
     private var addressIsFocused: Bool
 
-    ///
     /// Whether there is something to submit.
-    ///
-    /// This is the port of `ServerAddressViewController.updateOpenButtonEnablement()`: whitespace is trimmed before the check, so a field holding nothing but spaces offers no sign-in at all. It also closes while an attempt is in flight, which is what makes it the whole guard `connect()` needs.
-    ///
     private var canConnect: Bool {
         isConnecting == false && enteredAddress.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
     }
 
-    ///
     /// Whether the HTTPS caption has something to explain, which is true for exactly as long as the field still holds the address it was raised for.
-    ///
     private var showsSchemeHint: Bool {
         hintedAddress == enteredAddress
     }
 
-    ///
     /// Records the sign-in flow under the `ServerAddressView` category.
-    ///
-    /// Static because a `View` is a value rebuilt on every parent body evaluation, and one logger per screen is enough.
-    ///
     private static let logger = Logger(for: ServerAddressView.self)
 
-    ///
     /// The app builds one of these empty; the parameters exist so the previews can show the states a preview cannot reach by actually signing in.
-    ///
     init(enteredAddress: String = "", isConnecting: Bool = false, hintedAddress: String? = nil) {
         _enteredAddress = State(initialValue: enteredAddress)
         _isConnecting = State(initialValue: isConnecting)
@@ -238,11 +202,7 @@ struct ServerAddressView: View {
         }
     }
 
-    ///
     /// Normalize the entered address, show the user what it resolved to, and hand the server behind it to `signIn(to:)`.
-    ///
-    /// Everything that can be decided without the network happens here, synchronously, which is what makes `canConnect` a sufficient guard: `isConnecting` is already `true` by the time this returns, so a second tap in the same frame finds the door shut. macOS gets the same property from disabling its button inside `open(_:)` before the `Task`.
-    ///
     private func connect() {
         guard canConnect else {
             return
@@ -273,11 +233,7 @@ struct ServerAddressView: View {
         }
     }
 
-    ///
     /// Validate the server at `address` and, if it is supported, run Login Flow v2 against it and adopt the account the grant produced.
-    ///
-    /// Adopting it is what switches `ContentView` over to `NextcloudView`. Every failure either populates `failure` for the alert or, in the one case of the user dismissing the grant sheet, passes silently — that is their decision, not an error.
-    ///
     private func signIn(to address: ServerAddress) async {
         let server = ServerConnection.anonymous(address: address.url)
 
@@ -332,11 +288,7 @@ struct ServerAddressView: View {
         }
     }
 
-    ///
     /// The window the Login Flow v2 grant sheet is anchored to, or `nil` when there is none to anchor it to.
-    ///
-    /// macOS hands `LoginSession` the sign-in window directly, a view controller having one. A SwiftUI `View` has no equivalent reference, so the key window of the foreground-active scene is looked up instead — which is that same window, since this screen is what the app is showing when it runs. `nil` is unreachable while the sign-in screen is on screen; `signIn(to:)` reports it as `CirruscopeError.loginPresentationFailed` rather than presenting a sheet somewhere the user cannot see it.
-    ///
     private static func presentationAnchor() -> ASPresentationAnchor? {
         UIApplication.shared
             .connectedScenes

@@ -5,16 +5,9 @@
 import Foundation
 import Testing
 
-///
 /// `WebViewDestinationTests` covers `WebViewDestination`, which decides whether an address the embedded web view is navigating to is the web view's to display or the system's to open.
-///
-/// It is the rule that confines the web view to one server, and the stakes are asymmetric. Answering `webView` for an address that is not the connected server's leaves another site displayed inside the app's own window, carrying the account's session and borrowing the trust of the app's chrome. Answering `system` for one that is the server's, or for one only a document can make sense of, throws the user out of the app mid-task or hands the operating system something meaningless.
-/// Half the cases below are therefore addresses that must *not* move: the server's own pages however they are spelled, and the schemes a document uses on itself. The other half are the ones a host comparison alone would wave through, which is what the two apps used to do.
-///
 struct WebViewDestinationTests {
-    ///
     /// The connected server every case below is judged against.
-    ///
     private static let server = URL(string: "https://cloud.example.com")!
 
     @Test(arguments: [

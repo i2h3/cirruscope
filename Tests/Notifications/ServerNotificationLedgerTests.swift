@@ -5,31 +5,18 @@
 import Foundation
 import Testing
 
-///
 /// `ServerNotificationLedgerTests` covers how a fetch's answer is admitted to the record of notifications already seen: in the order the fetches were made, only while its account is signed in, and with the record written before anything may be posted.
-///
-/// It exists because the ledger is where two fetches in one process, and a sign-out landing between them, are kept from announcing a notification twice, announcing one for an account that is gone, or leaving a record behind for the next account to inherit.
-/// Every case builds its own ledger over a file in a directory of its own under `URL.temporaryDirectory`, removed when the case's suite instance is released, and a `KeychainStandIn`, so no case reads or writes the developer's real record or credentials.
-///
 final class ServerNotificationLedgerTests {
-    ///
     /// `directory` is this case's own directory, holding the record file.
-    ///
     private let directory: URL
 
-    ///
     /// `fileURL` is where this case's ledger keeps the record.
-    ///
     private let fileURL: URL
 
-    ///
     /// `keychain` is this case's stand-in for the Keychain, with `alice` signed in to begin with.
-    ///
     private let keychain: KeychainStandIn
 
-    ///
     /// `ledger` is this case's ledger.
-    ///
     private let ledger: ServerNotificationLedger
 
     init() throws {
@@ -215,9 +202,7 @@ final class ServerNotificationLedgerTests {
 
     // MARK: - Helpers
 
-    ///
     /// `plan(from:)` is the plan an admitted commit carries, or `nil` for any other.
-    ///
     private static func plan(from commit: ServerNotificationLedger.Commit) -> ServerNotificationPlan? {
         guard case let .admitted(plan) = commit else {
             return nil
@@ -226,9 +211,7 @@ final class ServerNotificationLedgerTests {
         return plan
     }
 
-    ///
     /// `recordOnDisk(at:)` is the record the file at `fileURL` holds, or `nil` when there is none to read.
-    ///
     private static func recordOnDisk(at fileURL: URL) -> ServerNotificationRecord? {
         guard let data = try? Data(contentsOf: fileURL) else {
             return nil

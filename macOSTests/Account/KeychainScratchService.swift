@@ -5,8 +5,6 @@ import Foundation
 import Security
 
 /// `KeychainScratchService` gives one test case a Keychain service of its own, in both the file-based and the data-protection Keychain, and deletes everything filed under it from both when the case ends.
-///
-/// It exists because the move out of the file-based Keychain can only be exercised with real items, and real items must never be the developer's own: the app files its credentials under `Keychain.service`, and a case that wrote or deleted under that would be signing them out. A service named for the case is one nothing else ever touches, so what a case writes here can only be what the case itself reads back.
 final class KeychainScratchService {
     /// `service` is the `kSecAttrService` value this case files its items under, unique to the instance.
     let service = "de.i2h3.cirruscope.tests.keychain-move.\(UUID().uuidString)"
@@ -62,10 +60,6 @@ final class KeychainScratchService {
     }
 
     /// `add(_:dataProtection:account:)` files `value` as the data of the item under `account` in the chosen Keychain, answering the status the Keychain gave.
-    ///
-    /// An item in the data-protection Keychain is filed as readable after the first unlock, as `Keychain.store(_:for:)` and the move file the app's own credentials.
-    /// Left at the default, readable only while the Mac is unlocked, every case filing one failed with `errSecInteractionNotAllowed` whenever the suite ran while the screen was locked, which reads as a regression in the move rather than as the machine's state.
-    /// The file-based Keychain has no such class, so nothing is set there.
     @discardableResult
     func add(_ value: String, dataProtection: Bool, account: String? = nil) -> OSStatus {
         var attributes = itemQuery(dataProtection: dataProtection, account: account)

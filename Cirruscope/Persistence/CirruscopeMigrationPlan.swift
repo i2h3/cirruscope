@@ -7,12 +7,6 @@ import SwiftData
 import Synchronization
 
 /// `CirruscopeMigrationPlan` carries Cirruscope's SwiftData store forward across every schema it has ever had: `SchemaV1` (the shipped `1.0.0` schema), `SchemaV2` (the shipped `1.1.0` one), `SchemaV2_1` (an intermediate step no build runs on), `SchemaV3` (the shipped `1.2.0` and `1.2.1` one), and `SchemaV4` (the current one), preserving the keyboard shortcuts and appearance settings users set up along the way.
-///
-/// Two of its moves are not inferable. The first renames the `AppShortcut` entity to `KeyboardShortcut`, and SwiftData has no entity-level `originalName`, so a lightweight migration would drop every row; that stage copies each row across the rename by value. The second moves the shortcuts and the appearance settings out of the account: a shortcut stops hanging off its `ServerApp` and is keyed by the app's identifier instead, which only the relationship being removed can tell it, and the appearance settings move from `Account` into a record of their own. That move goes through `SchemaV2_1`, which first adds the empty column and entity it needs, so that it can be written inside the store and saved before anything is dropped. `AppDatabase` passes this plan when opening the container, and a stage whose source version the store is already past is skipped, so a fresh install and a relaunch both run nothing.
-///
-/// Every stage addresses the models of the versions it operates on, never the app's live top-level types. That distinction is invisible while a frozen schema and the live models still agree and becomes silent data loss the moment they do not, which is exactly what freezing `SchemaV2` made possible: `didMigrate` below fetches `SchemaV2.ServerApp` and inserts a `SchemaV2.KeyboardShortcut`, because a `1.0.0` store arriving at the end of the first stage is a v2 store and nothing else.
-///
-/// Every step logs at `.notice` (and failures at `.error`) with the counts and app ids in the clear, because this migration runs once on a user's real data and is exactly the kind of thing whose logs must survive into a release build's persisted store — so that when something goes wrong, a `log show`/`log stream` capture reconstructs precisely what happened.
 enum CirruscopeMigrationPlan: SchemaMigrationPlan {
     /// `logger` records migration activity under the `CirruscopeMigrationPlan` category.
     private static let logger = Logger(for: CirruscopeMigrationPlan.self)
@@ -43,8 +37,6 @@ enum CirruscopeMigrationPlan: SchemaMigrationPlan {
     private static let captured = Mutex<[CapturedShortcut]>([])
 
     /// `migrateV1toV2` renames the `AppShortcut` entity to `KeyboardShortcut` without losing data.
-    ///
-    /// `willMigrate` reads every v1 `AppShortcut` into `captured`, then deletes the v1 rows so the `ServerApp.shortcut` relationship — whose destination entity is being renamed — has nothing dangling for SwiftData to auto-migrate (leaving it in place crashes the migration). Once the schema change has applied, `didMigrate` recreates each shortcut as a `KeyboardShortcut` and re-links it to its `ServerApp` by `appID`. Both closures log each step and log-then-rethrow on failure, so a partial or failed migration is fully diagnosable from a log capture.
     static let migrateV1toV2 = MigrationStage.custom(
         fromVersion: SchemaV1.self,
         toVersion: SchemaV2.self,
@@ -130,9 +122,6 @@ enum CirruscopeMigrationPlan: SchemaMigrationPlan {
     static let migrateV2toV2_1 = MigrationStage.lightweight(fromVersion: SchemaV2.self, toVersion: SchemaV2_1.self)
 
     /// `migrateV2_1toV3` moves the keyboard shortcuts and the appearance settings out of the account, so that a sign-out, which deletes the account, no longer takes them with it.
-    ///
-    /// `willMigrate` does all of the work, inside the store and before the schema change: it copies each shortcut's app identifier off the `ServerApp` it hangs off into the shortcut's own `appID`, copies the appearance choices off the account into a `DevicePreferences`, and saves. The schema change that follows then only drops what has already been copied — the relationship between a shortcut and its app, and the account's two attributes — and makes `appID` required and unique, which every remaining row by then satisfies. Nothing the user set up is ever held only in memory, so a migration that is interrupted or fails, and the copy `AppDatabase` quarantines when one fails, still carry it.
-    /// A shortcut whose app is missing cannot be keyed and is logged and deleted, as in the first stage. More than one shortcut for one app identifier cannot be written by a shipped build but is handled anyway, keeping the first and deleting the rest, because the identifier becomes unique. The `Account` and its `ServerApp` rows stay, because an upgrade must not sign anybody out. A `DevicePreferences` is written only if the user made either choice, so a choice never made stays one the defaults decide, and only if none exists yet, so a stage run again over a store it already wrote to changes nothing.
     static let migrateV2_1toV3 = MigrationStage.custom(
         fromVersion: SchemaV2_1.self,
         toVersion: SchemaV3.self,

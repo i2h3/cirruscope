@@ -6,8 +6,6 @@ import SwiftData
 
 extension SchemaV3 {
     /// `TalkConversation` is the v3 record for a Talk conversation the account takes part in exactly as it shipped in `1.2.0` and `1.2.1`.
-    ///
-    /// It is a frozen copy; see `SchemaV3` for why it never changes.
     @Model
     final class TalkConversation {
         /// `token` is what Talk addresses the conversation by, and what the route opening it requires.

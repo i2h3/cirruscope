@@ -6,8 +6,6 @@ import Foundation
 import Testing
 
 /// `NoteSortingTests` pins the single order every list of notes is shown in: favourites first, then most recently changed, then by title, then by identifier.
-///
-/// The last two exist to make the ordering total, and that is not pedantry here: the server stamps modification in whole seconds, so two notes saved in the same second are ordinary, and `sorted(by:)` promises no stability. An unstable order means the identifier behind a donated Spotlight row can move under the user between one refresh and the next.
 struct NoteSortingTests {
     private func note(_ id: Int, _ title: String, favorite: Bool = false, at seconds: TimeInterval = 100) -> NoteTransferObject {
         NoteTransferObject(id: id, title: title, category: "", isFavorite: favorite, isReadOnly: false, modification: Date(timeIntervalSince1970: seconds))

@@ -3,12 +3,7 @@
 
 import Foundation
 
-///
 /// `SilentRetryStep` is what a web view has to do next while it works through a lapsed browser session, as `SilentRetryBudget` decides it.
-///
-/// Both web views act on the same steps, so neither can reach a different conclusion from the same events than the other.
-/// Only `signOut` ends the account, and `SilentRetryBudget` only ever answers it once the server itself has refused the app password.
-///
 enum SilentRetryStep: Equatable {
     /// `retry` means the stale page is to be stopped and the carried address re-requested with the stored app password attached.
     case retry(URL)

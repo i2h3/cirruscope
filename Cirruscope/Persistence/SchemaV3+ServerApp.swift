@@ -6,8 +6,6 @@ import SwiftData
 
 extension SchemaV3 {
     /// `ServerApp` is the v3 record for a Nextcloud server app offered by an account exactly as it shipped in `1.2.0` and `1.2.1`.
-    ///
-    /// It is a frozen copy; see `SchemaV3` for why it never changes.
     @Model
     final class ServerApp {
         /// `appID` is the Nextcloud app identifier (e.g. `"files"`), used to match a web view's URL and to upsert this row across refreshes.

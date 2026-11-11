@@ -6,8 +6,6 @@ import SwiftData
 
 extension SchemaV3 {
     /// `Account` is the v3 root record for the connected Nextcloud account exactly as it shipped in `1.2.0` and `1.2.1`, before it recorded who the account signs in as.
-    ///
-    /// It is a frozen copy; see `SchemaV3` for why it never changes.
     @Model
     final class Account {
         /// `serverAddress` is the URL of the connected Nextcloud server, or `nil` while a sign-in is still in progress.
@@ -42,8 +40,6 @@ extension SchemaV3 {
         var collectives: [ServerCollective] = []
 
         /// `notes` are the notes in this account's Nextcloud Notes app; deleting the account cascades to them.
-        ///
-        /// Only their titles and categories, never their text — see `ServerNote`. Cascading matters here for the same reason it does for the conversations: a note's title is something the user wrote, and it must not outlive the account that was allowed to read it.
         @Relationship(deleteRule: .cascade, inverse: \ServerNote.account)
         var notes: [ServerNote] = []
 

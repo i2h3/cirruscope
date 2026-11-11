@@ -25,7 +25,7 @@ The reasoning and the costs accepted are in [`DECISIONS.md` → "Why must every 
 
 The first entitled launch moves that store across, once.
 `AppDatabase.importStore(from:into:)` quarantines whatever the App Group container already holds under the store's name and moves the store and its sidecars in from the app's own container, and the migration plan then carries it forward like any other store.
-Its documentation comment in `Cirruscope/Persistence/AppDatabase.swift` gives the order of the moves and the one case it resolves the wrong way on purpose.
+Moving rather than copying is what makes the import happen once: the next launch finds nothing left in the app's own container.
 
 Remove that import only once no build without the entitlement can still be on anybody's Mac.
 
@@ -143,7 +143,7 @@ Which queries set what:
 ### The move at launch
 
 **The Mac app moves the file-based credentials into the data-protection Keychain at launch, and a credential it cannot move asks for a sign-in without signing out.**
-The details are also in the documentation comment of `Keychain.moveFileBasedItems(service:)` in `macOS/Persistence/Keychain+FileBasedKeychain.swift`.
+The details are in `Keychain.moveFileBasedItems(service:)` in `macOS/Persistence/Keychain+FileBasedKeychain.swift`.
 
 - `AppDelegate.applicationWillFinishLaunching(_:)` calls `Keychain.moveFileBasedItems(service:)` before window restoration, which reads credentials and runs between it and `applicationDidFinishLaunching(_:)`, and reloads the widget's timelines when anything moved.
 - The move enumerates the file-based Keychain for attributes alone, that Keychain answering `errSecParam` to `kSecReturnData` together with `kSecMatchLimitAll`.

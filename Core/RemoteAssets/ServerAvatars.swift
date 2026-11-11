@@ -9,11 +9,6 @@ import Rainmaker
 import Synchronization
 
 /// `ServerAvatars` keeps the profile photograph of every Nextcloud user the app has drawn a circle for, and hands one over as a bitmap whenever a row is being built.
-///
-/// It is the sibling of `ServerAppIcons` and works the same way: cached on disk under a key built from the user and the server rather than from the path they were fetched from, read synchronously because a view is drawn the moment it is asked for, and answering `nil` as an ordinary result rather than a failure.
-/// What differs is what gets cached at all. Nextcloud answers the avatar endpoint for every user it knows, drawing a monogram itself when that user uploaded nothing, so a fetch always succeeds and the bytes alone never reveal which was received. Only `UserAvatar.isCustom` does. This stores a photograph and deliberately stores nothing for a generated one, which makes a cache miss mean exactly one thing to a caller — draw your own monogram — and keeps the app's circle style from being replaced by the server's wherever somebody has no picture.
-/// Each photograph is kept at the size it was asked for: the widget's rows ask for the small rendition, and the apps' own picture of the signed-in account for the large one, which their buttons and settings would otherwise draw blurred.
-/// `ImageIO` rather than `NSImage` or `UIImage`, because this is compiled into the widget extension as well and `Core/` may depend on neither AppKit nor UIKit.
 final class ServerAvatars: Sendable {
     /// `shared` is the process-wide store of user avatars.
     static let shared = ServerAvatars()
@@ -22,13 +17,9 @@ final class ServerAvatars: Sendable {
     private let cache: AssetCache
 
     /// `decoded` holds the bitmaps already produced, keyed by the user and server they were produced for.
-    ///
-    /// A `Mutex` rather than an actor for the same reason `ServerAppIcons` uses one: the readers are views being laid out, which cannot `await`.
     private let decoded = Mutex<[String: CGImage]>([:])
 
     /// `withoutPhotograph` remembers which users the server answered for with a generated monogram, so the same answer is not fetched again for the life of the process.
-    ///
-    /// Without it every refresh would re-request an avatar for every user who has none, which on a feed of colleagues is most of them. It is deliberately not persisted: somebody uploading a picture should see it appear, and a widget's process that ends is the bound on how long this can be wrong. An app runs for far longer, so its refresh of the signed-in account asks again regardless, which is what `refresh(userIDs:size:on:askingAgain:)` takes the flag for.
     private let withoutPhotograph = Mutex<Set<String>>([])
 
     /// `logger` records avatar fetching and decoding under the `ServerAvatars` category.
@@ -40,8 +31,6 @@ final class ServerAvatars: Sendable {
     }
 
     /// `image(forUserID:serverAddress:size:)` is the photograph of one user at `size` as a bitmap, or `nil` when they have none, it has not been fetched at that size, or it cannot be decoded.
-    ///
-    /// A `nil` is the ordinary answer, not a failure: nothing has been fetched on a first launch, and a user who uploaded no picture never gets one cached at all. Either way the caller draws its own monogram.
     func image(forUserID userID: String, serverAddress: URL, size: AvatarSize = .small) -> CGImage? {
         let key = Self.cacheKey(userID: userID, serverAddress: serverAddress, size: size)
 
@@ -64,10 +53,6 @@ final class ServerAvatars: Sendable {
     }
 
     /// `refresh(userIDs:size:on:askingAgain:)` fetches the avatar of each named user at `size` that has not already been answered for, or of each named user when `askingAgain` is set, storing the photographs and remembering who has none.
-    ///
-    /// `server` is a `Rainmaker.Server` the caller has already built and authenticated, because this is called from places that have just used one — a widget's timeline provider, having fetched the activity the users were named by, and the apps' refresh of the signed-in account, having asked the server who that account is.
-    /// Fetches run one after another rather than concurrently. A widget refresh is not a place to open a dozen sockets at once, and the count here is bounded by the rows a layout draws.
-    /// Nothing is thrown. An avatar that cannot be fetched leaves the cache as it was, and the caller draws a monogram for it, which is the same outcome as a user who has no photograph.
     func refresh(userIDs: some Sequence<String>, size: AvatarSize = .small, on server: Server, askingAgain: Bool = false) async {
         let serverAddress = server.address
 
@@ -113,8 +98,6 @@ final class ServerAvatars: Sendable {
     }
 
     /// `clear()` drops every decoded bitmap and every remembered absence, for a sign-out.
-    ///
-    /// The cached files themselves are removed by `AssetCache.clear()`, which runs beside this on every sign-out; this is what stops the ones already decoded from outliving them in memory, exactly as `ServerAppIcons.clear()` does.
     func clear() {
         decoded.withLock { $0.removeAll() }
         withoutPhotograph.withLock { $0.removeAll() }

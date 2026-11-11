@@ -6,8 +6,6 @@ import SwiftData
 
 extension SchemaV2 {
     /// `Account` is the v2 root record for the connected Nextcloud account: server address, cached branding and version, the appearance choices, and the apps it offers.
-    ///
-    /// It is a frozen copy of the `Account` model as it shipped in `1.1.0`; see `SchemaV2` for why the v2 models are nested here rather than reusing the live top-level types.
     @Model
     final class Account {
         /// `serverAddress` is the URL of the connected Nextcloud server, or `nil` while a sign-in is still in progress.

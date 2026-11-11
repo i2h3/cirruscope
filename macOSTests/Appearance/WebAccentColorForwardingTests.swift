@@ -6,10 +6,6 @@ import AppKit
 import Testing
 
 /// `WebAccentColorForwardingTests` covers `WebAccentColor.forwarded(controlAccentColor:appAccentColor:)`, the decision whether the accent color AppKit answers with reaches the Nextcloud web interface at all.
-///
-/// While the macOS accent color is "Multicolor", AppKit answers `NSColor.controlAccentColor` with the app's own accent color asset, and forwarding that painted Cirruscope's brand color over the primary color chosen on the server (issue #93).
-/// The decision is separated from `WebAccentColor.effective(in:)` precisely so it can be pinned here: `effective(in:)` reads whichever accent color the machine running the tests has chosen in System Settings, which `MulticolorAccentColorOracleTests` measures by agreement instead.
-/// The one-step-off case is what pins the comparison as exact at the eight-bit precision the page receives, rather than a tolerance that would also swallow a chosen accent color close to the brand color.
 struct WebAccentColorForwardingTests {
     @Test(arguments: [
         // Multicolor: AppKit answers with the app's own asset, light and dark.

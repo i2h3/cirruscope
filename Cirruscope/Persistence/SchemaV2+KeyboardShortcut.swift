@@ -6,8 +6,6 @@ import SwiftData
 
 extension SchemaV2 {
     /// `KeyboardShortcut` is the v2 record for the keyboard shortcut a user assigns to a `ServerApp`; it is what the v1 `AppShortcut` record is renamed to, and `CirruscopeMigrationPlan` copies each row across that rename.
-    ///
-    /// It is a frozen copy of the `KeyboardShortcut` model as it shipped in `1.1.0`; see `SchemaV2` for why the v2 models are nested here rather than reusing the live top-level types.
     @Model
     final class KeyboardShortcut {
         /// `keyEquivalent` is the character that triggers the shortcut.

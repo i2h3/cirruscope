@@ -7,9 +7,6 @@ import Rainmaker
 import WidgetKit
 
 /// `ActivityTimelineProvider` decides what the activity widget shows and when WidgetKit should ask again.
-///
-/// It does the fetching through `RecentActivity`, which resolves the account from the Keychain itself, so nothing here needs an account passed in and the extension needs no store. What it adds on top is the part only a widget cares about: remembering the last feed that succeeded, so a failed refresh dims what was there instead of blanking it.
-/// One entry per timeline, never a schedule of several. The rows are only true at the moment they are read — a second entry an hour out would assert that the same files were the newest ones then, which nothing here knows.
 struct ActivityTimelineProvider: TimelineProvider {
     /// `refreshInterval` is how long WidgetKit is asked to wait before rebuilding the timeline.
     ///
@@ -24,8 +21,6 @@ struct ActivityTimelineProvider: TimelineProvider {
     private static let rowLimit = 10
 
     /// `fetchLimit` is how many activities the server is asked for.
-    ///
-    /// More than `rowLimit`, because the server's file filter admits activity types the widget draws no badge for and `ActivityRow` drops those. Asking for exactly the number of rows wanted would leave the large layout short whenever a download or a favourite change landed in the newest ten.
     private static let fetchLimit = 30
 
     /// `placeholder(in:)` is the redacted shape WidgetKit draws before anything has been fetched, and whenever it wants the widget's outline without its content.
@@ -55,8 +50,6 @@ struct ActivityTimelineProvider: TimelineProvider {
     }
 
     /// `content(for:)` is what a set of rows means, which is not a feed at all when there are none.
-    ///
-    /// A server that answers with nothing and a snapshot saved from one are the same fact, and both have to reach the card as `empty` rather than as a feed of length zero — a feed of length zero draws a header over blank space, which reads as a widget that has failed rather than as a server with nothing to report. Every path that has rows goes through here so there is one answer to that rather than one per call site.
     private static func content(for rows: [ActivityRow]) -> ActivityEntry.Content {
         rows.isEmpty ? .empty : .feed(rows)
     }
@@ -119,9 +112,6 @@ struct ActivityTimelineProvider: TimelineProvider {
     }
 
     /// `refreshAvatars(for:of:)` fetches the profile photograph of everybody the new rows name from `account`'s server, so the next draw has them.
-    ///
-    /// It runs before the entry is handed over rather than lazily from the views, because a widget's views cannot await anything: whatever is not on disk by the time the entry is returned is a monogram until the next refresh. Only actors are asked for — a row without one is the signed-in user, whose own circle the design never fills.
-    /// Failures are silent by construction. `ServerAvatars.refresh(userIDs:size:on:askingAgain:)` throws nothing, and a photograph that could not be fetched draws as the monogram the design falls back to anyway.
     private static func refreshAvatars(for rows: [ActivityRow], of account: ServerAccount) async {
         let userIDs = Set(rows.compactMap(\.actorID))
 

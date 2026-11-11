@@ -6,8 +6,6 @@ import SwiftData
 
 extension SchemaV2_1 {
     /// `ServerApp` is the v2.1 record for a Nextcloud server app offered by an `Account`, identical to the v2 `ServerApp`: its `shortcut` relationship is what the stage into `SchemaV3` reads each shortcut's app identifier from before the relationship is dropped.
-    ///
-    /// It is a frozen copy; see `SchemaV2_1` for why this intermediate schema exists and why it never changes.
     @Model
     final class ServerApp {
         /// `appID` is the Nextcloud app identifier (e.g. `"files"`).

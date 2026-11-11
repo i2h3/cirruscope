@@ -6,13 +6,9 @@ import SwiftData
 
 extension SchemaV3 {
     /// `ServerCollective` is the v3 record for a collective the account is a member of exactly as it shipped in `1.2.0` and `1.2.1`.
-    ///
-    /// It is a frozen copy; see `SchemaV3` for why it never changes.
     @Model
     final class ServerCollective {
         /// `collectiveID` is the collective's server-assigned identifier, which is what listing its pages takes.
-        ///
-        /// Not named `id`, because SwiftData treats that name as the model's own identity and this is the server's.
         var collectiveID: Int
 
         /// `name` is the collective's human-readable name, which is also what its folder is called.

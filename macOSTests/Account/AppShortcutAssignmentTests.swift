@@ -5,9 +5,6 @@
 import Testing
 
 /// `AppShortcutAssignmentTests` covers the plain round trip through `AccountStore.setShortcut(_:forAppID:)` and `shortcut(forAppID:)`: recording, replacing, and clearing one app's keyboard shortcut.
-///
-/// `DuplicateShortcutSuppressionTests` covers which app a combination reaches when several could claim it; this suite covers the simpler contract underneath that, including the deliberate asymmetry that the store stores whatever it is given and leaves refusing an occupied combination to the recorder — visible here because a shortcut Cirruscope's own menu occupies is still stored, merely never applied.
-/// The store likewise keeps a shortcut for an app the connected server does not offer: it is recorded against the identifier and announced, reaches nothing and occupies nothing while the app is missing, and applies once a refresh lists it. Clearing a shortcut that was never recorded is the one call to `setShortcut(_:forAppID:)` that announces nothing.
 @MainActor
 @Suite(.serialized, .exclusiveStoreAccess)
 struct AppShortcutAssignmentTests {

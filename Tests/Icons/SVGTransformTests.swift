@@ -6,11 +6,7 @@ import CoreGraphics
 import Foundation
 import Testing
 
-///
 /// `SVGTransformTests` covers `SVGTransform`, which reads the `transform` attribute of an SVG element.
-///
-/// The functions themselves are arithmetic and hard to get wrong. The order they compose in is not: SVG applies a list of them left to right, so the leftmost is outermost and a point meets the rightmost first — the opposite of how `concatenating(_:)` reads. Getting that backwards still places artwork somewhere plausible, which is why it is asserted rather than assumed.
-///
 struct SVGTransformTests {
     @Test
     func `Each function is the transform it names`() {

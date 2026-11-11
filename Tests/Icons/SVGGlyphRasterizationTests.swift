@@ -6,12 +6,7 @@ import CoreGraphics
 import Foundation
 import Testing
 
-///
 /// `SVGGlyphRasterizationTests` measures the CoreGraphics behaviour the icon renderer is built on, and then asserts the renderer agrees with it.
-///
-/// Three of its assumptions are the kind a unit test cannot settle by restating them. That `CGMutablePath.addRelativeArc(center:radius:startAngle:delta:transform:)` under a scaling transform really draws SVG's elliptical arc; that `copy(strokingWithWidth:…)` inflates an outline the way a stroke is expected to; and that the whole chain of fit, flip and fill rule puts ink where the document said. Each is measured against something independent — the geometry the shape must have — rather than against a second copy of the belief.
-/// The pixel cases are the end of the pipeline and pin the most at once: a glyph painting one corner of its viewBox must come out opaque in the matching corner of the bitmap, which fails if the y flip is wrong, and a shape with a hole must keep the hole under one fill rule and lose it under the other.
-///
 struct SVGGlyphRasterizationTests {
     @Test
     func `Two arcs of half a turn each close a full circle`() throws {

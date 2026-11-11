@@ -5,10 +5,6 @@ import AppIntents
 import os
 
 /// `NoteEntityQuery` supplies `NoteEntity` values to the App Intents system: it enumerates the connected account's notes, resolves identifiers back to entities, and matches them by title.
-///
-/// It is `ConversationEntityQuery`'s counterpart and reads the same store on the same actor, conforming to the same three query protocols. As there, `suggestedEntities()` offers a bounded handful rather than everything: nothing bounds how many notes an account has, and a picker offering hundreds is a picker nobody scrolls. The store returns them favourites first and then most recently changed, so the ones kept are the ones a person is most likely to mean.
-///
-/// `entities(matching:)` searches titles and categories both. A note filed under "Recipes" is a note somebody may well look for by typing "recipes", and the category is already indexed as a Spotlight keyword for exactly that reason — having the Shortcuts picker answer differently from Spotlight would be the two surfaces disagreeing about the same data.
 @MainActor
 struct NoteEntityQuery: EntityQuery, EntityStringQuery, EnumerableEntityQuery {
     /// `logger` records query activity under the `NoteEntityQuery` category.

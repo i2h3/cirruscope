@@ -5,10 +5,6 @@ import AppIntents
 import os
 
 /// `ServerAppEntityQuery` supplies `ServerAppEntity` values to the App Intents system: it enumerates every server app the connected account offers, resolves ids back to entities, and matches them by name.
-///
-/// It is a main-actor consumer of `AccountStore.shared` — symmetric with `AppDelegate` and `ServerAppsViewController`, which also read `AccountStore.serverApps` — mapping the DTOs the store vends into entities via `ServerAppEntity.init(_:)`. Conforming to all three query protocols mirrors the `LandmarkEntityQuery` in Apple's "Adopting App Intents to support system experiences" sample, which is likewise `@MainActor`: `allEntities()` powers the Shortcuts parameter picker, `suggestedEntities()` the suggestions, `entities(for:)` resolves a donated or saved id through `AccountStore.serverApp(forID:)`, and `entities(matching:)` matches what the user types or says.
-///
-/// Each call logs its outcome at `.notice` with counts and ids in the clear so Spotlight/Siri/Shortcuts interactions are reconstructable from a log capture; the logger is `static` because App Intents instantiates the query as a plain value with a synthesized `init()`.
 @MainActor
 struct ServerAppEntityQuery: EntityQuery, EntityStringQuery, EnumerableEntityQuery {
     /// `logger` records query activity under the `ServerAppEntityQuery` category.

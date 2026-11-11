@@ -6,8 +6,6 @@ import AppKit
 import Testing
 
 /// `ShortcutMatchingTests` covers `ShortcutMatching.areEquivalent(_:_:)`, the comparison every keyboard shortcut conflict check in the app goes through.
-///
-/// The cases below state the rule in the app's own terms — which shortcuts count as the same keystroke and which do not — while `KeyEquivalentMatchingOracleTests` checks the same corpus against real `NSMenu` matching. Both exist because either alone is insufficient: this suite documents intent readably and fails loudly when the rule changes, the oracle catches the rule being confidently wrong about AppKit.
 struct ShortcutMatchingTests {
     @Test(arguments: ShortcutFixture.all)
     func `A shortcut is equivalent to itself`(fixture: ShortcutFixture) {

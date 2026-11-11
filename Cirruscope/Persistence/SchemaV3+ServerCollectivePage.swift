@@ -6,13 +6,9 @@ import SwiftData
 
 extension SchemaV3 {
     /// `ServerCollectivePage` is the v3 record for a page within a collective exactly as it shipped in `1.2.0` and `1.2.1`.
-    ///
-    /// It is a frozen copy; see `SchemaV3` for why it never changes.
     @Model
     final class ServerCollectivePage {
         /// `pageID` is the page's server-assigned identifier, which is the identifier of its file.
-        ///
-        /// Not named `id`, because SwiftData treats that name as the model's own identity and this is the server's.
         var pageID: Int
 
         /// `title` is the page's title, which for an ordinary page is its file name without the Markdown extension.

@@ -6,8 +6,6 @@ import Foundation
 import Testing
 
 /// `ConversationSortingTests` pins the single order every list of Talk conversations is shown in.
-///
-/// The server does not sort them at all, so whatever order they arrive in is an accident of the response, and the rule has to live somewhere that every surface shares. These cases also pin that the order is *total*: `sorted(by:)` promises no stability, and the server stamps activity in whole seconds, so ties are common rather than theoretical and two lists built from the same conversations must not be able to disagree.
 struct ConversationSortingTests {
     private func conversation(_ id: String, _ name: String, _ secondsSinceEpoch: TimeInterval) -> ConversationTransferObject {
         ConversationTransferObject(id: id, name: name, kind: .group, lastActivity: Date(timeIntervalSince1970: secondsSinceEpoch), avatarVersion: "")

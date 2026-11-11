@@ -4,8 +4,6 @@
 import AppKit
 
 /// `BackgroundImageView` is an `NSImageView` that paints the themed backdrop: a plain color filling its bounds, and over it an image scaled to fill them and center-cropped, matching the CSS `background-color` and `background-size: cover` of Nextcloud's own background rather than the aspect-fit scaling `NSImageView` offers.
-///
-/// `WebViewController` uses it for the backdrop shown behind the web view during the initial page load; with neither a color nor an image assigned it draws nothing, letting the window material show through.
 class BackgroundImageView: NSImageView {
     /// `backdropColor` is the plain color filled behind the image, or `nil` to fill nothing.
     ///

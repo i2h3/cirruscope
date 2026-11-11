@@ -6,13 +6,7 @@ import Foundation
 import SwiftData
 import Testing
 
-///
 /// `StoreImportTests` pins `AppDatabase.importStore(from:into:)`, the one move that carries a store a build without the App Group entitlement wrote into the App Group container.
-///
-/// It exists because that store is where every `1.1.0` user's keyboard shortcuts and appearance choices live: the release the App Store shipped carried no App Group entitlement and kept its store in the app's own container, so an entitled build that opened only the App Group's would greet everybody updating with an empty one. Nothing reports that as an error, which is why it has to be asserted.
-/// Two harnesses stand in for the two containers. Neither is the app's: naming `AppDatabase.container` from a test is forbidden, because its recovery path moves the developer's real store files aside, and this function moves files by design.
-/// Like `StoreMigrationTests` it is not `@MainActor`, for the same reason: nothing here touches AppKit or `AccountStore`.
-///
 @Suite(.serialized, .exclusiveStoreAccess)
 struct StoreImportTests {
     /// `own` stands in for the app's own container, where a build without the App Group entitlement kept the store.

@@ -7,13 +7,9 @@ import SwiftData
 
 /// `AccountStore`'s notes: reading them back as value snapshots, and writing what a refresh found.
 ///
-/// The shape is `AccountStore+Conversations`' exactly — upsert by the identity the server addresses the thing by, prune what it no longer lists, sort at the read, announce afterwards — which is the shape every domain on this store is meant to have. A domain that needs to depart from it should say why next to the departure.
-///
 /// What it never holds is a note's text. The refresh never downloads it, so it is not a rule this file has to keep; the value type it takes has nowhere to put one.
 extension AccountStore {
     /// `notes` are the connected account's notes as value snapshots, favourites first and then most recently changed.
-    ///
-    /// Sorted here rather than by each caller, as every other domain's read is: SwiftData does not preserve the order of a to-many relationship, so something has to impose one, and imposing it once is what keeps two surfaces from disagreeing. The comparison is `sortedByPriority()`, where the argument for that order rather than an alphabetical one is written down.
     var notes: [NoteTransferObject] {
         guard let account = currentAccount(createIfNeeded: false) else {
             return []
@@ -25,8 +21,6 @@ extension AccountStore {
     }
 
     /// `note(forID:)` is the connected account's note with `id` as a value snapshot, or `nil` when the account has no such note.
-    ///
-    /// The single-note counterpart of `notes`, for the App Intents layer: a query resolving a donated or saved identifier, and an intent re-resolving the one it was handed rather than trusting it. A donated Spotlight item outlives the list it came from, and a note is a thing people delete.
     func note(forID id: Int) -> NoteTransferObject? {
         guard let note = currentAccount(createIfNeeded: false)?.notes.first(where: { $0.noteID == id }) else {
             return nil
@@ -36,9 +30,6 @@ extension AccountStore {
     }
 
     /// `persist(notes:)` upserts the account's notes: existing rows are updated in place, new ones inserted, and ones the server no longer lists deleted.
-    ///
-    /// Matching by identifier rather than replacing the list is what keeps a note the same record across a refresh, so the Spotlight item donated for it is left alone rather than deleted and re-added on every launch.
-    /// It takes this app's own value type rather than the network library's model, as every writer on this store does: neither test target links Rainmaker, so a signature naming `Rainmaker.NoteSummary` would make the write side untestable.
     func persist(notes: [NoteTransferObject]) {
         guard let account = currentAccount(createIfNeeded: true) else {
             return

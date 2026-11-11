@@ -6,11 +6,6 @@ import Foundation
 import os
 
 /// `SVGDocumentParser` walks an SVG document and accumulates the shapes it paints, in document order and in the coordinates of the document's own viewBox.
-///
-/// It reads the subset Nextcloud's app icons are drawn in — `<svg>`, `<g>`, `<path>`, `<rect>`, `<circle>`, `<ellipse>`, `<polygon>`, `<polyline>` and `<line>`, with transforms and painting properties inherited down the tree — and skips any other element rather than failing on it, so a stray `<title>` or `<metadata>` costs nothing.
-/// One thing makes it refuse a document outright instead: a `d` attribute it cannot read. A refused document falls back to a placeholder, which is the honest answer — a wrongly drawn one does not announce itself.
-/// Skipping is not refusing, though, and the walk still descends into an element it skips, so a shape inside `<defs>`, `<clipPath>` or `<mask>` is painted as though it were drawn directly, while a `<use>` or `<text>` element contributes nothing.
-/// A fill counts whenever it is anything but `none`, so a gradient fill such as `fill="url(#…)"` is painted as solid ink.
 final class SVGDocumentParser: NSObject {
     /// `viewBox` is the rectangle of the document's own coordinate system, once `<svg>` has been read.
     private(set) var viewBox: CGRect?
@@ -31,8 +26,6 @@ final class SVGDocumentParser: NSObject {
     private static let logger = Logger(for: SVGDocumentParser.self)
 
     /// `parse(_:)` reads `data` and reports whether it yielded a usable document.
-    ///
-    /// It answers `false` for bytes that are not XML at all, which is the common failure in practice: a Nextcloud that wants authentication answers an asset request with an HTML sign-in page under a `200`, not with a `401`.
     func parse(_ data: Data) -> Bool {
         let parser = XMLParser(data: data)
         parser.delegate = self
@@ -54,9 +47,6 @@ final class SVGDocumentParser: NSObject {
     }
 
     /// `add(_:in:)` adds one shape, drawn in its element's own coordinates, to the accumulated shapes in viewBox coordinates: its fill as one entry and the outline of its stroke as another, for whichever of the two it has.
-    ///
-    /// A shape that is only stroked is converted to the outline of that stroke first, so that an icon drawn as lines rather than as areas still contributes a silhouette. A shape that is neither filled nor stroked contributes nothing, which is what makes a full-bleed `<rect fill="none"/>` invisible rather than solid.
-    /// The fill rule is read from the state the shape inherited rather than from whichever ancestor happened to mention it, because an ancestor's `fill-rule` means nothing where the shape overrides it — and in two thirds of Nextcloud's own icons it does.
     private func add(_ shape: CGPath, in state: SVGRenderingState) {
         var transform = state.transform
 
@@ -84,8 +74,6 @@ final class SVGDocumentParser: NSObject {
     }
 
     /// `paints(_:)` reports whether a path covers any area at all.
-    ///
-    /// A path can be non-empty and still paint nothing: a lone `moveto` is one element and no ink, which is exactly what a `d` attribute truncated by a coordinate it could not read leaves behind. Filling one would be a no-op, but *counting* one would make a document that draws nothing look like a document that draws something.
     private static func paints(_ path: CGPath) -> Bool {
         let box = path.boundingBoxOfPath
 

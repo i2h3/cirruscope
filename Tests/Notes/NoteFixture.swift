@@ -5,9 +5,6 @@
 import Foundation
 
 /// `NoteFixture` is the corpus of notes the note suites run their cases over.
-///
-/// Shared through a named type rather than copied between suites, for the reason `ServerAppFixture` and `ConversationFixture` are: two suites with their own copies cannot be told apart from two suites that agree.
-/// The corpus deliberately contains a favourite, an uncategorized note and a read-only one, because those are the three properties the ordering and the matching actually read.
 enum NoteFixture {
     /// `groceries` is an ordinary note, filed under a category, changed most recently of the non-favourites.
     static let groceries = NoteTransferObject(id: 1, title: "Groceries", category: "Home", isFavorite: false, isReadOnly: false, modification: Date(timeIntervalSince1970: 1_700_000_300))

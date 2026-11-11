@@ -5,8 +5,6 @@
 import Foundation
 
 /// `CollectiveFixture` is the corpus of collectives and pages the collective suites run their cases over.
-///
-/// It deliberately contains a collective with a slug and one without, because the route that opens one falls back from the first to the second and a corpus with only slugs would never exercise that. The pages cover the three shapes the path rule distinguishes: a page sitting directly in the collective, one inside a folder, and one that has subpages of its own and is therefore stored as a folder's `Readme.md`.
 enum CollectiveFixture {
     /// `cookbook` is an ordinary collective, with a slug.
     static let cookbook = CollectiveTransferObject(id: 1, name: "Cookbook", slug: "cookbook", emoji: "📗")

@@ -8,15 +8,7 @@ import Testing
 
 /// `StoreMigrationTests` covers `CirruscopeMigrationPlan` end to end: a store written by each schema Cirruscope has ever shipped is reopened at the current one, and everything the user authored has to still be there.
 ///
-/// This suite exists because nothing tested the migration at all, and the migration is the one piece of this app that can destroy data a user cannot get back. Server apps, theming and the server version are all re-fetched on the next launch; a keyboard shortcut and an appearance choice are made on the device and exist nowhere else. `AppDatabase` compounds that: when the store cannot be opened it quarantines the files and rebuilds an empty one, so a migration that throws does not surface as an error the user sees but as an app that has forgotten them.
-///
-/// Each case seeds a store through the *frozen* models of the version it is pretending to be — `SchemaV1.Account` and friends, never the live top-level types — because addressing the live types is precisely the mistake these cases are here to catch. That is not hypothetical: `migrateV1toV2`'s `didMigrate` addressed the live `ServerApp` and `KeyboardShortcut` until `SchemaV2` was frozen, which was correct only for as long as the live models happened to agree with the shipped v2 ones.
-///
 /// Two attributes here are load-bearing rather than tidiness, and both were measured rather than assumed after this suite hung the whole test run indefinitely while every one of its cases passed alone in under three seconds.
-///
-/// It is `.serialized` because Swift Testing runs a suite's cases in parallel by default, and a migration is not a pure function of the store it opens: `CirruscopeMigrationPlan` carries what it captured through process-wide state between `willMigrate` and `didMigrate`, so two of them in flight at once are two writers of one stash.
-///
-/// It is deliberately **not** `@MainActor`, which the other suites in this folder are. Nothing here touches AppKit or `AccountStore`; it builds its own containers and contexts, and those have no main-actor requirement. Annotating it anyway meant a synchronous migration ran *on* the main actor while the rest of the run's main-actor suites waited behind it, which is a deadlock rather than a slowdown — the run stopped with `StoreMigrationTests` announced, no case result after it, and the host app idle in its run loop.
 @Suite(.serialized, .exclusiveStoreAccess)
 struct StoreMigrationTests {
     /// `harness` gives each case its own store on disk; see `StoreFileHarness` for why an in-memory one cannot answer this question.

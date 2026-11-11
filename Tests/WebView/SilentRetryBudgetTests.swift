@@ -5,35 +5,25 @@
 import Foundation
 import Testing
 
-///
 /// `SilentRetryBudgetTests` covers `SilentRetryBudget`, which decides what a web view does while it works through a lapsed browser session.
 ///
 /// The suite exists because this decision has signed out users whose app password the server still accepted, on both platforms and more than once: on 2026-10-09 the stale page's own script navigating to the sign-in form was taken for the silent retry having been refused.
 /// So the one property every case below serves is that only the server's own refusal of the app password signs out, never a redirect, a response or the passage of time, and the property cases check it over fixed, generated sequences of events rather than only over the ones somebody thought of.
 /// The other cases pin what is done instead, a retry, a check, a wait or a hold, and that the work stays bounded, so a page the server keeps refusing to restore is held rather than retried forever.
 /// Every instant is passed in rather than read, so the window, the confirmation timeout and the holds are tested without waiting for any of them.
-///
 struct SilentRetryBudgetTests {
-    ///
     /// `target` is the page a retry is made for in most cases below.
-    ///
     private static let target = URL(string: "https://cloud.example.com/apps/files/")!
 
-    ///
     /// `otherTarget` is a second page, for the cases about one page's episode, check or hold and another page.
-    ///
     private static let otherTarget = URL(string: "https://cloud.example.com/apps/spreed/")!
 
-    ///
     /// `seeds` are the seeds the property cases draw their sequences of events from, one sequence each.
     ///
     /// They are fixed, so every run covers the same sequences and a failure names the seed that reproduces it.
-    ///
     private static let seeds: [UInt64] = Array(0 ..< 200)
 
-    ///
     /// `eventsPerSequence` is how many events each of those sequences holds.
-    ///
     private static let eventsPerSequence = 60
 
     // MARK: - Redirects to the Sign-In Form
@@ -494,14 +484,7 @@ struct SilentRetryBudgetTests {
         #expect(longestHold > limits.firstHold)
     }
 
-    ///
     /// `replay(seed:)` drives a budget with the limits both apps use through the sequence of events `seed` stands for, and records every call made with what the budget answered.
-    ///
-    /// Each event comes some time after the one before it, half of the time within five seconds, which keeps redirects inside the window often enough to reach checks and holds, and otherwise within 200 seconds, which reaches past the window, the confirmation timeout and the shorter holds.
-    /// An event is a redirect to the sign-in form for one of two pages, a response for either page or for no address with a status of 200, 401, 503 or none, or an answer about the app password for the page a check was last asked for, accepted and undetermined each twice as likely as rejected.
-    /// The answers arrive whether or not a check is in flight, so late answers to checks presumed lost and answers to nothing are part of what is replayed.
-    /// A recorded `verdict` is the answer passed to the budget, and is `nil` for every call that was not one.
-    ///
     private static func replay(seed: UInt64) -> [(call: String, verdict: AppPasswordVerdict?, step: SilentRetryStep, instant: ContinuousClock.Instant)] {
         var budget = SilentRetryBudget()
         var random = SplitMix64(seed: seed)
@@ -547,9 +530,7 @@ struct SilentRetryBudgetTests {
         return record
     }
 
-    ///
     /// `transcript(of:through:seed:)` spells out the calls of `record` up to and including the one at `index`, each with when it was made after the first and what it was answered, so a failing property case says how the budget got there.
-    ///
     private static func transcript(of record: [(call: String, verdict: AppPasswordVerdict?, step: SilentRetryStep, instant: ContinuousClock.Instant)], through index: Int, seed: UInt64) -> String {
         let calls = record[...index].map { "+\($0.instant - record[0].instant): \($0.call) -> \($0.step)" }
 

@@ -6,11 +6,7 @@ import CoreGraphics
 import Foundation
 import Testing
 
-///
 /// `SVGPathDataTests` covers `SVGPathData`, which reads the `d` attribute of an SVG path.
-///
-/// This is where a server's bytes first become geometry, and it is the part of the icon pipeline with the most ways to be quietly wrong: SVG's grammar packs tokens together wherever they are unambiguous, repeats a command for every extra group of arguments it finds, and reinterprets a repeated `moveto` as a `lineto`. Each of those is asserted here against the command stream the parser actually produced, not against a bounding box, which would be identical whether a curve had been read as a curve or dropped.
-///
 struct SVGPathDataTests {
     @Test
     func `Absolute and relative commands describe the same square`() throws {

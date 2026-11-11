@@ -5,16 +5,9 @@
 import Foundation
 import Testing
 
-///
 /// `WebPageInsetsTests` covers `WebPageInsets`, which turns one SwiftUI measurement into the JavaScript call that publishes it into the Nextcloud web interface.
-///
-/// It is pure input-to-value logic with no web view and no layout involved, which is what makes it testable: the measuring itself belongs to SwiftUI and the publishing to WebKit, and neither is covered here.
-/// Two properties are worth pinning. The first is that the horizontal edges are resolved from layout direction to physical sides, because a safe area is physical while `EdgeInsets` is not, and the two disagree in a right-to-left locale. The second is a safety invariant rather than a cosmetic one: the measurement is interpolated straight into a JavaScript call, so a `NaN` or an infinity arriving from a degenerate layout pass would produce a statement that does not parse and would take the whole injection down with it.
-///
 struct WebPageInsetsTests {
-    ///
     /// The text of a bundled function expression is passed through untouched, so a short stand-in is enough for every case here.
-    ///
     private static let function = "(function() {})"
 
     @Test

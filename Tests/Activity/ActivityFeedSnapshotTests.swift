@@ -5,12 +5,7 @@
 import Foundation
 import Testing
 
-///
 /// `ActivityFeedSnapshotTests` pins how `ActivityFeedStore.Snapshot` decodes, the saved feed being the one thing the widget carries from one refresh to the next.
-///
-/// A snapshot that no longer decodes is treated as absent, which costs the widget its stale state, so a change to its shape has to keep decoding the snapshots an earlier build wrote. The server address is such a change: a snapshot from before it was recorded must still decode, its rows intact and its address `nil`, so that the rows draw their monograms rather than vanish.
-/// The cases encode and decode in memory and never touch the App Group container `ActivityFeedStore` writes to.
-///
 struct ActivityFeedSnapshotTests {
     /// `row` is one activity of the shape a fetch produces, named so that whose avatar it is can be told apart.
     private static let row = ActivityRow(id: 7, verb: .changed, fileName: "Q3 Roadmap.md", directory: "Documents/Planning", actorID: "estelle", actorName: "Estelle", additionalCount: 0, date: Date(timeIntervalSince1970: 1_790_000_000))

@@ -4,9 +4,6 @@
 import Foundation
 
 /// `SVGGlyphFixture` is the corpus of SVG documents the icon suites parse, one per shape of real-world input the renderer was built against.
-///
-/// Every document here is hand-authored. Nextcloud's own app icons are licensed under the AGPL and must never be committed into this MIT-licensed repository, however convenient a regression corpus they would make — so each fixture instead reproduces one *property* measured from them: the negative-origin viewBox that twenty of them are drawn with, the `fill-rule` declared on the root and overridden on the path that two thirds of them use, the transform that normalizes one grid onto another, the `fill="none"` decoration that must not be painted.
-/// They are deliberately tiny. A fixture that is hard to read cannot be checked by eye against what a test claims about it, and these are the assertions that keep the parser honest.
 enum SVGGlyphFixture {
     /// `square` is the simplest possible document: one absolute path filling the whole viewBox.
     static let square = "<svg viewBox=\"0 0 10 10\"><path d=\"M0 0 H10 V10 H0 Z\" fill=\"#fff\"/></svg>"
@@ -57,8 +54,6 @@ enum SVGGlyphFixture {
     static let signInPage = "<!DOCTYPE html>\n<html><head><title>Nextcloud</title></head><body>Log in</body></html>"
 
     /// `nonLetterCommand` names a path command with a letter that is not one, and whose uppercase form is two characters rather than one.
-    ///
-    /// The path data comes from a server, so a command letter is untrusted input. Building a `Character` out of `"ß".uppercased()` — which is `"SS"` — traps, which made this the one input in the grammar able to crash the app rather than lose an icon.
     static let nonLetterCommand = "<svg viewBox=\"0 0 10 10\"><path d=\"M0 0 ß5 5\" fill=\"#fff\"/></svg>"
 
     /// `absurdNumber` asks for a coordinate too large to be a number, which `Double` reads as an infinity.

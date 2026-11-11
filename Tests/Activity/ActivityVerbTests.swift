@@ -5,11 +5,7 @@
 import Foundation
 import Testing
 
-///
 /// `ActivityVerbTests` pins which Nextcloud activity types the widget draws a badge for, and — more importantly — which it refuses.
-///
-/// The four recognized types are not a guess: they are exactly what the server's own `files` filter admits, `array_intersect(['file_created','file_changed','file_deleted','file_restored'], …)` in the files app's `FileChanges` filter. The refusals matter as much as the matches, because the files app emits `file_downloaded` and `file_favorite_changed` from the same app with the same `file_` prefix, and sharing emits a whole family of types that a looser match would sweep into the wrong badge. A row drawn under a badge that misdescribes it is worse than a row not drawn.
-///
 struct ActivityVerbTests {
     ///
     /// The four types the server's file filter admits each map to their verb.

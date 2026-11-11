@@ -4,9 +4,6 @@
 import SwiftUI
 
 /// `ActivityStyle` is every colour the activity widget draws with, in one place so that no view decides for itself what "secondary text" or "the badge ring" means.
-///
-/// Nothing here is a literal. The two colours the app owns are the assets already shipped in `Core/Assets.xcassets`, and every other one is the system's own. That is worth more than matching a mockup exactly: a system colour follows the appearance, Increase Contrast, and the accented and vibrant widget rendering modes on its own, where a transcribed hex value is correct in one of those and wrong in the rest.
-/// It is also why this takes no `ColorScheme`. Every value below resolves itself against the environment it is drawn in, so there is one style rather than a light one and a dark one, and nothing upstream has to know which is being drawn.
 struct ActivityStyle {
     /// `accent` is the cobalt the heading and the changed badge are drawn in: the app's own accent colour, which already carries its light and dark values.
     let accent = Color("AccentColor", bundle: .main)
@@ -47,8 +44,6 @@ struct ActivityStyle {
     let avatarFills: [Color] = [.blue, .purple, .teal, .pink, .indigo, .brown, .mint]
 
     /// `badgeColor(for:)` is the colour one verb's badge is filled with.
-    ///
-    /// The amber was the share badge's in the design. Sharing is out of the widget's scope — the server publishes no filter covering file changes and shares together, which `DECISIONS.md` records — so restoring takes the slot rather than the palette losing a colour.
     func badgeColor(for verb: ActivityVerb) -> Color {
         switch verb {
             case .created: created
@@ -59,8 +54,6 @@ struct ActivityStyle {
     }
 
     /// `avatarFill(for:)` is the circle colour one actor is always drawn with.
-    ///
-    /// It is chosen by hashing the name rather than by the row's position, so a person keeps their colour as the feed moves under them. `String.hashValue` is deliberately not used: it is seeded per process, which would repaint every circle on each launch.
     func avatarFill(for name: String) -> Color {
         var hash: UInt64 = 5381
 

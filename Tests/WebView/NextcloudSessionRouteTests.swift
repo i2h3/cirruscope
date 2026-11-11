@@ -5,22 +5,12 @@
 import Foundation
 import Testing
 
-///
 /// `NextcloudSessionRouteTests` covers `NextcloudSessionRoute`, which decides whether an address the web view is navigating to is one of the connected server's two session routes and, for the sign-in form, what the request behind it had been for.
-///
-/// It is pure address arithmetic with no web view involved, which is what makes it testable; what the app then does with the answer belongs to `NextcloudNavigationDecider` and is not covered here.
-/// Both directions matter, and for different reasons. Recognizing too little means the user is shown a sign-in form they cannot complete, since signing in happens natively rather than in the page, or that Nextcloud's own "Log out" ends the browser session while leaving the app signed in. Recognizing too much is worse, and worse for `signOut` than for `signIn`: a false `signIn` cancels a navigation the user asked for and replaces it with an authenticated re-request of the page, which may in turn lead to asking the server about the app password or to a hold, while a false `signOut` revokes the app password outright. A file someone named "login" or "logout" must therefore not be mistaken for either.
-/// The redirect target is the third risk and the sharpest. It comes off the address bar rather than from the server's own routing — any link a page can render may carry it — and whatever it names is where an app password is about to be sent.
-///
 struct NextcloudSessionRouteTests {
-    ///
     /// A server installed at the root of its host, which is how most instances are reached.
-    ///
     private static let server = URL(string: "https://cloud.example.com")!
 
-    ///
     /// The same server installed below a path, which is what puts a web root in front of every route it answers.
-    ///
     private static let subpathServer = URL(string: "https://cloud.example.com/nextcloud")!
 
     @Test(arguments: [

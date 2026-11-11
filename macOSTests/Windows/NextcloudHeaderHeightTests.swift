@@ -6,13 +6,6 @@ import AppKit
 import Testing
 
 /// `NextcloudHeaderHeightTests` covers `NextcloudHeaderHeight`, which remembers how tall the connected server draws Nextcloud's header so the window buttons are centered in it rather than in a height the app assumed (issue #102).
-///
-/// Two things are worth pinning. `isPlausible(_:)` is the pure rule that decides which reported heights are believed at all, and it is the guard standing between a page that measured its header mid-animation — or measured something that was not the header — and window buttons placed where the user cannot reach them; every boundary of it is asserted case by case. Around that sits what the facility adds: a height survives the round trip through `UserDefaults`, an unreported height reads back as nothing rather than as zero, an implausible report leaves an already-believed height alone instead of clearing it, and only a report that changes the recorded height is announced.
-///
-/// Every case passes its own `key`, so no two contend for one stored height, and none of them is `NextcloudHeaderHeight.defaultsKey` — writing that would overwrite the height the developer's own web windows are laid out against. Each clears its key afterwards so a run leaves `UserDefaults` as it found it, which is also what lets the "nothing reported yet" case be meaningful on a machine that has run these tests before.
-///
-/// `record(_:key:notifyChange:)` announces a change on `Notification.Name.nextcloudHeaderHeightDidChange` whichever key it wrote, and the host app may well have a real web window open for the whole run, whose `WebWindowController` observes it. So no case lets that announcement go out: each hands in a closure counting announcements instead, which is also what lets a case assert whether one was made at all.
-/// The suite is `@MainActor` because `record(_:key:notifyChange:)` is. Before either, it ran off the main thread like any unannotated suite, and a real post from one of its cases reached that main-actor observer there and trapped the host app, failing every case scheduled after it as a crash.
 @MainActor
 struct NextcloudHeaderHeightTests {
     /// `removeStoredHeight(key:)` deletes the `UserDefaults` entry a height is kept under, returning the domain to the state a machine that had never recorded that key would be in.

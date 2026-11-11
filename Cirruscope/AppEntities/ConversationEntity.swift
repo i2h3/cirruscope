@@ -7,22 +7,12 @@ import Foundation
 
 /// `ConversationEntity` is the App Intents projection of a Nextcloud Talk conversation, exposing it to Spotlight, Siri, and the Shortcuts app as a discoverable, openable entity.
 ///
-/// It follows `ServerAppEntity` in every load-bearing detail, and those details are load-bearing rather than stylistic: the `numericFormat` on the type representation and the `name` property bound to Spotlight's `displayName` are together what make an entity usable as a phrase parameter at all, established by diffing this app's extracted metadata against Apple's own sample. See `DECISIONS.md` for that investigation.
-///
-/// The image is the conversation's own picture where the server sent one this app can decode, and the Talk app's mark on the plated artwork otherwise. Both answers are wanted: a face is what tells two conversations apart at a glance, and the mark is what says "this is a conversation" for the many the server draws itself — as an SVG, which neither platform decodes. `ConversationAvatars` is where the fetching, the caching and the refusal live.
-///
 /// Its identifier is the conversation's token, which is both what Talk addresses a conversation by and what the route opening one requires. It is stable for the life of the conversation, which is what lets a donated Spotlight item and a saved Shortcut keep meaning the same thing.
 struct ConversationEntity: IndexedEntity {
     /// `defaultQuery` is the query the App Intents system uses to enumerate, resolve, and suggest these entities.
     static let defaultQuery = ConversationEntityQuery()
 
     /// `typeDisplayRepresentation` is the human-readable name of this entity type, shown wherever the Shortcuts app names the kind of value.
-    ///
-    /// It names the server app and not only the server product, because that is the whole of what the surface has to go on: the Shortcuts app shows this where a parameter's type goes, and "Nextcloud Conversation" would leave a reader to guess which of a Nextcloud's several ways of talking to people is meant. The app is called Talk and the thing is called a conversation, so the type is what the user would call it.
-    /// The numeric form says the same thing, and has to: it is the plural of this name rather than a phrase of its own, and a type shown as "Nextcloud Talk Conversation" that counts itself as "3 Nextcloud conversations" is a surface disagreeing with itself.
-    /// The synonyms widen what a spoken phrase may call the type. "Nextcloud conversation" is among them precisely because it is what the type used to be called and remains a reasonable thing to say; a bare "conversation" is deliberately not, for the same reason a bare "app" is not among `ServerAppEntity`'s — too generic to match on without dragging in utterances that have nothing to do with this app.
-    /// The name is in title case and its numeric form is not, as in Apple's own entity types ("Checklist Item", "%lld checklist items"): the Shortcuts app shows the name as a name, the kind of value a parameter takes and the subject of the Find action it generates for this type, beside action titles in the same case, while the numeric form is a count read inside a sentence.
-    /// See `DECISIONS.md`.
     static var typeDisplayRepresentation: TypeDisplayRepresentation {
         TypeDisplayRepresentation(
             name: "Nextcloud Talk Conversation",
@@ -46,8 +36,6 @@ struct ConversationEntity: IndexedEntity {
     }
 
     /// `iconData` is the conversation's own picture, or the Talk app's icon on the plated artwork where there is none to draw.
-    ///
-    /// Carried rather than looked up, for the reason `ServerAppEntity` carries its own: these representations are read from outside the main actor and travel out of the process, while neither store is.
     var iconData: Data?
 
     /// `displayRepresentation` is how a single conversation appears in Spotlight results, the Shortcuts parameter picker, and Siri.
@@ -62,15 +50,9 @@ struct ConversationEntity: IndexedEntity {
     }
 
     /// `subtitle` is the one line of context a conversation carries besides its name, in the one place both surfaces that show it read from.
-    ///
-    /// Stated once because it reaches Spotlight twice by two different routes — as the display representation's subtitle and as the searchable item's `contentDescription` — and a result whose two descriptions disagreed would be this app contradicting itself.
-    /// It names the *result* and not merely the app, which a live instance is what settled: a row reading "Camila Ayres" under "Nextcloud Talk" says where the thing came from but leaves what it is to be guessed at, and Talk holds calls and messages as well as conversations.
-    /// It follows the one pattern every entity's subtitle follows — *`<what it is>` in Nextcloud `<the app it lives in>`* — so that a column of mixed results reads as one list rather than four. The first half is the plain noun somebody would use for the thing, the second names the server app it belongs to, and neither is left to be inferred from the title: a Spotlight row is often the only context there is.
     private static let subtitle: LocalizedStringResource = "Conversation in Nextcloud Talk"
 
     /// `attributeSet` is the Spotlight metadata donated for this entity: it starts from `defaultAttributeSet` so it keeps the title and subtitle, and adds keywords so a search for the product finds a conversation whose own name mentions neither.
-    ///
-    /// The thumbnail is whatever `iconData` resolved to, which is the conversation's own picture where one could be decoded.
     var attributeSet: CSSearchableItemAttributeSet {
         let attributes = defaultAttributeSet
         attributes.contentDescription = String(localized: Self.subtitle)

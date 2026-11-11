@@ -6,8 +6,6 @@ import CoreGraphics
 import os
 
 /// This extension resolves the colour the Mac fills a donated app glyph with.
-///
-/// It is the one part of the artwork that could not be shared. Everything else about the plate — its geometry, its traffic lights, its shadow and its PNG encoding — is Core Graphics and ImageIO and is identical on both platforms; the ink is a semantic system colour, and the type that names it is `NSColor` here and `UIColor` on iOS. Keeping only this behind is what lets one implementation draw the artwork for both apps rather than two drifting copies.
 extension ServerAppIconThumbnail {
     /// `glyphColor()` is the colour the app's glyph is filled with: the secondary label colour, resolved in the light appearance.
     ///

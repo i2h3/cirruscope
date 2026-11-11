@@ -6,13 +6,8 @@ import Foundation
 import os
 
 /// `AssetCache` downloads remote assets into a caches directory, the shared App Group container's for `shared`, and avoids redundant downloads by revalidating cached copies with the server using their HTTP `ETag`.
-///
-/// `AccountStore.persist(theming:)` uses the `shared` instance to keep local copies of the Nextcloud server's branding assets up to date so they can be displayed without re-fetching them every launch.
-/// Cached files are addressed by the SHA-256 digest of their absolute URL so that distinct remote URLs map to distinct local files.
 final class AssetCache: Sendable {
     /// `shared` is the process-wide cache instance.
-    ///
-    /// `AccountStore.persist(theming:)` uses it to cache the server's branding assets, and other parts of the app read those cached files back via `localURL(for:)`.
     static let shared = AssetCache()
 
     /// `logger` records asset caching activity under the `AssetCache` category.
@@ -31,16 +26,12 @@ final class AssetCache: Sendable {
     }
 
     /// `init(directory:)` creates a cache over `directory`, which must already exist.
-    ///
-    /// Tests use it to keep what they write out of the directory `shared` caches into, which holds the developer's real cached assets.
     init(directory: URL) {
         self.directory = directory
         session = .shared
     }
 
     /// `assetsDirectory()` is the directory cached payloads and their `ETag` sidecars live in, created if it does not exist yet.
-    ///
-    /// It is the `Assets` subdirectory of the shared App Group container's `Library/Caches`, so the apps and the widget extension reach the same cached assets, and it is that directory or none: a copy cached somewhere only one bundle can reach would be a copy the others silently do without. A failure to create it is logged as a fault and not worked around, since in a build entitled to the container it is an I/O failure rather than a signing state; every later write into it then fails and is logged on its own.
     private static func assetsDirectory() -> URL {
         let logger = Logger(for: AssetCache.self)
         let directory = AppGroup.containerURL
@@ -58,9 +49,6 @@ final class AssetCache: Sendable {
     }
 
     /// `clear()` removes every cached payload and `ETag` sidecar stored by this cache.
-    ///
-    /// Every sign-out invokes this, so that nothing describing a server the app is no longer signed in to is left on disk: the branding it was themed with, the icons of the apps it offered, and the pictures of the people on it.
-    /// It removes the files it owns rather than the directory holding them. `directory` is inside the shared App Group container by design, so that an app extension reaches the same copies, and removing the directory itself would take a subdirectory another writer had made with it. Everything loose in `Assets/` belongs to whichever account is connected and goes when that account goes; anything that ever needs to outlive one belongs in a subdirectory, which this now leaves standing.
     func clear() {
         let contents: [URL]
 
@@ -90,8 +78,6 @@ final class AssetCache: Sendable {
     }
 
     /// `localURL(for:)` returns the file system URL of the cached copy of `remoteURL`, or `nil` if no copy has been downloaded yet.
-    ///
-    /// Call this from UI code that wants to display a cached asset; if it returns `nil`, the asset has not been downloaded yet and a placeholder should be shown instead.
     func localURL(for remoteURL: URL) -> URL? {
         localURL(forKey: remoteURL.absoluteString)
     }
@@ -121,9 +107,6 @@ final class AssetCache: Sendable {
     }
 
     /// `store(_:forKey:)` writes bytes this cache did not fetch itself under `key`, replacing whatever was there.
-    ///
-    /// Everything else here fetches what it stores, which is what lets it keep an `ETag` beside a payload and revalidate against it later. Some assets cannot be obtained that way: a user's avatar is read through Rainmaker, because the only thing distinguishing a photograph the user chose from a monogram the server drew is a response header, and a caller that fetched the bytes through this type would never see it. Those bytes still belong in the shared container, so this is the way in.
-    /// No `ETag` is kept, and any stale one is removed: this cache did not see the response, so it cannot claim to know what the server would revalidate against. A caller storing bytes this way owns deciding when they are refetched.
     func store(_ data: Data, forKey key: String) {
         let fileURL = fileURL(forKey: key)
 
@@ -147,18 +130,12 @@ final class AssetCache: Sendable {
     }
 
     /// `cache(remote:)` downloads the asset at `remoteURL` into the cache directory, unless the server confirms via the `ETag` sent in `If-None-Match` that the cached copy is still up to date.
-    ///
-    /// Returns the file system URL of the cached copy.
-    /// Throws `CirruscopeError.invalidResponse` if the server response is not HTTP, `CirruscopeError.unexpectedStatus` for HTTP status codes outside 2xx and 304, and any error thrown by `URLSession` while transporting the request.
     @discardableResult
     func cache(remote remoteURL: URL) async throws -> URL {
         try await cache(remote: remoteURL, key: nil, authenticatedAs: nil)
     }
 
     /// `cache(remote:key:authenticatedAs:)` downloads the asset at `remoteURL`, storing it under `key` and identifying the user with `credentials`.
-    ///
-    /// `key` defaults to the URL itself, which is what a caller that will look the asset up by the same URL wants. Passing one instead stores the asset where a caller can find it knowing something more durable than the path — an app's identifier rather than the icon path the server currently gives it.
-    /// `credentials` are attached as HTTP Basic authentication, and only ever for a `SameOriginURL`, which is what proves the request is going to the server that named it rather than somewhere that server was persuaded to point at. They matter more than they look: an instance that requires authentication for its assets does not answer with a `401` but with its sign-in page under a `200`, so an unauthenticated request quietly caches an HTML document where an image should be.
     @discardableResult
     func cache(remote asset: SameOriginURL, key: String? = nil, authenticatedAs credentials: Credentials? = nil) async throws -> URL {
         try await cache(remote: asset.url, key: key, authenticatedAs: credentials)
@@ -213,9 +190,6 @@ final class AssetCache: Sendable {
     }
 
     /// `fileURL(forKey:)` returns the file system URL at which the copy cached under `key` is stored.
-    ///
-    /// The file name is the lowercase hex-encoded SHA-256 digest of `key`, so that the mapping is deterministic and collision resistant whatever the key is spelled like — a URL, or an identifier a caller composed.
-    /// It carries no file extension, and deliberately so: nothing reads these back by type. The only reader that ever sniffed one was `NSImage(contentsOf:)`, which sniffs content rather than names, and adding an extension now would change every existing file name and orphan every copy already cached.
     private func fileURL(forKey key: String) -> URL {
         let digest = SHA256.hash(data: Data(key.utf8))
         let name = digest.map { String(format: "%02x", $0) }.joined()

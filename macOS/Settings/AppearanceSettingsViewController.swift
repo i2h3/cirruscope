@@ -5,9 +5,6 @@ import Cocoa
 import os
 
 /// `AppearanceSettingsViewController` backs the Appearance tab of the settings window, whose two switches record how the web windows on this device draw Nextcloud: whether the window material shows through, and whether the gaps around Nextcloud's content are removed.
-///
-/// The choices are the device's rather than the account's: `AccountStore` keeps them apart from the connected account, so a sign-out leaves them in place and the next account signed in on this Mac opens with them.
-/// Each switch writes as soon as it is flipped, and it is the store's `Notification.Name.appearanceSettingsDidChange` announcement, not this controller, that applies the change to every open web window without a reload.
 class AppearanceSettingsViewController: NSViewController {
     /// `translucentAppearance` is the switch, labelled "Liquid Glass appearance" in the storyboard, that lets the macOS window material show through the web view instead of Nextcloud's own backgrounds.
     @IBOutlet

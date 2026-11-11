@@ -5,9 +5,6 @@ import CoreGraphics
 import Foundation
 
 /// `CGPathElements` is a readable, comparable transcript of what a `CGPath` actually contains.
-///
-/// A path's bounding box is the tempting thing to assert on and is nearly worthless for a parser: it is identical whether the curve between two corners was read as a line, a quadratic, or nothing at all. Walking the path instead pins the command each piece of `d` was turned into, which is the thing under test.
-/// Coordinates are rounded before comparison because the arithmetic behind a relative command accumulates, and a test that fails on the last bit of a `Double` is measuring the floating-point unit rather than the parser.
 struct CGPathElements: Equatable, CustomStringConvertible {
     /// `steps` are the path's commands in order, each rendered as text so a failing comparison reads as a diff rather than as two opaque values.
     let steps: [String]

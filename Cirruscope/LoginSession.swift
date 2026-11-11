@@ -7,18 +7,12 @@ import os
 import Rainmaker
 
 /// `LoginSession` runs Nextcloud's Login Flow v2 against one server: it presents the grant page in an `ASWebAuthenticationSession` and concurrently polls the login endpoint until the user completes the grant.
-///
-/// One instance drives one sign-in attempt, and `signIn(to:anchoredTo:)` is the only way to start one, so no caller ever holds an instance.
-///
-/// The whole flow is platform-agnostic except for the window the sheet is anchored to, which is why that is the one thing the caller supplies. `ASPresentationAnchor` is `NSWindow` on macOS and `UIWindow` on iOS, so the entry point's signature needs no `#if` of its own. The caller resolves it, rather than this type reaching for a key window itself: on macOS the right window is the specific one the sign-in scene is in, not whichever is frontmost, and each caller already knows which that is. A caller with no window to offer cannot sign in and reports `CirruscopeError.loginPresentationFailed` itself, which is why nothing here is optional.
 @MainActor
 final class LoginSession: NSObject {
     /// `anchor` is the window the grant sheet is presented from, returned as-is by `presentationAnchor(for:)`.
     private let anchor: ASPresentationAnchor
 
     /// `authenticationSession` retains the `ASWebAuthenticationSession` that presents the Login Flow v2 grant page while polling is in progress.
-    ///
-    /// `startAuthenticationSession(using:)` assigns it, and `dismissAuthenticationSession()` cancels it once polling has produced credentials or stopped.
     private var authenticationSession: ASWebAuthenticationSession?
 
     /// `authenticationCancelled` is set by the `ASWebAuthenticationSession` completion handler when the user dismisses the grant sheet, signaling `pollForCredentials(on:flow:)` to stop.
@@ -32,10 +26,6 @@ final class LoginSession: NSObject {
     }
 
     /// `signIn(to:anchoredTo:)` runs one Login Flow v2 attempt against `server`, presenting the grant sheet from `anchor`, and returns the credentials the grant produced.
-    ///
-    /// It owns the attempt's one instance as a named constant, so the instance lives exactly as long as the attempt: the weak `presentationContextProvider` and the `[weak self]` completion handler find it alive while polling, and the late callback `cancel()` triggers after a successful poll finds it gone.
-    /// A caller writing `LoginSession(anchor:).signIn(to:)` itself would make whole-module builds warn that the weak reference "will always be nil", because the compiler sees the unnamed temporary released after the call and does not model that the call itself keeps it alive.
-    /// The constant stays named for the same reason, since that temporary written here would warn in every build, caller and callee then sharing a file.
     static func signIn(to server: Server, anchoredTo anchor: ASPresentationAnchor) async throws -> LoginResult {
         let attempt = LoginSession(anchor: anchor)
 
@@ -43,8 +33,6 @@ final class LoginSession: NSObject {
     }
 
     /// `signIn(to:)` runs Nextcloud's Login Flow v2 against `server` and returns the credentials the grant produced.
-    ///
-    /// Login Flow v2 never invokes the session's `nc` callback URL, so a result from `server.poll(_:)` is what signals completion; the session is then dismissed by the `defer`. It throws `CirruscopeError.loginCancelled` if the user dismisses the sheet and `CirruscopeError.loginTimedOut` if the grant is not completed in time.
     private func signIn(to server: Server) async throws -> LoginResult {
         let flow = try await server.login()
 
@@ -58,8 +46,6 @@ final class LoginSession: NSObject {
     }
 
     /// `startAuthenticationSession(using:)` presents `url` in an `ASWebAuthenticationSession` so the user can authenticate and grant access.
-    ///
-    /// The session is retained in `authenticationSession`. Because Login Flow v2 never invokes the `nc` callback, the completion handler only fires when the user dismisses the sheet, which sets `authenticationCancelled` so `pollForCredentials(on:flow:)` stops. It throws `CirruscopeError.loginPresentationFailed` if the session cannot be presented.
     private func startAuthenticationSession(using url: URL) throws {
         let session = ASWebAuthenticationSession(url: url, callbackURLScheme: "nc", completionHandler: makeAuthenticationCompletionHandler())
 
@@ -76,8 +62,6 @@ final class LoginSession: NSObject {
     }
 
     /// `makeAuthenticationCompletionHandler()` builds the completion handler `startAuthenticationSession(using:)` passes to its `ASWebAuthenticationSession`.
-    ///
-    /// It is `nonisolated` so the closure it returns is not itself inferred main-actor-isolated: `LoginSession` is main-actor-isolated, so a closure written directly inside one of its methods would inherit that isolation too — even though its body only creates a `Task` — and trip the very isolation check this handler exists to avoid, since `AuthenticationServices` does not guarantee it invokes the handler on the main thread (it is invoked off-main when `dismissAuthenticationSession()` calls `cancel()` right after polling succeeds).
     private nonisolated func makeAuthenticationCompletionHandler() -> (URL?, (any Error)?) -> Void {
         { [weak self] _, _ in
             Task { @MainActor [weak self] in
@@ -88,8 +72,6 @@ final class LoginSession: NSObject {
     }
 
     /// `pollForCredentials(on:flow:)` polls `server`'s login endpoint until the user completes the grant, returning the resulting credentials.
-    ///
-    /// While the grant is pending `server.poll(_:)` answers `nil`, and every error it throws is treated as "keep polling" too, so a transient network failure does not end the sign-in. It stops with `CirruscopeError.loginCancelled` if the user dismisses the sheet and `CirruscopeError.loginTimedOut` after a few minutes without completion.
     private func pollForCredentials(on server: Server, flow: LoginFlow) async throws -> LoginResult {
         let clock = ContinuousClock()
         let deadline = clock.now.advanced(by: .seconds(300))

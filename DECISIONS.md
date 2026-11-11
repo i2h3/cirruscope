@@ -1551,3 +1551,10 @@ Every value resolves itself against the environment it is drawn in, so there is 
 
 The cost accepted is that the widget does not match the design's palette exactly — the system's green is cooler than the green that was drawn, its red brighter.
 Green, red and orange are also kept out of the avatar fills, because those three mean something specific here and a badge sits on the corner of one of those circles.
+
+## Why must every type but not every property carry a documentation comment?
+
+Because a documentation comment earns its place only when it says something the declaration cannot show: what a symbol is for, or a contract, invariant or constraint the signature does not carry.
+The earlier rule gave every property a comment as well, which produced thousands of lines restating the symbol's name or explaining the symbols around it, and those lines drifted out of date the moment a referenced symbol or file moved.
+Relations and placement rationale are therefore recorded once, in `AGENTS.md` and this file, rather than copied into each symbol's comment.
+The cost accepted is sparser Quick Help on trivial properties and methods.

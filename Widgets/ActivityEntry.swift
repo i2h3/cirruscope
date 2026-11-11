@@ -36,8 +36,6 @@ struct ActivityEntry: TimelineEntry {
     let fetchedAt: Date?
 
     /// `isStale` marks rows that were carried over from an earlier fetch because the newest one failed.
-    ///
-    /// It is kept separate from `content` rather than made a case of it so that the feed is drawn by one piece of code either way, dimmed and footnoted rather than re-laid-out. The design asks for exactly that: the same rows, at reduced opacity, under a line saying when they were true.
     let isStale: Bool
 
     /// `serverAddress` is the server the rows in `content` came from, which their avatars were cached under, or `nil` where there are no rows or nothing recorded where they came from.

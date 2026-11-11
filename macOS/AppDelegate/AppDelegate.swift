@@ -8,24 +8,16 @@ import WebKit
 import WidgetKit
 
 /// `AppDelegate` is the application delegate of Cirruscope and owns the lifecycle of every window the app shows.
-///
-/// On launch it consults `AccountStore.serverAddress` to decide whether to present `WebViewController` directly or to first show `ServerAddressViewController`. When a server address is already configured it first re-validates the server's capabilities against `InfoPlist.minimumSupportedServerMajorVersion`, falling back to `ServerAddressViewController` only when no credentials are stored for it, the stored ones were revoked, or the server runs an unsupported major version; an unreachable server is treated as transient and keeps the web window, which surfaces its own retry UI. It also keeps freshly instantiated `NSWindowController`s alive until their windows close.
 @main
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
     /// `windowControllers` retains every `NSWindowController` that `present(windowController:sender:)` has shown so that their windows are not deallocated while visible.
-    ///
-    /// Each entry is removed when the corresponding `NSWindow.willCloseNotification` fires.
     private var windowControllers: [NSWindowController] = []
 
     /// `lastCascadePoint` is the point at which the most recently presented window was cascaded.
-    ///
-    /// `present(windowController:sender:)` updates it on every call so that subsequent windows opened via the "New Window" menu item are offset from the previous one rather than stacking on top of each other.
     private var lastCascadePoint: NSPoint = .zero
 
     /// `serverAppsSeparator` is the View-menu separator after which the dynamic server-app menu items are inserted.
-    ///
-    /// `rebuildServerAppsMenu()` inserts one item per `AccountStore.serverApps` entry directly after it, so the apps occupy the section the storyboard brackets with a separator above and below.
     @IBOutlet
     var serverAppsSeparator: NSMenuItem!
 
@@ -114,8 +106,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// `application(_:continue:restorationHandler:)` opens whatever a user selected from a Spotlight result.
-    ///
-    /// macOS delivers the selection here as a `CSSearchableItemActionType` activity (Core Spotlight's AppKit contract). The handling lives in `openSpotlightSelection(_:)` in the `AppDelegate+Spotlight` extension, so this file stays free of App Intents and Core Spotlight imports.
     func application(_: NSApplication, continue userActivity: NSUserActivity, restorationHandler _: @escaping ([any NSUserActivityRestoring]) -> Void) -> Bool {
         openSpotlightSelection(userActivity)
     }
@@ -137,16 +127,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// `newWindow(_:)` opens another web window for the "New Window" menu item and its ⌘N key equivalent.
-    ///
-    /// It reaches `presentInitialWindow(forLaunch:)` with `forLaunch` cleared, which presents the window in this same run-loop turn and validates the server behind it, so the window appears immediately rather than after a round-trip to the server.
     @IBAction
     func newWindow(_: Any?) {
         presentInitialWindow(forLaunch: false)
     }
 
     /// `openPrivacyPolicy(_:)` opens Cirruscope's online privacy policy in the user's default browser.
-    ///
-    /// It backs both the Help-menu "Privacy Policy…" item and the "Privacy Policy" button on `ServerAddressViewController`; both target the responder chain rather than this object directly, so a single handler serves every entry point.
     @IBAction
     func openPrivacyPolicy(_: Any?) {
         logger.debug("Opening privacy policy")
@@ -164,10 +150,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// `presentInitialWindow(forLaunch:)` validates the configured server and presents the window the app should show: a `WebViewWindowController` when a supported server is reachable or merely unreachable — in which case the web view shows its own "Server unreachable" retry UI — and a `ServerAddressWindowController` when no server is configured, no credentials are stored for it, the stored credentials were revoked, or the server runs an unsupported major version.
     /// A configured server with no stored credentials is a sign-out that did not finish, so that case completes it through `AccountStore.disconnect()` before asking for a sign-in — unless the credentials are still in macOS's file-based Keychain, which the move at launch could not carry across, and which asks for a sign-in without signing anything out. A revoked credential goes through `requireSignIn()`, which signs out the same way.
-    ///
-    /// `applicationDidFinishLaunching(_:)` calls it with `forLaunch` set to coordinate with AppKit window restoration: it opens a fresh web window only when none was restored. When the server reports an unsupported version or revoked credentials it closes any restored web windows so none lingers on a server the app can no longer use; an unreachable server is treated as transient, so restored windows are left in place to show their retry UI. `newWindow(_:)` and `applicationShouldHandleReopen(_:hasVisibleWindows:)` call it with `forLaunch` cleared, which always opens a new web window and leaves any already-open windows untouched unless validation reports the server unusable.
-    ///
-    /// `forLaunch` also selects *when* the web window is presented, which is what keeps ⌘N feeling instant. Validation is a live round-trip to the server — `capabilities()`, plus the theming assets `AccountStore.persist(theming:)` revalidates — and takes on the order of a second, so a user-initiated window is presented before the `Task` below rather than inside it: waiting would leave the app looking frozen for that whole second, since building and showing the window itself costs a few tens of milliseconds. At launch the presentation stays inside the `Task`, where it is reconciled against whatever AppKit restored and against a server that turns out to be unusable. Nothing else moves: the same capabilities, theming, app-list, and notification-monitor refreshes still run, only now behind the window instead of in front of it.
     private func presentInitialWindow(forLaunch: Bool) {
         logger.log("Presenting initial window")
 
@@ -323,8 +305,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// `requireSignIn()` signs out because the server rejected the stored credentials, alerts the user, and returns the app to the sign-in screen.
-    ///
-    /// `presentInitialWindow(forLaunch:)` calls it when validation reports the stored app password was revoked, the notification monitor calls it when a fetch or its event stream is refused the app password during a session, and `WebViewController+SilentRetry` calls it when the server answered HTTP 401 to the check of the app password the web view asks for whenever it suspects that password was refused. In every case the app is signing the user out on its own initiative rather than because the user asked to, so — unlike `logOut()` — it shows an alert explaining why before presenting the sign-in screen. It stops the monitor, closes any web windows left on the now-unusable server, clears the web view's site data, signs out through `AccountStore.disconnect()` exactly as `logOut()` does, and presents `ServerAddressWindowController`; the keyboard shortcuts and appearance settings, which belong to the device, survive it as they survive any sign-out. It does not attempt to revoke the app password: the server has already rejected it, so revoking it again would be pointless.
     func requireSignIn() {
         logger.notice("Credentials rejected; signing out and requiring sign-in")
         signOutLocally()
@@ -338,8 +318,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// `signOutLocally()` is the part every sign-out shares: it stops the notification monitor, closes every web window, clears the web view's site data and signs out through `AccountStore.disconnect()`, which also withdraws every notification the app delivered.
-    ///
-    /// `logOut()`, `requireSignIn()` and `presentInitialWindow(forLaunch:)`'s missing-credentials branch all call it, so that no sign-out leaves a window open on a server the store no longer names, where the navigation delegate would stop confining it, or a monitor polling with credentials that are gone.
     private func signOutLocally() {
         NotificationMonitor.shared.stop()
         closeWebViewWindows()
@@ -352,8 +330,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// `adoptStoredCredentialsIfTheStoreLostItsAccount()` records the server the Keychain holds credentials for as the connected one when the store names no server at all, which is what a store rebuilt empty leaves behind.
-    ///
-    /// `AppDatabase` rebuilds the store empty when it cannot be opened, and leaves the Keychain alone, so without this the app would ask for a sign-in while the widget, which signs itself in from the Keychain, went on drawing the account. Taking the credential the Keychain holds is what iOS does on every launch; the next app-list refresh fills the store again. More than one stored credential is not a state any build writes on purpose, and is signed out rather than guessed between.
     private func adoptStoredCredentialsIfTheStoreLostItsAccount() {
         guard AccountStore.shared.serverAddress == nil else {
             return
@@ -374,10 +350,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// `startNotificationMonitor(for:)` starts watching `account`'s notifications, signing out with an explanation should the server refuse its app password.
-    ///
-    /// `presentInitialWindow(forLaunch:)` calls it once a server is validated and `ServerAddressViewController` once a sign-in succeeds, so the Dock badge and Notification Center follow a fresh sign-in without waiting for the next launch.
-    /// The Mac signs out on the server's refusal at once, as it always has; the iPhone confirms the refusal with the server first.
-    /// The refusal reaches the handler a turn later, so it is asked again whether the refused account is still the one signed in, as every other caller of `requireSignIn()` asks: a validation or a web view refused the same app password may have signed out and said so first.
     func startNotificationMonitor(for account: ServerAccount) {
         NotificationMonitor.shared.start(for: account) { [weak self] refused in
             guard ServerConnection.isStillSignedIn(at: refused.server, as: refused.credentials) else {
@@ -391,15 +363,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// `hasOpenWebWindow` is `true` while at least one web window is open, including any AppKit restored at launch.
-    ///
-    /// `presentInitialWindow(forLaunch:)` reads it at launch to avoid opening a duplicate window when AppKit already restored one, and the notification monitor's `shared` instance reads it to withhold the server's notifications while the embedded web interface can surface its own.
     var hasOpenWebWindow: Bool {
         windowControllers.contains { $0 is WebWindowController }
     }
 
     /// `frontmostWebWindow` is the web window the user was last working in — the app's main window when that is one, and otherwise any open web window — or `nil` while none is open.
-    ///
-    /// `applicationWillTerminate(_:)` reads it to record a window's size at quit. The main window is preferred because with several web windows open it is the one whose size the user just settled on; the fallback keeps a quit while some other kind of window (Settings, Downloads) holds main status from recording nothing at all.
     private var frontmostWebWindow: NSWindow? {
         if let mainWindow = NSApp.mainWindow, mainWindow is WebWindow {
             return mainWindow
@@ -409,8 +377,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// `closeWebViewWindows()` closes every open web window.
-    ///
-    /// `presentInitialWindow(forLaunch:)` calls it when the server turns out to run an unsupported version, and `requireSignIn()` whenever the stored credentials are rejected, so no window — restored at launch or opened since — lingers on a server the app can no longer use. An unreachable server is not one of those cases: its windows stay open to show their retry UI.
     private func closeWebViewWindows() {
         logger.debug("Closing web view windows…")
 
@@ -421,10 +387,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// `presentWebViewWindow(targetURL:)` opens and tracks a web window, loading `targetURL` when given or `AccountStore.serverAddress` otherwise.
-    ///
-    /// `presentInitialWindow(forLaunch:)` and `ServerAddressViewController` open the root window through it, and `openServerApp(_:)`, a page an intent, a Spotlight result or a clicked server notification asks for through `EntityOpening`, and a page's own request for a new window open theirs through it too, so every web window is created, cascaded, and retained the same way.
-    ///
-    /// Being the one place every web window is created is also what makes it the one place the remembered size is applied (issue #82): `WebWindowFrame.applySize(to:)` resizes the window before `present(windowController:sender:)` cascades it, so the cascade offsets the origin and leaves that size alone. Windows AppKit restores at launch bypass this method entirely and keep the frame AppKit saved for each of them.
     func presentWebViewWindow(targetURL: URL? = nil) {
         logger.debug("Presenting web view window…")
 
@@ -446,9 +408,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// `openServerApp(_:)` brings the web window already showing `app` to the front, or opens a new window loading the app when none is open.
-    ///
-    /// The currently shown app of each window is reported by `WebViewController.currentApp`. It does nothing when no server address is configured, and brings the sign-in window forward instead when no credentials are stored for it.
-    /// Every sign-out deletes the server apps, so the menus and Spotlight normally offer none while nobody is signed in. The second case covers an account that outlived its credential — one removed from the Keychain behind the app's back, or a request latched at launch and served before `presentInitialWindow(forLaunch:)` has finished signing such an account out — where a window opened anyway would only ever be redirected to the sign-in form, having no app password to re-request the page with, and would sit on its loading state for good.
     func openServerApp(_ app: ServerAppTransferObject) {
         logger.log("Opening server app…")
 
@@ -481,11 +440,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// `logOut()` performs a full app-level logout: fires off a best-effort revocation of the stored Login Flow v2 app password on the server, closes every window, clears the web view's stored cookies and site data so no session for the old server lingers, disconnects the account via `AccountStore.disconnect()` (which deletes the account — its cached theme and version, and through it the apps, conversations, notes and collectives — and forgets every cache and credential describing the old server, while the keyboard shortcuts and appearance settings, which belong to the device, stay), and presents a fresh `ServerAddressWindowController`.
-    ///
-    /// `GeneralSettingsViewController.logOut(_:)` (the explicit Settings button) calls this shared implementation, and so do `WebViewController+WKNavigationDelegate` and `WebViewController+WKUIDelegate`'s `createWebViewWith` when the user activates a link to the server's own sign-out route, as `SignOutRequest` decides, so every entry point behaves identically and goes through the same tracked window-presentation path as every other window `AppDelegate` creates.
-    /// A navigation the page's own script makes to that route, such as Nextcloud's session heartbeat with `auto_logout`, never reaches it: that is the browser session timing itself out, not the user asking to sign out.
-    ///
-    /// The credentialed `Server` for revocation is captured synchronously before anything else runs, then handed to an unawaited `Task` so a slow or unreachable server can never delay the window-closing, site-data-clearing, or sign-in-presenting steps below, matching Nextcloud's own fail-open guidance for this call. `Server` captures the app password by value at construction, and `ServerConnection.revokeAppPassword(using:)` never re-reads `Keychain`, so the `Task` remains free to complete the request even after `AccountStore.disconnect()` clears the same credential from `Keychain` further down in this method.
     func logOut() {
         logger.notice("Logging out; revoking the app password on the server, closing all windows, clearing the web view's site data, and clearing the server address and credentials")
 
@@ -509,8 +463,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// `showDownloads(_:)` backs the "Downloads" menu item, opening the download history window or bringing it to the front when it is already open.
-    ///
-    /// It targets the responder chain from the menu item, so this single handler serves the menu; `downloadDidStart()` opens the same window when a transfer begins.
     @IBAction
     func showDownloads(_: Any?) {
         logger.log("Showing downloads…")
@@ -518,8 +470,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// `showDownloadsWindow()` brings the single Downloads window to the front, instantiating and tracking it from the storyboard first when none is open, and activates the app so the window comes to the foreground.
-    ///
-    /// `showDownloads(_:)` and `downloadDidStart()` both call it, so the menu item and a starting download converge on one window rather than each opening its own.
     func showDownloadsWindow() {
         if let existing = windowControllers.first(where: { $0.contentViewController is DownloadViewController }) {
             logger.log("Showing existing downloads window…")
@@ -533,8 +483,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// `downloadDidStart()` opens the Downloads window when `DownloadManager` reports that a transfer has begun.
-    ///
-    /// `DownloadManager.handle(_:)` posts `Notification.Name.downloadDidStart` on the main actor, so presenting the window here runs on the main thread.
     @objc
     private func downloadDidStart() {
         logger.log("Download did start")
@@ -552,8 +500,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// `serverAppsDidChange()` rebuilds the View menu when `AccountStore` posts that the server apps or the keyboard shortcuts changed, or `ServerConnection` that the apps' icons have landed.
-    ///
-    /// It observes `Notification.Name.keyboardShortcutsDidChange` as well as `Notification.Name.serverAppsDidChange` because recording, replacing or clearing a shortcut changes no app but does change the key equivalents the menu items carry. The Dock menu is built afresh each time it is opened and needs no rebuilding.
     @objc
     private func serverAppsDidChange() {
         logger.log("Server apps did change")
@@ -561,8 +507,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// `rebuildServerAppsMenu()` replaces the dynamic server-app items in the View menu with the current `AccountStore.serverApps`, applying the keyboard shortcut that reaches each app, if any.
-    ///
-    /// It removes the items it previously inserted and inserts the current apps directly after `serverAppsSeparator`, which keeps them within the storyboard's bracketed section. Only the apps the connected server offers get an item, so a shortcut recorded on this device for an app the server does not offer is applied to nothing until a refresh lists that app again.
     private func rebuildServerAppsMenu() {
         logger.log("Rebuilding server apps menu…")
 
@@ -588,13 +532,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         logger.log("Completed server app menu rebuilding")
     }
 
-    ///
     /// `menuItem(for:)` builds a menu item that opens `app` via `performServerApp(_:)`, carrying the app's own icon and the keyboard shortcut that reaches it, when `AccountStore.shortcut(forAppID:)` answers one — a shortcut it suppresses as reserved or as another app's is left off.
-    ///
-    /// The icon is looked up rather than awaited, because this same factory builds the Dock menu, which AppKit asks for and draws immediately. A miss is ordinary — nothing has been downloaded on a first launch — and answers with the placeholder instead, so the list never mixes rows that have an image with rows that have none, which AppKit does not necessarily align to the same left edge.
-    /// From macOS 27 on, AppKit decides for itself whether a menu item's image is drawn and hides most of them, so the item asks for its icon to be shown: in this list the icon is what tells one app from the next rather than a glyph restating a command, and leaving it to the default is how the View menu came to list bare names (issue #127). Every row asks, the placeholder included, which is what keeps the promise above.
-    /// The Dock menu shows no image whatever is set here, and nothing in this app can change that: the Dock renders that menu itself, out of process, and drops `NSMenuItem.image` entirely — measured against a system symbol, a template bitmap, and a plain bitmap alike, none of which appear. The image is still set on the way past, because this factory also builds the View menu, where it does appear. Do not go looking for a bug in the Dock menu's icons; there is nothing there to find.
-    ///
     private func menuItem(for app: ServerAppTransferObject) -> NSMenuItem {
         let item = NSMenuItem(title: app.name, action: #selector(performServerApp(_:)), keyEquivalent: "")
         item.target = self
@@ -680,8 +618,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// `track(_:)` retains `windowController` so its window survives while visible and drops it once the window closes.
-    ///
-    /// `present(windowController:sender:)` calls it after cascading and before showing; the restoration path calls it on its own for windows AppKit positions and shows itself, so those are retained without being cascaded or shown a second time.
     func track(_ windowController: NSWindowController) {
         logger.log("Tracking window controller \(windowController)…")
         guard let window = windowController.window else {

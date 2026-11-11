@@ -5,11 +5,6 @@ import Foundation
 import WebKit
 
 /// `SecurityOriginProbe` reports the security origin a real `WKWebView` gives a document, in the scheme, host and port WebKit spells it with.
-///
-/// `MediaCaptureDecision` takes an origin in exactly that spelling and is only right in terms of it: that the host arrives lowercased, that an IPv6 address keeps its brackets, that a port the scheme implies is reported as `0` even where the address spelled it out, and that a sandboxed frame's origin is empty.
-/// Those are beliefs about WebKit, and a test restating them could not catch one being wrong, so this loads a document and reads the origin of the frame that ran its script, the way `KeyEquivalentProbe` measures AppKit.
-/// The document is a string loaded with the address as its base, so no server and no network are involved, and the web view's data store is a non-persistent one, so nothing is kept.
-/// It reports through an alert because the delegate call an alert makes is handed the frame that raised it, the same `WKFrameInfo` a media-capture request is handed.
 @MainActor
 final class SecurityOriginProbe: NSObject, WKUIDelegate {
     /// `webView` is the web view the document is loaded into.

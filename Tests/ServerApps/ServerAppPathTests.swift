@@ -5,21 +5,12 @@
 import Foundation
 import Testing
 
-///
 /// `ServerAppPathTests` covers `ServerAppPath`, which reduces a URL to the path it addresses within one Nextcloud instance.
-///
-/// Every case here is a spelling difference the server itself introduces. Nextcloud serves the same app under `/apps/…` or `/index.php/apps/…` depending on one configuration option, and an instance installed in a subdirectory writes that directory into every path it names — including the ones it reports through its own navigation endpoint. The point of this type is that two paths meaning the same page compare equal, so the cases are pairs of spellings rather than a list of inputs.
-/// The logic replaced here — `WebViewController.appID(fromPath:)` — had no tests at all, and answered `nil` for every subpath install because it required `apps` to be the first component of the path. That case is below.
-///
 struct ServerAppPathTests {
-    ///
     /// An instance at the root of its host, which is how most are installed.
-    ///
     private static let server = URL(string: "https://cloud.example.com")!
 
-    ///
     /// An instance installed in a subdirectory, whose web root is part of every path it names.
-    ///
     private static let subpathServer = URL(string: "https://cloud.example.com/nextcloud/")!
 
     // MARK: - Relative Components

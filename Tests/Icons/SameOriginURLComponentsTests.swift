@@ -7,8 +7,6 @@ import Testing
 
 /// `SameOriginURLComponentsTests` covers building the address of a path the app itself knows, which is a different question from resolving one the server named.
 ///
-/// The suite exists because the difference is invisible on the instances most people test against and decisive on the rest. A server-named path already carries the instance's web root, so resolving it from the root is right; a path the app knows does not, so resolving it the same way silently moves it to the host's own root. On `https://cloud.example.com` the two agree exactly, which is why this shipped in the iOS account menu and in the first draft of the Talk conversation route before a subdirectory case caught it.
-///
 /// The case worth having is therefore the one asserting the two initializers *disagree*. Testing the new one alone would pass just as well if it were quietly changed back to the old behaviour.
 struct SameOriginURLComponentsTests {
     @Test

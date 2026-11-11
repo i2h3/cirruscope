@@ -7,11 +7,6 @@ import SwiftData
 import Testing
 
 /// `DevicePreferencesTests` covers the appearance settings as the store keeps them: on the device, apart from any account.
-///
-/// The suite exists because the settings used to live on the account, so every sign-out reset them and flipping a switch before signing in created an account with no address.
-/// The second of those is pinned here by the case that looks for an account through a context of its own; the first by the deletion case in `ConnectedAccountTests`.
-/// The read-back and unset cases are baselines that held under the old design too, and the announcement case observes the store's own seam rather than a web view in the host app reacting to it.
-/// It runs against both app modules, the store being shared, though only the Mac app shows the settings today.
 @MainActor
 @Suite(.serialized, .exclusiveStoreAccess)
 struct DevicePreferencesTests {

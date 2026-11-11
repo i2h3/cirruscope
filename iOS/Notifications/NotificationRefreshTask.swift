@@ -5,42 +5,23 @@ import BackgroundTasks
 import Foundation
 import os
 
-///
 /// The background job iOS wakes the app for, which fetches the notifications the server has queued, posts the new ones to Notification Center, withdraws those the server no longer lists, writes the count to the app icon badge, and stops.
-///
-/// The scope is the design. A background launch gets a short, unpredictable slice of time on a schedule nobody can force, with no debugger attached and no user watching, so everything the app could do while awake and does not do here is one less thing that can fail invisibly: no icon is downloaded, no web view is built, no store is touched. What is left is one HTTP GET, the shared dispatcher acting on its answer, and one integer; the only thing written is the dispatcher's small record of the notifications already seen, without which a process woken in the background could not tell a new notification from one it announced last time.
-/// Registration is SwiftUI's. `iOSApp` carries `.backgroundTask(.appRefresh(_:))`, which registers this identifier with `BGTaskScheduler` while the scene is being built — inside launch, which is the deadline registration has — and which also owns the expiration handler and the completion call that the manual `BGTaskScheduler.register` API leaves to its caller. Submitting the requests is not SwiftUI's, and that is what `submitRequest(reason:)` is for.
-/// Everything here logs at `.notice` or above, because `.debug` and `.info` are ephemeral and a run nobody watched leaves nothing else behind. See AGENTS.md → Logging and Diagnostics.
-///
 enum NotificationRefreshTask {
-    ///
     /// Property list keys.
-    ///
     private enum InfoPlistKey {
-        ///
         /// Property list key.
-        ///
         static let identifier = "NotificationRefreshTaskIdentifier"
     }
 
-    ///
     /// Records every request submitted, withdrawn, or found pending, and every run from end to end, under the `NotificationRefreshTask` category.
-    ///
     static let logger = Logger(for: NotificationRefreshTask.self)
 
-    ///
     /// How soon after a submission the system may start the task at the earliest, in seconds.
     ///
     /// Fifteen minutes is a floor and not a schedule. The system decides when — or whether — to run the task at all, from the user's own habits, the battery, and Low Power Mode, and the only thing this value does is refuse anything sooner. It is deliberately not shorter: asking more often than the server's state meaningfully changes spends the app's background budget without changing the badge.
-    ///
     static let earliestInterval: TimeInterval = 15 * 60
 
-    ///
     /// The identifier both the property list and `BGTaskScheduler` know this task by.
-    ///
-    /// Read from the property list rather than hardcoded for the same reason `AppGroup.identifier` is: it derives from the bundle identifier, which is a brandable value differing between builds. The property list names it twice — here, and in `BGTaskSchedulerPermittedIdentifiers` — from one build setting, because a disagreement between those two is invisible at build time and surfaces only much later, as a submission failing with a permission error nobody was watching for.
-    /// Trapping on a missing entry is deliberate and matches the house pattern. This is read while the scene is being built, so a build configured without it fails during launch, and the iOS test action launches the app — which turns a misconfiguration into a test failure here rather than into a crash on somebody's device later.
-    ///
     static let identifier: String = {
         guard let value = Bundle.main.object(forInfoDictionaryKey: InfoPlistKey.identifier) else {
             preconditionFailure("Info.plist is missing the \"\(InfoPlistKey.identifier)\" entry.")
@@ -53,15 +34,7 @@ enum NotificationRefreshTask {
         return stringValue
     }()
 
-    ///
     /// Run one background refresh.
-    ///
-    /// A run is identified in the log by the process it ran in and a four-digit number drawn once at its start. The process identifier alone is not enough — a wake-up can be delivered to a process that is merely suspended rather than gone, so two runs can share one — and a counter is no better, since each background launch would start it at one again. A random number needs no shared state to maintain, prints in the clear where a string would be redacted, and is enough to pull one run out of an interleaved log by eye.
-    /// The next request is submitted before any work is done, not after. An expiration, a throw, or a crash below must not cost the app its next wake-up, because an app with no pending request is never woken again, and that is the one way this feature dies without leaving a trace. The cost of getting it wrong the other way is one wasted round trip to the scheduler when the account turns out to be gone, which the branch below then withdraws.
-    /// A run is the one place new notifications are posted on the iPhone: the live monitor only records them as seen, the app being in front while it runs.
-    /// A refused app password disarms the refresh and clears the badge, and signs nobody out; the notifications already delivered stay until a sign-out withdraws them. A run in the background has no way to say why it signed somebody out, which `Store.requireSignIn()` exists to do, and touches no store by design; the refresh the next activation runs meets the same refusal, confirms it with the server and signs out with the explanation. Activation re-arms this task before that refresh runs, so it stays armed whenever the refusal is not confirmed, and a confirmed one disarms it again as it signs out.
-    /// Cancellation is how expiration arrives: SwiftUI cancels the task this body runs in, so the fetch unwinds as cancelled, or the dispatcher abandons the answer before recording it, and the badge is left alone; an expiry while posting is not honoured until posting ends, since the record already names what is being posted. It is logged as an error because a run that keeps running out of time is exactly the thing worth finding in a log a week later.
-    ///
     static func run() async {
         let started = ContinuousClock.now
         let processID = ProcessInfo.processInfo.processIdentifier
@@ -94,12 +67,7 @@ enum NotificationRefreshTask {
         logger.notice("Background refresh finished after \(Self.milliseconds(since: started), privacy: .public) ms (pid \(processID, privacy: .public), run \(runID, privacy: .public))")
     }
 
-    ///
     /// Ask the system to wake the app for another refresh, replacing any request already pending.
-    ///
-    /// `reason` names which moment asked — a scene-phase change, a sign-in, or a run re-arming itself — because a submission that never happened and a submission that failed look identical in a log unless both are written down. Submitting while a request for the same identifier is still pending is neither an error nor a duplicate: the scheduler replaces the earlier one, which is what makes calling this from several places safe rather than merely tolerable.
-    /// The failure is logged from the `NSError` rather than from a typed case, so the domain and the numeric code are on the record whatever the importer called them. Those numbers are the whole diagnosis, which is why `explanation(of:)` puts them in words as well.
-    ///
     static func submitRequest(reason: StaticString) {
         let request = BGAppRefreshTaskRequest(identifier: identifier)
         request.earliestBeginDate = Date(timeIntervalSinceNow: earliestInterval)
@@ -115,19 +83,15 @@ enum NotificationRefreshTask {
         }
     }
 
-    ///
     /// Withdraw any pending request, so the system stops waking the app for work it no longer has.
-    ///
     static func cancelRequest() {
         BGTaskScheduler.shared.cancel(taskRequestWithIdentifier: identifier)
         logger.notice("Withdrew the pending background refresh request for \(identifier, privacy: .public)")
     }
 
-    ///
     /// Record whether the app is actually armed.
     ///
     /// This is the line that separates a system which never ran the task from an app which never asked it to, and there is no other way to tell those two apart after the fact — the first is the scheduler's judgement and nothing to fix, the second is a bug. It is called on arriving in the foreground rather than on the way out, because an unstructured task started while the app is being suspended is not guaranteed to run at all.
-    ///
     static func logPendingRequests() async {
         let requests = await BGTaskScheduler.shared.pendingTaskRequests()
 
@@ -142,11 +106,7 @@ enum NotificationRefreshTask {
         }
     }
 
-    ///
     /// What one submission failure means in words, so the log names the cause instead of only numbering it.
-    ///
-    /// The codes are `BGTaskScheduler.Error.Code`'s, matched numerically so an unrecognized one still reads as something rather than as nothing.
-    ///
     private static func explanation(of error: NSError) -> StaticString {
         guard error.domain == BGTaskScheduler.errorDomain else {
             return "an error from outside the task scheduler"
@@ -167,9 +127,7 @@ enum NotificationRefreshTask {
         }
     }
 
-    ///
     /// How long ago `start` was, in whole milliseconds.
-    ///
     private static func milliseconds(since start: ContinuousClock.Instant) -> Int {
         Int(start.duration(to: .now) / .milliseconds(1))
     }

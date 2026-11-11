@@ -6,13 +6,7 @@ import Foundation
 import Security
 import Testing
 
-///
 /// `FileBasedKeychainMoveTests` pins `Keychain.moveFileBasedItems(service:)`, which carries the credentials releases up to `1.1.0` stored in macOS's file-based Keychain into the data-protection Keychain, and the three facts about those Keychains it rests on.
-///
-/// The facts are measured rather than assumed, because the move is only safe if they hold, and the first version of it rested on one that does not: that a query leaving `kSecUseDataProtectionKeychain` out addresses the file-based Keychain alone. In an entitled process it searches both, and a deletion made that way deletes from both, so deleting the file-based copy after making the new one deleted the new one too. Only setting the flag to `false` confines a query to the file-based Keychain. The first three cases ask the Keychain itself, so that belief cannot quietly come back.
-/// Every case files its items under a service of its own (`KeychainScratchService`), never under `Keychain.service`, where the developer's real credentials are.
-/// It is a macOS suite because only macOS has two Keychains to move between, and only the macOS app makes the move.
-///
 @Suite(.serialized)
 struct FileBasedKeychainMoveTests {
     /// `scratch` is this case's own service in both Keychains, emptied again when the case ends.

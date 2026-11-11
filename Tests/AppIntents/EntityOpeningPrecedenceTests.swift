@@ -8,8 +8,6 @@ import Testing
 /// `EntityOpeningPrecedenceTests` covers which of several installed openers serves a request, and what installing reports back.
 ///
 /// An iPad runs one opener per window, and the failure this rule exists to prevent is invisible from the window the user is looking at: a Spotlight result loaded into a window that was closed, or that is behind the one in front. Only the ordering decides that, so it is pinned here rather than left to a hand check with two windows open.
-///
-/// Every case builds its own `EntityOpening` rather than using `shared`, into which the host app installs a real opener for the whole test run — the same hazard `AccountStore.shared` carries, answered the same way. Owners are plain objects, since only their identity is ever compared.
 @MainActor
 struct EntityOpeningPrecedenceTests {
     /// `serverAddress` is the instance every address in this suite is on.

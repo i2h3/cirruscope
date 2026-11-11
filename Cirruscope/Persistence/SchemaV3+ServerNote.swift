@@ -6,13 +6,9 @@ import SwiftData
 
 extension SchemaV3 {
     /// `ServerNote` is the v3 record for a note's metadata exactly as it shipped in `1.2.0` and `1.2.1`.
-    ///
-    /// It is a frozen copy; see `SchemaV3` for why it never changes.
     @Model
     final class ServerNote {
         /// `noteID` is the note's server-assigned identifier, which is what the route opening it requires.
-        ///
-        /// Not named `id`, because SwiftData treats that name as the model's own identity and this is the server's.
         var noteID: Int
 
         /// `title` is the note's title, which for an ordinary note is its file name without the Markdown extension.

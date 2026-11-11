@@ -6,13 +6,8 @@ import os
 import Rainmaker
 
 /// `ServerConnection` builds `Rainmaker.Server` instances and validates them, centralizing the connection logic both apps' sign-in paths share.
-///
-/// `anonymous(address:)` is used before the user has authenticated and to initiate Login Flow v2, `authenticated(address:)` builds a credentialed server from `Keychain`, `validate(_:)` fetches capabilities and reports whether the server's version is supported, `verifyAppPassword(at:as:)` asks whether the server still accepts an app password, and `revokeAppPassword(using:)` invalidates a credential the app is about to discard.
-/// Everything here is free of persistence on purpose: this type is compiled into the widget extension too, and `AccountStore` exists only in the two apps. The half that records what a server said lives beside that store in `ServerConnection+AccountStore` and its per-domain siblings, and both apps persist the app list, the Talk conversations, the notes and the collectives through it. Only macOS also records what a validation found, its theming and version, so it calls `validateAndPersist(_:)` where iOS calls `validate(_:)` as it stands.
 enum ServerConnection {
     /// `ValidationOutcome` reports the result of `validate(_:)`.
-    ///
-    /// Both cases carry the fetched `CapabilitySet` rather than only the supported one, because a caller may have something to do with it either way: `ServerConnection+AccountStore` persists an unsupported server's theming too, and the version string an unsupported-server alert names is read back out of these capabilities.
     enum ValidationOutcome {
         /// `supported` carries the capabilities of a server whose major version meets `InfoPlist.minimumSupportedServerMajorVersion`.
         case supported(CapabilitySet)
@@ -22,8 +17,6 @@ enum ServerConnection {
     }
 
     /// `logger` records connection and validation activity under the `ServerConnection` category.
-    ///
-    /// Not `private`: `ServerConnection+AccountStore` logs the persistence half of a validation under the same category, so both halves of one operation read as one story in `log stream`.
     static let logger = Logger(for: ServerConnection.self)
 
     /// `anonymous(address:)` builds a `Server` without credentials, used to validate reachability and to initiate Login Flow v2.
@@ -32,8 +25,6 @@ enum ServerConnection {
     }
 
     /// `authenticated(address:)` builds a `Server` carrying the credentials stored for `address`, or `nil` if none have been stored.
-    ///
-    /// The returned server can call authenticated endpoints such as `navigation()`.
     static func authenticated(address: URL) -> Server? {
         guard let credentials = Keychain.credentials(for: address) else {
             return nil
@@ -50,9 +41,6 @@ enum ServerConnection {
     }
 
     /// `validate(_:)` fetches `server`'s capabilities and reports whether its major version meets `InfoPlist.minimumSupportedServerMajorVersion`.
-    ///
-    /// It rethrows any error raised while fetching the capabilities so callers can distinguish an unreachable or unauthorized server from an unsupported one.
-    /// It writes nothing anywhere. macOS wants a validation to also record the server's theming and version, and gets that from `validateAndPersist(_:)`, which wraps this; keeping the two apart is what lets iOS — which persists neither — reuse the check itself.
     static func validate(_ server: Server) async throws -> ValidationOutcome {
         logger.info("Validating server capabilities")
 
@@ -70,8 +58,6 @@ enum ServerConnection {
     }
 
     /// `revokeAppPassword(using:)` asks the server to revoke the Login Flow v2 app password `server` is currently authenticated with, so the credential the app is about to discard locally is also invalidated on the server.
-    ///
-    /// `AppDelegate.logOut()` on macOS and `Store.logout()` on iOS call this as a best-effort step: failures are logged and swallowed rather than thrown, because Nextcloud's own guidance is that app-password revocation is fail-open — if the server cannot be reached or rejects the request, the client should still remove the credential locally regardless. `server` must already carry the credentials to revoke, obtained via `authenticated(address:)` before the caller clears them from `Keychain`; this method never re-reads `Keychain` itself, so it stays valid to call even after the credential has been cleared locally.
     static func revokeAppPassword(using server: Server) async {
         do {
             try await server.deleteAppPassword()
@@ -82,11 +68,6 @@ enum ServerConnection {
     }
 
     /// `verifyAppPassword(at:as:)` asks the server at `address` whether it still accepts `credentials`, by making one authenticated request with them and reading the answer.
-    ///
-    /// Both web views call it before they sign anybody out, because a web view on its own can only infer that the app password was refused, and that inference was wrong on 2026-10-09: the page's own script superseded the silent retry before it ever reached the network, and its next redirect to the sign-in form was counted against a password the server still accepted.
-    /// The request is `Server.currentUser()`, `GET /ocs/v2.php/cloud/user`, because it asks the most direct question there is, who the credentials sign in as, requires a login, depends on no optional app, and sends no cookies, so the web view's lapsed browser session cannot colour the answer. `validate(_:)` is no substitute: the capabilities endpoint answers without credentials, so its success proves nothing about them.
-    /// Only HTTP 401 is `rejected`. `RainmakerError.credentialsRequired` is deliberately `undetermined`, unlike every other place that classifies a refusal: it is raised locally before anything is sent, so the server never answered.
-    /// It is nonisolated and builds its own `Server`, the way `UnreadNotifications.fetch(reason:)` does, so that nothing which is not `Sendable` crosses into or out of the caller's isolation.
     static func verifyAppPassword(at address: URL, as credentials: Credentials) async -> AppPasswordVerdict {
         let started = ContinuousClock.now
         let server = Server(address: address, password: credentials.appPassword, user: credentials.user, userAgent: userAgent)
@@ -112,8 +93,6 @@ enum ServerConnection {
     }
 
     /// `userAgent` is the HTTP user agent Cirruscope presents to the server, taken from `InfoPlist.applicationName`.
-    ///
-    /// It deliberately does not read `CFBundleName`, which Xcode derives from `PRODUCT_NAME`: this type is compiled into the widget extension too, where that resolves to `Widgets` and every request the extension makes would name itself that in the server's session list.
     static var userAgent: String {
         InfoPlist.applicationName
     }

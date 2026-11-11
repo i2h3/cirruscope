@@ -6,8 +6,6 @@ import SwiftData
 
 extension SchemaV3 {
     /// `KeyboardShortcut` is the v3 record for a keyboard shortcut keyed by its app's identifier exactly as it shipped in `1.2.0` and `1.2.1`.
-    ///
-    /// It is a frozen copy; see `SchemaV3` for why it never changes.
     @Model
     final class KeyboardShortcut {
         /// `appID` is the Nextcloud app identifier (e.g. `"files"`) this shortcut opens, unique among the shortcuts so there is at most one per app.

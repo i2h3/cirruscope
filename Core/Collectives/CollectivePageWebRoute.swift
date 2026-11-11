@@ -5,16 +5,10 @@ import Foundation
 
 /// `CollectivePageWebRoute` is where one page within a collective lives in the web interface.
 ///
-/// This was for a long time the one address in the app not read out of the owning app's own routing, because the Collectives app declares only a catch-all on the server and decides the rest in its Vue router. It is now read out of that router — `src/router.js` in `nextcloud/collectives` — so the caveat is retired. Every collective route there carries the same two children, in this order:
-///
 ///     { path: ':pageSlug-:pageId(\\d+)', component: CollectiveView },
 ///     { path: ':page(.*)', component: CollectiveView },
-///
-/// So a page is addressed by `<slug>-<id>` where it has a slug, and by a path otherwise. The first is what this builds wherever it can: it is unambiguous, both halves come from the server, and it is the form the app's own links carry. The second is the fallback for a server whose Collectives app predates slugs, and is the whole ancestor chain — which is what the earlier, derived version of this route built for every page, and why pages that resolved perfectly well still opened the wrong thing on an instance that had slugs.
 enum CollectivePageWebRoute {
     /// `pathComponents(forFileName:filePath:)` are the segments addressing a page by its place in the collective, for a server that gave it no slug.
-    ///
-    /// The folder comes first and the file second, with one exception. A page that has subpages is stored as the index file of a folder named after itself, and that file is always called `Readme.md`, so appending its name would repeat the page's own title in the path. The file name is therefore dropped for exactly that case, rather than for every page whose path is non-empty.
     static func pathComponents(forFileName fileName: String, filePath: String) -> [String] {
         var components = filePath.split(separator: "/", omittingEmptySubsequences: true).map(String.init)
 
