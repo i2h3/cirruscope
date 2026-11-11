@@ -84,7 +84,7 @@ enum ServerConnection {
     /// `verifyAppPassword(at:as:)` asks the server at `address` whether it still accepts `credentials`, by making one authenticated request with them and reading the answer.
     ///
     /// Both web views call it before they sign anybody out, because a web view on its own can only infer that the app password was refused, and that inference was wrong on 2026-10-09: the page's own script superseded the silent retry before it ever reached the network, and its next redirect to the sign-in form was counted against a password the server still accepted.
-    /// The request is `Server.navigation()`, `GET /ocs/v2.php/core/navigation/apps`, because it requires a login, depends on no optional app, and sends no cookies, so the web view's lapsed browser session cannot colour the answer. `validate(_:)` is no substitute: the capabilities endpoint answers without credentials, so its success proves nothing about them. Once Rainmaker 5 is adopted, `currentUser()` (`/ocs/v2.php/cloud/user`) is the more direct question.
+    /// The request is `Server.currentUser()`, `GET /ocs/v2.php/cloud/user`, because it asks the most direct question there is, who the credentials sign in as, requires a login, depends on no optional app, and sends no cookies, so the web view's lapsed browser session cannot colour the answer. `validate(_:)` is no substitute: the capabilities endpoint answers without credentials, so its success proves nothing about them.
     /// Only HTTP 401 is `rejected`. `RainmakerError.credentialsRequired` is deliberately `undetermined`, unlike every other place that classifies a refusal: it is raised locally before anything is sent, so the server never answered.
     /// It is nonisolated and builds its own `Server`, the way `UnreadNotifications.fetch(reason:)` does, so that nothing which is not `Sendable` crosses into or out of the caller's isolation.
     static func verifyAppPassword(at address: URL, as credentials: Credentials) async -> AppPasswordVerdict {
@@ -94,7 +94,7 @@ enum ServerConnection {
         logger.notice("Asking the server whether it still accepts the stored app password")
 
         do {
-            _ = try await server.navigation()
+            _ = try await server.currentUser()
             logger.notice("The server accepted the stored app password in \(Self.milliseconds(since: started), privacy: .public) ms")
             return .accepted
         } catch RainmakerError.unexpectedStatus(code: 401) {
