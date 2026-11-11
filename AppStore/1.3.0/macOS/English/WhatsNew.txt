@@ -2,3 +2,4 @@
 • Now removing a Nextcloud notification Cirruscope showed while no window was open from Notification Center once you dismiss it in Nextcloud
 • Now grouping the Nextcloud notifications Cirruscope shows while no window is open by the Nextcloud app they come from
 • Fixed the Dock badge and Nextcloud notifications not appearing after you signed in until you reopened Cirruscope
+• Now leaving “Open Link” and “Download Linked File” out of a link’s context menu, and “Back”, “Forward” and “Reload” out of a page’s, which the View menu still offers

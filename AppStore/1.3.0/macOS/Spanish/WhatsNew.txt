@@ -2,3 +2,4 @@
 • Ahora retira del Centro de notificaciones una notificación de Nextcloud que Cirruscope mostró sin ninguna ventana abierta en cuanto la descartas en Nextcloud
 • Ahora agrupa las notificaciones de Nextcloud que Cirruscope muestra sin ninguna ventana abierta según la app de Nextcloud de la que proceden
 • Corregidos el globo del Dock y las notificaciones de Nextcloud, que no aparecían tras iniciar sesión hasta volver a abrir Cirruscope
+• Ahora quita “Abrir enlace” y “Descargar archivo enlazado” del menú contextual de un enlace, y “Atrás”, “Adelante” y “Recargar” del de una página, ya que el menú Vista los sigue ofreciendo
