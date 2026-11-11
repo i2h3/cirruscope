@@ -35,7 +35,7 @@ struct NextcloudView: View {
     private var openURL
 
     ///
-    /// Whether this window is in front of the user, which is when it serves what Spotlight and the Shortcuts app ask the app to open, and whether it has gone to the background, which is when it stops.
+    /// Whether this window is in front of the user, which is when it serves what Spotlight and the Shortcuts app ask the app to open and reloads a page left blank, and whether it has gone to the background, which is when it stops.
     ///
     @Environment(\.scenePhase)
     private var scenePhase
@@ -88,6 +88,17 @@ struct NextcloudView: View {
     ///
     @State
     private var hasStarted = false
+
+    ///
+    /// Whether a terminated web content process may be answered with a reload at once, which it may from the moment this window comes to the front until it has reloaded once or gone to the background.
+    ///
+    /// WebKit reloads a page whose process ended only once the page is visible again, and only once in a while, but leaves both to an app that is told of the termination, which a `WebPage` always is.
+    /// One reload per activation keeps both: a window in the background loads nothing nobody sees under the memory pressure that ended its process, and a page that ends its own process on every load, by running out of memory for one, cannot reload without end.
+    /// Coming back to the window is what tries again, its activation reloading a page left blank whatever this says.
+    /// State rather than a reading of `scenePhase`, because the task that hears of the termination holds the view as it was when the task began, and an environment value read from that is the one it had then.
+    ///
+    @State
+    private var mayReloadAfterTermination = false
 
     ///
     /// Records this screen's activity under the `NextcloudView` category.
@@ -320,9 +331,13 @@ struct NextcloudView: View {
 
             page.load(account.authenticatedRequest(for: account.server))
         }
-        .onChange(of: scenePhase) { _, phase in
+        // Initially as well, so a window that is already in front when this screen appears may answer a terminated
+        // process at once; nothing else here acts before the session has started.
+        .onChange(of: scenePhase, initial: true) { _, phase in
             switch phase {
                 case .active:
+                    mayReloadAfterTermination = true
+
                     // A window coming to the front takes over what the App Intents layer asks the app to open, so a
                     // Spotlight result lands in the window the user was last looking at rather than in whichever
                     // appeared first.
@@ -332,7 +347,14 @@ struct NextcloudView: View {
 
                     installEntityOpener()
 
+                    // After the opener, so a request it has just loaded is not mistaken for a blank page. This is
+                    // what catches a page that went blank while the window was away: a termination heard in the
+                    // background, a reload that failed, or a termination no observer was subscribed to hear.
+                    reloadIfBlank()
+
                 case .background:
+                    mayReloadAfterTermination = false
+
                     // A window that is closed goes to the background, and that is the one signal it was seen to
                     // give: closing windows under Stage Manager did not run `onDisappear` at all. Handing the job back
                     // here means a closed window is never asked to open anything, and a request arriving while every
@@ -366,10 +388,11 @@ struct NextcloudView: View {
     ///
     /// The app's name is the shorter of the two by some way — "Files" against "Files - Nextcloud" — and this title is also the button that opens the app menu, so the space it does not take is space the app-navigation toggle and the account menu get to keep.
     /// Reading `page.url` here is what subscribes this view to it, `WebPage` being observable, exactly as reading `page.title` subscribes it to that. Nothing else in the app reads the URL from a view body, so it is worth naming the mechanism.
+    /// A page without an address falls back to the one its history is at, because a page whose web content process has ended loses its address and title but keeps its history (issue #119). An empty title is no title at all, and the app menu opens from the title, so without the fallback a blank page would also take away the menu that leads off it.
     /// The fallback is reached by more than a failure, so it has to read as a title in its own right rather than as an error, which is what `PageTitle.withoutSiteName(_:)` makes it. It covers the moment after a first sign-in before the app list has arrived — a relaunch starts from the persisted list — and the pages that genuinely belong to no app the server lists — its settings and a user's profile among them. A page that merely leaves its app's own path does not land here: a Talk conversation at `/call/<token>` resolves to Talk, the rule knowing the routes an app registers at the server's root.
     ///
     private var navigationTitle: String {
-        guard let url = page.url else {
+        guard let url = page.url ?? page.backForwardList.currentItem?.url else {
             return PageTitle.withoutSiteName(page.title)
         }
 
@@ -488,11 +511,12 @@ struct NextcloudView: View {
     }
 
     ///
-    /// Follows this screen's navigations for as long as it is on display: publishing the current measurement again each time a new document commits, and reporting the language each finished page was rendered in.
+    /// Follows this screen's navigations for as long as it is on display: publishing the current measurement again each time a new document commits, reporting the language each finished page was rendered in, and reloading the page once its web content process has been terminated.
     ///
     /// Publishing is a backstop, not the mechanism: the user script has already set the properties by the time this runs. It is here for the case where a document commits carrying a seed that predates the last measurement, and it costs nothing when it has nothing to correct. `.committed` rather than `.finished` because the document exists from that point on, well before the page has finished loading and painting.
     /// The language is reported on `.finished`, once `<html lang>` is certain to have been parsed, because a language changed in Nextcloud's personal settings only reloads the page and this is where the reload is seen arriving in it.
-    /// One loop serves both so that `page.navigations` has a single consumer.
+    /// The reload is `reloadIfBlank()`'s to make, and made only while the window is in front, as `mayReloadAfterTermination` explains, which is also when Safari reloads a tab whose process ended.
+    /// One loop serves all three so that `page.navigations` has a single consumer.
     /// The subscription is re-entered after a failure rather than abandoned, because `WebPage.navigations` reports a failed navigation by throwing, which ends the sequence — and a cancelled one counts as failed. `NextcloudNavigationDecider` cancels every sign-in redirect it intercepts, so a single expired browser session would otherwise retire both for the rest of the screen's life. The loop ends when the task is cancelled, which is when the screen goes away.
     ///
     private func followNavigations() async {
@@ -512,10 +536,58 @@ struct NextcloudView: View {
                 }
 
                 return
+            } catch WebPage.NavigationError.webContentProcessTerminated {
+                guard mayReloadAfterTermination else {
+                    Self.logger.notice("The web content process was terminated while the window was in the background or had already reloaded since it came to the front; leaving the page until it next does")
+                    continue
+                }
+
+                Self.logger.notice("The web content process was terminated")
+                mayReloadAfterTermination = false
+                reloadIfBlank()
             } catch {
                 Self.logger.debug("Navigation observation ended with \(error.localizedDescription); subscribing again")
             }
         }
+    }
+
+    ///
+    /// Load something into a page that shows nothing, which is what iOS leaves behind when it ends the page's web content process to reclaim memory, as it does to an app suspended for long enough (issue #119).
+    ///
+    /// Such a page has no document, no address and no title of its own, only the history `navigationTitle` falls back to.
+    /// The page the user was on is loaded again from its history, and the server's front page is loaded where there is none, the process having ended before the first document arrived.
+    /// Its history item rather than `WebPage.reload()`, which does nothing to a page whose process is running but has never shown a document, as a reload that failed leaves it, while still reporting a load in progress, so `LoadingOverlay` would never lift.
+    /// It leaves alone a page with an address or a document on its way in, and a screen that has not started its session, since nothing may load before the first measurement.
+    ///
+    private func reloadIfBlank() {
+        guard hasStarted else {
+            Self.logger.notice("Not reloading the page, as this screen has not started its session")
+            return
+        }
+
+        guard page.url == nil else {
+            Self.logger.debug("Not reloading the page, as it has an address")
+            return
+        }
+
+        guard page.isLoading == false else {
+            Self.logger.notice("Not reloading the blank page, as a document is on its way in")
+            return
+        }
+
+        guard let account = store.account else {
+            Self.logger.notice("Not reloading the blank page, as no account is configured")
+            return
+        }
+
+        guard let item = page.backForwardList.currentItem else {
+            Self.logger.notice("The page is blank and has no history; loading the server's front page")
+            page.load(account.authenticatedRequest(for: account.server))
+            return
+        }
+
+        Self.logger.notice("The page is blank; loading the one it showed from its history")
+        page.load(item)
     }
 
     ///
