@@ -33,8 +33,8 @@ extension ServerConnection {
             await record("the notes", fetchedFrom: address, as: credentials) {
                 AccountStore.shared.persist(notes: stored)
             }
-        } catch RainmakerError.notFound {
-            logger.notice("The notes endpoint answered 404, so the app is absent or disabled; dropping anything stored for it")
+        } catch RainmakerError.appUnavailable {
+            logger.notice("The notes endpoint was not served by the Notes app, so the app is absent or disabled; dropping anything stored for it")
 
             await record("the absence of the Notes app", fetchedFrom: address, as: credentials) {
                 AccountStore.shared.deleteNotes()

@@ -1096,7 +1096,7 @@
 			repositoryURL = "https://github.com/i2h3/rainmaker";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 4.1.0;
+				minimumVersion = 5.0.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

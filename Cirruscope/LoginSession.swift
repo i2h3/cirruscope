@@ -44,7 +44,7 @@ final class LoginSession: NSObject {
 
     /// `signIn(to:)` runs Nextcloud's Login Flow v2 against `server` and returns the credentials the grant produced.
     ///
-    /// Login Flow v2 never invokes the session's `nc` callback URL, so a successful `server.poll(_:token:)` is what signals completion; the session is then dismissed by the `defer`. It throws `CirruscopeError.loginCancelled` if the user dismisses the sheet and `CirruscopeError.loginTimedOut` if the grant is not completed in time.
+    /// Login Flow v2 never invokes the session's `nc` callback URL, so a result from `server.poll(_:)` is what signals completion; the session is then dismissed by the `defer`. It throws `CirruscopeError.loginCancelled` if the user dismisses the sheet and `CirruscopeError.loginTimedOut` if the grant is not completed in time.
     private func signIn(to server: Server) async throws -> LoginResult {
         let flow = try await server.login()
 
@@ -89,7 +89,7 @@ final class LoginSession: NSObject {
 
     /// `pollForCredentials(on:flow:)` polls `server`'s login endpoint until the user completes the grant, returning the resulting credentials.
     ///
-    /// While the grant is pending the endpoint yields no result and `server.poll(_:token:)` throws, so every failure is treated as "keep polling". It stops with `CirruscopeError.loginCancelled` if the user dismisses the sheet and `CirruscopeError.loginTimedOut` after a few minutes without completion.
+    /// While the grant is pending `server.poll(_:)` answers `nil`, and every error it throws is treated as "keep polling" too, so a transient network failure does not end the sign-in. It stops with `CirruscopeError.loginCancelled` if the user dismisses the sheet and `CirruscopeError.loginTimedOut` after a few minutes without completion.
     private func pollForCredentials(on server: Server, flow: LoginFlow) async throws -> LoginResult {
         let clock = ContinuousClock()
         let deadline = clock.now.advanced(by: .seconds(300))
@@ -101,7 +101,7 @@ final class LoginSession: NSObject {
                 throw CirruscopeError.loginCancelled
             }
 
-            if let result = try? await server.poll(flow.endpoint, token: flow.token) {
+            if let result = try? await server.poll(flow) {
                 logger.debug("Sign-in granted; received credentials")
                 return result
             }
