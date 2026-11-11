@@ -42,7 +42,7 @@ struct StoreMigrationTests {
     // The fix is a store fixture written by a real `1.0.0` build and committed, rather than one synthesized here:
     // it removes the seeding step this case dies in, and tests something stronger besides — a store the shipped
     // app actually wrote. Until then nothing automated covers a `1.0.0` store passing through every stage in one
-    // open, and the cases that remain pin the shipped `1.1.0` shape, the intermediate step and the current one.
+    // open, and the cases that remain pin the shipped `1.1.0` and `1.2.x` shapes, the intermediate step and the current one.
 
     @Test(.disabled("Seeding a 1.0.0-shaped store and migrating it in one process survives no concurrent test execution; see the note above."))
     func `A store written by 1.0.0 keeps its account and apps, and its shortcuts on the device, when it is opened by the current build`() throws {
@@ -187,6 +187,51 @@ struct StoreMigrationTests {
     }
 
     @Test
+    func `A store written by 1.2 keeps everything it holds and learns who the account signs in as later`() throws {
+        let modification = Date(timeIntervalSince1970: 1_790_000_000)
+
+        try harness.seed(Schema(versionedSchema: SchemaV3.self)) { context in
+            let account = SchemaV3.Account(serverAddress: URL(string: "https://cloud.example.com"), serverVersion: "34.0.0")
+            context.insert(account)
+
+            context.insert(SchemaV3.ServerApp(appID: "files", order: 0, href: "/apps/files/", name: "Files", account: account))
+            context.insert(SchemaV3.TalkConversation(token: "abc123", name: "Team", kind: 2, lastActivity: modification, avatarVersion: "1", account: account))
+            context.insert(SchemaV3.ServerNote(noteID: 7, title: "Groceries", category: "", isFavorite: true, isReadOnly: false, modification: modification, account: account))
+
+            let collective = SchemaV3.ServerCollective(collectiveID: 3, name: "Cookbook", slug: "cookbook", account: account)
+            context.insert(collective)
+            context.insert(SchemaV3.ServerCollectivePage(pageID: 11, title: "Bread", fileName: "Bread.md", filePath: "", isLandingPage: false, modification: modification, collective: collective))
+
+            context.insert(SchemaV3.KeyboardShortcut(appID: "files", keyEquivalent: "1", modifierFlags: 1_048_576))
+            context.insert(SchemaV3.DevicePreferences(translucentAppearance: true, removeGaps: false))
+        }
+
+        try harness.open(AppDatabase.schema, migrationPlan: CirruscopeMigrationPlan.self) { context in
+            let accounts = try context.fetch(FetchDescriptor<Account>())
+            #expect(accounts.count == 1)
+            #expect(accounts.first?.serverAddress == URL(string: "https://cloud.example.com"))
+            #expect(accounts.first?.serverVersion == "34.0.0")
+
+            // Nothing is invented for the identity: the next refresh asks the server for it.
+            #expect(accounts.first?.userID == nil)
+            #expect(accounts.first?.userDisplayName == nil)
+
+            #expect(try context.fetch(FetchDescriptor<ServerApp>()).map(\.appID) == ["files"])
+            #expect(try context.fetch(FetchDescriptor<TalkConversation>()).map(\.token) == ["abc123"])
+            #expect(try context.fetch(FetchDescriptor<ServerNote>()).map(\.noteID) == [7])
+            #expect(try context.fetch(FetchDescriptor<ServerCollective>()).first?.pages.map(\.pageID) == [11])
+
+            let shortcuts = try context.fetch(FetchDescriptor<KeyboardShortcut>())
+            #expect(shortcuts.map(\.appID) == ["files"])
+            #expect(shortcuts.first?.keyEquivalent == "1")
+
+            let preferences = try context.fetch(FetchDescriptor<DevicePreferences>())
+            #expect(preferences.first?.translucentAppearance == true)
+            #expect(preferences.first?.removeGaps == false)
+        }
+    }
+
+    @Test
     func `A store created by the current build carries the current schema version`() throws {
         try harness.seed(AppDatabase.schema) { context in
             context.insert(Account(serverAddress: URL(string: "https://cloud.example.com")))
@@ -199,6 +244,6 @@ struct StoreMigrationTests {
 
         // Pins what `AppDatabase` actually hands the container, so the day a new schema is introduced without the
         // app being pointed at it, this fails rather than the app quietly continuing to write the older shape.
-        #expect(AppDatabase.schema.version == SchemaV3.versionIdentifier)
+        #expect(AppDatabase.schema.version == SchemaV4.versionIdentifier)
     }
 }

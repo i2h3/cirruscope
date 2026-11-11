@@ -113,7 +113,7 @@ A value identical to English is deliberate rather than a gap in four cases:
 
 - the brand name, `Cirruscope`;
 - a placeholder example URL, such as `https://your.nextcloud.com` and `https://cloud.example.tld`;
-- a storyboard object whose text is fully overwritten at runtime or never shown, such as the `File Name`, `App Name` and `Size or progress description` cells and the `Main Menu` title;
+- a storyboard object whose text is fully overwritten at runtime or never shown, such as the `File Name`, `App Name` and `Size or progress description` cells, the General settings tab's `User Name` and the `Main Menu` title;
 - a genuine cognate, where that language's correct word is spelled the same, such as French `Services`, `Format` and `Ligatures`, German `Text`, and Spanish `General`.
 
 The check reports these on every run, so a run over complete catalogs is not silent; compare its output with a run from before the change.

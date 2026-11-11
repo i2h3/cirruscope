@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="24765" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="25408" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24765"/>
-        <plugIn identifier="com.apple.WebKit2IBPlugin" version="24765"/>
+        <deployment identifier="macosx"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="25408"/>
+        <plugIn identifier="com.apple.WebKit2IBPlugin" version="25408"/>
         <capability name="Image references" minToolsVersion="12.0"/>
         <capability name="System colors introduced in macOS 10.14" minToolsVersion="10.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -917,28 +918,25 @@
             <objects>
                 <viewController id="M8w-Tj-wCV" userLabel="General Settings" customClass="GeneralSettingsViewController" customModule="Cirruscope" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" translatesAutoresizingMaskIntoConstraints="NO" id="z5Z-wa-TqO">
-                        <rect key="frame" x="0.0" y="0.0" width="440" height="133"/>
+                        <rect key="frame" x="0.0" y="0.0" width="440" height="116"/>
                         <subviews>
-                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="fJw-we-GPe">
-                                <rect key="frame" x="350" y="20" width="70" height="24"/>
-                                <buttonCell key="cell" type="push" title="Log out" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="i91-lg-qlx">
-                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                    <font key="font" metaFont="system"/>
-                                </buttonCell>
-                                <connections>
-                                    <action selector="logOut:" target="M8w-Tj-wCV" id="nRb-ku-8kw"/>
-                                </connections>
-                            </button>
-                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="xMK-P6-2OJ">
-                                <rect key="frame" x="18" y="97" width="132" height="16"/>
-                                <textFieldCell key="cell" lineBreakMode="clipping" title="You are logged in on:" id="QBm-XH-EVn">
-                                    <font key="font" metaFont="system"/>
+                            <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="eNG-Cd-6uc" userLabel="Avatar">
+                                <rect key="frame" x="20" y="62" width="32" height="37"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" secondItem="eNG-Cd-6uc" secondAttribute="height" multiplier="1:1" id="p8a-HN-aXK"/>
+                                </constraints>
+                                <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyUpOrDown" image="person.fill" catalog="system" id="GYN-yK-jMl"/>
+                            </imageView>
+                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="xMK-P6-2OJ" userLabel="User Name">
+                                <rect key="frame" x="58" y="80" width="74" height="16"/>
+                                <textFieldCell key="cell" lineBreakMode="truncatingTail" title="User Name" id="QBm-XH-EVn">
+                                    <font key="font" metaFont="systemSemibold" size="13"/>
                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                 </textFieldCell>
                             </textField>
-                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="jn8-Pv-2jp">
-                                <rect key="frame" x="20" y="73" width="154" height="16"/>
+                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="jn8-Pv-2jp" userLabel="Server Address">
+                                <rect key="frame" x="60" y="64" width="154" height="16"/>
                                 <buttonCell key="cell" type="bevel" title="https://cloud.example.tld" bezelStyle="regularSquare" alignment="center" imageScaling="proportionallyDown" inset="2" id="g6X-kk-Wil">
                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                     <font key="font" metaFont="system"/>
@@ -948,25 +946,27 @@
                                     <action selector="openServerAddress:" target="M8w-Tj-wCV" id="1mf-47-dMu"/>
                                 </connections>
                             </button>
-                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="o8O-UB-Wz8">
-                                <rect key="frame" x="18" y="52" width="398" height="13"/>
-                                <textFieldCell key="cell" title="If you log out here, Cirruscope will reset the chosen server and ask for a new one." id="BH5-Gl-U5U">
-                                    <font key="font" textStyle="footnote" name=".SFNS-Regular"/>
-                                    <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
-                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                </textFieldCell>
-                            </textField>
+                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="fJw-we-GPe" userLabel="Logout">
+                                <rect key="frame" x="350" y="20" width="70" height="24"/>
+                                <buttonCell key="cell" type="push" title="Log out" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="i91-lg-qlx">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                                <connections>
+                                    <action selector="logOut:" target="M8w-Tj-wCV" id="nRb-ku-8kw"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <constraints>
                             <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="jn8-Pv-2jp" secondAttribute="trailing" constant="20" symbolic="YES" id="0z6-K8-rEs"/>
-                            <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="o8O-UB-Wz8" secondAttribute="trailing" constant="20" symbolic="YES" id="1gz-bI-4Sk"/>
                             <constraint firstItem="jn8-Pv-2jp" firstAttribute="leading" secondItem="xMK-P6-2OJ" secondAttribute="leading" id="3KE-wJ-8lT"/>
-                            <constraint firstItem="o8O-UB-Wz8" firstAttribute="top" secondItem="jn8-Pv-2jp" secondAttribute="bottom" constant="8" symbolic="YES" id="Ffb-jw-m3s"/>
-                            <constraint firstItem="xMK-P6-2OJ" firstAttribute="leading" secondItem="z5Z-wa-TqO" secondAttribute="leading" constant="20" symbolic="YES" id="GUa-tB-BJU"/>
-                            <constraint firstItem="fJw-we-GPe" firstAttribute="top" secondItem="o8O-UB-Wz8" secondAttribute="bottom" constant="8" symbolic="YES" id="bXK-3h-6dY"/>
-                            <constraint firstItem="jn8-Pv-2jp" firstAttribute="top" secondItem="xMK-P6-2OJ" secondAttribute="bottom" constant="8" symbolic="YES" id="dh3-hg-SRb"/>
+                            <constraint firstItem="fJw-we-GPe" firstAttribute="top" secondItem="jn8-Pv-2jp" secondAttribute="bottom" constant="20" symbolic="YES" id="7Y1-oX-q7b"/>
+                            <constraint firstItem="eNG-Cd-6uc" firstAttribute="bottom" secondItem="jn8-Pv-2jp" secondAttribute="bottom" id="CiJ-Ln-Lau"/>
+                            <constraint firstItem="xMK-P6-2OJ" firstAttribute="leading" secondItem="eNG-Cd-6uc" secondAttribute="trailing" constant="8" symbolic="YES" id="GUa-tB-BJU"/>
+                            <constraint firstItem="eNG-Cd-6uc" firstAttribute="top" secondItem="z5Z-wa-TqO" secondAttribute="top" constant="20" symbolic="YES" id="MGI-Ms-S1T"/>
+                            <constraint firstItem="eNG-Cd-6uc" firstAttribute="leading" secondItem="z5Z-wa-TqO" secondAttribute="leading" constant="20" symbolic="YES" id="R86-US-etM"/>
+                            <constraint firstItem="jn8-Pv-2jp" firstAttribute="top" secondItem="xMK-P6-2OJ" secondAttribute="bottom" id="dh3-hg-SRb"/>
                             <constraint firstItem="xMK-P6-2OJ" firstAttribute="top" secondItem="z5Z-wa-TqO" secondAttribute="top" constant="20" symbolic="YES" id="hxI-bZ-unw"/>
-                            <constraint firstItem="o8O-UB-Wz8" firstAttribute="leading" secondItem="jn8-Pv-2jp" secondAttribute="leading" id="jwx-yB-XHW"/>
                             <constraint firstItem="fJw-we-GPe" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="z5Z-wa-TqO" secondAttribute="leading" constant="20" symbolic="YES" id="kQK-te-lJJ"/>
                             <constraint firstAttribute="bottom" secondItem="fJw-we-GPe" secondAttribute="bottom" constant="20" symbolic="YES" id="lPV-t3-TAk"/>
                             <constraint firstAttribute="trailing" secondItem="fJw-we-GPe" secondAttribute="trailing" constant="20" symbolic="YES" id="p7c-8f-Mg6"/>
@@ -974,7 +974,9 @@
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="avatar" destination="eNG-Cd-6uc" id="okN-kw-hE9"/>
                         <outlet property="serverAddressButton" destination="jn8-Pv-2jp" id="zJB-ho-7mt"/>
+                        <outlet property="userName" destination="xMK-P6-2OJ" id="Tfl-ND-hyM"/>
                     </connections>
                 </viewController>
                 <customObject id="dfB-2r-kth" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
@@ -1498,10 +1500,11 @@
         <image name="arrow.clockwise" catalog="system" width="14" height="16"/>
         <image name="arrow.down.circle" catalog="system" width="15" height="15"/>
         <image name="arrow.right.circle.fill" catalog="system" width="15" height="15"/>
-        <image name="gear" catalog="system" width="17" height="16"/>
+        <image name="gear" catalog="system" width="17" height="17"/>
         <image name="keyboard" catalog="system" width="19" height="13"/>
         <image name="magnifyingglass.circle.fill" catalog="system" width="20" height="20"/>
         <image name="paintpalette" catalog="system" width="18" height="15"/>
+        <image name="person.fill" catalog="system" width="14" height="14"/>
         <image name="plus" catalog="system" width="14" height="13"/>
         <image name="xmark.circle.fill" catalog="system" width="20" height="20"/>
     </resources>

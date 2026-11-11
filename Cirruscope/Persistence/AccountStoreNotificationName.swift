@@ -3,7 +3,7 @@
 
 import Foundation
 
-/// This extension declares the in-process notifications the shared layer posts, which are shared because the store is. `AccountStore` posts every one of them, and `ServerConnection` posts three of them again once pictures it fetched have landed: `serverAppsDidChange` and `donatedArtworkDidChange` after the app icons, and `conversationsDidChange` after the conversations' pictures. All seven are declared here because a name belongs in one place rather than beside whichever type happens to post it.
+/// This extension declares the in-process notifications the shared layer posts, which are shared because the store is. `AccountStore` posts every one of them, and `ServerConnection` posts four of them again once pictures it fetched have landed: `serverAppsDidChange` and `donatedArtworkDidChange` after the app icons, `conversationsDidChange` after the conversations' pictures, and `currentUserDidChange` after the account's own. All eight are declared here because a name belongs in one place rather than beside whichever type happens to post it.
 ///
 /// They sit here rather than beside the rest of the app's notification names in `macOS/Settings/NotificationName.swift` for one reason: a name has to be visible where it is posted, and the store is compiled into both apps. What observes them is partly platform code — the View menu, the Keyboard Shortcuts settings tab and the web views on macOS, the title menu and the iPad's View menu on iOS — and partly the shared Spotlight indexers, but what announces them is shared throughout, and a second declaration per platform would let the two drift on the string.
 ///
@@ -38,4 +38,9 @@ extension Notification.Name {
     /// It exists because the artwork arrives later than the data it belongs to, by two separate routes. An entity's picture needs the owning app's icon, which the app-list refresh downloads, *and* the account's server address, which is what the icons are looked up against — and an entity built before either is in place carries no picture at all and is never redrawn. Both routes have been seen in the field: a fresh install donates before any icon is on disk, and a store whose address was never recorded donates without one indefinitely. `ServerConnection` posts it once the app icons have landed, and `AccountStore` once it has corrected the account's recorded server address, which are those two routes completing.
     /// `ServerAppIndexer` deliberately does not observe it. Everything that posts this also posts `serverAppsDidChange`, which it already hears, so observing both would donate the whole app list twice for one event.
     static let donatedArtworkDidChange = Notification.Name("DonatedArtworkDidChange")
+
+    /// `currentUserDidChange` is posted by `AccountStore` whenever who the account signs in as is recorded or deleted, and by `ServerConnection` once the account's own picture has landed, so the surfaces showing the account's name and picture redraw.
+    ///
+    /// A name of its own rather than `serverAppsDidChange`, because nothing listing the apps or indexing them for Spotlight has anything to redo when the account's name or picture changes.
+    static let currentUserDidChange = Notification.Name("CurrentUserDidChange")
 }

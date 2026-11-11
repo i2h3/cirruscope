@@ -6,7 +6,7 @@ import Foundation
 import SwiftData
 import Testing
 
-/// `ConnectedAccountTests` covers the lifecycle of the single `Account` record: connecting to a server, recording its version, and deleting the account again while what was set up on the device stays.
+/// `ConnectedAccountTests` covers the lifecycle of the single `Account` record: connecting to a server, recording its version and who the account signs in as, and deleting the account again while what was set up on the device stays.
 ///
 /// The case worth the suite is about the memoized `cachedAccount`, which every read in the store goes through: deleting the account has to clear it, or a later write lands on a deleted object and the old app list comes back with it. `deleteAccount()` is exercised rather than `disconnect()` because `disconnect()` also empties the real `AssetCache` and clears the real `Keychain`.
 /// Which names a deletion announces is asserted too, because each Spotlight index listens for its own domain's name and empties only when it hears it: a deletion that announced only the server apps left every conversation, note and collective of a signed-out account in Spotlight.
@@ -32,6 +32,7 @@ struct ConnectedAccountTests {
         harness.store.persist(notes: NoteFixture.all)
         harness.store.persist(collectives: CollectiveFixture.all)
         harness.store.persist(pages: CollectiveFixture.pages, inCollective: CollectiveFixture.cookbook.id)
+        harness.store.setUser(id: "alice", displayName: "Alice Liddell")
     }
 
     @Test
@@ -101,7 +102,7 @@ struct ConnectedAccountTests {
 
         harness.store.deleteAccount()
 
-        #expect(Set(harness.announcements.dropFirst(announcedBefore)) == [.serverAppsDidChange, .conversationsDidChange, .notesDidChange, .collectivesDidChange])
+        #expect(Set(harness.announcements.dropFirst(announcedBefore)) == [.serverAppsDidChange, .conversationsDidChange, .notesDidChange, .collectivesDidChange, .currentUserDidChange])
     }
 
     @Test
@@ -137,6 +138,51 @@ struct ConnectedAccountTests {
         #expect(try separateContext.fetch(FetchDescriptor<ServerNote>()).isEmpty)
         #expect(try separateContext.fetch(FetchDescriptor<ServerCollective>()).isEmpty)
         #expect(try separateContext.fetch(FetchDescriptor<ServerCollectivePage>()).isEmpty)
+        #expect(harness.store.userID == nil)
+        #expect(harness.store.userDisplayName == nil)
+    }
+
+    @Test
+    func `Recording who the account signs in as keeps both values and announces once`() {
+        harness.store.connect(to: server)
+
+        harness.store.setUser(id: "alice", displayName: "Alice Liddell")
+
+        #expect(harness.store.userID == "alice")
+        #expect(harness.store.userDisplayName == "Alice Liddell")
+        #expect(harness.announcements == [.currentUserDidChange])
+    }
+
+    @Test
+    func `Recording the same identity again announces nothing`() {
+        harness.store.connect(to: server)
+        harness.store.setUser(id: "alice", displayName: "Alice Liddell")
+
+        harness.store.setUser(id: "alice", displayName: "Alice Liddell")
+
+        #expect(harness.announcements == [.currentUserDidChange])
+    }
+
+    @Test
+    func `A changed display name is recorded and announced`() {
+        harness.store.connect(to: server)
+        harness.store.setUser(id: "alice", displayName: "Alice Liddell")
+
+        harness.store.setUser(id: "alice", displayName: "Alice")
+
+        #expect(harness.store.userDisplayName == "Alice")
+        #expect(harness.announcements == [.currentUserDidChange, .currentUserDidChange])
+    }
+
+    @Test
+    func `Recording who the account signs in as creates no account`() throws {
+        harness.store.setUser(id: "alice", displayName: "Alice Liddell")
+
+        #expect(harness.store.userID == nil)
+        #expect(harness.notificationCount == 0)
+
+        let separateContext = ModelContext(harness.container)
+        #expect(try separateContext.fetch(FetchDescriptor<Account>()).isEmpty)
     }
 
     @Test

@@ -4,7 +4,7 @@
 import Foundation
 import SwiftData
 
-/// `Account` is the SwiftData root record for the Nextcloud account the user has connected to: the server address, its cached branding and version, and the account-scoped domain records that belong to it.
+/// `Account` is the SwiftData root record for the Nextcloud account the user has connected to: the server address, its cached branding and version, who the account signs in as, and the account-scoped domain records that belong to it.
 ///
 /// It is the anchor every record describing the server relates back to, directly or through a parent: the server apps, Talk conversations, notes and collectives each have an `account` relationship here, a collective's pages hang off it, and a later domain model gains a relationship here the same way, so each is partitioned per account for free. `AccountStore` maintains at most one `Account` today; the schema already supports several, so multi-account support later needs no migration.
 ///
@@ -29,6 +29,14 @@ final class Account {
 
     /// `themeBackgroundPlain` is the `backgroundPlain` flag from the server's `Theming` capability, indicating whether the background is a plain color rather than an image.
     var themeBackgroundPlain: Bool?
+
+    /// `userID` is the identifier the server keys the account by, as the server reports it for the signed-in credentials, or `nil` until it has been asked.
+    ///
+    /// It is not necessarily the name the account signs in with, which is what the Keychain holds: a server can accept an email address or a directory login instead, and the account's avatar is addressed by this identifier rather than by that name.
+    var userID: String?
+
+    /// `userDisplayName` is the name the server displays for the account, or `nil` until it has been asked.
+    var userDisplayName: String?
 
     /// `apps` are the Nextcloud server apps offered by this account's server; deleting the account cascades to them.
     @Relationship(deleteRule: .cascade, inverse: \ServerApp.account)
@@ -57,12 +65,16 @@ final class Account {
         serverVersion: String? = nil,
         themeBackground: String? = nil,
         themeLogo: URL? = nil,
-        themeBackgroundPlain: Bool? = nil
+        themeBackgroundPlain: Bool? = nil,
+        userID: String? = nil,
+        userDisplayName: String? = nil
     ) {
         self.serverAddress = serverAddress
         self.serverVersion = serverVersion
         self.themeBackground = themeBackground
         self.themeLogo = themeLogo
         self.themeBackgroundPlain = themeBackgroundPlain
+        self.userID = userID
+        self.userDisplayName = userDisplayName
     }
 }

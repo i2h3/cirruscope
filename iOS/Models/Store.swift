@@ -10,7 +10,7 @@ import WebKit
 ///
 /// The observable state of the iOS app, which owns the connected account and the `Rainmaker.Server` built from it.
 ///
-/// It holds a projection of the app list `AccountStore` has persisted, because SwiftUI observes this object rather than the store, and starts the notification monitor for the account it holds, whose unread count it passes on.
+/// It holds a projection of the app list and the account's photograph `AccountStore` has persisted, because SwiftUI observes this object rather than the store, and starts the notification monitor for the account it holds, whose unread count it passes on.
 /// It decides which request may open a server app, more than one menu opening one and what may carry the app password not being a rule to hold twice.
 /// It runs the app's two sign-outs: `logout()`, which the user asks for and which revokes the app password on the server, and `requireSignIn()`, which the app makes on its own once the server refuses the app password, and which the sign-in screen then explains.
 ///
@@ -63,6 +63,13 @@ class Store {
     private(set) var iconGeneration = 0
 
     ///
+    /// The photograph the signed-in account uploaded to the server, or `nil` when it has none or none has been downloaded yet.
+    ///
+    /// A projection of what `AccountStore.userPhoto` reads, for the reason `apps` is one: SwiftUI observes this object, not the store. `restored()` seeds it from what was downloaded before, so the account menu's button shows it on the first frame of a launch, the network not being involved.
+    ///
+    private(set) var accountPhoto: CGImage?
+
+    ///
     /// Rainmaker server to interact with the Nextcloud server.
     ///
     /// Kept in step with `account` rather than assigned independently, so the two can never disagree about who the app is talking to. It is built through `ServerConnection.authenticated(address:)` so its credentials and user agent are resolved exactly as macOS resolves them.
@@ -84,19 +91,33 @@ class Store {
     private var serverAppsObserver: (any NSObjectProtocol)?
 
     ///
+    /// Keeps `accountPhoto` in step with who `AccountStore` records the account signs in as, and with the photograph `ServerConnection` downloads for it.
+    ///
+    /// It is registered and kept for the reasons `serverAppsObserver` is.
+    ///
+    private var currentUserObserver: (any NSObjectProtocol)?
+
+    ///
     /// Build a store around an account that is already known, or around none.
     ///
     /// The app itself uses `restored()` instead; this initializer is what previews and tests use, so they cannot pick up whatever credentials happen to sit in the Keychain of the machine they run on.
     ///
-    init(account: ServerAccount? = nil, apps: [ServerAppTransferObject] = []) {
+    init(account: ServerAccount? = nil, apps: [ServerAppTransferObject] = [], accountPhoto: CGImage? = nil) {
         self.account = account
         self.apps = apps
+        self.accountPhoto = accountPhoto
 
         server = account.flatMap { ServerConnection.authenticated(address: $0.server) }
 
         serverAppsObserver = NotificationCenter.default.addObserver(forName: .serverAppsDidChange, object: nil, queue: nil) { [weak self] _ in
             Task { @MainActor in
                 self?.adoptPersistedApps()
+            }
+        }
+
+        currentUserObserver = NotificationCenter.default.addObserver(forName: .currentUserDidChange, object: nil, queue: nil) { [weak self] _ in
+            Task { @MainActor in
+                self?.accountPhoto = AccountStore.shared.userPhoto
             }
         }
     }
@@ -133,11 +154,11 @@ class Store {
             AccountStore.shared.disconnect()
         }
 
-        return Store(account: stored?.first, apps: AccountStore.shared.serverApps)
+        return Store(account: stored?.first, apps: AccountStore.shared.serverApps, accountPhoto: AccountStore.shared.userPhoto)
     }
 
     ///
-    /// Update the list of available Nextcloud server apps, and the icons they are shown with.
+    /// Update the list of available Nextcloud server apps, and the icons they are shown with, and who the account signs in as, with its picture.
     ///
     /// The fetch, the mapping out of `Rainmaker.NavigationItem`, the persistence and the icon download are all `ServerConnection.refreshNavigationApps(using:)`, shared with macOS. One implementation rather than one per app is deliberate: two copies of the same four steps are exactly the kind of pair that drifts, down to the order the two apps list the same apps in.
     /// Nothing is read back here. The refresh announces itself when the list lands and again when the icons do, and `adoptPersistedApps()` picks both up — so the menu still appears before the icons rather than waiting on a round trip per app.
@@ -149,6 +170,10 @@ class Store {
 
         Task {
             await ServerConnection.refreshNavigationApps(using: server)
+
+            // Straight after the apps, which repair a store that never learned its address, and before the Spotlight
+            // domains, because the account's picture is on screen and they are not.
+            await ServerConnection.refreshCurrentUser(using: server)
 
             // After the apps, and awaited rather than run beside them, because both write to the same store on the
             // same actor and there is nothing waiting on the second: what it feeds is Spotlight and the Shortcuts
@@ -314,6 +339,7 @@ class Store {
         AccountStore.shared.disconnect()
 
         apps = []
+        accountPhoto = nil
         account = nil
     }
 }

@@ -19,8 +19,8 @@ enum AppDatabase {
 
     /// `schema` is the app's current SwiftData schema.
     ///
-    /// It is one definition rather than two because `AccountStore`'s unit tests build their own in-memory container from it (see `AccountStoreHarness`): a schema spelled out a second time on the test side would keep exercising whichever version it was written against once the app moves on. It names the newest versioned schema, `SchemaV3`; `CirruscopeMigrationPlan` migrates a store written by an older one up to it.
-    static let schema = Schema(versionedSchema: SchemaV3.self)
+    /// It is one definition rather than two because `AccountStore`'s unit tests build their own in-memory container from it (see `AccountStoreHarness`): a schema spelled out a second time on the test side would keep exercising whichever version it was written against once the app moves on. It names the newest versioned schema, `SchemaV4`; `CirruscopeMigrationPlan` migrates a store written by an older one up to it.
+    static let schema = Schema(versionedSchema: SchemaV4.self)
 
     /// `container` is the shared model container, built on first access, opened with `CirruscopeMigrationPlan` so a store written by an earlier shipped schema is migrated forward in place.
     ///
@@ -57,7 +57,7 @@ enum AppDatabase {
 
         importStore(from: ownConfiguration.url, into: sharedConfiguration.url)
 
-        logger.notice("Opening SwiftData store \"\(storeName, privacy: .public)\" in App Group \(AppGroup.identifier, privacy: .public) with schema v\(SchemaV3.versionIdentifier.description, privacy: .public) and the migration plan")
+        logger.notice("Opening SwiftData store \"\(storeName, privacy: .public)\" in App Group \(AppGroup.identifier, privacy: .public) with schema v\(SchemaV4.versionIdentifier.description, privacy: .public) and the migration plan")
 
         do {
             let container = try ModelContainer(for: schema, migrationPlan: CirruscopeMigrationPlan.self, configurations: sharedConfiguration)
