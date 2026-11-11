@@ -25,8 +25,7 @@ extension AppDelegate {
                 return hit
             }
 
-            guard item.action != #selector(performServerApp(_:)),
-                  item.keyEquivalent.isEmpty == false
+            guard item.action != #selector(performServerApp(_:)), item.keyEquivalent.isEmpty == false
             else {
                 continue
             }

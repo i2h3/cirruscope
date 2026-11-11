@@ -6,8 +6,7 @@ import Cocoa
 /// `ServerAppsViewController`'s conformance to `NSTableViewDelegate` builds each row's views: the app's icon and name in the first column and in the second a `ShortcutRecorderView` showing the shortcut that reaches the app and recording a new one into `AccountStore`, including the lookup that keeps the row from recording a combination another offered app already uses.
 extension ServerAppsViewController: NSTableViewDelegate {
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-        guard let tableColumn,
-              let columnIndex = tableView.tableColumns.firstIndex(of: tableColumn)
+        guard let tableColumn, let columnIndex = tableView.tableColumns.firstIndex(of: tableColumn)
         else {
             return nil
         }

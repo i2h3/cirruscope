@@ -52,9 +52,7 @@ class WebWindow: NSWindow {
     ///
     /// This covers the shortcut only while this window is the one AppKit offers the event to, which it is not while the page is in element fullscreen: the key window then belongs to WebKit rather than to the app. `macOSScript.sidebarShortcut` claims the keystroke from inside the page for that case, and both halves agree on which keystroke it is — this one through `WebViewController.isSidebarToggleShortcut(_:)`, the script through the same modifier set spelled out in JavaScript.
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
-        if WebViewController.isSidebarToggleShortcut(event),
-           let webViewController = contentViewController as? WebViewController
-        {
+        if WebViewController.isSidebarToggleShortcut(event), let webViewController = contentViewController as? WebViewController {
             webViewController.toggleSidebar(nil)
             return true
         }
@@ -87,8 +85,7 @@ class WebWindow: NSWindow {
         }
 
         for (index, type) in Self.buttonTypes.enumerated() {
-            guard let button = standardWindowButton(type),
-                  let superview = button.superview
+            guard let button = standardWindowButton(type), let superview = button.superview
             else {
                 continue
             }

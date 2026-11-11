@@ -393,10 +393,7 @@ class ShortcutRecorderView: NSTableCellView {
 
         // Function-region keys are stored as an unreadable Private Use Area scalar (see `functionRegionKeyNames`),
         // so substitute a friendly name for display; every other key equivalent still just displays uppercased.
-        if shortcut.keyEquivalent.unicodeScalars.count == 1,
-           let scalar = shortcut.keyEquivalent.unicodeScalars.first,
-           let name = functionRegionKeyNames[scalar]
-        {
+        if shortcut.keyEquivalent.unicodeScalars.count == 1, let scalar = shortcut.keyEquivalent.unicodeScalars.first, let name = functionRegionKeyNames[scalar] {
             result += name
         } else {
             result += shortcut.keyEquivalent.uppercased()

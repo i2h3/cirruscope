@@ -301,11 +301,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
 
     /// `cachedBackgroundImage()` returns the cached theming background image, or `nil` when the server publishes a plain color, the background is not an `http`/`https` image URL, or no cached copy exists yet.
     private func cachedBackgroundImage() -> NSImage? {
-        guard AccountStore.shared.themeBackgroundPlain != true,
-              let background = AccountStore.shared.themeBackground,
-              let url = URL(string: background),
-              url.scheme == "http" || url.scheme == "https",
-              let localURL = AssetCache.shared.localURL(for: url)
+        guard AccountStore.shared.themeBackgroundPlain != true, let background = AccountStore.shared.themeBackground, let url = URL(string: background), url.scheme == "http" || url.scheme == "https", let localURL = AssetCache.shared.localURL(for: url)
         else {
             return nil
         }
@@ -724,8 +720,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     func userContentController(_: WKUserContentController, didReceive message: WKScriptMessage) {
         switch ScriptMessageName(rawValue: message.name) {
             case .windowDrag:
-                guard let window = view.window,
-                      let event = NSApp.currentEvent
+                guard let window = view.window, let event = NSApp.currentEvent
                 else {
                     return
                 }
