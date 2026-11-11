@@ -154,8 +154,8 @@ xcodebuild test -project Cirruscope.xcodeproj -scheme 'Cirruscope for macOS' -co
 xcodebuild test -project Cirruscope.xcodeproj -scheme 'Cirruscope for iOS' -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -allowProvisioningUpdates
 ```
 
-The iOS run needs a concrete Simulator.
-Substitute whatever device is installed.
+The iOS run needs a concrete Simulator running iOS 27 or newer, the iOS app's deployment target.
+Substitute whatever such device is installed.
 Never strip signing from a run, or from a build of either app, with `CODE_SIGNING_ALLOWED=NO` or an empty `CODE_SIGN_ENTITLEMENTS`: what that produces is an unentitled build, which traps at launch.
 
 **What to test.**

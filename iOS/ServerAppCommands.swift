@@ -40,7 +40,6 @@ struct ServerAppCommands: Commands {
             .disabled(page == nil)
             // iPadOS 27 hides the images of menu bar items by default, and SwiftUI turns this label style into the
             // preference that shows them anyway — the same exception the Mac's View menu makes for these items alone.
-            // On iPadOS 26, which shows them regardless, it changes nothing.
             .labelStyle(.titleAndIcon)
             // The icons are bitmaps rendered at the display scale their view is given, and this content is given
             // SwiftUI's default of one, being in no window. The window in front knows its screen's real scale.
