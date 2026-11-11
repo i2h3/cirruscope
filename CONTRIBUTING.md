@@ -110,7 +110,7 @@ The Mac and the iOS Simulator are not affected.
   xcodebuild test -project Cirruscope.xcodeproj -scheme 'Cirruscope for iOS' -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -allowProvisioningUpdates
   ```
 
-  Substitute any iPhone Simulator you have installed for `iPhone 17`.
+  Substitute any iPhone Simulator running iOS 27 or newer you have installed for `iPhone 17`.
   See [AGENTS.md → Platform Scope](./AGENTS.md#platform-scope) for why shared placement is the default and what each shared folder is allowed to depend on.
 - Changing Swift-only logic that needs no server or web view — shortcut handling, string rendering, pure decision functions — means adding or updating its tests in the same pull request.
   The WebKit-facing code is deliberately not unit-tested; see [AGENTS.md → Testing](./AGENTS.md#testing) for where the line sits and why.

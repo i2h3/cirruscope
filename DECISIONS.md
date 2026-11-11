@@ -156,6 +156,15 @@ None of this changes the public story, and deliberately so: the [FAQ on the webs
 That the two apps share one bundle identifier is deliberate too, and is what App Store Connect requires to offer them as a single app record rather than two unrelated listings.
 Provisioning profiles are per platform even so, and no target names one: automatic signing creates and selects a profile for each platform a target is built for, the widget extension's two included, and refuses a profile named by hand once a team is set.
 
+## Why does the iOS app require iOS 27 while the Mac app still runs on macOS 26?
+
+Because the iOS app has not been released, so nobody is left behind by raising it, while the Mac app has users on macOS 26.
+Every availability branch costs a second code path that has to be written, kept correct and tested on an older system, and for an unreleased side product that cost buys nothing.
+Building on iOS 27 alone lets the iOS app use what it introduced directly, such as a toolbar item without its padding for the account's picture.
+
+The Mac app keeps macOS 26, so shared code that uses something newer still gates it on macOS, as the Spotlight indexing descriptions do.
+The cost accepted is that the iOS app, and its test run, need a device or Simulator on iOS 27 or newer.
+
 ## Why one widget extension for both platforms, and not one per platform?
 
 Because there is nothing platform-specific to separate.
@@ -1316,7 +1325,7 @@ That is the compiler's requirement rather than a second behaviour: the property 
 SwiftUI has no modifier named for the property.
 It has the label style, and turns `.titleAndIcon` into an element whose image is visible, `.titleOnly` into one whose image is hidden, and anything else into the automatic default.
 That mapping was read out of SwiftUI's binaries rather than out of any documentation, so it is the kind of assumption that deserves checking on screen whenever the SDK moves.
-The iPad's View menu applies `.labelStyle(.titleAndIcon)` to its server-app items, and on iPadOS 26, which draws menu images regardless, the modifier changes nothing.
+The iPad's View menu applies `.labelStyle(.titleAndIcon)` to its server-app items.
 The navigation bar's title menu is left to the default, which on iOS 27 still draws its images; should that change, moving the modifier into `ServerAppMenuItems`, which both menus share, covers both at once.
 
 Two limits are accepted.
