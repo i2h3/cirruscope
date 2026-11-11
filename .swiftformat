@@ -5,6 +5,7 @@
 
 --complex-attributes prev-line
 --computed-var-attributes prev-line
+--disable repeatedGuard
 --enable blankLinesBetweenScopes
 --enable blockComments
 --enable wrapConditionalBodies
