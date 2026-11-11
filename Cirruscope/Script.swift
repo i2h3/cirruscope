@@ -91,8 +91,7 @@ enum Script: String {
     ///
     private var resourceContents: String? {
         guard
-            let url = Bundle.main.url(forResource: rawValue, withExtension: resourceExtension),
-            let contents = try? String(contentsOf: url, encoding: .utf8)
+            let url = Bundle.main.url(forResource: rawValue, withExtension: resourceExtension), let contents = try? String(contentsOf: url, encoding: .utf8)
         else {
             Self.logger.error("Could not load bundled resource \(self.rawValue).\(self.resourceExtension)")
             return nil

@@ -175,10 +175,7 @@ extension WebViewController: WKNavigationDelegate {
             return
         }
 
-        if let response = navigationResponse.response as? HTTPURLResponse,
-           let disposition = response.value(forHTTPHeaderField: "Content-Disposition"),
-           disposition.lowercased().hasPrefix("attachment")
-        {
+        if let response = navigationResponse.response as? HTTPURLResponse, let disposition = response.value(forHTTPHeaderField: "Content-Disposition"), disposition.lowercased().hasPrefix("attachment") {
             logger.debug("Response is marked as an attachment; starting a download and cancelling the navigation (WebViewController \(self.logID))")
             startDownload(from: navigationResponse.response.url, in: webView)
             decisionHandler(.cancel)

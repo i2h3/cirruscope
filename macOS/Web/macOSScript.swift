@@ -44,8 +44,7 @@ enum macOSScript: String {
     /// It is read lazily at the point of use so edits to the underlying `.js` file take effect without any change to Swift source.
     var source: String? {
         guard
-            let url = Bundle.main.url(forResource: rawValue, withExtension: "js"),
-            let source = try? String(contentsOf: url, encoding: .utf8)
+            let url = Bundle.main.url(forResource: rawValue, withExtension: "js"), let source = try? String(contentsOf: url, encoding: .utf8)
         else {
             Self.logger.error("Could not load bundled script resource \(rawValue).js")
             return nil
