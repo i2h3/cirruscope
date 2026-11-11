@@ -1322,7 +1322,7 @@
                             <visualEffectView blendingMode="behindWindow" material="sidebar" state="followsWindowActiveState" translatesAutoresizingMaskIntoConstraints="NO" id="rVl-e1-PW7">
                                 <rect key="frame" x="0.0" y="0.0" width="1200" height="800"/>
                             </visualEffectView>
-                            <wkWebView hidden="YES" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="edZ-kL-6y2">
+                            <wkWebView hidden="YES" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="edZ-kL-6y2" customClass="CirruscopeWebView" customModule="Cirruscope" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="1200" height="800"/>
                                 <wkWebViewConfiguration key="configuration" applicationNameForUserAgent="Version/18.0 Safari/605.1.15">
                                     <audiovisualMediaTypes key="mediaTypesRequiringUserActionForPlayback" none="YES"/>

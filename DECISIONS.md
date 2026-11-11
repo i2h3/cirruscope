@@ -1170,6 +1170,25 @@ The cost accepted is that someone used to logging out of Nextcloud in a browser 
 
 The iOS stylesheet has no such rule, since it hides Nextcloud's header, the account menu with it, and the app's own Account menu in the toolbar takes its place.
 
+## Why does the Mac web view drop some items from its context menu instead of replacing the menu?
+
+Because those items do not belong in Cirruscope, and dropping them keeps every other item exactly as the system builds it.
+
+Right-clicking a link in the Mac web view offers "Open Link", which navigates the page the link is on, beside "Open Link in New Window", and "Download Linked File".
+Safari and the other browsers have no "Open Link", so it collided with muscle memory and convention, and a menu item downloading the linked file has no place in Cirruscope's interface.
+Right-clicking a page offers "Back", "Forward" and "Reload", which move the web view closer to a browser than to the app it is meant to feel like, and the View menu keeps all three.
+User feedback asked for all five to be gone.
+A click on an empty part of a page offers nothing but those three, so it now shows no menu at all, which is how an app behaves.
+The Mac gives a web view no delegate for its context menu.
+The one the iOS web view has is for iOS alone, and what it asks for is a whole menu, with no way to start from the default one.
+So the Mac web view is a [small subclass](./macOS/Web/CirruscopeWebView.swift) that lets the system build the menu and removes those items right before it is shown, and the separators they leave behind with them.
+Everything else the menu holds stays, localized and current, without the app having to track it, including whatever a later macOS adds.
+
+The trade-off is that the items are recognized by identifiers the system sets on them but does not document.
+A macOS release that renamed one would quietly bring its item back, and nothing would break.
+Nothing tests it, since the menu only exists while a real web view is being right-clicked, so the first right-click on a link after a new macOS release is the check.
+iOS is untouched: its web view is SwiftUI's, which offers no way to trim a menu.
+
 ## Why does a Spotlight tap resolve what it opens by entity *type*, and refuse a selection that carries no type?
 
 Because an identifier is unique within a type and not across them, and reading one without its type is how four of the five kinds of result came to open nothing at all.

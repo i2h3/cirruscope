@@ -2,3 +2,4 @@
 • Entfernt eine Nextcloud-Benachrichtigung, die Cirruscope ohne geöffnetes Fenster angezeigt hat, jetzt aus der Mitteilungszentrale, sobald du sie in Nextcloud verwirfst
 • Gruppiert die Nextcloud-Benachrichtigungen, die Cirruscope ohne geöffnetes Fenster anzeigt, jetzt nach der Nextcloud-App, aus der sie stammen
 • Behoben, dass nach der Anmeldung weder das Kennzeichen auf dem Symbol im Dock noch Nextcloud-Benachrichtigungen erschienen, bis du Cirruscope erneut geöffnet hast
+• Entfernt jetzt „Link öffnen“ und „Verknüpfte Datei laden“ aus dem Kontextmenü eines Links sowie „Zurück“, „Vorwärts“ und „Neu laden“ aus dem Kontextmenü einer Seite, da diese im Menü „Darstellung“ bleiben
