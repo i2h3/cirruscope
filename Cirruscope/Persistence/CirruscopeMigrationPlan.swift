@@ -6,7 +6,7 @@ import os
 import SwiftData
 import Synchronization
 
-/// `CirruscopeMigrationPlan` carries Cirruscope's SwiftData store forward across every schema it has ever had: `SchemaV1` (the shipped `1.0.0` schema), `SchemaV2` (the shipped `1.1.0` one), `SchemaV2_1` (an intermediate step no build runs on), and `SchemaV3` (the current one), preserving the keyboard shortcuts and appearance settings users set up along the way.
+/// `CirruscopeMigrationPlan` carries Cirruscope's SwiftData store forward across every schema it has ever had: `SchemaV1` (the shipped `1.0.0` schema), `SchemaV2` (the shipped `1.1.0` one), `SchemaV2_1` (an intermediate step no build runs on), `SchemaV3` (the shipped `1.2.0` and `1.2.1` one), and `SchemaV4` (the current one), preserving the keyboard shortcuts and appearance settings users set up along the way.
 ///
 /// Two of its moves are not inferable. The first renames the `AppShortcut` entity to `KeyboardShortcut`, and SwiftData has no entity-level `originalName`, so a lightweight migration would drop every row; that stage copies each row across the rename by value. The second moves the shortcuts and the appearance settings out of the account: a shortcut stops hanging off its `ServerApp` and is keyed by the app's identifier instead, which only the relationship being removed can tell it, and the appearance settings move from `Account` into a record of their own. That move goes through `SchemaV2_1`, which first adds the empty column and entity it needs, so that it can be written inside the store and saved before anything is dropped. `AppDatabase` passes this plan when opening the container, and a stage whose source version the store is already past is skipped, so a fresh install and a relaunch both run nothing.
 ///
@@ -19,12 +19,12 @@ enum CirruscopeMigrationPlan: SchemaMigrationPlan {
 
     /// `schemas` lists every versioned schema this plan spans, oldest first.
     static var schemas: [any VersionedSchema.Type] {
-        [SchemaV1.self, SchemaV2.self, SchemaV2_1.self, SchemaV3.self]
+        [SchemaV1.self, SchemaV2.self, SchemaV2_1.self, SchemaV3.self, SchemaV4.self]
     }
 
-    /// `stages` are the migration stages applied in order: the `SchemaV1` to `SchemaV2` rename, then the two steps through `SchemaV2_1` that move what the user set up on the device out of the account.
+    /// `stages` are the migration stages applied in order: the `SchemaV1` to `SchemaV2` rename, the two steps through `SchemaV2_1` that move what the user set up on the device out of the account, and the addition of the account's identity.
     static var stages: [MigrationStage] {
-        [migrateV1toV2, migrateV2toV2_1, migrateV2_1toV3]
+        [migrateV1toV2, migrateV2toV2_1, migrateV2_1toV3, migrateV3toV4]
     }
 
     /// `CapturedShortcut` is a value snapshot of one v1 `AppShortcut` — its key equivalent, modifier flags, and the `appID` of the server app it belongs to — carried from `willMigrate` to `didMigrate` across the schema change.
@@ -193,4 +193,9 @@ enum CirruscopeMigrationPlan: SchemaMigrationPlan {
             logger.notice("didMigrate (v2.1→v3): the shortcuts are keyed by app identifier and the appearance choices are device preferences; migration complete")
         }
     )
+
+    /// `migrateV3toV4` carries a v3 store into `SchemaV4`, adding the account's user identifier and display name, both optional and therefore inferred by SwiftData.
+    ///
+    /// Nothing is written: an account that arrives without its identity is asked for it on its next refresh, exactly like one that has just signed in.
+    static let migrateV3toV4 = MigrationStage.lightweight(fromVersion: SchemaV3.self, toVersion: SchemaV4.self)
 }

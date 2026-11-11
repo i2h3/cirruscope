@@ -8,7 +8,7 @@ import Rainmaker
 /// `ServerConnection`'s app half: the parts of talking to a server that also write what was learned to `AccountStore`.
 ///
 /// `ServerConnection` itself lives in `Core/` and is compiled into the widget extension as well as both apps, so it can depend on nothing the extension does not compile — and `AccountStore` is a main-actor SwiftData store only the apps have. This extension is where that dependency is allowed to exist, which is why it sits in `Cirruscope/` rather than beside the type it extends.
-/// Both apps call it. macOS refreshes the app list from `AppDelegate` and `ServerAddressViewController`, and iOS from `Store.updateApps()`, and both again through `pageFinishedLoading(in:)` when a page arrives in another language, so the list every menu on either platform draws is persisted the same way; `validateAndPersist(_:)` and `isStillSignedIn(_:)` are the parts only macOS calls.
+/// Both apps call it. macOS refreshes the app list from `AppDelegate` and `ServerAddressViewController`, and iOS from `Store.updateApps()`, each asking who the account signs in as through `refreshCurrentUser(using:)` straight afterwards, and both refresh the list again through `pageFinishedLoading(in:)` when a page arrives in another language, so the list every menu on either platform draws is persisted the same way; `validateAndPersist(_:)` and `isStillSignedIn(_:)` are the parts only macOS calls.
 /// It is also where every refresh, its per-domain siblings' included, has its writes admitted: `record(_:fetchedFrom:as:requiringStoredAccount:_:)` asks `RefreshAdmission` whether the account a refresh fetched as is still the one signed in, in the same main-actor turn as the write it allows.
 extension ServerConnection {
     /// `validateAndPersist(_:)` validates `server` and records what the validation found: its theming, and — when the version is supported — its version string.
@@ -177,6 +177,53 @@ extension ServerConnection {
             // Talk's — and none of them observes the app list. Without this second name they stay pictureless
             // until their own data next changes, which on a first launch is not until the next refresh.
             NotificationCenter.default.post(name: .donatedArtworkDidChange, object: nil)
+        }
+    }
+
+    /// `refreshCurrentUser(using:)` asks the authenticated `server` who the account signs in as, records the answer via `AccountStore.setUser(id:displayName:)`, and downloads the account's own photograph, announcing it once it has landed.
+    ///
+    /// The server is asked rather than the login name trusted, because a server can accept an email address or a directory login as the name to sign in with, and the account's picture is addressed by the identifier the server keys the account by instead.
+    /// Both apps call it straight after `refreshNavigationApps(using:)`, which is what repairs a store that never learned its own address and so has to run first: the identity is only ever recorded into a store that names the server it was fetched from.
+    /// Failures are logged and otherwise ignored, the previous identity and photograph being left in place, as the app list's are. Neither the identifier nor the names are logged, a login name being an email address as often as not.
+    static func refreshCurrentUser(using server: Server) async {
+        let address = server.address
+        let credentials = credentials(of: server)
+
+        guard await isStillSignedIn(at: address, as: credentials) else {
+            logger.notice("The account this refresh was begun for is no longer signed in; not asking who it signs in as")
+            return
+        }
+
+        let user: User
+
+        do {
+            user = try await server.currentUser()
+        } catch {
+            logger.notice("Could not ask who the account signs in as; keeping what was recorded: \(error.localizedDescription, privacy: .public)")
+            return
+        }
+
+        let recorded = await record("who the account signs in as", fetchedFrom: address, as: credentials) {
+            AccountStore.shared.setUser(id: user.id, displayName: user.displayName)
+        }
+
+        guard recorded else {
+            return
+        }
+
+        // Asked again even when the server drew a monogram for the account earlier in this process: an app runs for
+        // weeks, and a picture uploaded meanwhile should appear on the next refresh rather than after a relaunch.
+        await ServerAvatars.shared.refresh(userIDs: [user.id], size: AccountStore.userPhotoSize, on: server, askingAgain: true)
+
+        // A sign-out while the picture was downloading has emptied the caches already, and a picture that landed after
+        // it would otherwise outlive the account it shows.
+        await AccountStore.shared.forgetCachesIfSignedOut()
+
+        logger.notice("Refreshed who the account signs in as and its picture")
+
+        // Posted on the main actor for the reason `refreshServerAppIcons(from:using:)` gives.
+        await MainActor.run {
+            NotificationCenter.default.post(name: .currentUserDidChange, object: nil)
         }
     }
 

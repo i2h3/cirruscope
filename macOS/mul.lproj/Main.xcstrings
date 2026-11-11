@@ -1021,36 +1021,6 @@
         }
       }
     },
-    "BH5-Gl-U5U.title" : {
-      "comment" : "Class = \"NSTextFieldCell\"; title = \"If you log out here, Cirruscope will reset the chosen server and ask for a new one.\"; ObjectID = \"BH5-Gl-U5U\";",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wenn du dich hier abmeldest, setzt Cirruscope den gewählten Server zurück und fragt nach einem neuen."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "If you log out here, Cirruscope will reset the chosen server and ask for a new one."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Si cierras sesión aquí, Cirruscope restablecerá el servidor elegido y te pedirá uno nuevo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Si tu te déconnectes ici, Cirruscope réinitialisera le serveur choisi et en demandera un nouveau."
-          }
-        }
-      }
-    },
     "bib-Uj-vzu.title" : {
       "comment" : "Class = \"NSMenu\"; title = \"File\"; ObjectID = \"bib-Uj-vzu\";",
       "extractionState" : "extracted_with_value",
@@ -3332,31 +3302,31 @@
       }
     },
     "QBm-XH-EVn.title" : {
-      "comment" : "Class = \"NSTextFieldCell\"; title = \"You are logged in on:\"; ObjectID = \"QBm-XH-EVn\";",
+      "comment" : "Class = \"NSTextFieldCell\"; title = \"User Name\"; ObjectID = \"QBm-XH-EVn\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Du bist angemeldet bei:"
+            "value" : "User Name"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "You are logged in on:"
+            "value" : "User Name"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Has iniciado sesión en:"
+            "value" : "User Name"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tu es connecté à :"
+            "value" : "User Name"
           }
         }
       }

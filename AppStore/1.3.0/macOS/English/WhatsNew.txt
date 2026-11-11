@@ -1,3 +1,4 @@
+• Introduced your Nextcloud name and profile picture in general app settings
 • Now removing a Nextcloud notification Cirruscope showed while no window was open from Notification Center once you dismiss it in Nextcloud
 • Now grouping the Nextcloud notifications Cirruscope shows while no window is open by the Nextcloud app they come from
 • Fixed the Dock badge and Nextcloud notifications not appearing after you signed in until you reopened Cirruscope

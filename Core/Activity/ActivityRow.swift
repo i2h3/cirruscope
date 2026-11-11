@@ -21,9 +21,9 @@ struct ActivityRow: Identifiable, Hashable, Codable, Sendable {
     /// `directory` is the folder the file sits in, shown in the subtitle beside the actor, and empty for a file at the account's root.
     let directory: String
 
-    /// `actorID` is the login name of whoever acted, or `nil` when that was the signed-in user.
+    /// `actorID` is the user identifier of whoever acted, or `nil` when that was the signed-in user.
     ///
-    /// This is what an avatar is fetched and cached by, the endpoint keying on the login name rather than on the display name — two people may share the latter, and one person may change it.
+    /// This is what an avatar is fetched and cached by, the endpoint keying on the user identifier rather than on the display name — two people may share the latter, and one person may change it — or on the name they sign in with, which a server may let differ from it.
     let actorID: String?
 
     /// `actorName` is the display name of whoever acted, or `nil` when that was the signed-in user.

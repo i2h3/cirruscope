@@ -1,3 +1,4 @@
+• Nouveau : ton nom et ta photo de profil Nextcloud dans les réglages généraux de l’app
 • Retire désormais du centre de notifications une notification Nextcloud affichée par Cirruscope sans fenêtre ouverte dès que tu l’ignores dans Nextcloud
 • Regroupe désormais les notifications Nextcloud que Cirruscope affiche sans fenêtre ouverte selon l’app Nextcloud dont elles proviennent
 • Correction de la pastille du Dock et des notifications Nextcloud qui n’apparaissaient pas après ta connexion tant que tu n’avais pas rouvert Cirruscope

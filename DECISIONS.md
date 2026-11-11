@@ -228,12 +228,14 @@ So the rule is now uniform, and it has two halves.
 **Exactly one schema is live at a time**, the newest, and it references the top-level models so that `AppDatabase.schema` registers the types every `FetchDescriptor` in the app actually names.
 That second half is why freezing and succeeding are one change rather than two: the moment `SchemaV2` stopped naming the live models, something had to, or the container would have registered models no fetch could reach.
 
-`SchemaV3` is that one live schema.
+`SchemaV3` was that one live schema until `1.2.0` and `1.2.1` shipped it, and it was frozen in the change that introduced `SchemaV4`.
 It was introduced to give the freeze of `SchemaV2` a successor to hand the live types to, and it also registers `TalkConversation`, `ServerNote`, `ServerCollective` and `ServerCollectivePage`, which SwiftData infers on its own.
 It moved the keyboard shortcuts and the appearance settings out of the account as well, which it cannot infer.
 That move goes through an intermediate schema, `SchemaV2_1`, frozen from the start: a lightweight step adds an empty `appID` column and an empty `DevicePreferences` entity, and a custom step writes each shortcut's app identifier and the appearance choices into them and saves, all before the schema change that drops the relationship and the account's attributes.
 The first stage's recipe, capturing in memory and recreating afterwards, would have held the one thing a user cannot get back only in a process that might die before writing it, and a failed open would have quarantined a store that no longer contained it.
-It is where the next model or property goes — until a build carrying it ships, at which point it is frozen and `SchemaV4` is created in the same change.
+`SchemaV4` is the one live schema now.
+It adds who the account signs in as to `Account`, two optional attributes SwiftData infers, so a lightweight stage reaches it.
+It is where the next model or property goes — until a build carrying it ships, at which point it is frozen and `SchemaV5` is created in the same change.
 
 The version identifier of `SchemaV2` was deliberately *not* bumped when it was frozen.
 Stores in the field carry `2.0.0`, and the models nested into it are byte-for-byte the live models at the `1.1.0` tag, so the identity it claims is the identity those stores have.
@@ -1151,7 +1153,7 @@ And because a stylesheet can hide an entry but not remove it, the arrow keys sti
 
 Because Cirruscope is a client rather than a browser, and signing in is meant to happen once (issue #145).
 The web view widens Nextcloud's "Log out" into signing the account out of the app, which revokes its app password and deletes everything the app keeps from the server, and that entry sits one stray click below the profile and the settings.
-Signing out stays deliberate in the app's own "Log out" under Settings… > General, which says what it does next to the button.
+Signing out stays deliberate in the app's own "Log out" under Settings… > General.
 
 The Mac's stylesheet therefore hides the entry, keyed on its identifier `logout` rather than its label or address, so it stays hidden in every language and where an authentication app points the entry at an address of its own.
 The interception of the sign-out route stays as it is (see "Why does the web view intercept the sign-in and sign-out routes instead of just displaying them?"), because a link elsewhere on the server, or the page's own script, can still reach it.
@@ -1250,6 +1252,12 @@ An answer that cannot be decoded is recorded as a zero-length file under the sam
 The cache key carries the server, the account, the token and the avatar version, and names the light variant, the only one fetched: the donated artwork is opaque so that one bitmap is right in both appearances, and a dark variant would be a request per conversation for a picture nothing draws.
 Every part earns its place and the two that look redundant are the ones that do: the account, because a one-to-one conversation's picture is of *the other party* and so depends on who is signed in, and the version, because it is the only signal that a moderator changed a group's picture.
 Rainmaker states outright that the version alone is not enough — for a one-to-one conversation the server derives it from a generic icon's path, so it is identical everywhere and never moves.
+
+## Why does the account's picture come from the identifier the server reports rather than from the name it signs in with?
+
+Because the picture belongs to the account, and the account is not always called what it signs in as.
+A server can accept an email address or a login of a directory service as the name to sign in with, while it keys the account, and its picture, by an identifier of its own.
+Asking for the picture by the sign-in name works only where the two happen to agree, and quietly shows the placeholder everywhere else.
 
 ## Why is a Nextcloud app's icon a little window in Spotlight, but a bare glyph in the menus?
 

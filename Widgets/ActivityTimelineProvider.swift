@@ -121,7 +121,7 @@ struct ActivityTimelineProvider: TimelineProvider {
     /// `refreshAvatars(for:of:)` fetches the profile photograph of everybody the new rows name from `account`'s server, so the next draw has them.
     ///
     /// It runs before the entry is handed over rather than lazily from the views, because a widget's views cannot await anything: whatever is not on disk by the time the entry is returned is a monogram until the next refresh. Only actors are asked for — a row without one is the signed-in user, whose own circle the design never fills.
-    /// Failures are silent by construction. `ServerAvatars.refresh(userIDs:on:)` throws nothing, and a photograph that could not be fetched draws as the monogram the design falls back to anyway.
+    /// Failures are silent by construction. `ServerAvatars.refresh(userIDs:size:on:askingAgain:)` throws nothing, and a photograph that could not be fetched draws as the monogram the design falls back to anyway.
     private static func refreshAvatars(for rows: [ActivityRow], of account: ServerAccount) async {
         let userIDs = Set(rows.compactMap(\.actorID))
 

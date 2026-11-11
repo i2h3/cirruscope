@@ -12,6 +12,7 @@ import Synchronization
 ///
 /// It is the sibling of `ServerAppIcons` and works the same way: cached on disk under a key built from the user and the server rather than from the path they were fetched from, read synchronously because a view is drawn the moment it is asked for, and answering `nil` as an ordinary result rather than a failure.
 /// What differs is what gets cached at all. Nextcloud answers the avatar endpoint for every user it knows, drawing a monogram itself when that user uploaded nothing, so a fetch always succeeds and the bytes alone never reveal which was received. Only `UserAvatar.isCustom` does. This stores a photograph and deliberately stores nothing for a generated one, which makes a cache miss mean exactly one thing to a caller — draw your own monogram — and keeps the app's circle style from being replaced by the server's wherever somebody has no picture.
+/// Each photograph is kept at the size it was asked for: the widget's rows ask for the small rendition, and the apps' own picture of the signed-in account for the large one, which their buttons and settings would otherwise draw blurred.
 /// `ImageIO` rather than `NSImage` or `UIImage`, because this is compiled into the widget extension as well and `Core/` may depend on neither AppKit nor UIKit.
 final class ServerAvatars: Sendable {
     /// `shared` is the process-wide store of user avatars.
@@ -27,7 +28,7 @@ final class ServerAvatars: Sendable {
 
     /// `withoutPhotograph` remembers which users the server answered for with a generated monogram, so the same answer is not fetched again for the life of the process.
     ///
-    /// Without it every refresh would re-request an avatar for every user who has none, which on a feed of colleagues is most of them. It is deliberately not persisted: somebody uploading a picture should see it appear, and a process that ends is the bound on how long this can be wrong.
+    /// Without it every refresh would re-request an avatar for every user who has none, which on a feed of colleagues is most of them. It is deliberately not persisted: somebody uploading a picture should see it appear, and a widget's process that ends is the bound on how long this can be wrong. An app runs for far longer, so its refresh of the signed-in account asks again regardless, which is what `refresh(userIDs:size:on:askingAgain:)` takes the flag for.
     private let withoutPhotograph = Mutex<Set<String>>([])
 
     /// `logger` records avatar fetching and decoding under the `ServerAvatars` category.
@@ -38,11 +39,11 @@ final class ServerAvatars: Sendable {
         self.cache = cache
     }
 
-    /// `image(forUserID:serverAddress:)` is the photograph of one user as a bitmap, or `nil` when they have none or it cannot be decoded.
+    /// `image(forUserID:serverAddress:size:)` is the photograph of one user at `size` as a bitmap, or `nil` when they have none, it has not been fetched at that size, or it cannot be decoded.
     ///
     /// A `nil` is the ordinary answer, not a failure: nothing has been fetched on a first launch, and a user who uploaded no picture never gets one cached at all. Either way the caller draws its own monogram.
-    func image(forUserID userID: String, serverAddress: URL) -> CGImage? {
-        let key = Self.cacheKey(userID: userID, serverAddress: serverAddress)
+    func image(forUserID userID: String, serverAddress: URL, size: AvatarSize = .small) -> CGImage? {
+        let key = Self.cacheKey(userID: userID, serverAddress: serverAddress, size: size)
 
         if let existing = decoded.withLock({ $0[key] }) {
             return existing
@@ -62,23 +63,23 @@ final class ServerAvatars: Sendable {
         return image
     }
 
-    /// `refresh(userIDs:on:)` fetches the avatar of each named user that has not already been answered for, storing the photographs and remembering who has none.
+    /// `refresh(userIDs:size:on:askingAgain:)` fetches the avatar of each named user at `size` that has not already been answered for, or of each named user when `askingAgain` is set, storing the photographs and remembering who has none.
     ///
-    /// `server` is a `Rainmaker.Server` the caller has already built and authenticated, because this is called from a place that has just used one — a widget's timeline provider, having fetched the activity the users were named by.
+    /// `server` is a `Rainmaker.Server` the caller has already built and authenticated, because this is called from places that have just used one — a widget's timeline provider, having fetched the activity the users were named by, and the apps' refresh of the signed-in account, having asked the server who that account is.
     /// Fetches run one after another rather than concurrently. A widget refresh is not a place to open a dozen sockets at once, and the count here is bounded by the rows a layout draws.
     /// Nothing is thrown. An avatar that cannot be fetched leaves the cache as it was, and the caller draws a monogram for it, which is the same outcome as a user who has no photograph.
-    func refresh(userIDs: some Sequence<String>, on server: Server) async {
+    func refresh(userIDs: some Sequence<String>, size: AvatarSize = .small, on server: Server, askingAgain: Bool = false) async {
         let serverAddress = server.address
 
         for userID in Set(userIDs) {
-            let key = Self.cacheKey(userID: userID, serverAddress: serverAddress)
+            let key = Self.cacheKey(userID: userID, serverAddress: serverAddress, size: size)
 
-            if withoutPhotograph.withLock({ $0.contains(key) }) {
+            if askingAgain == false, withoutPhotograph.withLock({ $0.contains(key) }) {
                 continue
             }
 
             do {
-                let avatar = try await server.userAvatar(userID, size: .small, darkTheme: false)
+                let avatar = try await server.userAvatar(userID, size: size, darkTheme: false)
 
                 guard avatar.isCustom else {
                     // The server drew this one itself. Remembering that is what stops it being asked again, and discarding any
@@ -94,17 +95,17 @@ final class ServerAvatars: Sendable {
 
                 logger.debug("Cached the avatar of a user as \(avatar.contentType, privacy: .public)")
             } catch {
-                logger.notice("Could not fetch the avatar of a user: \(error.localizedDescription)")
+                logger.notice("Could not fetch the avatar of a user: \(error.localizedDescription, privacy: .public)")
             }
         }
     }
 
-    /// `forget(userIDs:serverAddress:)` removes what is cached about the named users of the server at `serverAddress`: their photographs on disk, the bitmaps decoded from them, and any remembered absence.
+    /// `forget(userIDs:serverAddress:size:)` removes what is cached about the named users of the server at `serverAddress` at `size`: their photographs on disk, the bitmaps decoded from them, and any remembered absence.
     ///
     /// It is for a refresh a sign-out overtook, whose photographs may have landed after the sign-out emptied the cache; removing only what that refresh asked for leaves alone whatever an account signed in since has cached.
-    func forget(userIDs: some Sequence<String>, serverAddress: URL) {
+    func forget(userIDs: some Sequence<String>, serverAddress: URL, size: AvatarSize = .small) {
         for userID in Set(userIDs) {
-            let key = Self.cacheKey(userID: userID, serverAddress: serverAddress)
+            let key = Self.cacheKey(userID: userID, serverAddress: serverAddress, size: size)
             cache.remove(forKey: key)
             decoded.withLock { $0[key] = nil }
             withoutPhotograph.withLock { _ = $0.remove(key) }
@@ -119,8 +120,10 @@ final class ServerAvatars: Sendable {
         withoutPhotograph.withLock { $0.removeAll() }
     }
 
-    /// `cacheKey(userID:serverAddress:)` is what an avatar is stored under: the user and the server together, so two accounts on different instances never read each other's pictures.
-    private static func cacheKey(userID: String, serverAddress: URL) -> String {
-        "avatar:\(serverAddress.absoluteString):\(userID)"
+    /// `cacheKey(userID:serverAddress:size:)` is what an avatar is stored under: the user and the server together, so two accounts on different instances never read each other's pictures, and the size, so a refresh at one size never replaces or answers for the other.
+    ///
+    /// Photographs cached before the size was part of the key are no longer read and stay on disk until the next sign-out empties the cache.
+    private static func cacheKey(userID: String, serverAddress: URL, size: AvatarSize) -> String {
+        "avatar:\(serverAddress.absoluteString):\(userID):\(size.rawValue)"
     }
 }

@@ -251,12 +251,26 @@ struct NextcloudView: View {
                             Label("Logout", systemImage: "iphone.and.arrow.forward.outward")
                         }
                     } label: {
-                        Label("Account", systemImage: "person.fill")
+                        if let photo = store.accountPhoto {
+                            // A bare image rather than a `Label`, which the bar would draw as a symbol-sized image  inside its padded glass, at the photograph's own proportions.
+                            Image(photo, scale: 1, label: Text("Account"))
+                                .renderingMode(.original)
+                                .resizable()
+                                .scaledToFill()
+                                // The size the bar draws its glass buttons at, which no API publishes.
+                                .frame(width: 44, height: 44)
+                                .clipShape(.circle)
+                        } else {
+                            Label("Account", systemImage: "person.fill")
+                        }
                     }
                     // `badge(_:)` draws nothing at all for a count of zero, so what this needs is the value itself
                     // rather than a branch around it.
                     .badge(store.unreadNotificationCount)
                 }
+                // Only for a photograph, which fills the glass circle edge to edge; the symbol keeps the margins that
+                // make its circle as large as its neighbours'.
+                .contentMarginsRemoved(store.accountPhoto != nil)
             }
             .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)

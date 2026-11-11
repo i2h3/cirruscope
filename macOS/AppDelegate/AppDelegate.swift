@@ -250,6 +250,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                         }
 
                         await ServerConnection.refreshNavigationApps(using: server)
+                        await ServerConnection.refreshCurrentUser(using: server)
                         // After the apps and after the first window is already on screen, because this is the
                         // slower of the two and nothing waits on it: what it feeds is Spotlight and the Shortcuts
                         // app, neither of which is looking yet.
@@ -542,8 +543,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @IBAction
     func performServerApp(_ sender: NSMenuItem) {
-        guard let id = sender.representedObject as? String,
-              let app = AccountStore.shared.serverApps.first(where: { $0.id == id })
+        guard let id = sender.representedObject as? String, let app = AccountStore.shared.serverApps.first(where: { $0.id == id })
         else {
             return
         }

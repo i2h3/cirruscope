@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Iva Horn
 // SPDX-License-Identifier: MIT
 
+import CoreGraphics
 import Foundation
 import os
 import Rainmaker
@@ -230,7 +231,7 @@ final class AccountStore {
     /// `deleteAccount()` deletes the account record — cascading to every record that hangs off it — drops the memoized `cachedAccount`, commits, and announces every domain the account held; the keyboard shortcuts and the appearance settings hang off nothing and are left alone.
     ///
     /// It is the storage half of `disconnect()`, separated so it can be exercised on its own: `disconnect()`'s remaining steps empty the shared caches, the widget's saved feed and the record of notifications already seen, withdraw the delivered notifications and clear the `Keychain`, none of which a test can run without destroying the developer's real data. Clearing `cachedAccount` is what keeps a later write from landing on the deleted object instead of a fresh account.
-    /// Each domain is announced under its own name because each Spotlight indexer listens for its own: announcing only the server apps left every conversation, note and collective of a signed-out account in the index.
+    /// Each domain is announced under its own name because each Spotlight indexer listens for its own: announcing only the server apps left every conversation, note and collective of a signed-out account in the index. Who the account signed in as is announced too, so the surfaces showing its name and picture fall back to their placeholders.
     func deleteAccount() {
         if let account = currentAccount(createIfNeeded: false) {
             logger.notice("Deleting the connected account and everything cascading from it")
@@ -245,6 +246,7 @@ final class AccountStore {
         notifyChange(.conversationsDidChange)
         notifyChange(.notesDidChange)
         notifyChange(.collectivesDidChange)
+        notifyChange(.currentUserDidChange)
     }
 
     // MARK: - Theming
@@ -366,6 +368,58 @@ final class AccountStore {
     func setServerVersion(_ version: String?) {
         currentAccount(createIfNeeded: true)?.serverVersion = version
         save()
+    }
+
+    // MARK: - Current User
+
+    /// `userPhotoSize` is the size the account's own picture is downloaded and read at, declared once so the refresh and every surface drawing the picture cannot disagree: the large rendition, since the smaller one is drawn blurred by both apps' buttons and settings at their screens' scales.
+    nonisolated static let userPhotoSize = AvatarSize.large
+
+    /// `userID` is the identifier the server keys the signed-in account by, or `nil` until the server has been asked.
+    var userID: String? {
+        currentAccount(createIfNeeded: false)?.userID
+    }
+
+    /// `userDisplayName` is the name the server displays for the signed-in account, or `nil` until the server has been asked.
+    var userDisplayName: String? {
+        currentAccount(createIfNeeded: false)?.userDisplayName
+    }
+
+    /// `userPhoto` is the photograph the signed-in account uploaded, read from the cache it was downloaded into, or `nil` when it has none, it has not been downloaded yet, or the account's identifier is not known yet.
+    ///
+    /// It reads the picture at `userPhotoSize`, the size `ServerConnection.refreshCurrentUser(using:)` downloads it at.
+    var userPhoto: CGImage? {
+        guard let serverAddress else {
+            return nil
+        }
+
+        guard let userID else {
+            return nil
+        }
+
+        return ServerAvatars.shared.image(forUserID: userID, serverAddress: serverAddress, size: Self.userPhotoSize)
+    }
+
+    /// `setUser(id:displayName:)` records who the account signs in as, then announces `Notification.Name.currentUserDidChange` when anything changed.
+    ///
+    /// It is a setter of two values on the account rather than a domain of upserted and pruned records, as `setServerVersion(_:)` is: the server answers with exactly one identity per account, so there is nothing to match against what is stored and nothing to prune.
+    /// It never creates an account, because the identity describes one that a sign-in recorded and a refresh only ever records it into a store that names the server it fetched from.
+    func setUser(id: String, displayName: String) {
+        guard let account = currentAccount(createIfNeeded: false) else {
+            logger.notice("Asked to record who the account signs in as, but there is no account to record it on")
+            return
+        }
+
+        guard account.userID != id || account.userDisplayName != displayName else {
+            logger.debug("Who the account signs in as is already recorded")
+            return
+        }
+
+        account.userID = id
+        account.userDisplayName = displayName
+        save()
+        logger.notice("Recorded who the account signs in as")
+        notifyChange(.currentUserDidChange)
     }
 
     // MARK: - Server Apps
