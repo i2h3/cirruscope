@@ -991,7 +991,7 @@ Running out of attempts never signs anybody out: a wrong sign-out costs a new si
 Three other answers were rejected.
 Telling the script's navigation from the app's own by navigation identity is offered only from macOS 27 and not at all by the SwiftUI `WebPage` the iOS app uses, and would still be an inference about the app password.
 Quarantining the stale page with a content rule list until the retry lands would block a live page whenever the guess was wrong.
-Asking the server's public capabilities, as `validate(_:)` does, proves nothing about the credentials, since they are answered without any; asking for the current user is more direct, and is the request to move to once Rainmaker 5 is adopted.
+Asking the server's public capabilities, as `validate(_:)` does, proves nothing about the credentials, since they are answered without any, which is why the check asks who the credentials sign in as instead.
 
 ## Why does the iPhone sign out when the notifications endpoint refuses the app password, and only from the foreground?
 
