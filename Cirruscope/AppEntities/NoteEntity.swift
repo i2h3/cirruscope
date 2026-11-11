@@ -11,7 +11,7 @@ import Foundation
 ///
 /// It donates no image, as `ConversationEntity` does not: the Notes app publishes no artwork per note, and inventing one would be this app drawing a second placeholder where the system already has one.
 ///
-/// **A note's text is not here, and could not be**: the value this projects has no field for one, having dropped it where the server's answer was mapped. What a Spotlight result carries is a title and the category it is filed under, which is what finds a note; opening it is what shows it.
+/// **A note's text is not here, and could not be**: the value this projects has no field for one, and the refresh never downloads it. What a Spotlight result carries is a title and the category it is filed under, which is what finds a note; opening it is what shows it.
 struct NoteEntity: IndexedEntity {
     /// `defaultQuery` is the query the App Intents system uses to enumerate, resolve, and suggest these entities.
     static let defaultQuery = NoteEntityQuery()

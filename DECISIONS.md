@@ -728,8 +728,8 @@ Only a failure of any other kind keeps the previous list, for the reason given f
 
 Because the store is an unencrypted file in a container shared with an app extension, and a person's notes are the most private thing this app has any reason to touch.
 
-The server sends every note in full — the endpoint returns the whole collection with bodies unless a chunk size is requested, which the network library deliberately does not request — so the text arrives whether or not it is wanted.
-It is dropped in the same expression that maps the server's answer into this app's own value type, which is the strongest place to put that rule: `NoteTransferObject` has no field for a body, so nothing downstream can be made to carry one by accident, and a test asserts that shape rather than a behaviour precisely so it fails the day somebody adds one.
+The app never downloads the text either: it asks the server for summaries of the notes, which leave the content of every note out.
+They are mapped into this app's own value type, and `NoteTransferObject` has no field for a body, so nothing downstream can be made to carry one by accident, and a test asserts that shape rather than a behaviour precisely so it fails the day somebody adds one.
 
 The obvious middle ground is to leave the body out of the store but hand it to Spotlight as `textContent`, so a note could be found by a phrase inside it.
 **That is not a privacy win and is declined for saying so.**
@@ -739,8 +739,7 @@ Full-text search over notes is a feature worth having, and if it is built it sho
 What is kept is a title and a category, which is enough to find a note and open it.
 The body is fetched by the web view from the server at the moment the note is actually opened, over a connection that was going to carry it anyway.
 
-The cost accepted is that the fetch is still proportional to the size of the account's notes: every refresh decodes every body to discard it.
-That is a property of the endpoint rather than of this decision, and it is stated plainly rather than implied away — the incremental endpoint the app could use instead needs a cursor the network library does not currently surface.
+What remains is that every refresh lists every note rather than only those that changed, because the store keeps no record of when it last asked; the listing carries no text, so that costs a list of titles rather than the account's notes.
 
 ## Why is Talk's availability decided from a 404 rather than from the capability the server advertises?
 

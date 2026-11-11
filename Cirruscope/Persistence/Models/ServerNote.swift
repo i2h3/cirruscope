@@ -10,7 +10,7 @@ import SwiftData
 ///
 /// It is named for the server rather than for the thing, as `ServerApp` is, because Rainmaker exports a public `Note` and a record of the same name in this module would shadow it in every file importing both. The project answered this the same way when the keyboard-shortcut record could not be called `AppShortcut`.
 ///
-/// **There is no field for the note's text, and its absence is the design rather than an omission.** The store is unencrypted and lives in a container an app extension can also open; a person's notes are the most private thing this app has any reason to touch. The body is dropped where the server's answer is mapped, so nothing downstream ever holds it, and the web view fetches it from the server when a note is actually opened.
+/// **There is no field for the note's text, and its absence is the design rather than an omission.** The store is unencrypted and lives in a container an app extension can also open; a person's notes are the most private thing this app has any reason to touch. The refresh never downloads the body, so nothing downstream ever holds it, and the web view fetches it from the server when a note is actually opened.
 @Model
 final class ServerNote {
     /// `noteID` is the note's server-assigned identifier, which is what the route opening it requires.

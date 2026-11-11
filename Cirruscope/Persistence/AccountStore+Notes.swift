@@ -9,7 +9,7 @@ import SwiftData
 ///
 /// The shape is `AccountStore+Conversations`' exactly — upsert by the identity the server addresses the thing by, prune what it no longer lists, sort at the read, announce afterwards — which is the shape every domain on this store is meant to have. A domain that needs to depart from it should say why next to the departure.
 ///
-/// What it never holds is a note's text. That is dropped where the server's answer is mapped, so it is not a rule this file has to keep; the value type it takes has nowhere to put one.
+/// What it never holds is a note's text. The refresh never downloads it, so it is not a rule this file has to keep; the value type it takes has nowhere to put one.
 extension AccountStore {
     /// `notes` are the connected account's notes as value snapshots, favourites first and then most recently changed.
     ///
@@ -38,7 +38,7 @@ extension AccountStore {
     /// `persist(notes:)` upserts the account's notes: existing rows are updated in place, new ones inserted, and ones the server no longer lists deleted.
     ///
     /// Matching by identifier rather than replacing the list is what keeps a note the same record across a refresh, so the Spotlight item donated for it is left alone rather than deleted and re-added on every launch.
-    /// It takes this app's own value type rather than the network library's model, as every writer on this store does: neither test target links Rainmaker, so a signature naming `Rainmaker.Note` would make the write side untestable.
+    /// It takes this app's own value type rather than the network library's model, as every writer on this store does: neither test target links Rainmaker, so a signature naming `Rainmaker.NoteSummary` would make the write side untestable.
     func persist(notes: [NoteTransferObject]) {
         guard let account = currentAccount(createIfNeeded: true) else {
             return
