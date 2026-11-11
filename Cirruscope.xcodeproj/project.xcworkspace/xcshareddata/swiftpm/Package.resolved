@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/i2h3/rainmaker",
       "state" : {
-        "revision" : "0c538c6f82aca9ac91a1248808e1a15c091822b4",
-        "version" : "4.1.1"
+        "revision" : "f4eda84ae09016614cf1976b3f0ddcb57a4b50d4",
+        "version" : "5.0.0"
       }
     },
     {
