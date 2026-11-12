@@ -3631,6 +3631,36 @@
         }
       }
     },
+    "Rvw-It-Rat.title" : {
+      "comment" : "Class = \"NSMenuItem\"; title = \"Rate Cirruscope…\"; ObjectID = \"Rvw-It-Rat\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cirruscope bewerten…"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Rate Cirruscope…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valorar Cirruscope…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Évaluer Cirruscope…"
+          }
+        }
+      }
+    },
     "S0p-oC-mLd.title" : {
       "comment" : "Class = \"NSMenuItem\"; title = \"Jump to Selection\"; ObjectID = \"S0p-oC-mLd\";",
       "extractionState" : "extracted_with_value",

@@ -1558,3 +1558,17 @@ Because a documentation comment earns its place only when it says something the 
 The earlier rule gave every property a comment as well, which produced thousands of lines restating the symbol's name or explaining the symbols around it, and those lines drifted out of date the moment a referenced symbol or file moved.
 Relations and placement rationale are therefore recorded once, in `AGENTS.md` and this file, rather than copied into each symbol's comment.
 The cost accepted is sparser Quick Help on trivial properties and methods.
+
+## Why does Cirruscope ask for a rating only after four days of use, never at launch, and once per version?
+
+Because a rating request that arrives too early or too often costs more good will than the rating is worth.
+The system already shows the request at most three times a year, never in a TestFlight build, and not at all for someone who turned in-app ratings off, so the app adds a few rules of its own.
+It asks once the app has been used on four separate days, and at most once per version, after which another four days of use have to pass as well.
+Days are counted rather than launches, because a Mac app often runs for weeks without being relaunched.
+
+It asks when the app comes back to the front, never on the first activation of a process, the one launch brings, and never right after signing in, because that is when people start something rather than pause, and Apple advises against asking then.
+Only the signed-in server on screen counts as use, an open web window on the Mac and a screen that has loaded the server on the iPhone, since that is what the user came for and what the request is shown over.
+The count lives in the app's own defaults rather than in the account store, because it describes the app, not the server, and should survive a sign-out.
+
+The app cannot show the request on demand, since the system may decide to show nothing, so a "Rate Cirruscope" item in the Mac's Help menu and the iPhone's account menu opens the App Store's review page instead, for anyone who wants to rate without being asked.
+The cost accepted is fewer ratings than asking at every launch would bring.

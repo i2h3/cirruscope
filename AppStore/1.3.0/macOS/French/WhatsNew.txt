@@ -3,3 +3,4 @@
 • Regroupe désormais les notifications Nextcloud que Cirruscope affiche sans fenêtre ouverte selon l’app Nextcloud dont elles proviennent
 • Correction de la pastille du Dock et des notifications Nextcloud qui n’apparaissaient pas après ta connexion tant que tu n’avais pas rouvert Cirruscope
 • Retire désormais « Ouvrir le lien » et « Télécharger le fichier lié » du menu contextuel d’un lien ainsi que « Précédent », « Suivant » et « Recharger » de celui d’une page, puisque le menu Présentation les propose toujours
+• Nouveau : « Évaluer Cirruscope… » dans le menu Aide et, après quelques jours d’utilisation, une demande occasionnelle d’évaluer Cirruscope

@@ -4,6 +4,7 @@
 import Cocoa
 import os
 import Rainmaker
+import StoreKit
 import WebKit
 import WidgetKit
 
@@ -77,6 +78,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidBecomeActive(_: Notification) {
         // Keep the Dock badge fresh when the user returns to the app; does nothing while the monitor is stopped.
         NotificationMonitor.shared.refreshNow()
+
+        // Only an open web window is use, and it is what anchors the prompt.
+        let viewController = frontmostWebWindow?.contentViewController
+
+        if ReviewRequest.isDueOnActivation(inUse: viewController != nil), let viewController {
+            AppStore.requestReview(in: viewController)
+        }
     }
 
     func applicationDockMenu(_: NSApplication) -> NSMenu? {
@@ -146,6 +154,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func openSupportPage(_: Any?) {
         logger.debug("Opening support page")
         NSWorkspace.shared.open(InfoPlist.support)
+    }
+
+    @IBAction
+    func writeAppStoreReview(_: Any?) {
+        logger.debug("Opening the App Store review page")
+        NSWorkspace.shared.open(InfoPlist.appStoreReview)
     }
 
     /// `presentInitialWindow(forLaunch:)` validates the configured server and presents the window the app should show: a `WebViewWindowController` when a supported server is reachable or merely unreachable — in which case the web view shows its own "Server unreachable" retry UI — and a `ServerAddressWindowController` when no server is configured, no credentials are stored for it, the stored credentials were revoked, or the server runs an unsupported major version.
@@ -405,6 +419,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         present(windowController: windowController)
+        // Counted here as well, so a day spent in a window opened after the launch activation counts even if the user never leaves the app.
+        ReviewRequest.recordDayOfUse()
     }
 
     /// `openServerApp(_:)` brings the web window already showing `app` to the front, or opens a new window loading the app when none is open.

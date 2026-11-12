@@ -1387,6 +1387,29 @@
         }
       }
     },
+    "Rate Cirruscope" : {
+      "comment" : "A menu item in the account menu that opens the App Store page where the user can rate and review Cirruscope.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cirruscope bewerten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valorar Cirruscope"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Évaluer Cirruscope"
+          }
+        }
+      }
+    },
     "Server address" : {
       "comment" : "The server address field on the iOS sign-in screen: both the label above it and the field's own accessibility label, which are one string because they are the same words. The field itself displays an example address as its prompt rather than this.",
       "localizations" : {

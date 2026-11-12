@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 import os
+import StoreKit
 import SwiftUI
 import WebKit
 
@@ -25,6 +26,9 @@ struct NextcloudView: View {
     /// Whether this window is in front of the user, which is when it serves what Spotlight and the Shortcuts app ask the app to open and reloads a page left blank, and whether it has gone to the background, which is when it stops.
     @Environment(\.scenePhase)
     private var scenePhase
+
+    @Environment(\.requestReview)
+    private var requestReview
 
     @State
     private var page: WebPage
@@ -203,6 +207,10 @@ struct NextcloudView: View {
                             Label("Settings", systemImage: "gear")
                         }
 
+                        Link(destination: InfoPlist.appStoreReview) {
+                            Label("Rate Cirruscope", systemImage: "star")
+                        }
+
                         Divider()
 
                         Button {
@@ -267,6 +275,7 @@ struct NextcloudView: View {
 
             hasStarted = true
             Self.logger.notice("Starting the session of this screen on its first measurement")
+            ReviewRequest.recordDayOfUse()
             store.updateApps()
 
             // Only now, and not when the screen appears: the opener serves at once whatever Spotlight or the Shortcuts
@@ -287,6 +296,9 @@ struct NextcloudView: View {
                 case .active:
                     mayReloadAfterTermination = true
 
+                    // Ahead of the guard, so the activation that launch or signing in brings is the one passed over.
+                    let isReviewDue = ReviewRequest.isDueOnActivation(inUse: hasStarted)
+
                     // A window coming to the front takes over what the App Intents layer asks the app to open, so a
                     // Spotlight result lands in the window the user was last looking at rather than in whichever
                     // appeared first.
@@ -300,6 +312,10 @@ struct NextcloudView: View {
                     // what catches a page that went blank while the window was away: a termination heard in the
                     // background, a reload that failed, or a termination no observer was subscribed to hear.
                     reloadIfBlank()
+
+                    if isReviewDue {
+                        requestReview()
+                    }
 
                 case .background:
                     mayReloadAfterTermination = false

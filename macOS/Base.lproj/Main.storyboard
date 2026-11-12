@@ -655,6 +655,12 @@
                                                 <action selector="openSupportPage:" target="Ady-hI-5gd" id="Fbk-It-eml"/>
                                             </connections>
                                         </menuItem>
+                                        <menuItem title="Rate Cirruscope…" id="Rvw-It-Rat">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="writeAppStoreReview:" target="Ady-hI-5gd" id="Rvw-It-act"/>
+                                            </connections>
+                                        </menuItem>
                                     </items>
                                 </menu>
                             </menuItem>

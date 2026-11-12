@@ -21,6 +21,8 @@ enum InfoPlist {
 
         /// Property list key.
         static let support = "SupportURL"
+
+        static let appStoreReview = "AppStoreReviewURL"
     }
 
     /// The lowest Nextcloud major version the app accepts.
@@ -87,6 +89,23 @@ enum InfoPlist {
 
         guard let stringValue = value as? String, let url = URL(string: stringValue) else {
             preconditionFailure("Info.plist entry \"\(Key.support)\" must be a string representing a valid URL but was \(value).")
+        }
+
+        return url
+    }
+
+    /// The App Store page for writing a review of Cirruscope, which only the apps declare.
+    static var appStoreReview: URL {
+        guard let value = Bundle.main.object(forInfoDictionaryKey: Key.appStoreReview) else {
+            preconditionFailure("Info.plist is missing the \"\(Key.appStoreReview)\" entry.")
+        }
+
+        guard let stringValue = value as? String else {
+            preconditionFailure("Info.plist entry \"\(Key.appStoreReview)\" must be a string but was \(value).")
+        }
+
+        guard let url = URL(string: stringValue) else {
+            preconditionFailure("Info.plist entry \"\(Key.appStoreReview)\" must represent a valid URL but was \(stringValue).")
         }
 
         return url
