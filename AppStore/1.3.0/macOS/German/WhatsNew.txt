@@ -4,3 +4,4 @@
 • Behoben, dass nach der Anmeldung weder das Kennzeichen auf dem Symbol im Dock noch Nextcloud-Benachrichtigungen erschienen, bis du Cirruscope erneut geöffnet hast
 • Entfernt jetzt „Link öffnen“ und „Verknüpfte Datei laden“ aus dem Kontextmenü eines Links sowie „Zurück“, „Vorwärts“ und „Neu laden“ aus dem Kontextmenü einer Seite, da diese im Menü „Darstellung“ bleiben
 • Neu: „Cirruscope bewerten…“ im Menü „Hilfe“ und nach einigen Tagen der Nutzung gelegentlich die Bitte, Cirruscope zu bewerten
+• Behoben, dass heruntergeladene Dateien von macOS unter Quarantäne gestellt wurden, wodurch eine heruntergeladene App nicht lief
