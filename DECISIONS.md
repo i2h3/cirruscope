@@ -1572,3 +1572,10 @@ The count lives in the app's own defaults rather than in the account store, beca
 
 The app cannot show the request on demand, since the system may decide to show nothing, so a "Rate Cirruscope" item in the Mac's Help menu and the iPhone's account menu opens the App Store's review page instead, for anyone who wants to rate without being asked.
 The cost accepted is fewer ratings than asking at every launch would bring.
+
+## Why does Cirruscope strip the quarantine flag from every file it downloads?
+
+Because WebKit's sandboxed download process stamps every file a `WKDownload` writes with a `com.apple.quarantine` record carrying the AppSandbox bit (`0x04`), which Gatekeeper refuses to exec or open outright — so a macOS app downloaded from Nextcloud would not run at all, while Safari's own downloads carry only the web-download bit (`0x83`) and get the soft first-run prompt instead (issue #149).
+Cirruscope is not a general browser but a client for the server the user explicitly signed in to, which is the same trust the Nextcloud desktop sync client works under, and it quarantines nothing it syncs; a file downloaded through Cirruscope is therefore replaced by an app-written copy the moment it lands, which carries only the creation marker (`0x82`) every sandboxed app's saved file has, for every file and not only app bundles.
+The app's own sandbox can neither clear the `0x04` bit from WebKit's file nor write it, so the copy is the only way to drop it, and `QuarantineRemovalTests` reads the raw record back through `getxattr` so the suite does not verify the API with itself.
+The cost accepted is that Gatekeeper will not gate an executable from a server that turns out to be compromised, which is the price of treating the signed-in server as trusted.

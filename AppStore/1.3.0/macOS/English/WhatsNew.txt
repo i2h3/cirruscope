@@ -4,3 +4,4 @@
 • Fixed the Dock badge and Nextcloud notifications not appearing after you signed in until you reopened Cirruscope
 • Now leaving “Open Link” and “Download Linked File” out of a link’s context menu, and “Back”, “Forward” and “Reload” out of a page’s, which the View menu still offers
 • Introduced “Rate Cirruscope…” in the Help menu, and after a few days of use an occasional request to rate Cirruscope
+• Fixed downloaded files being quarantined by macOS, which kept a downloaded app from running
