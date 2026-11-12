@@ -44,7 +44,7 @@ extension DownloadManager: WKDownloadDelegate {
         if let destinationURL = model.destinationURL {
             let displayName = model.displayName
             Task.detached(priority: .utility) {
-                DownloadManager.removeQuarantine(from: destinationURL)
+                DownloadManager.replaceWithAppWrittenCopy(destinationURL)
                 await MainActor.run {
                     Logger(for: DownloadManager.self).debug("Posting a completion notification for \(displayName)")
                     UserNotifier.shared.postDownloadFinished(filename: displayName, fileURL: destinationURL)
@@ -82,16 +82,20 @@ extension DownloadManager: WKDownloadDelegate {
         NotificationCenter.default.post(name: .downloadsDidChange, object: nil)
     }
 
-    /// `removeQuarantine(from:)` replaces the file a `WKDownload` wrote with a copy written by the app itself. WebKit's sandboxed download process stamps the file with the quarantine record's AppSandbox bit (`0x04`), which Gatekeeper refuses to exec or open and which the app's own sandbox can neither clear from the original nor write itself; a freshly created copy carries only the app's own creation marker (`0x82`), so a downloaded app bundle runs and every download behaves like a file the Nextcloud desktop client synced. A file that cannot be replaced still counts as downloaded; the failure is only logged and the original is left in place.
-    nonisolated static func removeQuarantine(from url: URL) {
+    /// Replaces a finished download with a copy the app writes itself, so a downloaded app bundle opens.
+    /// WebKit's download process quarantines its file with a record macOS refuses to open and the app's sandbox cannot clear, while a fresh copy carries only the creation marker (`0x82`) every file a sandboxed app writes has.
+    /// A file that cannot be replaced stays in place and still counts as downloaded; the failure is only logged.
+    nonisolated static func replaceWithAppWrittenCopy(_ url: URL) {
         let logger = Logger(for: DownloadManager.self)
         let fileManager = FileManager.default
         let copy = url.deletingLastPathComponent().appendingPathComponent(".\(url.lastPathComponent).cirruscope-\(UUID().uuidString)")
 
         do {
             try fileManager.copyItem(at: url, to: copy)
-            try fileManager.removeItem(at: url)
-            try fileManager.moveItem(at: copy, to: url)
+            // `rename(2)` swaps the copy in atomically, so a failure leaves the original in place; `replaceItemAt` would carry the original's quarantine record over.
+            guard rename(copy.path(percentEncoded: false), url.path(percentEncoded: false)) == 0 else {
+                throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+            }
             logger.debug("Replaced \(url.lastPathComponent) with an app-written copy to drop WebKit's quarantine record")
         } catch {
             logger.error("Could not replace \(url.lastPathComponent) with an app-written copy: \(error.localizedDescription)")

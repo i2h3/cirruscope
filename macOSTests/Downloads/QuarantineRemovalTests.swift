@@ -6,9 +6,9 @@ import Darwin
 import Foundation
 import Testing
 
-/// `QuarantineRemovalTests` covers `DownloadManager.removeQuarantine(from:)`, which replaces a `WKDownload`'s output with an app-written copy so the quarantine record's AppSandbox bit (`0x04`, which Gatekeeper refuses to exec or open) is gone, issue #149.
-/// It reads the raw `com.apple.quarantine` record through `getxattr` rather than `URLResourceValues.quarantineProperties`, so the suite measures the attribute itself and not the same API the copy is checked with.
-/// A sandboxed app cannot write the `0x04` bit itself, so the suite sets a web-download record (`0083`) via the LaunchServices API and asserts the replacement leaves only the app's own creation marker (`0082`); what matters is that no download-originated record survives on the file the app ends up with.
+/// Covers `DownloadManager.replaceWithAppWrittenCopy(_:)`, which replaces a `WKDownload`'s output with an app-written copy so macOS opens a downloaded app bundle, issue #149.
+/// It reads the raw `com.apple.quarantine` record through `getxattr` rather than `URLResourceValues.quarantineProperties`, so the suite measures the attribute itself and not the API the record is written with.
+/// A sandboxed app cannot write the record WebKit's download process leaves, so the suite starts from a web-download record (`0083`) and asserts the replacement leaves only the app's own creation marker (`0082`); what matters is that no download-originated record survives on the file the app ends up with.
 struct QuarantineRemovalTests {
     /// `quarantineFlags(_:)` returns the raw `com.apple.quarantine` record's leading four-byte flag field on `url` as a hex number, or `nil` when the record is absent.
     private func quarantineFlags(_ url: URL) -> UInt32? {
@@ -37,21 +37,12 @@ struct QuarantineRemovalTests {
     }
 
     @Test
-    func `A quarantined download ends up with only the app's own creation marker`() throws {
+    func `A quarantined download is replaced by an intact copy with only the app's own creation marker`() throws {
         let url = try quarantinedDownload()
         defer { try? FileManager.default.removeItem(at: url) }
 
         #expect(quarantineFlags(url) == 0x83)
-        DownloadManager.removeQuarantine(from: url)
-        #expect(quarantineFlags(url) == 0x82)
-    }
-
-    @Test
-    func `A download stays intact when it is replaced by the app-written copy`() throws {
-        let url = try quarantinedDownload()
-        defer { try? FileManager.default.removeItem(at: url) }
-
-        DownloadManager.removeQuarantine(from: url)
+        DownloadManager.replaceWithAppWrittenCopy(url)
         #expect(quarantineFlags(url) == 0x82)
         #expect(try String(contentsOf: url, encoding: .utf8) == "test")
     }
