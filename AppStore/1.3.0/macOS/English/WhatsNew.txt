@@ -5,3 +5,4 @@
 • Now leaving “Open Link” and “Download Linked File” out of a link’s context menu, and “Back”, “Forward” and “Reload” out of a page’s, which the View menu still offers
 • Introduced “Rate Cirruscope…” in the Help menu, and after a few days of use an occasional request to rate Cirruscope
 • Fixed macOS refusing to open an app downloaded in Cirruscope
+• Fixed the app sidebar sliding to the top of the window when the Nextcloud viewer opened with the sidebar shown

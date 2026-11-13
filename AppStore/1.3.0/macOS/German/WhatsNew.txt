@@ -5,3 +5,4 @@
 • Entfernt jetzt „Link öffnen“ und „Verknüpfte Datei laden“ aus dem Kontextmenü eines Links sowie „Zurück“, „Vorwärts“ und „Neu laden“ aus dem Kontextmenü einer Seite, da diese im Menü „Darstellung“ bleiben
 • Neu: „Cirruscope bewerten…“ im Menü „Hilfe“ und nach einigen Tagen der Nutzung gelegentlich die Bitte, Cirruscope zu bewerten
 • Behoben, dass macOS eine in Cirruscope heruntergeladene App nicht öffnete
+• Behoben, dass die Seitenleiste bis an den oberen Rand des Fensters rückte, wenn bei geöffneter Seitenleiste eine Datei im Nextcloud-Viewer geöffnet wurde
