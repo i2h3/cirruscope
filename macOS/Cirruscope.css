@@ -325,9 +325,12 @@ html[data-cirruscope-translucency="true"][data-cirruscope-accent="true"][data-ci
  *
  * The height has to shrink by the same inset the top gains. The viewer's root is an NcModal mask, fixed at `top: 0` with `height: 100%`, so moving its top edge alone would hang its bottom edge that far past the viewport — and Viewer.vue insets its own `.modal-container` by `--header-height` at top and bottom, so the first thing lost would be the gap it deliberately keeps at the bottom.
  *
+ * An app sidebar open next to the viewer needs the same correction: under `body.viewer--sidebar-fullscreen` the Viewer pins `#app-sidebar-vue` to `position: fixed` so it fills the full window height beside the viewer, again on the assumption that the header is gone (issue #155).
+ * The sidebar's own default is `position: relative`, an in-flow flex item of the content that starts below the header, and the third rule below restores exactly that; the `:has(#viewer)` in its selector contributes an id, so it outranks the Viewer's `body.viewer--sidebar-fullscreen #app-sidebar-vue` on specificity alone, without `!important`.
+ *
  * This affects every viewer handler, not only Nextcloud Text and Nextcloud Office: images, video, audio, and PDFs all render through the same `#viewer` root.
  *
- * Neither rule applies in element fullscreen. The Viewer fullscreens `document.documentElement` and resets its own insets for that state, and WebKit moves the web view into a fullscreen window of its own (see WebViewController.enableElementFullscreen()), where there are no traffic lights to clear and no host window to drag.
+ * None of these rules applies in element fullscreen. The Viewer fullscreens `document.documentElement` and resets its own insets for that state, and WebKit moves the web view into a fullscreen window of its own (see WebViewController.enableElementFullscreen()), where there are no traffic lights to clear and no host window to drag.
  */
 
 html:not(:fullscreen) body:has(#viewer) #header {
@@ -337,6 +340,11 @@ html:not(:fullscreen) body:has(#viewer) #header {
 html:not(:fullscreen) #viewer {
     height: calc(100% - var(--header-height)) !important;
     top: var(--header-height) !important;
+}
+
+/* Fix #155: Nextcloud viewer sidebar top margin */
+html:not(:fullscreen) body:has(#viewer) #app-sidebar-vue {
+    position: relative;
 }
 
 /*
