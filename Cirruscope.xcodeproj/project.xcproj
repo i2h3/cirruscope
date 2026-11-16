@@ -33,6 +33,7 @@
     { "path": "GOVERNANCE.md" },
     { "path": "REUSE.toml" },
     { "path": "Cirruscope.xcconfig" },
+    { "path": ".gitignore" },
     { "kind": "folder", "path": ".github" },
     { "kind": "folder", "path": "AppStore" },
     { "kind": "folder", "path": "Documentation" },
