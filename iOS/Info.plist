@@ -12,10 +12,10 @@
 	<array>
 		<string>$(CIRRUSCOPE_NOTIFICATION_REFRESH_TASK_IDENTIFIER)</string>
 	</array>
-    <key>KeychainServiceIdentifier</key>
-    <string>$(CIRRUSCOPE_KEYCHAIN_SERVICE_IDENTIFIER)</string>
+	<key>KeychainServiceIdentifier</key>
+	<string>$(CIRRUSCOPE_KEYCHAIN_SERVICE_IDENTIFIER)</string>
 	<key>MinimumSupportedNextcloudMajorVersion</key>
-    <string>$(CIRRUSCOPE_MINIMUM_SUPPORTED_NEXTCLOUD_MAJOR_VERSION)</string>
+	<string>$(CIRRUSCOPE_MINIMUM_SUPPORTED_NEXTCLOUD_MAJOR_VERSION)</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
@@ -25,6 +25,8 @@
 	<string>$(CIRRUSCOPE_NOTIFICATION_REFRESH_TASK_IDENTIFIER)</string>
 	<key>PrivacyPolicy</key>
 	<string>$(CIRRUSCOPE_PRIVACY_POLICY_URL)</string>
+	<key>ServerURL</key>
+	<string>$(CIRRUSCOPE_SERVER_URL)</string>
 	<key>SupportURL</key>
 	<string>$(CIRRUSCOPE_SUPPORT_URL)</string>
 	<key>UIBackgroundModes</key>

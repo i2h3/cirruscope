@@ -20,6 +20,9 @@ enum InfoPlist {
         static let privacyPolicy = "PrivacyPolicy"
 
         /// Property list key.
+        static let server = "ServerURL"
+
+        /// Property list key.
         static let support = "SupportURL"
 
         static let appStoreReview = "AppStoreReviewURL"
@@ -69,25 +72,62 @@ enum InfoPlist {
     }
 
     /// The URL of Cirruscope's online privacy policy.
-    static var privacyPolicy: URL {
+    static var privacyPolicy: URL? {
         guard let value = Bundle.main.object(forInfoDictionaryKey: Key.privacyPolicy) else {
-            preconditionFailure("Info.plist is missing the \"\(Key.privacyPolicy)\" entry.")
+            return nil
         }
 
-        guard let stringValue = value as? String, let url = URL(string: stringValue) else {
+        guard let stringValue = value as? String else {
+            return nil
+        }
+
+        guard stringValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false else {
+            return nil
+        }
+
+        guard let url = URL(string: stringValue) else {
             preconditionFailure("Info.plist entry \"\(Key.privacyPolicy)\" must be a string representing a valid URL but was \(value).")
         }
 
         return url
     }
 
-    /// The URL of Cirruscope's online support page.
-    static var support: URL {
-        guard let value = Bundle.main.object(forInfoDictionaryKey: Key.support) else {
-            preconditionFailure("Info.plist is missing the \"\(Key.support)\" entry.")
+    /// The pre-defined URL of the server to connect to.
+    static var server: URL? {
+        guard let value = Bundle.main.object(forInfoDictionaryKey: Key.server) else {
+            return nil
         }
 
-        guard let stringValue = value as? String, let url = URL(string: stringValue) else {
+        guard let stringValue = value as? String else {
+            return nil
+        }
+
+        guard stringValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false else {
+            return nil
+        }
+
+        guard let url = URL(string: stringValue) else {
+            preconditionFailure("Info.plist entry \"\(Key.server)\" must be a string representing a valid URL but was \(value).")
+        }
+
+        return url
+    }
+
+    /// The URL of Cirruscope's online support page.
+    static var support: URL? {
+        guard let value = Bundle.main.object(forInfoDictionaryKey: Key.support) else {
+            return nil
+        }
+
+        guard let stringValue = value as? String else {
+            return nil
+        }
+
+        guard stringValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false else {
+            return nil
+        }
+
+        guard let url = URL(string: stringValue) else {
             preconditionFailure("Info.plist entry \"\(Key.support)\" must be a string representing a valid URL but was \(value).")
         }
 
