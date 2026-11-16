@@ -13,4 +13,5 @@ DerivedData
 xcuserdata
 .DS_Store
 Local.xcconfig
+CustomAccentColor.colorset
 CustomAppIcon.icon
