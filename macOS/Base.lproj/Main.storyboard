@@ -804,7 +804,7 @@
                                     <real value="3.4028234663852886e+38"/>
                                 </customSpacing>
                             </stackView>
-                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="oXX-0C-ccH">
+                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="oXX-0C-ccH" userLabel="Slogan">
                                 <rect key="frame" x="157" y="255" width="287" height="21"/>
                                 <textFieldCell key="cell" lineBreakMode="clipping" title="Your Nextcloud experience, elevated." id="07Z-WQ-xKK">
                                     <font key="font" textStyle="title2" name=".SFNS-Regular"/>
