@@ -42,7 +42,7 @@ Each of the five targets carries its own `.xcconfig`, all of them chaining up to
 - `CODE_SIGN_ENTITLEMENTS = Cirruscope/Cirruscope.entitlements` is assigned a level below, by `Cirruscope/Cirruscope.xcconfig` for both apps and by `Widgets/Widgets.xcconfig` for the extension, each after its include of the root.
   `Cirruscope.entitlements` declares the App Group and Keychain-sharing capabilities.
 - The two test bundles, which include only the root, therefore carry no entitlements, and a root `Local.xcconfig` cannot reassign the entitlements for the three products, which is intended.
-- `REGISTER_APP_GROUPS = YES` sits beside the entitlements in the same two files rather than in `project.pbxproj`.
+- `REGISTER_APP_GROUPS = YES` sits beside the entitlements in the same two files rather than in `project.xcproj`.
   It is a macOS-only build setting, letting automatic signing register the App Group the entitlements name when it signs for the Mac.
 - Automatic signing rejects a `PROVISIONING_PROFILE_SPECIFIER` once a team is set, which is why no target names a provisioning profile and the profile is left to automatic signing rather than named again.
 - From the command line, automatic signing registers identifiers and creates or downloads profiles only when it is allowed to, which is what `-allowProvisioningUpdates` does.
@@ -57,7 +57,7 @@ Such a file is read after its folder's own assignments, so what it sets override
 
 Every folder holding one of those `.xcconfig` files is synchronized, so a `Local.xcconfig` placed in it is copied into the built product of every target listing that folder, and ignoring it in git does nothing to stop that.
 That is why it is kept at the repository root.
-The `.xcconfig` files themselves stay out of the products only because each is named in its folder's `membershipExceptions` in `project.pbxproj`, `Cirruscope.xcconfig` once for each app target listing `Cirruscope/`.
+The `.xcconfig` files themselves stay out of the products only because each is named in its folder's `membership-exceptions` entry in `project.xcproj`, `Cirruscope.xcconfig` once for each app target listing `Cirruscope/`.
 That is why [AGENTS.md → Building and Signing](../AGENTS.md#building-and-signing) asks a new `.xcconfig` in a synchronized folder for an exception of its own.
 
 ## Nothing checks for the entitlements at build time

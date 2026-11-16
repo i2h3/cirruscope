@@ -80,7 +80,7 @@ The tracked configuration in [Cirruscope.xcconfig](./Cirruscope.xcconfig) signs 
    Those assignments would now reach the widget extension and both test bundles as well, and sign them against a profile made for something else.
 
 Never pick a team in a target's **Signing & Capabilities** tab.
-Doing so writes a target-level `DEVELOPMENT_TEAM` into `project.pbxproj`, which overrides `Local.xcconfig` and ends up in your commit.
+Doing so writes a target-level `DEVELOPMENT_TEAM` into `project.xcproj`, which overrides `Local.xcconfig` and ends up in your commit.
 
 Xcode registers your identifiers and downloads provisioning profiles for them on its own.
 `xcodebuild` does so only when it is passed `-allowProvisioningUpdates`, so every build or test run from a terminal needs that flag, as the commands under [Code Quality Checks](#code-quality-checks) show.
