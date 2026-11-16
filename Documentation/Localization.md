@@ -10,15 +10,16 @@ This is the reference behind the rules in [AGENTS.md → Localization Instructio
 ## Where the languages come from
 
 English is the app's base (development) language.
-The canonical, and only, source for the others is `knownRegions` on the `PBXProject` object in `Cirruscope.xcodeproj/project.pbxproj`, which Xcode writes when a localization is added to or removed from the project.
-It also lists `en` and `Base`, which are filtered out because neither is a translation target.
+The canonical, and only, source for the others is the `localizations` object in `Cirruscope.xcodeproj/project.xcproj`, the JSON project format, which Xcode rewrites when a localization is added to or removed from the project.
+Its `development` entry names the base language, `en`, and its `supported` array lists every localization including `Base`.
+The check reads the base language from `development` and filters it out of `supported` together with `Base`, so neither is a translation target.
 `python3 Tools/check-string-catalogs.py --list-locales` prints what remains, and the catalog check reads the same list, so neither changes when a language does.
 
 The localization stores are String Catalogs, so the repository has no per-locale `.lproj` resource folders to enumerate.
 The only two are `macOS/Base.lproj`, the storyboard source, and `macOS/mul.lproj` ("multiple languages"), which holds the storyboard's catalog file itself rather than one language's strings.
 Per-language `.lproj` folders exist only in the built products, compiled from the catalogs, which is where [`ShortcutsNameTests`](../Tests/AppIntents/ShortcutsNameTests.swift) looks a translation up, the way the system resolves it.
 
-Adding a language reaches beyond `knownRegions`:
+Adding a language reaches beyond the project's `localizations`:
 
 - Until it is translated, the catalog check reports every key of all eight catalogs not marked Do Not Translate in it with `state=None`, the locale having no entry yet.
 - The voice and terminology rules in AGENTS.md → Localization Instructions name the pronoun and Apple's compound term for a keyboard shortcut per language, so a new language needs its own there.
@@ -125,7 +126,7 @@ Both find the repository root from their own location, so they work from any dir
 
 ### `Tools/check-string-catalogs.py`
 
-It reads `knownRegions` through `plutil` itself and, for every key of the eight catalogs not marked Do Not Translate, in every detected language, prints one line per finding:
+It reads the project's `localizations` object through `plutil` itself, since the `.xcproj` allows trailing commas a strict JSON parser rejects, and, for every key of the eight catalogs not marked Do Not Translate, in every detected language, prints one line per finding:
 
 - `<catalog>: '<key>' [<locale>] state='new'`, or whichever other state is not `translated`, `state=None` meaning the locale has no entry for that key at all;
 - `<catalog>: '<key>' [<locale>] still identical to English: '<value>' (confirm this is a deliberate exception, not a missed translation)`.
@@ -140,7 +141,7 @@ How it decides:
 It exits 0 whether or not it reports anything, since only a person can judge an identical-to-English hit, so read its output rather than its exit status.
 Only a file it cannot open or parse ends it early, with a Python traceback and a non-zero status.
 A clean run rules out only those two failure modes; it cannot tell whether an existing translation reads well.
-`--list-locales` prints the detected languages as a Python list, such as `['de', 'fr', 'es']`, and checks nothing.
+`--list-locales` prints the detected languages as a Python list, such as `['de', 'es', 'fr']`, and checks nothing.
 
 ### `Tools/check-appstore-texts.py`
 
@@ -164,7 +165,7 @@ The two predicates that tell the cases apart, `ToolKitDatabase` for the `locale:
 
 ## App Store texts
 
-The texts in `AppStore/` are localized outside the String Catalogs and outside `knownRegions`.
+The texts in `AppStore/` are localized outside the String Catalogs and outside the project's `localizations`.
 Their languages are App Store Connect's localizations of the app, English, German, French and Spanish, which match the app's own today but are a list of their own.
 Their layout and field limits are in AGENTS.md → Repository Structure, when they change is in AGENTS.md → Documentation Instructions, and why they are in the repository is [DECISIONS.md → "Why are the App Store texts kept in the repository, one folder per version?"](../DECISIONS.md#why-are-the-app-store-texts-kept-in-the-repository-one-folder-per-version).
 

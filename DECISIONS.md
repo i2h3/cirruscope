@@ -181,7 +181,7 @@ That is a smaller cost than it looks, because those differences are rare — so 
 ## Why is there a `Core/` folder as well as `Cirruscope/`?
 
 Because Xcode's synchronized folders are all-or-nothing, and an app extension wants less than an app.
-A folder listed by a target contributes every file it holds to that target; the only lever is `membershipExceptions`, which is a deny list.
+A folder listed by a target contributes every file it holds to that target; the only lever is `membership-exceptions`, which is a deny list.
 So if the widget extension listed `Cirruscope/`, every file later migrated there — as macOS code is generalized for iOS reuse — would silently join the extension too, and each one not wanted would need an exclusion added by hand.
 Forgetting one either bloats the extension, which nothing reports, or breaks its build.
 

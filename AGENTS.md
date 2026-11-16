@@ -55,11 +55,11 @@ The root holds `Cirruscope.xcconfig`, the only file that names a team, `Cirrusco
   Anything in `Cirruscope/`, `Core/`, `macOS/`, `iOS/`, `Widgets/` or a test folder, subfolders included, is compiled or copied into every target listing it, with no project-file change and no review step to notice.
   So tool configuration, dependencies, documents and `Local.xcconfig` never go there, which is why the formatter configurations sit at the root and Biome is a Homebrew binary rather than an npm package.
   `biome.jsonc`'s `files.includes` stays an allowlist pinned to `*.js` in `Cirruscope/Scripts/`, `macOS/Scripts/`, `iOS/Scripts/` and `Website/js/`, so Biome never formats stylesheets or Xcode-owned JSON.
-  A new `.xcconfig` or `Info.plist` there needs a `membershipExceptions` entry of its own.
+  A new `.xcconfig` or `Info.plist` there needs a `membership-exceptions` entry of its own.
 - **Browse-only folders stay out of every target.**
   `.github/`, `AppStore/`, `Documentation/`, `Tools/` and `Website/` are in the main group only for browsing in Xcode, and no target may list them.
 - **Placement follows "Platform Scope".**
-  Nothing in `Core/` imports AppKit or UIKit, and since `membershipExceptions` is a deny list, the extension must never list `Cirruscope/`, or it would silently absorb each file later moved there.
+  Nothing in `Core/` imports AppKit or UIKit, and since `membership-exceptions` is a deny list, the extension must never list `Cirruscope/`, or it would silently absorb each file later moved there.
 - **A platform's remainder of shared code lives in that platform's folder, never behind `#if os`**, as an `+AppKit` or `+UIKit` extension, or as a `+Shared.swift` per app building the one instance with what only that platform can answer, as `AccountStore+Shared.swift` and `NotificationMonitor+Shared.swift` do.
 - **`Core/`'s domain subfolders share their names with the tests**, a type and its suites sitting under one word; `RemoteAssets/` is the exception, its SVG renderer's suites being in `Tests/Icons/`.
 - **No two files in one target share a base name**, since Xcode derives each `.stringsdata` output from it.
@@ -71,7 +71,7 @@ The root holds `Cirruscope.xcconfig`, the only file that names a team, `Cirrusco
 - **One widget target serves both platforms**, differences living in `[sdk=…]`-qualified build settings.
   `Widgets/Info.plist` deliberately declares no `NSLocalNetworkUsageDescription`, an extension sharing its app's local network permission.
   `Widgets/PrivacyInfo.xcprivacy` is the extension's own manifest, which the apps' copy does not reach, so a required-reason API goes into every manifest whose bundle compiles code using it, be it the apps' code, `Core/` or Rainmaker.
-- **Only the root `Cirruscope.xcconfig` names a team**, and `project.pbxproj` must not (see "Building and Signing").
+- **Only the root `Cirruscope.xcconfig` names a team**, and `project.xcproj` must not (see "Building and Signing").
 - **The GitHub workflows compile nothing**: building and testing is Xcode Cloud's.
 
 **Folder map.**
@@ -128,9 +128,9 @@ Debug, a test run and Release alike: no ad-hoc configuration and no runtime fall
 A build without the entitlements traps at launch by design (`AppGroup.containerURL`, `AppDatabase.container`); never add a fallback.
 
 - Never strip signing with `CODE_SIGNING_ALLOWED=NO`, `CODE_SIGN_IDENTITY=-` or an empty `CODE_SIGN_ENTITLEMENTS`, on the command line or in a `Local.xcconfig`.
-- `Cirruscope.xcconfig` is the only file naming a team: no target's `.xcconfig` does, and `project.pbxproj` must not either.
+- `Cirruscope.xcconfig` is the only file naming a team: no target's `.xcconfig` does, and `project.xcproj` must not either.
 - **Never pick a team in a target's Signing & Capabilities tab.**
-  Xcode writes the choice into `project.pbxproj` as a target-level `DEVELOPMENT_TEAM`, which overrides `Local.xcconfig` and the root alike and ends up committed.
+  Xcode writes the choice into `project.xcproj` as a target-level `DEVELOPMENT_TEAM`, which overrides `Local.xcconfig` and the root alike and ends up committed.
 - No target names a provisioning profile, and none may: automatic signing rejects a `PROVISIONING_PROFILE_SPECIFIER` once a team is set.
 - Pass `-allowProvisioningUpdates` to every `xcodebuild` that builds.
 - A contributor signs with their own team and base identifier through a gitignored `Local.xcconfig` copied from `Local.xcconfig.example`.
@@ -204,7 +204,7 @@ The host apps open the real store during every run, and under the shipping base 
 
 - The header is `SPDX-FileCopyrightText: <year> Iva Horn` and `SPDX-License-Identifier: MIT`, in the file's comment syntax (`//` for Swift and JavaScript, `/* */` for CSS, `<!-- -->` for Markdown, `#` for Python and shell-style configurations), at the very top with a blank line after it.
   `<year>` is the year the file was created — never hardcode the current year; for an existing file it is `git log --follow --format=%ad --date=format:%Y -- <path> | tail -1`, a recreation at the same path counting as new.
-- Binaries, pure JSON and files Xcode, SwiftPM or Icon Composer rewrite — `project.pbxproj`, `Package.resolved`, the asset catalog, `AppIcon.icon`, `Main.storyboard`, `Info.plist`, `PrivacyInfo.xcprivacy`, the String Catalogs, `.swift-version` — are covered by a `[[annotations]]` entry in `REUSE.toml`, joining a matching `path` glob only if its year matches and a new block otherwise; never hand-edit an SPDX comment into them.
+- Binaries, pure JSON and files Xcode, SwiftPM or Icon Composer rewrite — `project.xcproj`, `Package.resolved`, the asset catalog, `AppIcon.icon`, `Main.storyboard`, `Info.plist`, `PrivacyInfo.xcprivacy`, the String Catalogs, `.swift-version` — are covered by a `[[annotations]]` entry in `REUSE.toml`, joining a matching `path` glob only if its year matches and a new block otherwise; never hand-edit an SPDX comment into them.
 - `REUSE.toml` also covers `.github/PULL_REQUEST_TEMPLATE.md`, `Website/**` and `AppStore/**`, for the reasons its comments give.
 - Whenever a change adds a new file, give it SPDX coverage immediately.
 - Always run `reuse lint` in the project root directory after applying changes (`brew install reuse` if missing) and confirm it reports "Congratulations! Your project is compliant with version 3.3 of the REUSE Specification".
