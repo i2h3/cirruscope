@@ -712,6 +712,17 @@
                         <rect key="frame" x="0.0" y="0.0" width="600" height="400"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
+                            <button hidden="YES" tintProminence="primary" borderShape="capsule" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="phv-81-3t0" userLabel="Pre-Defined Server Login Button">
+                                <rect key="frame" x="270" y="138" width="61" height="24"/>
+                                <buttonCell key="cell" type="push" title="Log In" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="tsp-YA-poS">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                                <color key="bezelColor" name="controlAccentColor" catalog="System" colorSpace="catalog"/>
+                                <connections>
+                                    <action selector="open:" target="CSm-iM-xwx" id="hvL-AJ-RG3"/>
+                                </connections>
+                            </button>
                             <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="hJR-Eu-VYI" userLabel="App Name">
                                 <rect key="frame" x="179" y="284" width="242" height="56"/>
                                 <textFieldCell key="cell" lineBreakMode="clipping" title="Cirruscope" id="YMm-Pw-AmD">
@@ -812,6 +823,7 @@
                         </subviews>
                         <constraints>
                             <constraint firstItem="Ekq-sM-rjr" firstAttribute="centerX" secondItem="JXc-I7-b73" secondAttribute="centerX" id="3wJ-QI-0zb"/>
+                            <constraint firstItem="ech-1t-Ipm" firstAttribute="top" secondItem="phv-81-3t0" secondAttribute="bottom" constant="20" symbolic="YES" id="9fp-1K-auw"/>
                             <constraint firstItem="ech-1t-Ipm" firstAttribute="top" secondItem="BCk-Io-y3b" secondAttribute="bottom" constant="8" symbolic="YES" id="Az3-z4-5Dz"/>
                             <constraint firstItem="YlJ-G9-LcR" firstAttribute="top" secondItem="RBx-9A-EGs" secondAttribute="bottom" constant="8" symbolic="YES" id="Bsv-FU-npx"/>
                             <constraint firstItem="YlJ-G9-LcR" firstAttribute="leading" secondItem="JXc-I7-b73" secondAttribute="leading" constant="80" id="Cbi-y6-i1D"/>
@@ -829,15 +841,21 @@
                             <constraint firstItem="oXX-0C-ccH" firstAttribute="centerX" secondItem="JXc-I7-b73" secondAttribute="centerX" id="jBG-57-ERi"/>
                             <constraint firstItem="hJR-Eu-VYI" firstAttribute="top" secondItem="JXc-I7-b73" secondAttribute="top" constant="60" id="k3d-Rx-YbX"/>
                             <constraint firstAttribute="bottom" secondItem="Ekq-sM-rjr" secondAttribute="bottom" constant="20" symbolic="YES" id="k59-fG-Vrn"/>
+                            <constraint firstItem="phv-81-3t0" firstAttribute="centerX" secondItem="JXc-I7-b73" secondAttribute="centerX" id="mQp-ne-iBg"/>
                             <constraint firstItem="BCk-Io-y3b" firstAttribute="leading" secondItem="YlJ-G9-LcR" secondAttribute="leading" id="nqq-rP-lKs"/>
                             <constraint firstItem="k1i-ML-nxX" firstAttribute="leading" secondItem="YlJ-G9-LcR" secondAttribute="trailing" constant="8" symbolic="YES" id="rk6-nx-Pm7"/>
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="appName" destination="hJR-Eu-VYI" id="jgM-D9-KGf"/>
                         <outlet property="openButton" destination="k1i-ML-nxX" id="yTP-uu-Umj"/>
+                        <outlet property="predefinedServerURLOpenButton" destination="phv-81-3t0" id="6Hp-7O-0hd"/>
+                        <outlet property="privacyPolicy" destination="mVU-k2-QDL" id="YK3-QZ-lM8"/>
                         <outlet property="progressIndicator" destination="ech-1t-Ipm" id="ask-cz-WW2"/>
                         <outlet property="schemeHintLabel" destination="BCk-Io-y3b" id="1bS-R9-6eD"/>
                         <outlet property="serverAddressField" destination="YlJ-G9-LcR" id="7M9-fT-bgh"/>
+                        <outlet property="serverAddressLabel" destination="RBx-9A-EGs" id="a5Y-f4-hkZ"/>
+                        <outlet property="support" destination="51v-jE-Cfp" id="Wsp-2Z-C9a"/>
                     </connections>
                 </viewController>
                 <customObject id="ZVT-ow-fmy" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>

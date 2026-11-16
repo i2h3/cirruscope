@@ -9,17 +9,34 @@ import WidgetKit
 
 /// `ServerAddressViewController` backs the storyboard scene that asks the user for the address of the Nextcloud server they want to connect to.
 class ServerAddressViewController: NSViewController {
+    @IBOutlet
+    var appName: NSTextField!
+
+    @IBOutlet
+    var privacyPolicy: NSButton!
+
     /// `progressIndicator` is the indeterminate spinner that is animated while a server is being validated and the login is in progress.
     @IBOutlet
     var progressIndicator: NSProgressIndicator!
+
+    /// `serverAddressLabel` is the label for `serverAddressField`.
+    @IBOutlet
+    var serverAddressLabel: NSTextField!
 
     /// `serverAddressField` is the text field that captures the server address typed by the user.
     @IBOutlet
     var serverAddressField: NSTextField!
 
+    @IBOutlet
+    var support: NSButton!
+
     /// `openButton` is the button that triggers `open(_:)` to validate the entered server address.
     @IBOutlet
     var openButton: NSButton!
+
+    /// `predefinedServerURLOpenButton` is the button that triggers `open(_:)` to validate the entered server address.
+    @IBOutlet
+    var predefinedServerURLOpenButton: NSButton!
 
     /// `schemeHintLabel` is the hint under `serverAddressField` that names the HTTPS default Cirruscope applied to an address the user entered without a scheme of its own.
     @IBOutlet
@@ -37,8 +54,26 @@ class ServerAddressViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        appName.stringValue = InfoPlist.applicationName
+
         serverAddressField.delegate = self
         serverAddressField.formatter = addressFormatter
+
+        if let server = InfoPlist.server {
+            openButton.isHidden = true
+            predefinedServerURLOpenButton.isHidden = false
+            serverAddressLabel.isHidden = true
+            serverAddressField.stringValue = server.absoluteString
+            serverAddressField.isHidden = true
+        }
+
+        if InfoPlist.privacyPolicy == nil {
+            privacyPolicy.isHidden = true
+        }
+
+        if InfoPlist.support == nil {
+            support.isHidden = true
+        }
     }
 
     /// `open(_:)` normalizes whatever is in `serverAddressField` through `ServerAddress`, shows the user the address it resolved to, and then validates that address against the server before running Login Flow v2.
@@ -70,6 +105,7 @@ class ServerAddressViewController: NSViewController {
 
         serverAddressField.isEnabled = false
         openButton.isEnabled = false
+        predefinedServerURLOpenButton.isEnabled = false
         progressIndicator.isHidden = false
         progressIndicator.startAnimation(self)
 
@@ -77,6 +113,7 @@ class ServerAddressViewController: NSViewController {
             defer {
                 serverAddressField.isEnabled = true
                 updateOpenButtonEnablement()
+                predefinedServerURLOpenButton.isEnabled = true
                 progressIndicator.isHidden = true
                 progressIndicator.stopAnimation(self)
             }
@@ -140,6 +177,10 @@ class ServerAddressViewController: NSViewController {
 
     /// `revealSchemeHint()` shows the hint that HTTPS was assumed for an address entered without a scheme, and announces it once to assistive applications.
     func revealSchemeHint() {
+        guard InfoPlist.server == nil else {
+            return
+        }
+
         guard schemeHintLabel.isHidden else {
             return
         }
