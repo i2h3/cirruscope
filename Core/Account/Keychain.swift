@@ -7,7 +7,7 @@ import os
 /// `Keychain` stores the `Credentials` obtained from Login Flow v2, keyed by the address of the server they authenticate against.
 enum Keychain {
     /// `service` is the constant `kSecAttrService` value under which every credential item is filed, so the items can be enumerated and cleared as a group.
-    static let service: String = InfoPlist.keychainServiceIdentifier
+    static let service: String = InfoPlist().keychainServiceIdentifier
 
     /// `logger` records Keychain access under the `Keychain` category, at debug level for successful reads, writes, and clears and at error level for failures; it is not `private` so the macOS app's move out of the file-based Keychain logs through it as well.
     static let logger = Logger(for: Keychain.self)

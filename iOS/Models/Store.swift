@@ -37,6 +37,8 @@ class Store {
     /// Counts how many times the apps' icons have changed, so a view drawing them redraws when they do.
     private(set) var iconGeneration = 0
 
+    let infoPlist: any InfoPlistReading
+
     /// The photograph the signed-in account uploaded to the server, or `nil` when it has none or none has been downloaded yet.
     private(set) var accountPhoto: CGImage?
 
@@ -53,10 +55,11 @@ class Store {
     private var currentUserObserver: (any NSObjectProtocol)?
 
     /// Build a store around an account that is already known, or around none.
-    init(account: ServerAccount? = nil, apps: [ServerAppTransferObject] = [], accountPhoto: CGImage? = nil) {
+    init(account: ServerAccount? = nil, apps: [ServerAppTransferObject] = [], accountPhoto: CGImage? = nil, infoPlist: any InfoPlistReading = InfoPlist.shared) {
         self.account = account
         self.apps = apps
         self.accountPhoto = accountPhoto
+        self.infoPlist = infoPlist
 
         server = account.flatMap { ServerConnection.authenticated(address: $0.server) }
 

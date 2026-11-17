@@ -45,7 +45,7 @@ enum ServerConnection {
         logger.info("Validating server capabilities")
 
         let capabilities = try await server.capabilities()
-        let minimumMajorVersion = InfoPlist.minimumSupportedServerMajorVersion
+        let minimumMajorVersion = InfoPlist().minimumSupportedServerMajorVersion
 
         guard capabilities.version.major >= minimumMajorVersion else {
             logger.notice("Server version \(capabilities.version.string) is below the minimum \(minimumMajorVersion)")
@@ -94,6 +94,6 @@ enum ServerConnection {
 
     /// `userAgent` is the HTTP user agent Cirruscope presents to the server, taken from `InfoPlist.applicationName`.
     static var userAgent: String {
-        InfoPlist.applicationName
+        InfoPlist().applicationName
     }
 }
