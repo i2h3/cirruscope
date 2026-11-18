@@ -13,7 +13,7 @@ PRODUCT_NAME = $(CIRRUSCOPE_BUNDLE_NAME)
 // bundles include only the root and so carry none, and a root `Local.xcconfig`, read before this point, cannot
 // reassign them for the apps. `Widgets/Widgets.xcconfig` assigns the same entitlements to the extension the same way.
 // `REGISTER_APP_GROUPS` is a macOS-only build setting, letting automatic signing register the App Group the
-// entitlements name when it signs for the Mac, and it sits beside them here rather than in `project.pbxproj`.
+// entitlements name when it signs for the Mac, and it sits beside them here rather than in `project.xcproj`.
 CODE_SIGN_ENTITLEMENTS = Cirruscope/Cirruscope.entitlements
 REGISTER_APP_GROUPS = YES
 

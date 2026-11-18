@@ -207,8 +207,10 @@ struct NextcloudView: View {
                             Label("Settings", systemImage: "gear")
                         }
 
-                        Link(destination: InfoPlist.appStoreReview) {
-                            Label("Rate Cirruscope", systemImage: "star")
+                        if let url = store.infoPlist.appStoreReview {
+                            Link(destination: url) {
+                                Label("Rate Cirruscope", systemImage: "star")
+                            }
                         }
 
                         Divider()

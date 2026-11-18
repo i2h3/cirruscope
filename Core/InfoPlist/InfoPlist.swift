@@ -4,7 +4,7 @@
 import Foundation
 
 /// Facility to read values from a bundle's own Info.plist file.
-enum InfoPlist {
+struct InfoPlist: InfoPlistReading {
     /// Property list keys.
     private enum Key {
         /// Property list key.
@@ -20,13 +20,20 @@ enum InfoPlist {
         static let privacyPolicy = "PrivacyPolicy"
 
         /// Property list key.
+        static let server = "ServerURL"
+
+        /// Property list key.
         static let support = "SupportURL"
 
         static let appStoreReview = "AppStoreReviewURL"
     }
 
-    /// The lowest Nextcloud major version the app accepts.
-    static var minimumSupportedServerMajorVersion: Int {
+    @MainActor
+    static let shared: any InfoPlistReading = InfoPlist()
+
+    init() {}
+
+    var minimumSupportedServerMajorVersion: Int {
         guard let value = Bundle.main.object(forInfoDictionaryKey: Key.minimumSupportedServerMajorVersion) else {
             preconditionFailure("Info.plist is missing the \"\(Key.minimumSupportedServerMajorVersion)\" entry.")
         }
@@ -42,8 +49,7 @@ enum InfoPlist {
         preconditionFailure("Info.plist entry \"\(Key.minimumSupportedServerMajorVersion)\" must be an integer or a string representing one but was \(type(of: value)).")
     }
 
-    /// The name of the application every bundle in this app group belongs to, as presented to a server.
-    static var applicationName: String {
+    var applicationName: String {
         guard let value = Bundle.main.object(forInfoDictionaryKey: Key.applicationName) else {
             preconditionFailure("Info.plist is missing the \"\(Key.applicationName)\" entry.")
         }
@@ -55,8 +61,7 @@ enum InfoPlist {
         return stringValue
     }
 
-    /// The `kSecAttrService` value every Keychain item of this app group is filed under.
-    static var keychainServiceIdentifier: String {
+    var keychainServiceIdentifier: String {
         guard let value = Bundle.main.object(forInfoDictionaryKey: Key.keychainServiceIdentifier) else {
             preconditionFailure("Info.plist is missing the \"\(Key.keychainServiceIdentifier)\" entry.")
         }
@@ -68,34 +73,67 @@ enum InfoPlist {
         return stringValue
     }
 
-    /// The URL of Cirruscope's online privacy policy.
-    static var privacyPolicy: URL {
+    var privacyPolicy: URL? {
         guard let value = Bundle.main.object(forInfoDictionaryKey: Key.privacyPolicy) else {
-            preconditionFailure("Info.plist is missing the \"\(Key.privacyPolicy)\" entry.")
+            return nil
         }
 
-        guard let stringValue = value as? String, let url = URL(string: stringValue) else {
+        guard let stringValue = value as? String else {
+            return nil
+        }
+
+        guard stringValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false else {
+            return nil
+        }
+
+        guard let url = URL(string: stringValue) else {
             preconditionFailure("Info.plist entry \"\(Key.privacyPolicy)\" must be a string representing a valid URL but was \(value).")
         }
 
         return url
     }
 
-    /// The URL of Cirruscope's online support page.
-    static var support: URL {
-        guard let value = Bundle.main.object(forInfoDictionaryKey: Key.support) else {
-            preconditionFailure("Info.plist is missing the \"\(Key.support)\" entry.")
+    var server: URL? {
+        guard let value = Bundle.main.object(forInfoDictionaryKey: Key.server) else {
+            return nil
         }
 
-        guard let stringValue = value as? String, let url = URL(string: stringValue) else {
+        guard let stringValue = value as? String else {
+            return nil
+        }
+
+        guard stringValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false else {
+            return nil
+        }
+
+        guard let url = URL(string: stringValue) else {
+            preconditionFailure("Info.plist entry \"\(Key.server)\" must be a string representing a valid URL but was \(value).")
+        }
+
+        return url
+    }
+
+    var support: URL? {
+        guard let value = Bundle.main.object(forInfoDictionaryKey: Key.support) else {
+            return nil
+        }
+
+        guard let stringValue = value as? String else {
+            return nil
+        }
+
+        guard stringValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false else {
+            return nil
+        }
+
+        guard let url = URL(string: stringValue) else {
             preconditionFailure("Info.plist entry \"\(Key.support)\" must be a string representing a valid URL but was \(value).")
         }
 
         return url
     }
 
-    /// The App Store page for writing a review of Cirruscope, which only the apps declare.
-    static var appStoreReview: URL {
+    var appStoreReview: URL? {
         guard let value = Bundle.main.object(forInfoDictionaryKey: Key.appStoreReview) else {
             preconditionFailure("Info.plist is missing the \"\(Key.appStoreReview)\" entry.")
         }
@@ -104,8 +142,12 @@ enum InfoPlist {
             preconditionFailure("Info.plist entry \"\(Key.appStoreReview)\" must be a string but was \(value).")
         }
 
+        guard stringValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false else {
+            return nil
+        }
+
         guard let url = URL(string: stringValue) else {
-            preconditionFailure("Info.plist entry \"\(Key.appStoreReview)\" must represent a valid URL but was \(stringValue).")
+            return nil
         }
 
         return url

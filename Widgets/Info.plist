@@ -22,6 +22,8 @@
 	</dict>
 	<key>PrivacyPolicy</key>
 	<string>$(CIRRUSCOPE_PRIVACY_POLICY_URL)</string>
+	<key>ServerURL</key>
+	<string>$(CIRRUSCOPE_SERVER_URL)</string>
 	<key>SupportURL</key>
 	<string>$(CIRRUSCOPE_SUPPORT_URL)</string>
 </dict>

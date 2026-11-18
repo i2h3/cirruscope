@@ -33,6 +33,7 @@
     { "path": "GOVERNANCE.md" },
     { "path": "REUSE.toml" },
     { "path": "Cirruscope.xcconfig" },
+    { "path": ".gitignore" },
     { "kind": "folder", "path": ".github" },
     { "kind": "folder", "path": "AppStore" },
     { "kind": "folder", "path": "Documentation" },
@@ -196,8 +197,8 @@
         },
       ],
       "build-settings": {
-        "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon",
-        "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "AccentColor",
+        "ASSETCATALOG_COMPILER_APPICON_NAME": "$(CIRRUSCOPE_APPICON_NAME)",
+        "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "$(CIRRUSCOPE_GLOBAL_ACCENT_COLOR_NAME)",
         "AUTOMATION_APPLE_EVENTS": "NO",
         "COMBINE_HIDPI_IMAGES": "YES",
         "ENABLE_APP_SANDBOX": "YES",
@@ -292,8 +293,8 @@
         },
       ],
       "build-settings": {
-        "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon",
-        "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "AccentColor",
+        "ASSETCATALOG_COMPILER_APPICON_NAME": "$(CIRRUSCOPE_APPICON_NAME)",
+        "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "$(CIRRUSCOPE_GLOBAL_ACCENT_COLOR_NAME)",
         "ENABLE_PREVIEWS": "YES",
         "GENERATE_INFOPLIST_FILE": "YES",
         "INFOPLIST_FILE": "iOS/Info.plist",
@@ -364,7 +365,7 @@
         },
       ],
       "build-settings": {
-        "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "AccentColor",
+        "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "$(CIRRUSCOPE_GLOBAL_ACCENT_COLOR_NAME)",
         "ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME": "WidgetBackground",
         "AUTOMATION_APPLE_EVENTS": "NO",
         "ENABLE_APP_SANDBOX": "YES",

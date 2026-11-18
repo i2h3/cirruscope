@@ -143,8 +143,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// `openPrivacyPolicy(_:)` opens Cirruscope's online privacy policy in the user's default browser.
     @IBAction
     func openPrivacyPolicy(_: Any?) {
+        guard let url = InfoPlist.privacyPolicy else {
+            return
+        }
+
         logger.debug("Opening privacy policy")
-        NSWorkspace.shared.open(InfoPlist.privacyPolicy)
+        NSWorkspace.shared.open(url)
     }
 
     /// `openSupportPage(_:)` opens Cirruscope's online support page in the user's default browser.
@@ -152,8 +156,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// It backs the Help-menu "Get Support…" item, which targets the responder chain.
     @IBAction
     func openSupportPage(_: Any?) {
+        guard let url = InfoPlist.support else {
+            return
+        }
+        
         logger.debug("Opening support page")
-        NSWorkspace.shared.open(InfoPlist.support)
+        NSWorkspace.shared.open(url)
     }
 
     @IBAction

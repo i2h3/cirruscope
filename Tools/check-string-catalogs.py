@@ -4,7 +4,7 @@
 """
 Checks every String Catalog for a translation that is missing, and for one still identical to English.
 
-Every key of each catalog not marked Do Not Translate is checked in every localization the Xcode project's `knownRegions` enables, `en` and `Base` excepted.
+Every key of each catalog not marked Do Not Translate is checked in every localization the Xcode project's `localizations` object supports, its `development` language and `Base` excepted.
 A translation whose `state` is not `translated` is reported with that state, and a translated one still identical to the English source is reported for a person to confirm as a deliberate exception.
 The script exits 0 either way, since only a person can judge an identical-to-English hit.
 With `--list-locales` it prints the detected localizations instead and checks nothing.
@@ -18,15 +18,17 @@ import pathlib
 import subprocess
 
 parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-parser.add_argument("--list-locales", action="store_true", help="print the localizations knownRegions enables, en and Base excepted, and check nothing")
+parser.add_argument("--list-locales", action="store_true", help="print the localizations the project's supported list holds, its development language and Base excepted, and check nothing")
 arguments = parser.parse_args()
 
 # Every path below is relative to the repository root, whichever directory the script is run from.
 os.chdir(pathlib.Path(__file__).resolve().parent.parent)
 
-pbxproj = json.loads(subprocess.check_output(["plutil", "-convert", "json", "-o", "-", "Cirruscope.xcodeproj/project.pbxproj"]))
-known_regions = next(o["knownRegions"] for o in pbxproj["objects"].values() if o.get("isa") == "PBXProject")
-locales = [r for r in known_regions if r not in ("en", "Base")]
+# The .xcproj allows trailing commas, so it is not strict JSON and only plutil parses it.
+project = json.loads(subprocess.check_output(["plutil", "-convert", "json", "-o", "-", "Cirruscope.xcodeproj/project.xcproj"]))
+localizations = project["localizations"]
+development = localizations["development"]
+locales = [r for r in localizations["supported"] if r not in (development, "Base")]
 
 if arguments.list_locales:
     print(locales)

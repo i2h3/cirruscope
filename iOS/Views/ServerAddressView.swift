@@ -46,7 +46,7 @@ struct ServerAddressView: View {
 
     /// Whether there is something to submit.
     private var canConnect: Bool {
-        isConnecting == false && enteredAddress.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+        (isConnecting == false && enteredAddress.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false) || store.infoPlist.server != nil
     }
 
     /// Whether the HTTPS caption has something to explain, which is true for exactly as long as the field still holds the address it was raised for.
@@ -73,12 +73,9 @@ struct ServerAddressView: View {
 
             VStack(alignment: .leading, spacing: 48) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(verbatim: "Cirruscope")
+                    Text(verbatim: store.infoPlist.applicationName)
                         .font(.system(size: addressIsFocused ? 28 : 40, weight: .bold))
-                        .foregroundStyle(Gradient(colors: [.accent.opacity(0.75), .accent]))
-                        // Still a glow, just half strength: radius 24 at full opacity haloed the glyph edges, while
-                        // 0.35 alpha keeps the bloom and lets the letterforms stay crisp.
-                        .shadow(color: .accent.opacity(0.35), radius: 18, x: 0, y: 0)
+                        .foregroundStyle(Color.accentColor)
 
                     Text("Your Nextcloud experience, elevated.")
                         .font(addressIsFocused ? .subheadline : .title3)
@@ -87,44 +84,48 @@ struct ServerAddressView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
-                    // A label, not a headline: the sentence this replaces ran to two lines at body size, competed
-                    // with the wordmark for the top of the hierarchy, and pushed the field down the screen. What it
-                    // used to explain is the footnote below, which is the only place that explanation is needed.
-                    Text("Server address")
-                        .font(.subheadline.weight(.semibold))
+                    if store.infoPlist.server == nil {
+                        // A label, not a headline: the sentence this replaces ran to two lines at body size, competed
+                        // with the wordmark for the top of the hierarchy, and pushed the field down the screen. What it
+                        // used to explain is the footnote below, which is the only place that explanation is needed.
+                        Text("Server address")
+                            .font(.subheadline.weight(.semibold))
 
-                    TextField("Server address", text: $enteredAddress, prompt: Text(verbatim: "https://your.nextcloud.com"))
-                        .autocorrectionDisabled()
-                        .keyboardType(.URL)
-                        .textContentType(.URL)
-                        .textInputAutocapitalization(.never)
-                        .submitLabel(.go)
-                        .disabled(isConnecting)
-                        .focused($addressIsFocused)
-                        .padding(.horizontal, 16)
-                        .frame(height: 52)
-                        .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 14))
-                        .onSubmit(connect)
+                        TextField("Server address", text: $enteredAddress, prompt: Text(verbatim: "https://your.nextcloud.com"))
+                            .autocorrectionDisabled()
+                            .keyboardType(.URL)
+                            .textContentType(.URL)
+                            .textInputAutocapitalization(.never)
+                            .submitLabel(.go)
+                            .disabled(isConnecting)
+                            .focused($addressIsFocused)
+                            .padding(.horizontal, 16)
+                            .frame(height: 52)
+                            .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 14))
+                            .onSubmit(connect)
 
-                    // Shown only once an address entered without a scheme of its own has actually been rewritten, so
-                    // the note is present when it has something to explain — the rule `revealSchemeHint()` follows on
-                    // macOS. It stays laid out either way and only fades, because inserting it used to shove the
-                    // button upwards under a thumb already on its way down.
-                    Text("Assuming HTTPS for a secure connection unless specified differently.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .opacity(showsSchemeHint ? 1 : 0)
-                        .accessibilityHidden(showsSchemeHint == false)
+                        // Shown only once an address entered without a scheme of its own has actually been rewritten, so
+                        // the note is present when it has something to explain — the rule `revealSchemeHint()` follows on
+                        // macOS. It stays laid out either way and only fades, because inserting it used to shove the
+                        // button upwards under a thumb already on its way down.
+                        Text("Assuming HTTPS for a secure connection unless specified differently.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .opacity(showsSchemeHint ? 1 : 0)
+                            .accessibilityHidden(showsSchemeHint == false)
+                    }
 
                     // One labelled, full width action rather than a 26 point icon hanging off the field's trailing
                     // edge: it clears the 44 point minimum, it says what it does, and the spinner trades places with
                     // the label inside it so the row never changes size mid-attempt.
                     Button(action: connect) {
                         ZStack {
-                            HStack(spacing: 8) {
-                                Text("Connect")
-
-                                Image(systemName: "arrow.right")
+                            Group {
+                                if store.infoPlist.server == nil {
+                                    Text("Connect")
+                                } else {
+                                    Text("Login")
+                                }
                             }
                             .fontWeight(.semibold)
                             .opacity(isConnecting ? 0 : 1)
@@ -152,12 +153,14 @@ struct ServerAddressView: View {
         // Out of the centered group entirely: as a sibling of the spacers the footer took a third of the leftover
         // height with it, which is where the gap below the form came from.
         .safeAreaInset(edge: .bottom) {
-            HStack {
-                Link("Privacy Policy", destination: InfoPlist.privacyPolicy)
+            HStack(spacing: 20) {
+                if let url = store.infoPlist.privacyPolicy {
+                    Link("Privacy Policy", destination: url)
+                }
 
-                Spacer()
-
-                Link("Support", destination: InfoPlist.support)
+                if let url = store.infoPlist.support {
+                    Link("Support", destination: url)
+                }
             }
             .font(.footnote)
             .padding(.horizontal, 20)
@@ -211,7 +214,11 @@ struct ServerAddressView: View {
         let address: ServerAddress
 
         do {
-            address = try ServerAddress(normalizing: enteredAddress)
+            if let predefinedAddress = store.infoPlist.server {
+                address = try ServerAddress(normalizing: predefinedAddress.absoluteString)
+            } else {
+                address = try ServerAddress(normalizing: enteredAddress)
+            }
         } catch {
             Self.logger.error("Entered server address is not usable: \(String(describing: error))")
             failure = Failure(title: String(localized: "Invalid Server Address", comment: "Alert title shown when the entered server address cannot be used to reach a Nextcloud server."), message: error.localizedDescription)
@@ -242,7 +249,7 @@ struct ServerAddressView: View {
                 case let .unsupported(capabilities):
                     let version = capabilities.version.string
                     Self.logger.notice("Server version \(version) is unsupported")
-                    failure = Failure(title: String(localized: "Unsupported Server Version", comment: "Alert title shown when the server runs a Nextcloud version older than the app supports."), message: String(localized: "Cirruscope requires Nextcloud server version \(InfoPlist.minimumSupportedServerMajorVersion) or later. The server at “\(address.displayString)” is running version \(version).", comment: "Alert message shown when the server's Nextcloud version is too old; placeholders are the minimum supported major version, the server address, and the server's version."))
+                    failure = Failure(title: String(localized: "Unsupported Server Version", comment: "Alert title shown when the server runs a Nextcloud version older than the app supports."), message: String(localized: "Cirruscope requires Nextcloud server version \(store.infoPlist.minimumSupportedServerMajorVersion) or later. The server at “\(address.displayString)” is running version \(version).", comment: "Alert message shown when the server's Nextcloud version is too old; placeholders are the minimum supported major version, the server address, and the server's version."))
 
                 case .supported:
                     Self.logger.info("Server supported; starting Login Flow v2")
@@ -301,6 +308,11 @@ struct ServerAddressView: View {
 #Preview("Default") {
     ServerAddressView()
         .environment(Store())
+}
+
+#Preview("Pre-defined Server") {
+    ServerAddressView()
+        .environment(Store(infoPlist: InfoPlistMock(server: URL(string: "http://localhost:8080")!)))
 }
 
 #Preview("Assumed HTTPS") {

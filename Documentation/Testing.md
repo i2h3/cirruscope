@@ -13,7 +13,7 @@ The rules themselves are in that section and are not restated here.
 - `macOSTests/` and `iOSTests/` are each a test target with its own `.xcconfig`.
   `Tests/` is listed by both and carries no `.xcconfig`, so every suite in it runs twice, once against each app module.
   That is not redundancy: `Core/` and `Cirruscope/` are compiled twice, against two SDKs, and a framework can answer differently on each, which a suite pinned to one platform cannot see.
-- Both test targets are hosted by their app: `project.pbxproj` sets `TEST_HOST` to `$(BUILT_PRODUCTS_DIR)/Cirruscope.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Cirruscope` and `BUNDLE_LOADER` to `$(TEST_HOST)`.
+- Both test targets are hosted by their app: `project.xcproj` sets `TEST_HOST` to `$(BUILT_PRODUCTS_DIR)/Cirruscope.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Cirruscope` and `BUNDLE_LOADER` to `$(TEST_HOST)`.
   A suite therefore reaches the app's internal types through `@testable import Cirruscope`, and a macOS suite may touch AppKit directly.
   The host app runs for the whole test run, which is what most of this document is about.
 - `Cirruscope for macOS.xcscheme` and `Cirruscope for iOS.xcscheme` are committed in `Cirruscope.xcodeproj/xcshareddata/xcschemes/`, so each scheme's test action is the same everywhere rather than depending on the per-user schemes Xcode autocreates (`xcuserdata` is gitignored).
