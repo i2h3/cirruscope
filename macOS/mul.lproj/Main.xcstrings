@@ -3451,36 +3451,6 @@
         }
       }
     },
-    "r6i-3X-z7f.title" : {
-      "comment" : "Class = \"NSTextFieldCell\"; title = \"1 of 3\"; ObjectID = \"r6i-3X-z7f\";",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1 von 3"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "1 of 3"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1 de 3"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1 sur 3"
-          }
-        }
-      }
-    },
     "RB4-Sm-HuC.title" : {
       "comment" : "Class = \"NSMenuItem\"; title = \"\\tRight to Left\"; ObjectID = \"RB4-Sm-HuC\";",
       "extractionState" : "extracted_with_value",
