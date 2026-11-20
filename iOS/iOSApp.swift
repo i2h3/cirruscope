@@ -29,10 +29,11 @@ struct iOSApp: App {
             ContentView()
                 .environment(store)
         }
-        // The server apps in the View menu of an iPad's menu bar. An iPhone has no menu bar, and no item here carries
-        // a keyboard shortcut, so nothing of this reaches the key commands SwiftUI builds there instead.
+        // The server apps in the View menu of an iPad's menu bar, and the Find command in its Edit menu. An iPhone has
+        // no menu bar, so only the Find command's ⌘F reaches the key commands SwiftUI builds there instead.
         .commands {
             ServerAppCommands(store: store)
+            FindCommands()
         }
         // Registers `NotificationRefreshTask.identifier` with `BGTaskScheduler` while this scene is built, which
         // happens inside launch — the deadline registration has, and the reason no application delegate is needed to

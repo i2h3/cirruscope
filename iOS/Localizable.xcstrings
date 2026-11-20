@@ -739,6 +739,29 @@
         }
       }
     },
+    "Find in Page" : {
+      "comment" : "A menu item in the account menu and the iPad menu bar's Edit menu that presents the system find navigator over the page, labelled like the Mac's find panel so it is told apart from the server's own search.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf Seite suchen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar en la página"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechercher dans la page"
+          }
+        }
+      }
+    },
     "Invalid Server Address" : {
       "comment" : "Alert title shown when the entered server address cannot be used to reach a Nextcloud server.",
       "localizations" : {
