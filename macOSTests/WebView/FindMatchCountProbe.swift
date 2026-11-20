@@ -18,13 +18,13 @@ final class FindMatchCountProbe: NSObject, WKNavigationDelegate {
     private let webView: WKWebView
 
     /// `continuation` is the report waiting for the document to finish loading, or `nil` once it has resumed.
-    private var continuation: CheckedContinuation<Void, Never>?
+    private var continuation: CheckedContinuation<Void, Error>?
 
-    /// `init()` builds a web view that keeps nothing and reports its finished navigations to this probe.
+    /// `init()` builds a web view sized like a real window, so WebKit lays the page out as it would for a user, that keeps nothing and reports its finished navigations to this probe.
     override private init() {
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
-        webView = WKWebView(frame: .zero, configuration: configuration)
+        webView = WKWebView(frame: NSRect(x: 0, y: 0, width: 1024, height: 768), configuration: configuration)
         super.init()
         webView.navigationDelegate = self
     }
@@ -32,18 +32,46 @@ final class FindMatchCountProbe: NSObject, WKNavigationDelegate {
     /// `counts(inDocument:forQuery:)` loads `document` and answers WebKit's own match count for `query` alongside the bundled script's count in the same document, the script count being `nil` when the bundled script is missing.
     static func counts(inDocument document: String, forQuery query: String) async throws -> (webkit: Int, script: Int?) {
         let probe = FindMatchCountProbe()
-        await probe.load(document)
+        try await probe.load(document)
         let webkit = try await probe.webkitMatchCount(of: query)
         let script = try await probe.scriptMatchCount(of: query)
         return (webkit, script)
     }
 
-    /// `load(_:)` loads `document` and returns once its navigation has finished.
-    private func load(_ document: String) async {
-        await withCheckedContinuation { continuation in
+    /// `selectionStarts(inDocument:afterFinds:)` loads `document`, runs WebKit's find for each query in `queries` in order with the find bar's configuration, and answers the start offset of the page's selection after each find, so a test can assert that a longer query does not move the selection's start.
+    static func selectionStarts(inDocument document: String, afterFinds queries: [String]) async throws -> [Int] {
+        let probe = FindMatchCountProbe()
+        try await probe.load(document)
+
+        var starts: [Int] = []
+        for query in queries {
+            let configuration = WKFindConfiguration()
+            configuration.caseSensitive = false
+            configuration.wraps = true
+            _ = try await probe.webView.find(query, configuration: configuration)
+            let result = try await probe.webView.callAsyncJavaScript(
+                "const selection = window.getSelection(); return selection.rangeCount > 0 ? selection.getRangeAt(0).startOffset : -1;",
+                in: nil,
+                contentWorld: .page
+            )
+            starts.append(result as? Int ?? -1)
+        }
+
+        return starts
+    }
+
+    /// `load(_:)` loads `document` and returns once its navigation has finished, or throws when the load fails or the WebContent process dies.
+    private func load(_ document: String) async throws {
+        try await withCheckedThrowingContinuation { continuation in
             self.continuation = continuation
             webView.loadHTMLString(document, baseURL: Self.address)
         }
+    }
+
+    /// `fail(_:)` resumes a waiting load with `error`, so a failed navigation fails the test instead of hanging it.
+    private func fail(_ error: Error) {
+        continuation?.resume(throwing: error)
+        continuation = nil
     }
 
     /// `webkitMatchCount(of:)` is how many times WebKit's own find reports a match for `query`, stepping forward without wrapping until it reports none.
@@ -79,5 +107,17 @@ final class FindMatchCountProbe: NSObject, WKNavigationDelegate {
     func webView(_: WKWebView, didFinish _: WKNavigation!) {
         continuation?.resume()
         continuation = nil
+    }
+
+    func webView(_: WKWebView, didFail _: WKNavigation!, withError error: Error) {
+        fail(error)
+    }
+
+    func webView(_: WKWebView, didFailProvisionalNavigation _: WKNavigation!, withError error: Error) {
+        fail(error)
+    }
+
+    func webViewWebContentProcessDidTerminate(_: WKWebView) {
+        fail(NSError(domain: "FindMatchCountProbe", code: 1, userInfo: [NSLocalizedDescriptionKey: "The WebContent process terminated during the load"]))
     }
 }
