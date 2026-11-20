@@ -10,7 +10,9 @@
 // Text nodes under script, style and form elements are skipped, as the
 // browser's own find skips them, and so are text nodes in hidden elements
 // (display: none, the hidden attribute, visibility: hidden), which
-// checkVisibility reports. The values of visible text controls (text-like
+// checkVisibility reports, judging the nearest box ancestor for elements with
+// display: contents, whose text still renders; an unslotted child of a shadow
+// host is not rendered either. The values of visible text controls (text-like
 // inputs and textareas) are counted instead, because the browser's own find
 // searches them; other input types (checkbox, radio, password, date, submit)
 // are not. The walk also enters rendered same-origin iframes and open shadow
@@ -63,7 +65,22 @@ window.Cirruscope.findMatchCount = (query) => {
         if (parent?.closest(skipped)) {
           return NodeFilter.FILTER_REJECT;
         }
-        if (!parent?.checkVisibility({ visibilityProperty: true })) {
+        // An unslotted child of a shadow host is not rendered.
+        if (node.parentElement?.shadowRoot && !node.assignedSlot) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        // checkVisibility is false for display: contents, whose text still renders, so judge the nearest box.
+        let box = parent;
+        while (box && getComputedStyle(box).display === "contents") {
+          box = box.parentElement ?? box.parentNode?.host;
+        }
+        if (
+          box !== parent &&
+          getComputedStyle(parent).visibility !== "visible"
+        ) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        if (!box?.checkVisibility({ visibilityProperty: true })) {
           return NodeFilter.FILTER_REJECT;
         }
         return NodeFilter.FILTER_ACCEPT;

@@ -1582,7 +1582,7 @@ The cost accepted is that Gatekeeper does not check an executable coming from th
 
 ## Why does the Mac draw its own find bar while iOS uses the system's?
 
-A `WKWebView` can drive the system's `NSTextFinder` bar, but it was rejected because the app wants its own floating panel that also reports the match count, which `NSTextFinder`'s bar does not offer; the Mac therefore draws its own bar and drives `WKWebView.find(_:configuration:)` itself, which selects the next match and scrolls it into view (issue #98).
+A `WKWebView` can drive the system's `NSTextFinder` bar, but that bar sits inside the window above the page, and the app wants a floating panel that never covers content; the Mac therefore draws its own bar and drives `WKWebView.find(_:configuration:)` itself, which selects the next match and scrolls it into view (issue #98).
 The bar lives in its own floating panel window attached to the web window rather than as an overlay on the page, so it never covers content the user wants to read: it is placed at its window's top trailing corner each time it is shown, its title bar drags it anywhere while it stays open, and its standard panel shadow comes with it.
 Keeping the panel a child window of the web window, so that it moves with it, makes its title-bar drag stutter; that cost is accepted.
 On iOS the web view is SwiftUI's `WebView`, which ships the system find navigator as the `findNavigator` modifier, so the iPhone and iPad present that instead of drawing anything of their own, opened from the account menu's Find in Page item and, on iPad, from the menu bar's Find in Page command (⌘F) through a focused scene value naming the window in front.

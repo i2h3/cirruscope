@@ -5,7 +5,7 @@
 import Foundation
 import WebKit
 
-/// `FindMatchCountProbe` measures, in a real `WKWebView`, how many matches WebKit's own `find(_:configuration:)` reports for a query in a document, and how many the bundled match-count script counts in the same document, so `FindMatchCountOracleTests` can assert the two agree.
+/// `FindMatchCountProbe` measures, in a real `WKWebView`, how many matches WebKit's own `find(_:configuration:)` reports for a query in a document, how many the bundled match-count script counts in the same document, and where the page's selection starts after sequential finds, so `FindMatchCountOracleTests` can assert the first two agree and that a longer query does not move the selection's start.
 @MainActor
 final class FindMatchCountProbe: NSObject, WKNavigationDelegate {
     /// `address` is the base the fixture document is loaded at.
@@ -38,7 +38,7 @@ final class FindMatchCountProbe: NSObject, WKNavigationDelegate {
         return (webkit, script)
     }
 
-    /// `selectionStarts(inDocument:afterFinds:)` loads `document`, runs WebKit's find for each query in `queries` in order with the find bar's configuration, and answers the start offset of the page's selection after each find, so a test can assert that a longer query does not move the selection's start.
+    /// `selectionStarts(inDocument:afterFinds:)` loads `document`, runs WebKit's find for each query in `queries` in order with the find bar's configuration, and answers the character offset of the page selection's start from the start of the body after each find (-1 when there is no selection), so a test can assert that a longer query does not move the selection's start.
     static func selectionStarts(inDocument document: String, afterFinds queries: [String]) async throws -> [Int] {
         let probe = FindMatchCountProbe()
         try await probe.load(document)
@@ -49,11 +49,7 @@ final class FindMatchCountProbe: NSObject, WKNavigationDelegate {
             configuration.caseSensitive = false
             configuration.wraps = true
             _ = try await probe.webView.find(query, configuration: configuration)
-            let result = try await probe.webView.callAsyncJavaScript(
-                "const selection = window.getSelection(); return selection.rangeCount > 0 ? selection.getRangeAt(0).startOffset : -1;",
-                in: nil,
-                contentWorld: .page
-            )
+            let result = try await probe.webView.callAsyncJavaScript("const selection = window.getSelection(); if (selection.rangeCount === 0) { return -1; } const start = selection.getRangeAt(0); const prefix = document.createRange(); prefix.setStart(document.body, 0); prefix.setEnd(start.startContainer, start.startOffset); return prefix.toString().length;", in: nil, contentWorld: .page)
             starts.append(result as? Int ?? -1)
         }
 
