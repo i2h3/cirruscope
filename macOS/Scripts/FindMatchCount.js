@@ -12,7 +12,8 @@
 // (display: none, the hidden attribute, visibility: hidden), which
 // checkVisibility reports, judging the nearest box ancestor for elements with
 // display: contents, whose text still renders; an unslotted child of a shadow
-// host is not rendered either. The values of visible text controls (text-like
+// host and a slot's fallback text with assigned nodes are not rendered either.
+// The values of visible text controls (text-like
 // inputs and textareas) are counted instead, because the browser's own find
 // searches them; other input types (checkbox, radio, password, date, submit)
 // are not. The walk also enters rendered same-origin iframes and open shadow
@@ -60,13 +61,19 @@ window.Cirruscope.findMatchCount = (query) => {
 
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
       acceptNode(node) {
+        if (!node.nodeValue.toLowerCase().includes(needle)) {
+          return NodeFilter.FILTER_REJECT;
+        }
         // Text placed directly in a shadow root has no parentElement; its host stands in.
         const parent = node.parentElement ?? node.parentNode?.host;
         if (parent?.closest(skipped)) {
           return NodeFilter.FILTER_REJECT;
         }
-        // An unslotted child of a shadow host is not rendered.
-        if (node.parentElement?.shadowRoot && !node.assignedSlot) {
+        // An unslotted child of a shadow host is not rendered, nor is a slot's fallback text once nodes are assigned to the slot.
+        if (
+          (node.parentElement?.shadowRoot && !node.assignedSlot) ||
+          (parent?.localName === "slot" && parent.assignedNodes().length > 0)
+        ) {
           return NodeFilter.FILTER_REJECT;
         }
         // checkVisibility is false for display: contents, whose text still renders, so judge the nearest box.
@@ -74,13 +81,11 @@ window.Cirruscope.findMatchCount = (query) => {
         while (box && getComputedStyle(box).display === "contents") {
           box = box.parentElement ?? box.parentNode?.host;
         }
+        // The box decides whether the text is rendered; the text's visibility is its parent's.
         if (
-          box !== parent &&
+          !box?.checkVisibility() ||
           getComputedStyle(parent).visibility !== "visible"
         ) {
-          return NodeFilter.FILTER_REJECT;
-        }
-        if (!box?.checkVisibility({ visibilityProperty: true })) {
           return NodeFilter.FILTER_REJECT;
         }
         return NodeFilter.FILTER_ACCEPT;

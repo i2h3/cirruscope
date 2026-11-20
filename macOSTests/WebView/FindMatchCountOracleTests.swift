@@ -7,7 +7,7 @@ import Testing
 @MainActor
 @Suite(.timeLimit(.minutes(5)))
 struct FindMatchCountOracleTests {
-    /// `document` is the fixture page: three visible text matches plus one each in a text input, a textarea, a rendered same-origin iframe, an open shadow root, text placed directly in a shadow root and a `display: contents` span, which WebKit's find searches, and matches it must skip — `display: none`, the `hidden` attribute, `visibility: hidden`, an iframe in a hidden element, an unslotted child of a shadow host, script source and the values of non-text controls (checkbox, radio, password, submit, date).
+    /// `document` is the fixture page: three visible text matches plus one each in a text input, a textarea, a rendered same-origin iframe, an open shadow root, text placed directly in a shadow root, a `display: contents` span, a visible `display: contents` span inside a `visibility: hidden` element and an empty slot's fallback text, which WebKit's find searches, and matches it must skip — `display: none`, the `hidden` attribute, `visibility: hidden`, an iframe in a hidden element, an unslotted child of a shadow host, a filled slot's fallback text, script source and the values of non-text controls (checkbox, radio, password, submit, date).
     private static let document = """
     <!doctype html>
     <html><body>
@@ -26,10 +26,13 @@ struct FindMatchCountOracleTests {
     <iframe srcdoc="<p>vendor iframe</p>"></iframe>
     <div style="display: none"><iframe srcdoc="<p>vendor hidden frame</p>"></iframe></div>
     <span style="display: contents">vendor contents</span>
+    <div style="visibility: hidden"><span style="display: contents; visibility: visible">vendor visible again</span></div>
     <div id="host"></div>
     <div id="bare"></div>
     <div id="lighthost">vendor unslotted</div>
-    <script>var note = "vendor in script"; document.getElementById("host").attachShadow({ mode: "open" }).innerHTML = "<p>vendor shadow</p>"; document.getElementById("bare").attachShadow({ mode: "open" }).textContent = "vendor bare shadow"; document.getElementById("lighthost").attachShadow({ mode: "open" }).innerHTML = "<p>other</p>";</script>
+    <div id="filled"><span>other</span></div>
+    <div id="empty"></div>
+    <script>var note = "vendor in script"; document.getElementById("host").attachShadow({ mode: "open" }).innerHTML = "<p>vendor shadow</p>"; document.getElementById("bare").attachShadow({ mode: "open" }).textContent = "vendor bare shadow"; document.getElementById("lighthost").attachShadow({ mode: "open" }).innerHTML = "<p>other</p>"; document.getElementById("filled").attachShadow({ mode: "open" }).innerHTML = "<slot>vendor fallback</slot>"; document.getElementById("empty").attachShadow({ mode: "open" }).innerHTML = "<slot>vendor fallback shown</slot>";</script>
     </body></html>
     """
 
