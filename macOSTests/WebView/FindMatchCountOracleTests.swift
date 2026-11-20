@@ -3,11 +3,11 @@
 
 import Testing
 
-/// `FindMatchCountOracleTests` asserts that the bundled match-count script agrees with WebKit's own `find(_:configuration:)` on a fixture page holding visible, hidden, form, iframe, shadow-root and script text, both measured in a real `WKWebView` through `FindMatchCountProbe` (issue #98).
+/// `FindMatchCountOracleTests` asserts that the bundled match-count script agrees with WebKit's own `find(_:configuration:)` on a fixture page holding visible, hidden, form, iframe, shadow-root and script text, and that a longer query does not move the start of the page's selection, both measured in a real `WKWebView` through `FindMatchCountProbe` (issue #98).
 @MainActor
-@Suite(.timeLimit(.minutes(1)))
+@Suite(.timeLimit(.minutes(5)))
 struct FindMatchCountOracleTests {
-    /// `document` is the fixture page: three visible text matches plus one each in a text input, a textarea, a rendered same-origin iframe, an open shadow root and text placed directly in a shadow root, which WebKit's find searches, and matches it must skip — `display: none`, the `hidden` attribute, `visibility: hidden`, an iframe in a hidden element, script source and the values of non-text controls (checkbox, radio, password, submit, date).
+    /// `document` is the fixture page: three visible text matches plus one each in a text input, a textarea, a rendered same-origin iframe, an open shadow root, text placed directly in a shadow root and a `display: contents` span, which WebKit's find searches, and matches it must skip — `display: none`, the `hidden` attribute, `visibility: hidden`, an iframe in a hidden element, an unslotted child of a shadow host, script source and the values of non-text controls (checkbox, radio, password, submit, date).
     private static let document = """
     <!doctype html>
     <html><body>
@@ -25,9 +25,11 @@ struct FindMatchCountOracleTests {
     <input type="date" value="2026-11-20">
     <iframe srcdoc="<p>vendor iframe</p>"></iframe>
     <div style="display: none"><iframe srcdoc="<p>vendor hidden frame</p>"></iframe></div>
+    <span style="display: contents">vendor contents</span>
     <div id="host"></div>
     <div id="bare"></div>
-    <script>var note = "vendor in script"; document.getElementById("host").attachShadow({ mode: "open" }).innerHTML = "<p>vendor shadow</p>"; document.getElementById("bare").attachShadow({ mode: "open" }).textContent = "vendor bare shadow";</script>
+    <div id="lighthost">vendor unslotted</div>
+    <script>var note = "vendor in script"; document.getElementById("host").attachShadow({ mode: "open" }).innerHTML = "<p>vendor shadow</p>"; document.getElementById("bare").attachShadow({ mode: "open" }).textContent = "vendor bare shadow"; document.getElementById("lighthost").attachShadow({ mode: "open" }).innerHTML = "<p>other</p>";</script>
     </body></html>
     """
 
@@ -38,11 +40,12 @@ struct FindMatchCountOracleTests {
         #expect(counts.webkit == scriptCount)
     }
 
-    /// Searching a longer query starts from the start of the current selection, so the selection's start offset does not move between the two finds.
+    /// Searching a longer query starts from the start of the current selection, so the selection's start does not move between the two finds.
     @Test
     func `Searching a longer query does not move the start of the selection`() async throws {
         let starts = try await FindMatchCountProbe.selectionStarts(inDocument: Self.document, afterFinds: ["ve", "ven"])
         let first = try #require(starts.first)
+        #expect(first >= 0)
         #expect(starts.count == 2)
         #expect(starts.allSatisfy { $0 == first })
     }

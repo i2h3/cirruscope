@@ -5,7 +5,7 @@ import AppKit
 import os
 import WebKit
 
-/// `FindBarViewController` is the view controller of the storyboard "Find Bar Window" scene: it owns the find bar's search field, match count and stepping buttons, and drives WebKit's own in-page search in `webView` — the Edit menu's Find items and the bar's controls all end up in `performFind(backwards:)`, which asks `webView` to select the next match of the query and scroll it into view.
+/// `FindBarViewController` is the view controller of the storyboard "Find Bar Window" scene: it owns the find bar's search field, match count and stepping buttons, and drives WebKit's own in-page search in `webView` — the Edit menu's Find Next and Find Previous items, the search field and the bar's buttons all end up in `performFind(backwards:)`, which asks `webView` to select the next match of the query and scroll it into view, while Find… only shows the bar and counts the current query again.
 final class FindBarViewController: NSViewController {
     /// `webView` is the web view whose page is searched, read from the `FindBarWindowController` owning this panel on each use, because the storyboard loads the scene before `WebViewController` can hand the controller its web view.
     private var webView: WKWebView? {
@@ -38,7 +38,7 @@ final class FindBarViewController: NSViewController {
         findNextButton?.isEnabled = false
     }
 
-    /// `showFindBar(_:)` backs the Edit menu's "Find…" item: it attaches the panel to the web window, makes the panel key, moves first responder to `findField` with its text selected so typing replaces it, and re-counts the current query's matches without searching, so the label and the stepping buttons reflect the page just opened.
+    /// `showFindBar(_:)` backs the Edit menu's "Find…" item: it attaches the panel to the web window, makes the panel key, moves first responder to `findField` with its text selected so typing replaces it, and re-counts the current query's matches without searching, so the label reflects the page just opened; the count cannot say whether anything matched, so only a search decides that.
     @IBAction
     func showFindBar(_: Any?) {
         (view.window?.windowController as? FindBarWindowController)?.attachToWebWindow()
@@ -58,7 +58,10 @@ final class FindBarViewController: NSViewController {
 
         Task {
             let count = await countMatches(of: query, in: webView)
-            updateFindCount(matchFound: count > 0, matchCount: count)
+            guard findField.stringValue == query else {
+                return
+            }
+            updateFindCount(matchFound: true, matchCount: count)
         }
     }
 
@@ -117,6 +120,9 @@ final class FindBarViewController: NSViewController {
                 logger.debug("Find returned matchFound=\(result.matchFound, privacy: .public) (FindBarViewController)")
                 let matchCount = await countMatches(of: query, in: webView)
                 logger.debug("Counted \(matchCount) match(es) in the page (FindBarViewController)")
+                guard findField.stringValue == query else {
+                    return
+                }
                 updateFindCount(matchFound: result.matchFound, matchCount: matchCount)
             } catch {
                 logger.notice("In-page find failed: \(error.localizedDescription, privacy: .public) (FindBarViewController)")
@@ -124,7 +130,7 @@ final class FindBarViewController: NSViewController {
         }
     }
 
-    /// `updateFindCount(matchFound:matchCount:)` renders the find result and the page-wide `matchCount` into `findCountLabel` and enables the stepping buttons exactly when the query matched something.
+    /// `updateFindCount(matchFound:matchCount:)` renders whether the query matched and the page-wide `matchCount` into `findCountLabel` and enables the stepping buttons exactly when the query matched something.
     private func updateFindCount(matchFound: Bool, matchCount: Int) {
         findCountLabel?.stringValue = Self.matchCountText(matchFound: matchFound, matchCount: matchCount)
         findPreviousButton?.isEnabled = matchFound
