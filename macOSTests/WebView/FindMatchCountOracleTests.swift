@@ -7,16 +7,18 @@ import Testing
 @MainActor
 @Suite(.timeLimit(.minutes(5)))
 struct FindMatchCountOracleTests {
-    /// `document` is the fixture page: three visible text matches plus one each in a text input, a textarea, a rendered same-origin iframe, an open shadow root, text placed directly in a shadow root, a `display: contents` span, a visible `display: contents` span inside a `visibility: hidden` element and an empty slot's fallback text, which WebKit's find searches, and matches it must skip — `display: none`, the `hidden` attribute, `visibility: hidden`, an iframe in a hidden element, an unslotted child of a shadow host, a filled slot's fallback text, script source and the values of non-text controls (checkbox, radio, password, submit, date).
+    /// `document` is the fixture page: visible text matches (including accented and typographically quoted ones WebKit's find matches with unaccented, plain-quote queries), plus one each in a text input, an input's placeholder, a textarea, a rendered same-origin iframe, an open shadow root, text placed directly in a shadow root, a `display: contents` span, a visible `display: contents` span inside a `visibility: hidden` element and an empty slot's fallback text, which WebKit's find searches, and matches it must skip — `display: none`, the `hidden` attribute, `visibility: hidden`, an iframe in a hidden element, an unslotted child of a shadow host, a filled slot's fallback text, script source and the values of non-text controls (checkbox, radio, password, submit, date).
     private static let document = """
     <!doctype html>
     <html><body>
     <p>vendor alpha</p>
     <p>vendor beta vendor</p>
+    <p>Café don’t</p>
     <div style="display: none">vendor display none</div>
     <div hidden>vendor hidden attribute</div>
     <div style="visibility: hidden">vendor visibility hidden</div>
     <input value="vendor text input">
+    <input placeholder="vendor placeholder">
     <textarea>vendor textarea text</textarea>
     <input type="checkbox" value="vendor checkbox">
     <input type="radio" value="vendor radio">
@@ -36,7 +38,7 @@ struct FindMatchCountOracleTests {
     </body></html>
     """
 
-    @Test(arguments: ["vendor", "VENDOR", "2026"])
+    @Test(arguments: ["vendor", "VENDOR", "2026", "cafe", "don't", "visible again", "fallback"])
     func `The bundled script's count agrees with WebKit's own find`(query: String) async throws {
         let counts = try await FindMatchCountProbe.counts(inDocument: Self.document, forQuery: query)
         let scriptCount = try #require(counts.script)

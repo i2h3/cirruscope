@@ -81,15 +81,23 @@ final class FindBarViewController: NSViewController {
         performFind(backwards: false)
     }
 
-    /// `findNext(_:)` backs the Edit menu's "Find Next" item and the bar's down button, stepping to the next match.
+    /// `findNext(_:)` backs the Edit menu's "Find Next" item and the bar's down button, stepping to the next match; with no query in the field it shows the bar instead, so the item is never a dead key.
     @IBAction
     func findNext(_: Any?) {
+        guard findField.stringValue.isEmpty == false else {
+            showFindBar(nil)
+            return
+        }
         performFind(backwards: false)
     }
 
-    /// `findPrevious(_:)` backs the Edit menu's "Find Previous" item and the bar's up button, stepping to the previous match.
+    /// `findPrevious(_:)` backs the Edit menu's "Find Previous" item and the bar's up button, stepping to the previous match; with no query in the field it shows the bar instead, so the item is never a dead key.
     @IBAction
     func findPrevious(_: Any?) {
+        guard findField.stringValue.isEmpty == false else {
+            showFindBar(nil)
+            return
+        }
         performFind(backwards: true)
     }
 
