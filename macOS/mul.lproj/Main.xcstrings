@@ -481,6 +481,36 @@
         }
       }
     },
+    "6A8-Rl-bWA.placeholderString" : {
+      "comment" : "Class = \"NSSearchFieldCell\"; placeholderString = \"Find in Page\"; ObjectID = \"6A8-Rl-bWA\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf Seite suchen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Find in Page"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar en la página"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechercher dans la page"
+          }
+        }
+      }
+    },
     "6dh-zS-Vam.title" : {
       "comment" : "Class = \"NSMenuItem\"; title = \"Redo\"; ObjectID = \"6dh-zS-Vam\";",
       "extractionState" : "extracted_with_value",
@@ -507,6 +537,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rétablir"
+          }
+        }
+      }
+    },
+    "06J-1m-UGI.title" : {
+      "comment" : "Class = \"NSButtonCell\"; title = \"Previous\"; ObjectID = \"06J-1m-UGI\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zurück"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Previous"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anterior"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Précédent"
           }
         }
       }
@@ -1051,36 +1111,6 @@
         }
       }
     },
-    "buJ-ug-pKt.title" : {
-      "comment" : "Class = \"NSMenuItem\"; title = \"Use Selection for Find\"; ObjectID = \"buJ-ug-pKt\";",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Auswahl für Suche verwenden"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Use Selection for Find"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Usar selección para buscar"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Utiliser la sélection pour la recherche"
-          }
-        }
-      }
-    },
     "c8a-y6-VQd.title" : {
       "comment" : "Class = \"NSMenu\"; title = \"Transformations\"; ObjectID = \"c8a-y6-VQd\";",
       "extractionState" : "extracted_with_value",
@@ -1527,6 +1557,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Texte"
+          }
+        }
+      }
+    },
+    "fBW-wn-03.title" : {
+      "comment" : "Class = \"NSWindow\"; title = \"Find in Page\"; ObjectID = \"fBW-wn-03\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf Seite suchen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Find in Page"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar en la página"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechercher dans la page"
           }
         }
       }
@@ -3391,6 +3451,36 @@
         }
       }
     },
+    "r6i-3X-z7f.title" : {
+      "comment" : "Class = \"NSTextFieldCell\"; title = \"1 of 3\"; ObjectID = \"r6i-3X-z7f\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 von 3"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "1 of 3"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 de 3"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 sur 3"
+          }
+        }
+      }
+    },
     "RB4-Sm-HuC.title" : {
       "comment" : "Class = \"NSMenuItem\"; title = \"\\tRight to Left\"; ObjectID = \"RB4-Sm-HuC\";",
       "extractionState" : "extracted_with_value",
@@ -3657,36 +3747,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Évaluer Cirruscope…"
-          }
-        }
-      }
-    },
-    "S0p-oC-mLd.title" : {
-      "comment" : "Class = \"NSMenuItem\"; title = \"Jump to Selection\"; ObjectID = \"S0p-oC-mLd\";",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zur Auswahl wechseln"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Jump to Selection"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ir a la selección"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aller à la sélection"
           }
         }
       }
@@ -4561,36 +4621,6 @@
         }
       }
     },
-    "YEy-JH-Tfz.title" : {
-      "comment" : "Class = \"NSMenuItem\"; title = \"Find and Replace…\"; ObjectID = \"YEy-JH-Tfz\";",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Suchen und Ersetzen…"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Find and Replace…"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Buscar y reemplazar…"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rechercher et remplacer…"
-          }
-        }
-      }
-    },
     "YGs-j5-SAR.title" : {
       "comment" : "Class = \"NSMenuItem\"; title = \"\\tDefault\"; ObjectID = \"YGs-j5-SAR\";",
       "extractionState" : "extracted_with_value",
@@ -4677,6 +4707,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Démarrer la parole"
+          }
+        }
+      }
+    },
+    "yqx-I9-alO.title" : {
+      "comment" : "Class = \"NSButtonCell\"; title = \"Next\"; ObjectID = \"yqx-I9-alO\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weiter"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Next"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siguiente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suivant"
           }
         }
       }

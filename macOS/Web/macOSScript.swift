@@ -21,6 +21,9 @@ enum macOSScript: String {
     /// `appearanceAttributes` sets the `data-cirruscope-translucency`, `data-cirruscope-full-width`, `data-cirruscope-accent`, and `data-cirruscope-accent-bright` attributes on `<html>` that `Cirruscope.css` scopes its translucency, full-width, and accent-color rules to, along with the `--cirruscope-accent-color` custom property those accent rules re-derive Nextcloud's primary color family from and the `--cirruscope-window-button-clearance` one the header's leading inset is measured by.
     case appearanceAttributes = "AppearanceAttributes"
 
+    /// `findMatchCount` contributes `findMatchCount` to the page's `Cirruscope` namespace, answering how many times the find bar's query occurs in the page's rendered text, since `WKFindResult` reports no total on macOS.
+    case findMatchCount = "FindMatchCount"
+
     /// `logger` records failures to load a bundled script under the `macOSScript` category.
     private static let logger = Logger(for: macOSScript.self)
 

@@ -43,6 +43,9 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
     @IBOutlet
     var webView: WKWebView!
 
+    /// `findBarController` is the lazily instantiated controller of the storyboard "Find Bar Window" scene hosting the find bar, which searches this controller's `webView`.
+    private var findBarController: FindBarWindowController?
+
     // MARK: - Logging
 
     /// `logger` records this web view controller's activity under the `WebViewController` category; it is not `private` so the delegate conformances in `WebViewController+WKNavigationDelegate` and `+WKUIDelegate` can log through it.
@@ -56,6 +59,24 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         WebViewController.nextLogID += 1
         return WebViewController.nextLogID
     }()
+
+    // MARK: - Find Bar
+
+    /// `findBarWindowController()` returns the find bar's window controller, instantiating the storyboard "Find Bar Window" scene on first use and handing it this controller's `webView` to search; it answers `nil` when the scene is missing.
+    func findBarWindowController() -> FindBarWindowController? {
+        if let findBarController {
+            return findBarController
+        }
+
+        guard let controller = storyboard?.instantiateController(withIdentifier: "FindBarWindowController") as? FindBarWindowController else {
+            logger.error("Could not instantiate the Find Bar Window scene (WebViewController \(self.logID))")
+            return nil
+        }
+
+        controller.webView = webView
+        findBarController = controller
+        return controller
+    }
 
     // MARK: - Initial Load
 

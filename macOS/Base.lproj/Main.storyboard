@@ -136,33 +136,17 @@
                                                 <items>
                                                     <menuItem title="Find…" tag="1" keyEquivalent="f" id="Xz5-n4-O0W">
                                                         <connections>
-                                                            <action selector="performFindPanelAction:" target="Ady-hI-5gd" id="cD7-Qs-BN4"/>
-                                                        </connections>
-                                                    </menuItem>
-                                                    <menuItem title="Find and Replace…" tag="12" keyEquivalent="f" id="YEy-JH-Tfz">
-                                                        <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
-                                                        <connections>
-                                                            <action selector="performFindPanelAction:" target="Ady-hI-5gd" id="WD3-Gg-5AJ"/>
+                                                            <action selector="showFindBar:" target="Ady-hI-5gd" id="xvJ-kv-IeD"/>
                                                         </connections>
                                                     </menuItem>
                                                     <menuItem title="Find Next" tag="2" keyEquivalent="g" id="q09-fT-Sye">
                                                         <connections>
-                                                            <action selector="performFindPanelAction:" target="Ady-hI-5gd" id="NDo-RZ-v9R"/>
+                                                            <action selector="findNext:" target="Ady-hI-5gd" id="Ld7-mt-8uF"/>
                                                         </connections>
                                                     </menuItem>
                                                     <menuItem title="Find Previous" tag="3" keyEquivalent="G" id="OwM-mh-QMV">
                                                         <connections>
-                                                            <action selector="performFindPanelAction:" target="Ady-hI-5gd" id="HOh-sY-3ay"/>
-                                                        </connections>
-                                                    </menuItem>
-                                                    <menuItem title="Use Selection for Find" tag="7" keyEquivalent="e" id="buJ-ug-pKt">
-                                                        <connections>
-                                                            <action selector="performFindPanelAction:" target="Ady-hI-5gd" id="U76-nv-p5D"/>
-                                                        </connections>
-                                                    </menuItem>
-                                                    <menuItem title="Jump to Selection" keyEquivalent="j" id="S0p-oC-mLd">
-                                                        <connections>
-                                                            <action selector="centerSelectionInVisibleArea:" target="Ady-hI-5gd" id="IOG-6D-g5B"/>
+                                                            <action selector="findPrevious:" target="Ady-hI-5gd" id="rxW-xn-LKL"/>
                                                         </connections>
                                                     </menuItem>
                                                 </items>
@@ -1322,25 +1306,25 @@
             <objects>
                 <viewController id="XfG-lQ-9wD" customClass="WebViewController" customModule="Cirruscope" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="m2S-Jp-Qdl">
-                        <rect key="frame" x="0.0" y="0.0" width="1200" height="800"/>
+                        <rect key="frame" x="0.0" y="0.0" width="1240" height="800"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <visualEffectView blendingMode="behindWindow" material="sidebar" state="followsWindowActiveState" translatesAutoresizingMaskIntoConstraints="NO" id="rVl-e1-PW7">
-                                <rect key="frame" x="0.0" y="0.0" width="1200" height="800"/>
+                                <rect key="frame" x="0.0" y="0.0" width="1240" height="800"/>
                             </visualEffectView>
                             <wkWebView hidden="YES" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="edZ-kL-6y2" customClass="CirruscopeWebView" customModule="Cirruscope" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="0.0" width="1200" height="800"/>
+                                <rect key="frame" x="0.0" y="0.0" width="1240" height="800"/>
                                 <wkWebViewConfiguration key="configuration" applicationNameForUserAgent="Version/18.0 Safari/605.1.15">
                                     <audiovisualMediaTypes key="mediaTypesRequiringUserActionForPlayback" none="YES"/>
                                     <wkPreferences key="preferences"/>
                                 </wkWebViewConfiguration>
                             </wkWebView>
                             <imageView horizontalHuggingPriority="1" verticalHuggingPriority="1" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="9eM-UK-O0L" customClass="BackgroundImageView" customModule="Cirruscope" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="0.0" width="1200" height="800"/>
+                                <rect key="frame" x="0.0" y="0.0" width="1240" height="800"/>
                                 <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyUpOrDown" id="Wfu-an-mwi"/>
                             </imageView>
                             <stackView distribution="equalSpacing" orientation="vertical" alignment="centerX" spacing="16" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="TQI-hA-Tf7" customClass="StateOverlayStackView" customModule="Cirruscope" customModuleProvider="target">
-                                <rect key="frame" x="527" y="332" width="146" height="136"/>
+                                <rect key="frame" x="547" y="332" width="146" height="136"/>
                                 <subviews>
                                     <progressIndicator wantsLayer="YES" maxValue="100" displayedWhenStopped="NO" indeterminate="YES" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="raH-BI-vv0">
                                         <rect key="frame" x="57" y="104" width="32" height="32"/>
@@ -1499,6 +1483,112 @@
                 <customObject id="UNm-QU-lsf" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="1936" y="-178"/>
+        </scene>
+        <!--Find Bar Window-->
+        <scene sceneID="fBW-sc-01">
+            <objects>
+                <windowController storyboardIdentifier="FindBarWindowController" id="fBW-wc-02" userLabel="Find Bar Window" customClass="FindBarWindowController" customModule="Cirruscope" customModuleProvider="target" sceneMemberID="viewController">
+                    <window key="window" title="Find in Page" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" restorable="NO" hidesOnDeactivate="YES" releasedWhenClosed="NO" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" id="fBW-wn-03" customClass="NSPanel">
+                        <windowStyleMask key="styleMask" titled="YES" closable="YES" utility="YES"/>
+                        <rect key="contentRect" x="196" y="240" width="400" height="48"/>
+                        <rect key="screenRect" x="0.0" y="0.0" width="1680" height="1027"/>
+                    </window>
+                    <connections>
+                        <segue destination="fBV-vc-08" kind="relationship" relationship="window.shadowedContentViewController" id="fBW-sg-05"/>
+                    </connections>
+                </windowController>
+                <customObject id="fBW-fr-06" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="979" y="1666"/>
+        </scene>
+        <!--Find Bar View Controller-->
+        <scene sceneID="fBV-sc-07">
+            <objects>
+                <viewController id="fBV-vc-08" customClass="FindBarViewController" customModule="Cirruscope" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" id="W65-53-djS">
+                        <rect key="frame" x="0.0" y="0.0" width="400" height="56"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <stackView distribution="fill" orientation="horizontal" alignment="centerY" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="750" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="uya-jE-8Bw">
+                                <rect key="frame" x="16" y="16" width="368" height="24"/>
+                                <subviews>
+                                    <searchField wantsLayer="YES" focusRingType="none" verticalHuggingPriority="748" horizontalCompressionResistancePriority="500" textCompletion="NO" textFieldBorderShape="automatic" translatesAutoresizingMaskIntoConstraints="NO" id="N1W-8o-SbV">
+                                        <rect key="frame" x="0.0" y="0.0" width="181" height="24"/>
+                                        <searchFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" borderStyle="bezel" placeholderString="Find in Page" usesSingleLineMode="YES" bezelStyle="round" sendsSearchStringImmediately="YES" id="6A8-Rl-bWA">
+                                            <font key="font" metaFont="system"/>
+                                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                        </searchFieldCell>
+                                        <connections>
+                                            <action selector="findQueryChanged:" target="fBV-vc-08" id="cFnD-qry-01"/>
+                                        </connections>
+                                    </searchField>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" textFieldBorderShape="none" translatesAutoresizingMaskIntoConstraints="NO" id="NZK-if-DPC">
+                                        <rect key="frame" x="187" y="4" width="38" height="16"/>
+                                        <textFieldCell key="cell" lineBreakMode="truncatingMiddle" title="1 of 3" id="r6i-3X-z7f">
+                                            <font key="font" usesAppearanceFont="YES"/>
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                        </textFieldCell>
+                                    </textField>
+                                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="3OQ-Ih-2zl">
+                                        <rect key="frame" x="231" y="0.0" width="77" height="24"/>
+                                        <buttonCell key="cell" type="push" title="Previous" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="06J-1m-UGI">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
+                                        <symbolConfiguration key="symbolConfiguration" scale="large">
+                                            <nil key="locale"/>
+                                        </symbolConfiguration>
+                                        <connections>
+                                            <action selector="findPrevious:" target="fBV-vc-08" id="cFnD-prv-02"/>
+                                        </connections>
+                                    </button>
+                                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Qyt-j8-XZj">
+                                        <rect key="frame" x="316" y="0.0" width="52" height="24"/>
+                                        <buttonCell key="cell" type="push" title="Next" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="yqx-I9-alO">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
+                                        <symbolConfiguration key="symbolConfiguration" scale="large">
+                                            <nil key="locale"/>
+                                        </symbolConfiguration>
+                                        <connections>
+                                            <action selector="findNext:" target="fBV-vc-08" id="cFnD-nxt-03"/>
+                                        </connections>
+                                    </button>
+                                </subviews>
+                                <visibilityPriorities>
+                                    <integer value="1000"/>
+                                    <integer value="1000"/>
+                                    <integer value="1000"/>
+                                    <integer value="1000"/>
+                                </visibilityPriorities>
+                                <customSpacing>
+                                    <real value="3.4028234663852886e+38"/>
+                                    <real value="3.4028234663852886e+38"/>
+                                    <real value="3.4028234663852886e+38"/>
+                                    <real value="3.4028234663852886e+38"/>
+                                </customSpacing>
+                            </stackView>
+                        </subviews>
+                        <constraints>
+                            <constraint firstAttribute="bottom" secondItem="uya-jE-8Bw" secondAttribute="bottom" constant="16" id="H8Q-QR-Y5E"/>
+                            <constraint firstAttribute="trailing" secondItem="uya-jE-8Bw" secondAttribute="trailing" constant="16" id="f0r-YM-XOR"/>
+                            <constraint firstItem="uya-jE-8Bw" firstAttribute="leading" secondItem="W65-53-djS" secondAttribute="leading" constant="16" id="ivO-r6-8U5"/>
+                            <constraint firstItem="uya-jE-8Bw" firstAttribute="top" secondItem="W65-53-djS" secondAttribute="top" constant="16" id="z2e-jN-lfC"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="findCountLabel" destination="NZK-if-DPC" id="fBV-oc-10"/>
+                        <outlet property="findField" destination="N1W-8o-SbV" id="fBV-of-09"/>
+                        <outlet property="findNextButton" destination="Qyt-j8-XZj" id="fBV-nb-13"/>
+                        <outlet property="findPreviousButton" destination="3OQ-Ih-2zl" id="fBV-pb-12"/>
+                    </connections>
+                </viewController>
+                <customObject id="fBV-fr-11" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="979" y="1904"/>
         </scene>
     </scenes>
     <resources>

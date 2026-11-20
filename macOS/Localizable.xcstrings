@@ -485,6 +485,29 @@
         }
       }
     },
+    "%lld of %lld" : {
+      "comment" : "Find bar label showing which match of the page's total matches is currently highlighted, e.g. \"1 of 3\".",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld von %lld"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld de %lld"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld sur %lld"
+          }
+        }
+      }
+    },
     "Already Used" : {
       "comment" : "Shown briefly in the shortcut recorder when the just-pressed combination is already used by one of Cirruscope's own menu items or by another Nextcloud server app.",
       "localizations" : {
@@ -2003,6 +2026,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Non défini"
+          }
+        }
+      }
+    },
+    "No Matches" : {
+      "comment" : "Find bar label shown when the search text matches nothing on the page.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Treffer"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin resultados"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun résultat"
           }
         }
       }

@@ -1579,3 +1579,10 @@ Because the web view's download process quarantines every file it writes with a 
 The app's sandbox cannot clear that record, but a copy the app writes itself carries only the marker every file a sandboxed app saves has, which macOS does not hold back.
 Cirruscope is not a general browser but a client for the server the user explicitly signed in to, so it trusts what that server delivers and replaces every download, not only app bundles.
 The cost accepted is that Gatekeeper does not check an executable coming from that server, whether a compromised server delivers it or another person shares it there, as a guest in a public conversation or a federated share can.
+
+## Why does the Mac draw its own find bar while iOS uses the system's?
+
+Because a `WKWebView` never adopts `NSFindPanel`, so the Edit menu's standard Find items did nothing in the app and ⌘F was a dead key (issue #98); the Mac therefore draws its own bar and drives `WKWebView.find(_:configuration:)` itself, which highlights the matches and scrolls to them.
+The bar lives in its own floating panel window attached to the web window rather than as an overlay on the page, so it never covers content the user wants to read: its title bar drags it anywhere, its frame autosave remembers where the user put it, and its standard panel shadow comes with it.
+On iOS the web view is SwiftUI's `WebView`, which ships the system find navigator as the `findNavigator` modifier, so the iPhone and iPad present that instead of drawing anything of their own.
+The two platforms share WebKit's find engine, not the interface around it, and the trade-off accepted on the Mac is that the menu claims ⌘F before the page sees it, so a server app with its own ⌘F search, like Deck, is reached through its own UI rather than the key — the same trade-off Safari makes.
