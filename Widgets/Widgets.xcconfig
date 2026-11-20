@@ -19,7 +19,7 @@ PRODUCT_BUNDLE_IDENTIFIER = $(CIRRUSCOPE_BASE_BUNDLE_IDENTIFIER).widgets
 // the data-protection Keychain on macOS as well, the one Keychain where an access group decides who may read an item.
 // They are assigned here, after the include of the root, as `Cirruscope/Cirruscope.xcconfig` assigns them to the apps.
 // `REGISTER_APP_GROUPS` is a macOS-only build setting, letting automatic signing register the App Group the
-// entitlements name when it signs for the Mac, and it sits beside them here rather than in `project.pbxproj`.
+// entitlements name when it signs for the Mac, and it sits beside them here rather than in `project.xcproj`.
 CODE_SIGN_ENTITLEMENTS = Cirruscope/Cirruscope.entitlements
 REGISTER_APP_GROUPS = YES
 

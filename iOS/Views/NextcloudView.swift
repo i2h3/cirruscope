@@ -43,6 +43,10 @@ struct NextcloudView: View {
     @State
     private var notificationsPanel: NotificationsPanelBridge
 
+    /// Carries the system find navigator's presentation, bound to the `WebView` below and published as a focused scene value for the iPad menu bar's Find command.
+    @State
+    private var findNavigator = FindNavigatorBridge()
+
     /// Decides what the page may navigate to, which is how a sign-in form reached on an expired browser session is turned back into the page the user was on.
     @State
     private var navigationDecider: NextcloudNavigationDecider
@@ -141,6 +145,8 @@ struct NextcloudView: View {
                     .ignoresSafeArea(.container, edges: .all)
                     .webViewMagnificationGestures(.disabled)
                     .webViewBackForwardNavigationGestures(.disabled)
+                    // The system find navigator, which searches and highlights in the page itself; presented from the account menu's Find item and, on iPad, the menu bar's ⌘F.
+                    .findNavigator(isPresented: $findNavigator.isPresented)
                     .onChange(of: measurement(in: proxy), initial: true) { _, measurement in
                         apply(measurement)
                     }
@@ -197,6 +203,14 @@ struct NextcloudView: View {
                             openNotificationsPanel()
                         } label: {
                             Label("Notifications", systemImage: "bell.badge.fill")
+                        }
+
+                        Divider()
+
+                        Button {
+                            findNavigator.isPresented = true
+                        } label: {
+                            Label("Find in Page", systemImage: "magnifyingglass")
                         }
 
                         Divider()
@@ -346,6 +360,9 @@ struct NextcloudView: View {
         // otherwise render the icons at a scale of one, which a 2x or 3x screen then draws blurred. Not withheld with
         // the page: the scale is true from the first layout, and nothing is loaded by it.
         .focusedSceneValue(\.displayScale, displayScale)
+        // Tells the iPad menu bar's Find command which window in front presents the find navigator. Not withheld with the
+        // page: presenting the navigator loads nothing, so it is safe before the first measurement.
+        .focusedSceneValue(findNavigator)
     }
 
     /// What the navigation bar is titled with: the name of the Nextcloud app on screen, or the page's own title where the app cannot be told.

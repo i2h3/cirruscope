@@ -181,7 +181,7 @@ That is a smaller cost than it looks, because those differences are rare — so 
 ## Why is there a `Core/` folder as well as `Cirruscope/`?
 
 Because Xcode's synchronized folders are all-or-nothing, and an app extension wants less than an app.
-A folder listed by a target contributes every file it holds to that target; the only lever is `membershipExceptions`, which is a deny list.
+A folder listed by a target contributes every file it holds to that target; the only lever is `membership-exceptions`, which is a deny list.
 So if the widget extension listed `Cirruscope/`, every file later migrated there — as macOS code is generalized for iOS reuse — would silently join the extension too, and each one not wanted would need an exclusion added by hand.
 Forgetting one either bloats the extension, which nothing reports, or breaks its build.
 
@@ -1579,3 +1579,11 @@ Because the web view's download process quarantines every file it writes with a 
 The app's sandbox cannot clear that record, but a copy the app writes itself carries only the marker every file a sandboxed app saves has, which macOS does not hold back.
 Cirruscope is not a general browser but a client for the server the user explicitly signed in to, so it trusts what that server delivers and replaces every download, not only app bundles.
 The cost accepted is that Gatekeeper does not check an executable coming from that server, whether a compromised server delivers it or another person shares it there, as a guest in a public conversation or a federated share can.
+
+## Why does the Mac draw its own find bar while iOS uses the system's?
+
+A `WKWebView` can drive the system's `NSTextFinder` bar, but that bar sits inside the window above the page, and the app wants a floating panel the user can drag off the page; the Mac therefore draws its own bar and drives `WKWebView.find(_:configuration:)` itself, which selects the next match and scrolls it into view (issue #98).
+The bar lives in its own floating panel window attached to the web window rather than as an overlay on the page: it is placed at its window's top trailing corner each time it is shown, where it covers the trailing end of the page's header until its title bar drags it elsewhere, and its standard panel shadow comes with it.
+Keeping the panel a child window of the web window, so that it moves with it, makes its title-bar drag stutter; that cost is accepted.
+On iOS the web view is SwiftUI's `WebView`, which ships the system find navigator as the `findNavigator` modifier, so the iPhone and iPad present that instead of drawing anything of their own, opened from the account menu's Find in Page item and, on iPad, from the menu bar's Find in Page command (⌘F) through a focused scene value naming the window in front.
+The two platforms share WebKit's find engine, not the interface around it, and the trade-off accepted on the Mac is that the menu claims ⌘F before the page sees it, so a server app with its own ⌘F search, like Deck, is reached through its own UI rather than the key — the same trade-off Safari makes.

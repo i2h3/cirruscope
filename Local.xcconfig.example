@@ -14,7 +14,7 @@
 // provisioning profile and the entitlements file, must be replaced rather than kept: those assignments now reach
 // the widget extension and both test bundles as well, which signs them against a profile made for something else.
 // Do not pick a team in a target's Signing & Capabilities tab either. That writes DEVELOPMENT_TEAM into
-// project.pbxproj at target level, where it overrides this file and ends up committed.
+// project.xcproj at target level, where it overrides this file and ends up committed.
 //
 // Cirruscope.xcconfig includes Local.xcconfig last, so whatever you set here overrides its defaults.
 // Cirruscope/Cirruscope.xcconfig and every per-target .xcconfig end with the same #include? "Local.xcconfig",
