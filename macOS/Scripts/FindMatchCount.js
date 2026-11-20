@@ -8,8 +8,12 @@
 // search field.
 //
 // Text nodes under script, style and form elements are skipped, as the
-// browser's own find skips them. A match spanning an inline element boundary
-// is not counted, which the browser's find would catch.
+// browser's own find skips them, and so are text nodes in hidden elements
+// (display: none, the hidden attribute, visibility: hidden), which
+// checkVisibility reports. The values of visible input and textarea fields
+// are counted instead, because the browser's own find searches them. A match
+// spanning an inline element boundary is not counted, which the browser's own
+// find would catch.
 //
 // The namespace is assigned idempotently, because the script is evaluated again
 // for every find and may meet a namespace another script already created.
@@ -28,20 +32,35 @@ window.Cirruscope.findMatchCount = (query) => {
     NodeFilter.SHOW_TEXT,
     {
       acceptNode(node) {
-        return node.parentElement?.closest(skipped)
-          ? NodeFilter.FILTER_REJECT
-          : NodeFilter.FILTER_ACCEPT;
+        const parent = node.parentElement;
+        if (parent?.closest(skipped)) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        if (!parent?.checkVisibility({ visibilityProperty: true })) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
       },
     },
   );
 
   let count = 0;
-  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-    const text = node.nodeValue.toLowerCase();
-    let index = text.indexOf(needle);
+  const countIn = (text) => {
+    const haystack = text.toLowerCase();
+    let index = haystack.indexOf(needle);
     while (index !== -1) {
       count += 1;
-      index = text.indexOf(needle, index + needle.length);
+      index = haystack.indexOf(needle, index + needle.length);
+    }
+  };
+
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    countIn(node.nodeValue);
+  }
+
+  for (const field of document.body.querySelectorAll("input, textarea")) {
+    if (field.checkVisibility({ visibilityProperty: true })) {
+      countIn(field.value || "");
     }
   }
 

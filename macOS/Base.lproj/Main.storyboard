@@ -1525,7 +1525,7 @@
                                     </searchField>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" textFieldBorderShape="none" translatesAutoresizingMaskIntoConstraints="NO" id="NZK-if-DPC">
                                         <rect key="frame" x="187" y="4" width="38" height="16"/>
-                                        <textFieldCell key="cell" lineBreakMode="truncatingMiddle" title="1 of 3" id="r6i-3X-z7f">
+                                        <textFieldCell key="cell" lineBreakMode="truncatingMiddle" title="" id="r6i-3X-z7f">
                                             <font key="font" usesAppearanceFont="YES"/>
                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
