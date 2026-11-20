@@ -3,7 +3,7 @@
 
 import SwiftUI
 
-/// The Find command in an iPad menu bar's Edit menu, ⌘F: it presents the system find navigator over the page of the window in front. An iPhone has no menu bar, so there the command reaches only a hardware keyboard; the toolbar's own button is the way in on the phone.
+/// The Find command in an iPad menu bar's Edit menu, ⌘F: it presents the system find navigator over the page of the window in front. An iPhone has no menu bar, so there the command reaches only a hardware keyboard; the account menu's Find in Page item is the way in on the phone.
 struct FindCommands: Commands {
     /// The find navigator state of the window in front, or `nil` while no window in front has one.
     @FocusedValue(FindNavigatorBridge.self)

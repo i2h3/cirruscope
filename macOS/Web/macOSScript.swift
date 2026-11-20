@@ -4,7 +4,7 @@
 import Foundation
 import os
 
-/// `macOSScript` enumerates the JavaScript resources bundled with the app that `WebViewController` injects into or evaluates within its `WKWebView`.
+/// `macOSScript` enumerates the JavaScript resources bundled with the app for injection into or evaluation within its web views.
 enum macOSScript: String {
     /// `windowDrag` forwards `mousedown` events that land on Nextcloud's header to the `windowDrag` message handler so the host window can begin a drag.
     case windowDrag = "WindowDrag"

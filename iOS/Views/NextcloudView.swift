@@ -356,13 +356,13 @@ struct NextcloudView: View {
         // front. Withheld until the first measurement for the reason the first load is: nothing may load before the
         // first document can inset itself.
         .focusedSceneValue(insets == nil ? nil : page)
-        // Tells the iPad menu bar's Find command which window in front presents the find navigator. Not withheld with the
-        // page: presenting the navigator loads nothing, so it is safe before the first measurement.
-        .focusedSceneValue(findNavigator)
         // Tells the same menu the scale this window's screen draws at. Its content is in no window and would
         // otherwise render the icons at a scale of one, which a 2x or 3x screen then draws blurred. Not withheld with
         // the page: the scale is true from the first layout, and nothing is loaded by it.
         .focusedSceneValue(\.displayScale, displayScale)
+        // Tells the iPad menu bar's Find command which window in front presents the find navigator. Not withheld with the
+        // page: presenting the navigator loads nothing, so it is safe before the first measurement.
+        .focusedSceneValue(findNavigator)
     }
 
     /// What the navigation bar is titled with: the name of the Nextcloud app on screen, or the page's own title where the app cannot be told.
