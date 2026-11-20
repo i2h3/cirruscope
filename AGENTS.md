@@ -185,6 +185,7 @@ Prefer that shape — measure the framework, then assert the app agrees — over
   Inject the post as a closure defaulting to the production one and count calls instead, as `AccountStore.notifyChange` does: a real post reaches the host's main-actor observers synchronously and, off the main thread, traps it.
 - SwiftFormat rewrites `@Test("A display name")` into a backtick-quoted function name: write the sentence, run `swiftformat .`, and leave the result alone.
 - Never wrap a test's literal in `String(localized:comment:)`.
+- Every assertion must be able to fail: assert what a comparison relies on before comparing, as `FindMatchCountOracleTests` asserts that a selection exists before comparing where it starts.
 
 **Testing the account store.**
 Give each case its own `AccountStoreHarness`, an `AccountStore` over an in-memory container that counts announcements.
@@ -241,6 +242,8 @@ The host apps open the real store during every run, and under the shipping base 
 - Do not record routine implementation details or bug fixes, only choices with lasting design consequence; nothing enforces this mechanically, so err toward recording it when unsure.
 - When a decision changes, edit or remove its answer rather than preserving the old text, since git keeps the history.
 - Keep the reasoning consistent wherever it also appears — a Swift documentation comment, `README.md`, a document in `Documentation/`, or elsewhere in this document — and check `./Website` when it affects the public story.
+- A review finding the user turns down as deliberate is such a choice: record it, with its cost, in the matching entry in the same change, so no later review raises it again.
+- An entry states a trade-off as it shows in the running app, not as intended.
 
 ## Localization Instructions
 
@@ -281,6 +284,7 @@ The texts in `AppStore/` are localized into App Store Connect's own list of the 
 - They address the reader informally (the published 1.1.0 French "vous" stays).
 - A UI label they quote is the app's own localized label word for word, as is a system label in Apple's localization of macOS, and a macOS feature is named by Apple's own term in that language (Mitteilungszentrale, centre de notifications, Centro de notificaciones) rather than the website's, which is wrong in places.
 - Write the Spanish for Spain in a way that also reads naturally in Latin America, keep the English well below each limit since translations run longer, and use no emoji, which App Store Connect rejects.
+- A translated line follows the sentence pattern of the other lines in its own file, with the app as the subject, as in "Entfernt jetzt", "Retire désormais" and "Ahora retira", rather than the English line's construction, and it translates the meaning, not the words one by one.
 
 Run `python3 Tools/check-appstore-texts.py` after any change to `AppStore/`.
 
@@ -329,6 +333,12 @@ Invoke the tool as `/usr/bin/log`, since zsh's builtin `log` shadows it, and mat
 - Keep the category equal to the type name.
   Tell live instances of one type apart by an auto-incremented `UInt64` (`WebViewController.logID`) appended as `(TypeName \(id))`, e.g. `(WebViewController 3)`: an integer prints in the clear, where a `String` would be redacted.
 - In the WebKit and download delegates, log every method's entry and every return or early exit at debug level, with the reason, so a capture can reconstruct what happened.
+
+## Review Instructions
+
+- Read the `DECISIONS.md` entries for the area under review first, and do not raise an accepted trade-off again.
+- Only bugs, risks and broken rules block a merge; a round that finds nothing else ends with "Ship", and its nice-to-haves become an issue or are dropped, never another round.
+- Text, values and fixtures a review suggests are claims like any other: check each against the code or the running app before applying it.
 
 ## Commit Instructions
 
