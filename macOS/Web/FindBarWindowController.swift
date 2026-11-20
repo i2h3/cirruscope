@@ -19,7 +19,7 @@ final class FindBarWindowController: NSWindowController {
         return contentViewController as? FindBarViewController
     }
 
-    /// `attachToWebWindow()` makes the panel a child window of the web view's window, so it follows that window, and places it at its top trailing corner. It runs when the find bar is shown rather than in `windowDidLoad`, because the storyboard instantiates this controller — and so would run `windowDidLoad` — before `WebViewController` can hand over the web view; it is a no-op once the panel is already attached.
+    /// `attachToWebWindow()` makes the panel a child window of the web view's window, so it follows that window, and places it at its top trailing corner. It runs when the find bar is shown rather than in `windowDidLoad`, because the storyboard instantiates this controller — and so would run `windowDidLoad` — before `WebViewController` can hand over the web view. Hiding the panel detaches it again (`orderOut` removes a child window from its parent), so every show attaches and places it anew; it is a no-op only while the panel is still attached.
     func attachToWebWindow() {
         guard let panel = window else {
             logger.error("The Find Bar Window scene loaded no window")

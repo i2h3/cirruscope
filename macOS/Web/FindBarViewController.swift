@@ -5,7 +5,7 @@ import AppKit
 import os
 import WebKit
 
-/// `FindBarViewController` is the view controller of the storyboard "Find Bar Window" scene: it owns the find bar's search field, match count and stepping buttons, and drives WebKit's own in-page search in `webView` — the Edit menu's Find items and the bar's controls all end up in `performFind(backwards:)`, which asks `webView` to highlight every match of the query and scroll to the next one in the search direction.
+/// `FindBarViewController` is the view controller of the storyboard "Find Bar Window" scene: it owns the find bar's search field, match count and stepping buttons, and drives WebKit's own in-page search in `webView` — the Edit menu's Find items and the bar's controls all end up in `performFind(backwards:)`, which asks `webView` to select the next match of the query and scroll it into view.
 final class FindBarViewController: NSViewController {
     /// `webView` is the web view whose page is searched, read from the `FindBarWindowController` owning this panel on each use, because the storyboard loads the scene before `WebViewController` can hand the controller its web view.
     private var webView: WKWebView? {
@@ -38,7 +38,7 @@ final class FindBarViewController: NSViewController {
         findNextButton?.isEnabled = false
     }
 
-    /// `showFindBar(_:)` backs the Edit menu's "Find…" item: it attaches the panel to the web window, makes the panel key, moves first responder to `findField` with its text selected so typing replaces it, and re-runs the current query so its highlights are restored.
+    /// `showFindBar(_:)` backs the Edit menu's "Find…" item: it attaches the panel to the web window, makes the panel key, moves first responder to `findField` with its text selected so typing replaces it, and re-counts the current query's matches without searching, so the label and the stepping buttons reflect the page just opened.
     @IBAction
     func showFindBar(_: Any?) {
         (view.window?.windowController as? FindBarWindowController)?.attachToWebWindow()
@@ -46,7 +46,20 @@ final class FindBarViewController: NSViewController {
         findField.delegate = self
         view.window?.makeFirstResponder(findField)
         findField.currentEditor()?.selectAll(nil)
-        performFind(backwards: false)
+
+        guard let webView else {
+            return
+        }
+
+        let query = findField.stringValue
+        guard query.isEmpty == false else {
+            return
+        }
+
+        Task {
+            let count = await countMatches(of: query, in: webView)
+            updateFindCount(matchFound: count > 0, matchCount: count)
+        }
     }
 
     /// `hideFindBar(_:)` closes the panel and hands first responder back to the web view; the search field's Escape key calls it.
@@ -58,7 +71,7 @@ final class FindBarViewController: NSViewController {
         }
     }
 
-    /// `findQueryChanged(_:)` is sent by `findField` on every keystroke and searches the page for the field's current text.
+    /// `findQueryChanged(_:)` is sent by `findField` on every keystroke and searches the page for the field's current text, from the start of the current selection.
     @IBAction
     func findQueryChanged(_: Any?) {
         logger.debug("Find query changed, \(self.findField?.stringValue.count ?? 0) character(s) (FindBarViewController)")
@@ -104,18 +117,18 @@ final class FindBarViewController: NSViewController {
                 logger.debug("Find returned matchFound=\(result.matchFound, privacy: .public) (FindBarViewController)")
                 let matchCount = await countMatches(of: query, in: webView)
                 logger.debug("Counted \(matchCount) match(es) in the page (FindBarViewController)")
-                updateFindCount(result, matchCount: matchCount)
+                updateFindCount(matchFound: result.matchFound, matchCount: matchCount)
             } catch {
                 logger.notice("In-page find failed: \(error.localizedDescription, privacy: .public) (FindBarViewController)")
             }
         }
     }
 
-    /// `updateFindCount(_:matchCount:)` renders `result` and the page-wide `matchCount` into `findCountLabel` and enables the stepping buttons exactly when the query matched something.
-    private func updateFindCount(_ result: WKFindResult, matchCount: Int) {
-        findCountLabel?.stringValue = Self.matchCountText(matchFound: result.matchFound, matchCount: matchCount)
-        findPreviousButton?.isEnabled = result.matchFound
-        findNextButton?.isEnabled = result.matchFound
+    /// `updateFindCount(matchFound:matchCount:)` renders the find result and the page-wide `matchCount` into `findCountLabel` and enables the stepping buttons exactly when the query matched something.
+    private func updateFindCount(matchFound: Bool, matchCount: Int) {
+        findCountLabel?.stringValue = Self.matchCountText(matchFound: matchFound, matchCount: matchCount)
+        findPreviousButton?.isEnabled = matchFound
+        findNextButton?.isEnabled = matchFound
     }
 
     /// `matchCountText(matchFound:matchCount:)` renders a find result for the find bar's label: "No Matches" when the query matched nothing, "N matches" with the page-wide count when it did, and an empty string when the count could not be determined.
