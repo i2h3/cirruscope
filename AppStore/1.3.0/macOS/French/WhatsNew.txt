@@ -6,3 +6,4 @@
 • Nouveau : « Évaluer Cirruscope… » dans le menu Aide et, après quelques jours d’utilisation, une demande occasionnelle d’évaluer Cirruscope
 • Correction d’une app téléchargée dans Cirruscope que macOS refusait d’ouvrir
 • Correction de la barre latérale de l’app qui atteignait le bord supérieur de la fenêtre lorsque le visualiseur Nextcloud s’ouvrait avec la barre latérale affichée
+• La page actuelle se recherche désormais avec ⌘F, et ⌘G ainsi que ⇧⌘G permettent de passer d’un résultat à l’autre

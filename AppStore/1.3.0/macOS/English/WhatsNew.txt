@@ -6,3 +6,4 @@
 • Introduced “Rate Cirruscope…” in the Help menu, and after a few days of use an occasional request to rate Cirruscope
 • Fixed macOS refusing to open an app downloaded in Cirruscope
 • Fixed the app sidebar sliding to the top of the window when the Nextcloud viewer opened with the sidebar shown
+• Now searching the current page with ⌘F and stepping through the matches with ⌘G and ⇧⌘G
