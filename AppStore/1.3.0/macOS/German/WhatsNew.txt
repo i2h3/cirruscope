@@ -6,4 +6,5 @@
 • Neu: „Cirruscope bewerten…“ im Menü „Hilfe“ und nach einigen Tagen der Nutzung gelegentlich die Bitte, Cirruscope zu bewerten
 • Behoben, dass macOS eine in Cirruscope heruntergeladene App nicht öffnete
 • Behoben, dass die Seitenleiste bis an den oberen Rand des Fensters rückte, wenn bei geöffneter Seitenleiste eine Datei im Nextcloud-Viewer geöffnet wurde
-• Durchsucht jetzt die aktuelle Seite mit ⌘F und springt mit ⌘G sowie ⇧⌘G durch die Treffer
+• Durchsucht jetzt mit einem wiederholten ⌘F die aktuelle Seite und springt mit ⌘G sowie ⇧⌘G durch die Treffer
+• Öffnet jetzt die Suche der aktiven App mit ⌘F und die Suche in der Kopfzeile von Nextcloud mit ⌘K, auch wenn ein Textfeld der Seite fokussiert ist (⌘K ab Nextcloud 35)
