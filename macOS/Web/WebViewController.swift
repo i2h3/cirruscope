@@ -150,6 +150,7 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         installHeaderHeightBridge()
         installSidebarToggleBridge()
         installSidebarShortcutBridge()
+        installSearchShortcutsBridge()
         installNotificationBridge()
         observeAppearanceSettings()
         observeAccentColor()
@@ -438,6 +439,12 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         installUserScript(macOSScript.sidebarShortcut.source, injectionTime: .atDocumentStart)
     }
 
+    /// `installSearchShortcutsBridge()` registers the `findPanel` message handler and injects `macOSScript.searchShortcuts` into the main frame only, which claims ⌘K and ⌘F keystrokes aimed at an editable control and re-dispatches them on `<body>`, so the page's own search shortcuts fire even while a text field has focus, and reports a ⌘F the page declined — or that repeats while the page's search field has focus — through the handler (issue #153).
+    private func installSearchShortcutsBridge() {
+        webView.configuration.userContentController.add(self, name: ScriptMessageName.findPanel.rawValue)
+        installUserScript(macOSScript.searchShortcuts.source, injectionTime: .atDocumentStart, forMainFrameOnly: true)
+    }
+
     /// `isSidebarToggleShortcut(_:)` is `true` when `event` is the ⌃⌘S keystroke Cirruscope claims for "Show/Hide Sidebar" ahead of the loaded page.
     static func isSidebarToggleShortcut(_ event: NSEvent) -> Bool {
         let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask).intersection([.command, .option, .control, .shift])
@@ -591,6 +598,9 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
         /// `sidebarShortcut` is posted by `macOSScript.sidebarShortcut` to report that the page has claimed the ⌃⌘S keystroke on the app's behalf.
         case sidebarShortcut
 
+        /// `findPanel` is posted by `macOSScript.searchShortcuts` to report a ⌘F keystroke the page declined or that repeats while the page's search field has focus, so the host shows the find bar as the Edit menu's Find… item would. Messages from a non-main frame and while the page is in element fullscreen — where no app window is key and the panel cannot attach — are dropped.
+        case findPanel
+
         /// `notification` is posted by `macOSScript.notificationBridge` to forward a web notification's content to the app.
         case notification
     }
@@ -632,6 +642,14 @@ class WebViewController: NSViewController, WKScriptMessageHandler {
 
             case .sidebarShortcut:
                 toggleSidebar(nil)
+
+            case .findPanel:
+                let mainFrame = message.frameInfo.isMainFrame
+                logger.notice("findPanel message received (main frame: \(mainFrame), fullscreen state: \(self.webView.fullscreenState.rawValue)) (WebViewController \(self.logID))")
+                guard mainFrame, webView.fullscreenState == .notInFullscreen else {
+                    return
+                }
+                showFindBar(nil)
 
             case .notification:
                 guard let body = message.body as? [String: Any] else {

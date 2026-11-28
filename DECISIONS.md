@@ -436,7 +436,7 @@ See [AGENTS.md → Testing](./AGENTS.md#testing) for the rules and [Documentatio
 
 Because the part of the app that has no tests is also where the code that is not Swift lives.
 The entry above records that the code talking to WebKit and to the page — navigation handling, downloads, injected scripts, and notification bridging — is deliberately left out of the test suites, since it only means anything against a live Nextcloud server in a real web view, and of all of that, the injected scripts are the part the Swift compiler never sees either.
-Twelve files and nearly eight hundred lines, ten of them injected straight into Nextcloud's own DOM: the sidebar toggle both apps click and the state it reports back, the header the Mac measures to place its traffic lights, the window drag, the ⌃⌘S the page must not swallow, the `Notification` API override, the appearance attributes, the iOS app's safe-area insets and its notifications panel — with the remaining two behind the website's own progressive enhancements.
+Sixteen files and just over a thousand lines, fourteen of them injected straight into the web pages' DOM: the sidebar toggle both apps click and the state it reports back, the header the Mac measures to place its traffic lights, the window drag, the ⌃⌘S the page must not swallow, the ⌘K and ⌘F offered to the page while a text field has focus, the `Notification` API override, the appearance attributes, the iOS app's safe-area insets and its notifications panel — with the remaining two behind the website's own progressive enhancements.
 Nothing checked any of them.
 A mistake in one is not a build failure but a feature that quietly does nothing against a server, which is exactly what hand-verification is worst at noticing, so static analysis — the only automated check that code can have — is now applied to it.
 
@@ -1586,4 +1586,13 @@ A `WKWebView` can drive the system's `NSTextFinder` bar, but that bar sits insid
 The bar lives in its own floating panel window attached to the web window rather than as an overlay on the page: it is placed at its window's top trailing corner each time it is shown, where it covers the trailing end of the page's header until its title bar drags it elsewhere, and its standard panel shadow comes with it.
 Keeping the panel a child window of the web window, so that it moves with it, makes its title-bar drag stutter; that cost is accepted.
 On iOS the web view is SwiftUI's `WebView`, which ships the system find navigator as the `findNavigator` modifier, so the iPhone and iPad present that instead of drawing anything of their own, opened from the account menu's Find in Page item and, on iPad, from the menu bar's Find in Page command (⌘F) through a focused scene value naming the window in front.
-The two platforms share WebKit's find engine, not the interface around it, and the trade-off accepted on the Mac is that the menu claims ⌘F before the page sees it, so a server app with its own ⌘F search, like Deck, is reached through its own UI rather than the key — the same trade-off Safari makes.
+The two platforms share the find engine, not the interface around it.
+The trade-off on the Mac changed with issue #153: ⌘F now reaches the page's own search first, even while a text field in the page has focus, and the find bar opens when the page has no ⌘F of its own or on a repeated ⌘F while the page's search field holds focus — so the key behaves the same wherever the focus is.
+
+## Why are ⌘K and ⌘F claimed from inside the page?
+
+While a text field in the page has focus, the page's own hotkey handling ignores ⌘K and ⌘F — a keystroke aimed at an editable control is left to the control — and the menu bar claims ⌘F itself, so the unified search did nothing but play the alert sound and a server app's own ⌘F search was skipped (issue #153).
+The injected [`SearchShortcuts.js`](./macOS/Scripts/SearchShortcuts.js) therefore claims such keystrokes inside the page — but only those aimed at an editable control that nothing else has already handled — and re-dispatches them on `<body>`, where the page's handlers treat them like a keystroke pressed with nothing focused.
+Keystrokes nobody claims are left un-prevented, so they still fall through to the menu bar: a user-assigned server-app shortcut keeps working, and the Edit menu's Find… item still opens the find bar.
+Claiming in the page rather than in a window override also covers element fullscreen, where no app window is the key window and the menu bar never sees the keystroke at all — the same reason the ⌃⌘S claim lives there.
+The script runs in the main frame alone, so embedded documents with their own ⌘F handling keep their keystrokes untouched.

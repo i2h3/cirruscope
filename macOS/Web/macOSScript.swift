@@ -12,6 +12,9 @@ enum macOSScript: String {
     /// `sidebarShortcut` claims the ⌃⌘S keystroke inside the page and reports it through the `sidebarShortcut` message handler, for the cases in which no `WebWindow` is offered the key equivalent — element fullscreen above all, where WebKit hosts the web view in a window of its own.
     case sidebarShortcut = "SidebarShortcut"
 
+    /// `searchShortcuts` claims ⌘K and ⌘F keystrokes aimed at an editable control inside the page and re-dispatches them synthetically on `<body>`, so the page's own search shortcuts fire even while a text field has focus, and reports a ⌘F the page declined — or that repeats while the page's search field has focus — through the `findPanel` message handler (issue #153).
+    case searchShortcuts = "SearchShortcuts"
+
     /// `headerHeight` measures Nextcloud's own header and reports its height through the `headerHeight` message handler, once on injection and again whenever that header is resized.
     case headerHeight = "HeaderHeight"
 
